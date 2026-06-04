@@ -1,0 +1,44 @@
+package com.yunxingcloud.yunxingcloud.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/oauth2/consent")
+public class ConsentController {
+
+    private final RegisteredClientRepository registeredClientRepository;
+
+    public ConsentController(RegisteredClientRepository registeredClientRepository) {
+        this.registeredClientRepository = registeredClientRepository;
+    }
+
+    @GetMapping("/client")
+    public ResponseEntity<Map<String, Object>> clientInfo(@RequestParam("client_id") String clientId) {
+        RegisteredClient client = registeredClientRepository.findByClientId(clientId);
+        if (client == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "client not found"));
+        }
+        return ResponseEntity.ok(Map.of(
+                "clientId", client.getClientId(),
+                "clientName", client.getClientName() != null
+                        ? client.getClientName() : client.getClientId(),
+                "scopes", client.getScopes().stream()
+                        .map(s -> Map.of("scope", s, "description", scopeDescription(s)))
+                        .toList()
+        ));
+    }
+
+    private String scopeDescription(String scope) {
+        return switch (scope) {
+            case "openid" -> "使用您的身份进行登录";
+            case "profile" -> "读取您的基本资料";
+            case "email" -> "读取您的邮箱地址";
+            default -> scope;
+        };
+    }
+}
