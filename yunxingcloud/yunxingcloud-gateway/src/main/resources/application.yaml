@@ -1,0 +1,10 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: yunxingcloud-gateway
+
+logging:
+  level:
+    com.yunxingcloud: DEBUG

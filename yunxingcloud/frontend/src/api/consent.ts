@@ -1,4 +1,4 @@
-import axios from 'axios'
+import request from '@/api/request'
 
 export interface ClientInfo {
   clientId: string
@@ -7,7 +7,7 @@ export interface ClientInfo {
 }
 
 export async function fetchClientInfo(clientId: string): Promise<ClientInfo> {
-  const res = await axios.get('/api/oauth2/consent/client', {
+  const res = await request.get('/api/oauth2/consent/client', {
     params: { client_id: clientId },
   })
   return res.data

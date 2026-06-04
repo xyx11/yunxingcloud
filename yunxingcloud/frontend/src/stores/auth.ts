@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
-import { getCsrfToken } from '@/composables/useCsrf'
+import request from '@/api/request'
 
 export const useAuthStore = defineStore('auth', () => {
   const username = ref<string | null>(null)
@@ -12,29 +11,36 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchUser() {
     loading.value = true
     try {
-      const res = await axios.get('/api/user')
+      const res = await request.get('/api/user')
       username.value = res.data.username
     } finally {
       loading.value = false
     }
   }
 
-  async function login(user: string, password: string): Promise<string> {
-    const csrfToken = getCsrfToken()
-    const res = await axios.post('/api/login',
-      { username: user, password },
-      { headers: { 'X-XSRF-TOKEN': csrfToken } }
-    )
+  async function login(user: string, password: string, code?: string): Promise<string> {
+    const res = await request.post('/api/login', { username: user, password, code })
     if (res.data.success) {
       username.value = res.data.username
-      return res.data.redirectUrl || '/'
+      localStorage.setItem('accessToken', res.data.accessToken)
+      localStorage.setItem('refreshToken', res.data.refreshToken)
+      return '/'
     }
     throw new Error(res.data.message || '登录失败')
   }
 
-  function clear() {
-    username.value = null
+  function restoreFromStorage() {
+    const token = localStorage.getItem('accessToken')
+    if (token) {
+      fetchUser().catch(() => clear())
+    }
   }
 
-  return { username, loading, isAuthenticated, fetchUser, login, clear }
+  function clear() {
+    username.value = null
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+  }
+
+  return { username, loading, isAuthenticated, fetchUser, login, restoreFromStorage, clear }
 })

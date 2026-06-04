@@ -1,0 +1,81 @@
+package com.yunxingcloud.usercenter.controller;
+
+import com.yunxingcloud.usercenter.repository.SocialAccountRepository;
+import com.yunxingcloud.usercenter.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/user")
+public class UserController {
+
+    private final UserService userService;
+    private final SocialAccountRepository socialAccountRepository;
+
+    public UserController(UserService userService, SocialAccountRepository socialAccountRepository) {
+        this.userService = userService;
+        this.socialAccountRepository = socialAccountRepository;
+    }
+
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> currentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String username = auth.getName();
+        return userService.findByUsername(username)
+                .map(user -> ResponseEntity.ok(Map.<String, Object>of(
+                        "id", user.getId(),
+                        "username", user.getUsername(),
+                        "email", user.getEmail() != null ? user.getEmail() : "",
+                        "nickname", user.getNickname() != null ? user.getNickname() : "",
+                        "avatarUrl", user.getAvatarUrl() != null ? user.getAvatarUrl() : "",
+                        "registerSource", user.getRegisterSource()
+                )))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/social")
+    public ResponseEntity<List<Map<String, Object>>> socialAccounts() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return userService.findByUsername(auth.getName())
+                .map(user -> socialAccountRepository.findByUserId(user.getId())
+                        .stream()
+                        .<Map<String, Object>>map(sa -> Map.of(
+                                "id", sa.getId(),
+                                "provider", sa.getProvider(),
+                                "nickname", sa.getNickname() != null ? sa.getNickname() : "",
+                                "avatarUrl", sa.getAvatarUrl() != null ? sa.getAvatarUrl() : ""
+                        ))
+                        .toList())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
+
+    @DeleteMapping("/social/{id}")
+    public ResponseEntity<Map<String, Object>> unbindSocial(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return socialAccountRepository.findById(id)
+                .map(sa -> {
+                    socialAccountRepository.delete(sa);
+                    return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "解绑成功"));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}

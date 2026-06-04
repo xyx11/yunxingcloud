@@ -1,5 +1,4 @@
-import axios from 'axios'
-import { getCsrfToken } from '@/composables/useCsrf'
+import request from '@/api/request'
 
 export interface LoginResponse {
   success: boolean
@@ -13,10 +12,11 @@ export interface UserInfo {
 }
 
 export async function fetchUserInfo(): Promise<UserInfo> {
-  const res = await axios.get('/api/user')
+  const res = await request.get('/api/user')
   return res.data
 }
 
-export async function fetchCsrfToken(): Promise<void> {
-  await axios.get('/api/csrf')
+export async function refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const res = await request.post('/api/refresh', { refreshToken })
+  return res.data
 }

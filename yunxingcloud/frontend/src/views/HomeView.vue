@@ -1,105 +1,144 @@
 <script setup lang="ts">
-import { h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import request from '@/api/request'
 import { useAuthStore } from '@/stores/auth'
-import { getCsrfToken } from '@/composables/useCsrf'
 import {
-  NConfigProvider, NLayout, NLayoutHeader, NLayoutContent,
-  NCard, NTable, NButton, NCode,
+  NConfigProvider, NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NLayoutFooter,
+  NMenu, NButton, NBreadcrumb, NBreadcrumbItem, NDropdown, NAvatar, NTag,
 } from 'naive-ui'
+import type { MenuOption } from 'naive-ui'
+import { RouterLinkOutlined } from '@vicons/material'
 
 const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
 
-const endpoints = [
-  { key: 1, name: '授权端点', path: '/oauth2/authorize', desc: 'OAuth2 授权码流程入口' },
-  { key: 2, name: 'Token 端点', path: '/oauth2/token', desc: '换取 access_token / refresh_token' },
-  { key: 3, name: 'JWKS 端点', path: '/oauth2/jwks', desc: 'RSA 公钥，验证 JWT 签名' },
-  { key: 4, name: 'UserInfo', path: '/userinfo', desc: 'OIDC 用户信息端点' },
-  { key: 5, name: '吊销端点', path: '/oauth2/revoke', desc: '吊销 Token' },
-  { key: 6, name: 'Discovery', path: '/.well-known/openid-configuration', desc: 'OIDC 自动发现' },
-]
+const collapsed = ref(false)
+const menuOptions = ref<MenuOption[]>([])
 
-const columns = [
-  { title: '端点', key: 'name', width: 120 },
-  { title: '路径', key: 'path', width: 240, render: (row: any) => h(NCode, {}, { default: () => row.path }) },
-  { title: '说明', key: 'desc' },
-]
+const currentKey = computed(() => route.path.replace('/', '') || 'home')
+
+const breadcrumbs = computed(() => {
+  const path = route.path
+  const parts = path.split('/').filter(Boolean)
+  const items = [{ label: '首页', path: '/' }]
+  const map: Record<string, string> = {
+    departments: '部门管理', roles: '角色管理', users: '用户管理',
+    menus: '菜单管理', operlog: '操作日志', job: '定时任务',
+    config: '系统参数', generator: '代码生成',
+  }
+  for (const p of parts) {
+    items.push({ label: map[p] || p, path: `/${p}` })
+  }
+  return items
+})
+
+onMounted(async () => {
+  try {
+    const res = await request.get('/api/menus/tree')
+    menuOptions.value = convertMenus(res.data)
+  } catch {
+    menuOptions.value = [
+      { label: '首页', key: 'home' },
+      { label: '部门管理', key: 'departments' },
+      { label: '角色管理', key: 'roles' },
+      { label: '用户管理', key: 'users' },
+    ]
+  }
+})
+
+function convertMenus(menus: any[]): MenuOption[] {
+  return menus
+    .filter((m: any) => m.menuType !== 'F' && m.visible)
+    .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    .map((m: any) => ({
+      label: m.name,
+      key: m.path ? m.path.replace('/', '') : `menu-${m.id}`,
+      icon: m.icon ? () => h('span', m.icon) : undefined,
+      children: m.children ? convertMenus(m.children) : undefined,
+    }))
+}
+
+function handleMenuUpdate(key: string) {
+  router.push(key === 'home' ? '/' : `/${key}`)
+}
 
 function handleLogout() {
-  const form = document.createElement('form')
-  form.method = 'POST'
-  form.action = '/logout'
-  const csrfInput = document.createElement('input')
-  csrfInput.type = 'hidden'
-  csrfInput.name = '_csrf'
-  csrfInput.value = getCsrfToken()
-  form.appendChild(csrfInput)
-  document.body.appendChild(form)
-  form.submit()
+  authStore.clear()
+  router.push('/login')
+}
+
+const userMenuOptions = [
+  { label: '个人中心', key: 'profile' },
+  { label: '退出登录', key: 'logout' },
+]
+
+function handleUserMenu(key: string) {
+  if (key === 'logout') handleLogout()
 }
 </script>
 
 <template>
   <n-config-provider>
-    <n-layout>
-      <n-layout-header class="header">
-        <h1>yunxingcloud SSO 认证中心</h1>
-        <div class="user-info">
-          <span>{{ authStore.username }}</span>
-          <n-button text type="warning" @click="handleLogout">退出</n-button>
+    <n-layout style="min-height: 100vh" :has-sider="true">
+      <n-layout-sider bordered :collapsed="collapsed" collapse-mode="width" :width="220">
+        <div class="logo">
+          <span v-if="!collapsed">yunxingcloud</span>
+          <span v-else style="font-size:16px;">YC</span>
         </div>
-      </n-layout-header>
-      <n-layout-content class="content">
-        <n-card title="欢迎使用 SSO 认证中心" class="card">
-          <p>您已成功登录。本系统提供 OAuth 2.0 / OpenID Connect 单点登录服务，子服务可通过标准 OIDC 协议接入认证。</p>
-        </n-card>
-        <n-card title="OAuth2 / OIDC 端点" class="card">
-          <n-table :columns="columns" :data="endpoints" />
-        </n-card>
-      </n-layout-content>
+        <n-menu :value="currentKey" :options="menuOptions" @update:value="handleMenuUpdate" />
+      </n-layout-sider>
+      <n-layout>
+        <n-layout-header class="header">
+          <div class="header-left">
+            <n-button text @click="collapsed = !collapsed" style="font-size:18px;">
+              {{ collapsed ? '☰' : '☰' }}
+            </n-button>
+            <n-breadcrumb>
+              <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
+                {{ b.label }}
+              </n-breadcrumb-item>
+            </n-breadcrumb>
+          </div>
+          <div class="header-right">
+            <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
+              <div class="user-area">
+                <n-avatar size="small" round style="background:#667eea;">{{ authStore.username?.charAt(0)?.toUpperCase() }}</n-avatar>
+                <span>{{ authStore.username }}</span>
+              </div>
+            </n-dropdown>
+          </div>
+        </n-layout-header>
+        <n-layout-content style="padding:16px; background:#f5f7fa; min-height:calc(100vh - 96px);">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </n-layout-content>
+        <n-layout-footer class="footer">
+          yunxingcloud {{ new Date().getFullYear() }} · Distributed Microservice Platform
+        </n-layout-footer>
+      </n-layout>
     </n-layout>
   </n-config-provider>
 </template>
 
 <style scoped>
-.header {
+.logo {
+  height: 56px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  padding: 0 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 56px;
+  color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 1px;
 }
-
-.header h1 {
-  font-size: 18px;
-  font-weight: 500;
+.header {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.content {
-  max-width: 860px;
-  margin: 32px auto;
-  padding: 0 20px;
-}
-
-.card {
-  margin-bottom: 20px;
-}
-
-.card p {
-  color: #666;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-:deep(.n-data-table-th) {
-  font-weight: 500;
-}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-right { display: flex; align-items: center; }
+.user-area { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.footer { text-align: center; font-size: 12px; color: #999; padding: 12px; background: #fff; border-top:1px solid #eee; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
