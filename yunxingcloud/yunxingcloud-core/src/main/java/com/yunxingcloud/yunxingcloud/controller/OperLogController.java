@@ -2,10 +2,16 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/operlog")
@@ -17,6 +23,40 @@ public class OperLogController {
 
     @GetMapping
     public ResponseEntity<List<SysOperLog>> list() { return ResponseEntity.ok(logRepository.findAll()); }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export() {
+        List<SysOperLog> logs = logRepository.findAll();
+        StringBuilder sb = new StringBuilder();
+        sb.append("ID,标题,业务类型,操作人,IP,URL,状态,耗时(ms),操作时间\n");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        for (SysOperLog log : logs) {
+            sb.append(String.join(",",
+                String.valueOf(log.getId()),
+                csvEscape(log.getTitle()),
+                csvEscape(log.getBusinessType()),
+                csvEscape(log.getOperName()),
+                csvEscape(log.getOperIp()),
+                csvEscape(log.getOperUrl()),
+                log.getStatus() != null && log.getStatus() == 0 ? "成功" : "失败",
+                String.valueOf(log.getCostTime() != null ? log.getCostTime() : 0),
+                log.getOperTime() != null ? log.getOperTime().format(fmt) : ""
+            )).append("\n");
+        }
+        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=operlog.csv")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(bytes);
+    }
+
+    private String csvEscape(String val) {
+        if (val == null) return "";
+        if (val.contains(",") || val.contains("\"") || val.contains("\n")) {
+            return "\"" + val.replace("\"", "\"\"") + "\"";
+        }
+        return val;
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {

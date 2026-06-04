@@ -11,12 +11,18 @@ import java.util.Date;
 public class JwtTokenService {
 
     private final SecretKey secretKey;
+    private TokenBlacklist blacklist;
 
     public static final long ACCESS_EXPIRATION = 2 * 60 * 60;        // 2 hours
     public static final long REFRESH_EXPIRATION = 7 * 24 * 60 * 60;  // 7 days
 
     public JwtTokenService(SecretKey secretKey) {
         this.secretKey = secretKey;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setBlacklist(TokenBlacklist blacklist) {
+        this.blacklist = blacklist;
     }
 
     public String createAccessToken(String username) {
@@ -44,6 +50,9 @@ public class JwtTokenService {
 
     public boolean validateToken(String token) {
         try {
+            if (blacklist != null && blacklist.isBlacklisted(token)) {
+                return false;
+            }
             parseClaims(token);
             return true;
         } catch (Exception e) {

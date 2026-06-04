@@ -1,6 +1,7 @@
 package com.yunxingcloud.yunxingcloud.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -32,7 +33,26 @@ public class User {
 
     private boolean enabled = true;
 
+    private int failedAttempts = 0;
+    private LocalDateTime lockedUntil;
+
     public User() {}
+
+    public boolean isLocked() {
+        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+    }
+
+    public void onLoginSuccess() {
+        this.failedAttempts = 0;
+        this.lockedUntil = null;
+    }
+
+    public void onLoginFailed() {
+        this.failedAttempts++;
+        if (this.failedAttempts >= 5) {
+            this.lockedUntil = LocalDateTime.now().plusMinutes(30);
+        }
+    }
 
     public User(String username, String password, String email) {
         this.username = username;
@@ -66,4 +86,9 @@ public class User {
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    public int getFailedAttempts() { return failedAttempts; }
+    public void setFailedAttempts(int failedAttempts) { this.failedAttempts = failedAttempts; }
+    public LocalDateTime getLockedUntil() { return lockedUntil; }
+    public void setLockedUntil(LocalDateTime lockedUntil) { this.lockedUntil = lockedUntil; }
 }

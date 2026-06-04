@@ -1,7 +1,16 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.yunxingcloud.yunxingcloud.config.RateLimitService;
+import com.yunxingcloud.yunxingcloud.config.TokenBlacklist;
+import com.yunxingcloud.yunxingcloud.entity.User;
+import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "认证管理", description = "登录、登出、Token 刷新、用户信息")
 @RestController
 @RequestMapping("/api")
 public class AuthController {
@@ -23,16 +33,33 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenService jwtTokenService;
+    private final TokenBlacklist tokenBlacklist;
+    private final RateLimitService rateLimitService;
+    private final UserRepository userRepository;
 
     public AuthController(AuthenticationManager authenticationManager,
-                          JwtTokenService jwtTokenService) {
+                          JwtTokenService jwtTokenService,
+                          TokenBlacklist tokenBlacklist,
+                          RateLimitService rateLimitService,
+                          UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
+        this.tokenBlacklist = tokenBlacklist;
+        this.rateLimitService = rateLimitService;
+        this.userRepository = userRepository;
     }
 
+    @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request,
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        if (!rateLimitService.isAllowed(ip)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                    "success", false, "message", "请求过于频繁，请稍后再试"
+            ));
+        }
+
         if (request.getCode() != null && !request.getCode().isEmpty()) {
             String sessionCaptcha = CaptchaController.getCaptcha(httpRequest.getSession());
             if (sessionCaptcha == null || !sessionCaptcha.equalsIgnoreCase(request.getCode())) {
@@ -47,10 +74,21 @@ public class AuthController {
             password = CaptchaController.decryptRSA(password);
         } catch (Exception ignored) {}
 
+        // check account lockout
+        var userOpt = userRepository.findByUsername(request.getUsername());
+        if (userOpt.isPresent() && userOpt.get().isLocked()) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of(
+                    "success", false, "message", "账号已被锁定，请30分钟后重试"
+            ));
+        }
+
         try {
             UsernamePasswordAuthenticationToken token =
                     new UsernamePasswordAuthenticationToken(request.getUsername(), password);
             Authentication auth = authenticationManager.authenticate(token);
+
+            // reset failed attempts on success
+            userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
 
             String accessToken = jwtTokenService.createAccessToken(auth.getName());
             String refreshToken = jwtTokenService.createRefreshToken(auth.getName());
@@ -64,6 +102,7 @@ public class AuthController {
                     "expiresIn", JwtTokenService.ACCESS_EXPIRATION
             ));
         } catch (BadCredentialsException e) {
+            userOpt.ifPresent(u -> { u.onLoginFailed(); userRepository.save(u); });
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "success", false, "message", "用户名或密码错误"
             ));
@@ -95,6 +134,15 @@ public class AuthController {
         ));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            tokenBlacklist.add(bearer.substring(7));
+        }
+        return ResponseEntity.ok(Map.of("success", true, "message", "已登出"));
+    }
+
     @GetMapping("/user")
     public ResponseEntity<Map<String, Object>> currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -115,8 +163,14 @@ public class AuthController {
     }
 
     static class LoginRequest {
+        @NotBlank(message = "用户名不能为空")
+        @Size(min = 2, max = 50, message = "用户名长度2-50位")
         private String username;
+
+        @NotBlank(message = "密码不能为空")
+        @Size(min = 4, max = 100, message = "密码长度4-100位")
         private String password;
+
         private String code;
         private String uuid;
         private Boolean rememberMe = false;

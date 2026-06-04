@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
-import { NConfigProvider, NCard, NDataTable, NButton, NModal, NSelect, NSpace, NTag } from 'naive-ui'
+import { NConfigProvider, NCard, NDataTable, NButton, NModal, NSelect, NSpace, NTag, NInput } from 'naive-ui'
 
 interface UserInfo { id: number; username: string; nickname: string; email: string; departmentId: number; registerSource: string; enabled: boolean; roles: { id: number; name: string; code: string }[] }
 interface Dept { id: number; name: string }
@@ -10,6 +10,17 @@ interface Role { id: number; name: string; code: string }
 const users = ref<UserInfo[]>([])
 const depts = ref<Dept[]>([])
 const allRoles = ref<Role[]>([])
+const searchKeyword = ref('')
+
+const filteredUsers = computed(() => {
+  const kw = searchKeyword.value.toLowerCase()
+  if (!kw) return users.value
+  return users.value.filter(u =>
+    u.username.toLowerCase().includes(kw) ||
+    u.nickname.toLowerCase().includes(kw) ||
+    u.email.toLowerCase().includes(kw)
+  )
+})
 const loading = ref(false)
 const showDeptModal = ref(false)
 const showRoleModal = ref(false)
@@ -87,7 +98,10 @@ onMounted(loadData)
   <n-config-provider>
     <div style="padding: 24px;">
       <n-card title="用户管理">
-        <n-data-table :columns="columns" :data="users" :loading="loading" :row-key="(row: UserInfo) => row.id" />
+        <template #header-extra>
+          <n-input v-model:value="searchKeyword" placeholder="搜索用户名/昵称/邮箱..." clearable style="width:220px" />
+        </template>
+        <n-data-table :columns="columns" :data="filteredUsers" :loading="loading" :pagination="{ pageSize: 10 }" :row-key="(row: UserInfo) => row.id" />
 
         <n-modal v-model:show="showDeptModal" title="分配部门">
           <n-form>

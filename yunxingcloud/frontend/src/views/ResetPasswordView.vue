@@ -22,6 +22,14 @@ onMounted(() => {
 })
 
 async function handleSubmit() {
+  if (newPassword.value.length < 8) {
+    error.value = '密码至少 8 位'
+    return
+  }
+  if (!/[A-Z]/.test(newPassword.value) || !/[a-z]/.test(newPassword.value) || !/[0-9]/.test(newPassword.value)) {
+    error.value = '密码需包含大写字母、小写字母和数字'
+    return
+  }
   if (newPassword.value !== confirmPassword.value) {
     error.value = '两次输入的密码不一致'
     return

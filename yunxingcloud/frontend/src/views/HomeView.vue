@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import {
   NConfigProvider, NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NLayoutFooter,
   NMenu, NButton, NBreadcrumb, NBreadcrumbItem, NDropdown, NAvatar, NTag,
+  darkTheme, NIcon,
 } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import { RouterLinkOutlined } from '@vicons/material'
@@ -14,8 +15,18 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const collapsed = ref(false)
+const collapsed = ref(window.innerWidth < 768)
+const isDark = ref(localStorage.getItem('theme') === 'dark')
 const menuOptions = ref<MenuOption[]>([])
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth < 768) collapsed.value = true
+})
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 const currentKey = computed(() => route.path.replace('/', '') || 'home')
 
@@ -64,7 +75,8 @@ function handleMenuUpdate(key: string) {
   router.push(key === 'home' ? '/' : `/${key}`)
 }
 
-function handleLogout() {
+async function handleLogout() {
+  try { await request.post('/api/logout') } catch {}
   authStore.clear()
   router.push('/login')
 }
@@ -80,7 +92,7 @@ function handleUserMenu(key: string) {
 </script>
 
 <template>
-  <n-config-provider>
+  <n-config-provider :theme="isDark ? darkTheme : undefined">
     <n-layout style="min-height: 100vh" :has-sider="true">
       <n-layout-sider bordered :collapsed="collapsed" collapse-mode="width" :width="220">
         <div class="logo">
@@ -102,6 +114,9 @@ function handleUserMenu(key: string) {
             </n-breadcrumb>
           </div>
           <div class="header-right">
+            <n-button text @click="toggleTheme" style="font-size:18px;margin-right:12px;">
+              {{ isDark ? '☀️' : '🌙' }}
+            </n-button>
             <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
               <div class="user-area">
                 <n-avatar size="small" round style="background:#667eea;">{{ authStore.username?.charAt(0)?.toUpperCase() }}</n-avatar>
@@ -110,7 +125,7 @@ function handleUserMenu(key: string) {
             </n-dropdown>
           </div>
         </n-layout-header>
-        <n-layout-content style="padding:16px; background:#f5f7fa; min-height:calc(100vh - 96px);">
+        <n-layout-content style="padding:16px; background:#f5f7fa; min-height:calc(100vh - 96px);" class="content-area">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
               <component :is="Component" />
@@ -141,4 +156,13 @@ function handleUserMenu(key: string) {
 .footer { text-align: center; font-size: 12px; color: #999; padding: 12px; background: #fff; border-top:1px solid #eee; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+@media (max-width: 768px) {
+  .header { padding: 0 10px; flex-wrap: wrap; height: auto; min-height: 44px; }
+  .header-left { gap: 8px; }
+  .header-right { gap: 4px; }
+  .user-area span { display: none; }
+  .logo { font-size: 14px; height: 44px; }
+  .content-area { padding: 8px !important; }
+}
 </style>

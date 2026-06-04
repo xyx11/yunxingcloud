@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.common.core.PasswordValidator;
 import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.PasswordResetTokenRepository;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,8 +66,11 @@ public class PasswordController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "重置令牌无效或已过期"));
         }
 
-        if (newPassword == null || newPassword.length() < 6) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "密码至少6位"));
+        List<String> pwErrors = PasswordValidator.validate(newPassword);
+        if (!pwErrors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, "message", "密码强度不足",
+                "details", String.join("; ", pwErrors)));
         }
 
         User user = userRepository.findById(resetToken.getUserId()).orElse(null);

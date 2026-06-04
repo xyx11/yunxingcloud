@@ -78,7 +78,7 @@ onMounted(loadDepts)
         <template #header-extra>
           <n-button type="primary" size="small" @click="addDept">新增部门</n-button>
         </template>
-        <n-data-table :columns="columns" :data="depts" :loading="loading"
+        <n-data-table :columns="columns" :data="depts" :loading="loading" :pagination="{ pageSize: 10 }"
           default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑部门' : '新增部门'">

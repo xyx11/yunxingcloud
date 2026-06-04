@@ -77,6 +77,10 @@ async function cleanLogs() {
   await loadLogs()
 }
 
+function exportLogs() {
+  window.open('/api/operlog/export', '_blank')
+}
+
 onMounted(loadLogs)
 </script>
 
@@ -85,12 +89,13 @@ onMounted(loadLogs)
     <div style="padding: 24px">
       <n-card title="操作日志">
         <template #header-extra>
+          <n-button size="small" @click="exportLogs" style="margin-right:8px">导出CSV</n-button>
           <n-popconfirm @positive-click="cleanLogs">
             <template #trigger><n-button type="error" size="small" secondary>清空日志</n-button></template>
             确认清空所有操作日志?
           </n-popconfirm>
         </template>
-        <n-data-table :columns="columns" :data="logs" :loading="loading"
+        <n-data-table :columns="columns" :data="logs" :loading="loading" :pagination="{ pageSize: 10 }"
           :row-key="(row: OperLog) => row.id" :max-height="600" />
 
         <n-modal v-model:show="detailVisible" title="日志详情" style="width:640px">

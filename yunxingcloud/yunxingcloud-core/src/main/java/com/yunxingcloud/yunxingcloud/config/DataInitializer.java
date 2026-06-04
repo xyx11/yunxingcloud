@@ -5,8 +5,10 @@ import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.SysMenuRepository;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -14,21 +16,77 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final SysMenuRepository menuRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     public DataInitializer(UserRepository userRepository,
                             SysMenuRepository menuRepository,
-                            PasswordEncoder passwordEncoder) {
+                            PasswordEncoder passwordEncoder,
+                            JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.menuRepository = menuRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
+        initRoles();
+        initUsers();
+        initMenus();
+    }
+
+    private void initRoles() {
+        // fallback DDL when Flyway is disabled (e.g., H2 tests)
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS role (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    code VARCHAR(50) NOT NULL UNIQUE,
+                    description VARCHAR(200),
+                    permissions VARCHAR(2000) DEFAULT '',
+                    enabled BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )""");
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS user_roles (
+                    user_id BIGINT NOT NULL,
+                    role_id BIGINT NOT NULL,
+                    PRIMARY KEY (user_id, role_id)
+                )""");
+        } catch (Exception ignored) {}
+
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM role", Integer.class);
+        if (count != null && count == 0) {
+            jdbcTemplate.update(
+                "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
+                "超级管理员", "admin", "系统超级管理员",
+                "user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write");
+            jdbcTemplate.update(
+                "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
+                "普通用户", "user", "普通用户", "user:read,dept:read");
+        }
+    }
+
+    private void initUsers() {
         if (!userRepository.existsByUsername("admin")) {
             User admin = new User("admin", passwordEncoder.encode("admin123"), "admin@yunxingcloud.com");
-            userRepository.save(admin);
+            admin = userRepository.save(admin);
+            // assign admin role
+            try {
+                Long roleId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM role WHERE code = ?", Long.class, "admin");
+                if (roleId != null) {
+                    jdbcTemplate.update(
+                        "INSERT INTO user_roles (user_id, role_id) VALUES (?,?)",
+                        admin.getId(), roleId);
+                }
+            } catch (Exception ignored) {}
         }
+    }
+
+    private void initMenus() {
 
         if (menuRepository.count() == 0) {
             SysMenu system = createMenu("系统管理", null, 1, "system", null, "M", null);

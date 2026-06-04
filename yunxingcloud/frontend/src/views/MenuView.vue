@@ -122,7 +122,7 @@ onMounted(loadMenus)
         <template #header-extra>
           <n-button type="primary" size="small" @click="addMenu">新增菜单</n-button>
         </template>
-        <n-data-table :columns="columns" :data="menus" :loading="loading"
+        <n-data-table :columns="columns" :data="menus" :loading="loading" :pagination="{ pageSize: 10 }"
           default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑菜单' : '新增菜单'" style="width:600px">

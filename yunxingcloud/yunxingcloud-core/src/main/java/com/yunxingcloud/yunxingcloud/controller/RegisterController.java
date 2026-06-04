@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.common.core.PasswordValidator;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -36,8 +38,11 @@ public class RegisterController {
         if (request.username() == null || request.username().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名不能为空"));
         }
-        if (request.password() == null || request.password().length() < 6) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "密码至少6位"));
+        List<String> pwErrors = PasswordValidator.validate(request.password());
+        if (!pwErrors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, "message", "密码强度不足",
+                "details", String.join("; ", pwErrors)));
         }
 
         try {

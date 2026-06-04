@@ -20,7 +20,23 @@ const rules: FormRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+    { min: 8, message: '密码至少 8 位', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string) => /[A-Z]/.test(value),
+      message: '需包含大写字母', trigger: 'blur',
+    },
+    {
+      validator: (_rule: any, value: string) => /[a-z]/.test(value),
+      message: '需包含小写字母', trigger: 'blur',
+    },
+    {
+      validator: (_rule: any, value: string) => /[0-9]/.test(value),
+      message: '需包含数字', trigger: 'blur',
+    },
+    {
+      validator: (_rule: any, value: string) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
+      message: '需包含特殊字符', trigger: 'blur',
+    },
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },

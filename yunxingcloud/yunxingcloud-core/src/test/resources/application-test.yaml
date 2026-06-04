@@ -10,10 +10,8 @@ spring:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
 
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema-h2.sql
+  flyway:
+    enabled: false
 
 jwt:
   secret: test-jwt-secret-for-integration-tests-min-256-bits

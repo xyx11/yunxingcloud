@@ -58,7 +58,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getUsername(),
                 user.getPassword(),
                 user.isEnabled(),
-                true, true, true,
+                true, true,
+                !user.isLocked(),
                 authorities
         );
     }

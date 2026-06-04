@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag
@@ -13,6 +14,7 @@ interface SysJob {
   status: string; remark: string; createdAt: string; updatedAt: string
 }
 
+const notify = useNotify()
 const jobs = ref<SysJob[]>([])
 const loading = ref(false)
 const showModal = ref(false)
@@ -110,7 +112,7 @@ async function delJob(id: number) {
 
 async function runJob(id: number) {
   await request.post(`/api/job/${id}/run`)
-  alert('任务已触发执行')
+  notify.success('任务已触发执行')
 }
 
 onMounted(loadJobs)
@@ -123,7 +125,7 @@ onMounted(loadJobs)
         <template #header-extra>
           <n-button type="primary" size="small" @click="addJob">新增任务</n-button>
         </template>
-        <n-data-table :columns="columns" :data="jobs" :loading="loading"
+        <n-data-table :columns="columns" :data="jobs" :loading="loading" :pagination="{ pageSize: 10 }"
           :row-key="(row: SysJob) => row.id" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑任务' : '新增任务'" style="width:560px">

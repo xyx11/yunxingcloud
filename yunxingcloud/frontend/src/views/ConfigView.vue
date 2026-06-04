@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag
@@ -12,6 +13,7 @@ interface SysConfig {
   configType: string; createdAt: string
 }
 
+const notify = useNotify()
 const configs = ref<SysConfig[]>([])
 const loading = ref(false)
 const showModal = ref(false)
@@ -77,7 +79,7 @@ async function saveConfig() {
     showModal.value = false
     await loadConfigs()
   } catch (e: any) {
-    alert(e.response?.data?.message || '保存失败')
+    notify.error(e.response?.data?.message || '保存失败')
   }
 }
 
@@ -96,7 +98,7 @@ onMounted(loadConfigs)
         <template #header-extra>
           <n-button type="primary" size="small" @click="addConfig">新增参数</n-button>
         </template>
-        <n-data-table :columns="columns" :data="configs" :loading="loading"
+        <n-data-table :columns="columns" :data="configs" :loading="loading" :pagination="{ pageSize: 10 }"
           :row-key="(row: SysConfig) => row.id" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑参数' : '新增参数'">

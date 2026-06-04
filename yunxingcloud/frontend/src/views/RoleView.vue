@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm } from 'naive-ui'
 
 interface Role { id: number; name: string; code: string; description: string; permissions: string; enabled: boolean }
 
+const notify = useNotify()
 const roles = ref<Role[]>([])
+const roleSearch = ref('')
+
+const filteredRoles = computed(() => {
+  const kw = roleSearch.value.toLowerCase()
+  if (!kw) return roles.value
+  return roles.value.filter(r =>
+    r.name.toLowerCase().includes(kw) ||
+    r.code.toLowerCase().includes(kw)
+  )
+})
 const loading = ref(false)
 const showModal = ref(false)
 const editing = ref<Role | null>(null)
@@ -56,7 +68,7 @@ async function saveRole() {
     showModal.value = false
     await loadRoles()
   } catch (e: any) {
-    alert(e.response?.data?.message || '保存失败')
+    notify.error(e.response?.data?.message || '保存失败')
   }
 }
 
@@ -73,9 +85,10 @@ onMounted(loadRoles)
     <div style="padding: 24px;">
       <n-card title="角色管理">
         <template #header-extra>
+          <n-input v-model:value="roleSearch" placeholder="搜索名称/编码..." clearable style="width:180px;margin-right:8px" />
           <n-button type="primary" size="small" @click="addRole">新增角色</n-button>
         </template>
-        <n-data-table :columns="columns" :data="roles" :loading="loading" :row-key="(row: Role) => row.id" />
+        <n-data-table :columns="columns" :data="filteredRoles" :loading="loading" :pagination="{ pageSize: 10 }" :row-key="(row: Role) => row.id" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑角色' : '新增角色'">
           <n-form>

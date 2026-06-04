@@ -4,11 +4,16 @@ import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysMenu;
 import com.yunxingcloud.yunxingcloud.repository.SysMenuRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Tag(name = "菜单管理", description = "系统菜单树 CRUD")
 @RestController
 @RequestMapping("/api/menus")
 public class MenuController {
@@ -17,6 +22,7 @@ public class MenuController {
 
     public MenuController(SysMenuRepository menuRepository) { this.menuRepository = menuRepository; }
 
+    @Cacheable(value = "menuTree")
     @GetMapping("/tree")
     public ResponseEntity<List<SysMenu>> tree() {
         List<SysMenu> all = menuRepository.findByVisibleTrueOrderBySortOrder();
@@ -30,6 +36,7 @@ public class MenuController {
         return ResponseEntity.ok(roots);
     }
 
+    @Cacheable(value = "menuList")
     @GetMapping
     public ResponseEntity<List<SysMenu>> list() { return ResponseEntity.ok(menuRepository.findAll()); }
 
@@ -39,12 +46,14 @@ public class MenuController {
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
+    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PostMapping
     public ResponseEntity<SysMenu> create(@RequestBody SysMenu menu) {
         return ResponseEntity.ok(menuRepository.save(menu));
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
+    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<SysMenu> update(@PathVariable Long id, @RequestBody SysMenu body) {
         return menuRepository.findById(id).map(m -> {
@@ -58,6 +67,7 @@ public class MenuController {
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
+    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         menuRepository.deleteById(id);

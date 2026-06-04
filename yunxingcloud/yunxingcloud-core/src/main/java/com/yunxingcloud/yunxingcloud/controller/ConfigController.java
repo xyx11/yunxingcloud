@@ -4,6 +4,8 @@ import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysConfig;
 import com.yunxingcloud.yunxingcloud.repository.SysConfigRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;

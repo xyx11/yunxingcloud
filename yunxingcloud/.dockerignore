@@ -1,0 +1,8 @@
+frontend/
+node_modules/
+.git/
+*.md
+.vscode/
+.idea/
+target/
+*/target/

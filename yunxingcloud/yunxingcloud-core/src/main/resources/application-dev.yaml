@@ -10,7 +10,13 @@ spring:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
 
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema-h2.sql
+  flyway:
+    enabled: false
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} [%X{requestId}] %-5level %logger{20} - %msg%n"
+  level:
+    root: WARN
+    com.yunxingcloud: INFO
+    org.springframework.security: INFO

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode
 } from 'naive-ui'
@@ -9,6 +10,7 @@ import type { DataTableColumns } from 'naive-ui'
 interface TableInfo { TABLE_NAME: string; TABLE_COMMENT: string }
 interface ColumnInfo { COLUMN_NAME: string; DATA_TYPE: string; COLUMN_COMMENT: string; IS_NULLABLE: string; COLUMN_KEY: string }
 
+const notify = useNotify()
 const tables = ref<TableInfo[]>([])
 const loading = ref(false)
 const showColumnsModal = ref(false)
@@ -61,7 +63,7 @@ async function loadTables() {
   try {
     const res = await request.get('/api/generator/tables')
     tables.value = res.data
-  } catch { alert('获取表列表失败，请确保使用MySQL数据库'); }
+  } catch { notify.error('获取表列表失败，请确保使用MySQL数据库'); }
   loading.value = false
 }
 
@@ -90,7 +92,7 @@ onMounted(loadTables)
         <template #header-extra>
           <n-input v-model:value="packageName" placeholder="包名" style="width:200px;margin-right:8px" />
         </template>
-        <n-data-table :columns="tableColumns" :data="tables" :loading="loading"
+        <n-data-table :columns="tableColumns" :data="tables" :loading="loading" :pagination="{ pageSize: 10 }"
           :row-key="(row: TableInfo) => row.TABLE_NAME" />
 
         <!-- 字段查看弹窗 -->

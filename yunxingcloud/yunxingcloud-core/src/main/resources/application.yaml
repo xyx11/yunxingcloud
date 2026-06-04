@@ -8,15 +8,20 @@ spring:
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=30m
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     open-in-view: false
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 jwt:
   secret: ${JWT_SECRET:yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
@@ -27,10 +32,21 @@ oauth2:
     secret: ${OAUTH2_CLIENT_SECRET:secret}
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://127.0.0.1:9090/callback}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
 server:
   port: 8080
 
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{requestId}] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
     com.yunxingcloud: DEBUG
