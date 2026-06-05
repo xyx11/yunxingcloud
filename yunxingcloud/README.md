@@ -32,7 +32,54 @@ yunxingcloud/
 └── .github/workflows/         # CI/CD
 ```
 
+## 架构图
+
+```mermaid
+graph TB
+    subgraph 客户端
+        Browser["浏览器 (Vue 3 SPA)"]
+    end
+
+    subgraph 网关层
+        Gateway["API 网关 :8090<br/>限流 · 熔断 · 日志"]
+    end
+
+    subgraph 服务层
+        Core["SSO 认证中心 :8080<br/>JWT · OAuth2 · RBAC"]
+        UC["用户中心 :8081<br/>部门 · 角色 · 社交登录"]
+    end
+
+    subgraph 数据层
+        MySQL["MySQL 8"]
+        Cache["Caffeine Cache"]
+    end
+
+    subgraph 运维层
+        Docker["Docker / K8s"]
+        CI["GitHub Actions"]
+        Monitor["Actuator + SSE"]
+    end
+
+    Browser --> Gateway
+    Gateway --> Core
+    Gateway --> UC
+    Core --> MySQL
+    UC --> MySQL
+    Core --> Cache
+    Docker --> Core
+    Docker --> UC
+    CI --> Docker
+    Monitor --> Core
+```
+
 ## 快速开始
+
+### 一键演示
+
+```bash
+./demo.sh
+# 自动构建 → 启动 → 冒烟测试 → 打开浏览器
+```
 
 ### 本地开发
 
