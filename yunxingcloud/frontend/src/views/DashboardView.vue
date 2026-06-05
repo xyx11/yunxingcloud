@@ -40,6 +40,18 @@ onMounted(async () => {
     }
     const sysRes = await request.get('/api/system/info').catch(() => ({ data: null }))
     sysInfo.value = sysRes.data
+
+    // SSE 实时更新
+    const es = new EventSource('/api/sse/dashboard')
+    es.addEventListener('stats', (e) => {
+      const sseData = JSON.parse(e.data)
+      if (sysInfo.value) {
+        sysInfo.value.heapUsed = sseData.heapUsed
+        sysInfo.value.usedMemory = sseData.usedMemory
+        sysInfo.value.activeSessions = sseData.activeSessions
+        sysInfo.value = { ...sysInfo.value } // trigger reactivity
+      }
+    })
   } catch {} finally { loading.value = false }
 })
 </script>
