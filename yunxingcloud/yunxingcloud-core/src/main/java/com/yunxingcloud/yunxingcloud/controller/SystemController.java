@@ -3,6 +3,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import org.springframework.cache.CacheManager;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +21,13 @@ public class SystemController {
     private final CacheManager cacheManager;
     private final TokenStore tokenStore;
     private final FeatureFlags featureFlags;
+    private final JdbcTemplate jdbcTemplate;
 
-    public SystemController(CacheManager cacheManager, TokenStore tokenStore, FeatureFlags featureFlags) {
+    public SystemController(CacheManager cacheManager, TokenStore tokenStore, FeatureFlags featureFlags, JdbcTemplate jdbcTemplate) {
         this.cacheManager = cacheManager;
         this.tokenStore = tokenStore;
         this.featureFlags = featureFlags;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @GetMapping("/info")
@@ -74,6 +77,18 @@ public class SystemController {
             return ResponseEntity.ok(Map.of("success", true, "message", "已强制下线: " + username));
         }
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", "缺少 username"));
+    }
+
+    @GetMapping("/benchmark")
+    public ResponseEntity<Map<String, Object>> benchmark() {
+        long start = System.currentTimeMillis();
+        Map<String, Object> r = new LinkedHashMap<>();
+        try { jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Long.class); r.put("db_ms", System.currentTimeMillis() - start); } catch (Exception e) { r.put("db_ms", -1); }
+        long t2 = System.currentTimeMillis();
+        for (int i = 0; i < 1000; i++) cacheManager.getCache("menuTree");
+        r.put("cache_1k_ms", System.currentTimeMillis() - t2);
+        r.put("total_ms", System.currentTimeMillis() - start);
+        return ResponseEntity.ok(r);
     }
 
     @GetMapping("/flags")
