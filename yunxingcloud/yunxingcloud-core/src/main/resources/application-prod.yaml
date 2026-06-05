@@ -2,6 +2,9 @@
 # yunxingcloud 生产环境配置
 # ============================================
 
+app:
+  base-url: https://www.yunxingcloud.com
+
 spring:
   datasource:
     hikari:
