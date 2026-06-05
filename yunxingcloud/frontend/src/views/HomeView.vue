@@ -23,6 +23,7 @@ const { t, locale } = useI18n()
 const collapsed = ref(window.innerWidth < 768)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 const menuOptions = ref<MenuOption[]>([])
+const liveStats = ref({ uptime: '', sessions: 0 })
 
 window.addEventListener('resize', () => {
   if (window.innerWidth < 768) collapsed.value = true
@@ -50,7 +51,19 @@ const breadcrumbs = computed(() => {
   return items
 })
 
+async function fetchStats() {
+  try {
+    const [info, sessions] = await Promise.all([
+      request.get('/api/system/info'),
+      request.get('/api/system/sessions'),
+    ])
+    liveStats.value = { uptime: info.data.uptime, sessions: sessions.data.count }
+  } catch {}
+}
+
 onMounted(async () => {
+  fetchStats()
+  setInterval(fetchStats, 30000)
   try {
     const res = await request.get('/api/menus/tree')
     menuOptions.value = convertMenus(res.data)
@@ -149,7 +162,7 @@ useKeyboard({
           </router-view>
         </n-layout-content>
         <n-layout-footer class="footer">
-          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }}
+          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · 运行 {{ liveStats.uptime }} · {{ liveStats.sessions }} 在线
         </n-layout-footer>
       </n-layout>
     </n-layout>

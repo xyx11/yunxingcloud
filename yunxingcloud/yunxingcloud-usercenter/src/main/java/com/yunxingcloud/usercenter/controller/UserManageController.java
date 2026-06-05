@@ -103,4 +103,13 @@ public class UserManageController {
         }
         return ResponseEntity.ok(Map.of("success", true, "imported", success, "failed", fail));
     }
+
+    @PutMapping("/{id}/toggle")
+    public ResponseEntity<Map<String, Object>> toggleUser(@PathVariable Long id) {
+        return userRepository.findById(id).map(u -> {
+            u.setEnabled(!u.isEnabled());
+            userRepository.save(u);
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "enabled", u.isEnabled()));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

@@ -2,7 +2,7 @@
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
-import { NConfigProvider, NCard, NDataTable, NButton, NModal, NSelect, NSpace, NTag, NInput } from 'naive-ui'
+import { NConfigProvider, NCard, NDataTable, NButton, NModal, NSelect, NSpace, NTag, NInput, NSwitch } from 'naive-ui'
 
 interface UserInfo { id: number; username: string; nickname: string; email: string; departmentId: number; registerSource: string; enabled: boolean; roles: { id: number; name: string; code: string }[] }
 interface Dept { id: number; name: string }
@@ -29,6 +29,11 @@ const showRoleModal = ref(false)
 const selectedUser = ref<UserInfo | null>(null)
 const selectedDeptId = ref<number | null>(null)
 const selectedRoleIds = ref<number[]>([])
+
+async function toggleUser(user: UserInfo) {
+  await request.put(`/api/users/${user.id}/toggle`)
+  await loadData()
+}
 
 const columns = [
   { title: '用户名', key: 'username', width: 100, sorter: true },
