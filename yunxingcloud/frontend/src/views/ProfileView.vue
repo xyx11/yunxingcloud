@@ -52,6 +52,7 @@ async function handleUpload({ file }: any) {
         <n-descriptions-item label="用户名">{{ user.username }}</n-descriptions-item>
         <n-descriptions-item label="昵称">{{ user.nickname || '-' }}</n-descriptions-item>
         <n-descriptions-item label="邮箱">{{ user.email || '-' }}</n-descriptions-item>
+        <n-descriptions-item label="最后登录">{{ user.lastLoginTime || "-" }}</n-descriptions-item>
         <n-descriptions-item label="注册来源">
           <n-tag :type="user.registerSource === 'local' ? 'info' : 'success'" size="small">
             {{ user.registerSource === 'local' ? '本地注册' : user.registerSource }}

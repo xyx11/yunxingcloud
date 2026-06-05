@@ -98,6 +98,7 @@ public class AuthController {
 
             // reset failed attempts on success
             userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
+            userOpt.ifPresent(u -> { u.setLastLoginTime(java.time.LocalDateTime.now()); userRepository.save(u); });
 
             String accessToken = jwtTokenService.createAccessToken(auth.getName());
             tokenStore.add(accessToken, auth.getName(), System.currentTimeMillis() + JwtTokenService.ACCESS_EXPIRATION * 1000);

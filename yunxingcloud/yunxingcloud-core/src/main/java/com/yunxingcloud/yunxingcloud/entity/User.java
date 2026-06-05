@@ -35,6 +35,7 @@ public class User {
 
     private int failedAttempts = 0;
     private LocalDateTime lockedUntil;
+    private LocalDateTime lastLoginTime;
 
     public User() {}
 
@@ -82,4 +83,6 @@ public class User {
     public void setFailedAttempts(int failedAttempts) { this.failedAttempts = failedAttempts; }
     public LocalDateTime getLockedUntil() { return lockedUntil; }
     public void setLockedUntil(LocalDateTime lockedUntil) { this.lockedUntil = lockedUntil; }
+    public LocalDateTime getLastLoginTime() { return lastLoginTime; }
+    public void setLastLoginTime(LocalDateTime lastLoginTime) { this.lastLoginTime = lastLoginTime; }
 }
