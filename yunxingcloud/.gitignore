@@ -34,3 +34,22 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+logs/
+*.log
+
+### Uploads ###
+uploads/
+
+### Test ###
+test-results/
+playwright-report/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Env ###
+.env
+.env.local
