@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yunxingcloud-config
+  namespace: yunxingcloud
+data:
+  DB_URL: "jdbc:mysql://mysql-service:3306/sso_yunxingcloud?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+  DB_USERNAME: "root"
+  OAUTH2_CLIENT_ID: "yunxingcloud-client"
+  OAUTH2_REDIRECT_URI: "https://your-domain.com/callback"
+  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"

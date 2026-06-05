@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-core
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-core
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yunxingcloud-core
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-core
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
