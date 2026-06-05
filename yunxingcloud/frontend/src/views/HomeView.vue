@@ -12,6 +12,7 @@ import type { MenuOption } from 'naive-ui'
 import { RouterLinkOutlined } from '@vicons/material'
 import { useKeyboard } from '@/composables/useKeyboard'
 import CommandPalette from '@/components/CommandPalette.vue'
+import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import { useI18n } from 'vue-i18n'
 import { switchLocale } from '@/locales'
 
@@ -119,6 +120,7 @@ useKeyboard({
 
 <template>
   <n-config-provider :theme="isDark ? darkTheme : undefined">
+    <AnnouncementBanner />
     <n-layout style="min-height: 100vh" :has-sider="true">
       <n-layout-sider bordered :collapsed="collapsed" collapse-mode="width" :width="220">
         <div class="logo">

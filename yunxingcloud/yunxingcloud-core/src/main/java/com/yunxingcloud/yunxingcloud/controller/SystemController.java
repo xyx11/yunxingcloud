@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,12 @@ public class SystemController {
 
     private final CacheManager cacheManager;
     private final TokenStore tokenStore;
+    private final FeatureFlags featureFlags;
 
-    public SystemController(CacheManager cacheManager, TokenStore tokenStore) {
+    public SystemController(CacheManager cacheManager, TokenStore tokenStore, FeatureFlags featureFlags) {
         this.cacheManager = cacheManager;
         this.tokenStore = tokenStore;
+        this.featureFlags = featureFlags;
     }
 
     @GetMapping("/info")
@@ -71,6 +74,14 @@ public class SystemController {
             return ResponseEntity.ok(Map.of("success", true, "message", "已强制下线: " + username));
         }
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", "缺少 username"));
+    }
+
+    @GetMapping("/flags")
+    public ResponseEntity<Map<String, Object>> flags() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("features", featureFlags.getAll());
+        data.put("announcement", featureFlags.getAnnouncement());
+        return ResponseEntity.ok(data);
     }
 
     @PreAuthorize("hasAuthority('config:write')")
