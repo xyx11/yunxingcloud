@@ -34,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
         initRoles();
         initUsers();
         initMenus();
+        initDemoData();
     }
 
     private void initRoles() {
@@ -117,6 +118,36 @@ public class DataInitializer implements CommandLineRunner {
             SysMenu config = createMenu("参数配置", tools.getId(), 2, "/config", "ConfigView", "C", "tool:config:list");
             menuRepository.save(config);
         }
+    }
+
+    private void initDemoData() {
+        if (!userRepository.existsByUsername("demo")) {
+            User demo = new User("demo", passwordEncoder.encode("demo1234"), "demo@yunxingcloud.com");
+            demo.setNickname("演示用户");
+            demo.setRegisterSource("local");
+            userRepository.save(demo);
+            try {
+                Long roleId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM role WHERE code = ?", Long.class, "user");
+                if (roleId != null) {
+                    jdbcTemplate.update(
+                        "INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", demo.getId(), roleId);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 演示系统配置
+        try {
+            Integer cfgCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_config", Integer.class);
+            if (cfgCount != null && cfgCount == 0) {
+                jdbcTemplate.update("INSERT INTO sys_config (name, config_key, config_value, config_type) VALUES (?,?,?,?)",
+                        "系统名称", "sys.name", "yunxingcloud", "Y");
+                jdbcTemplate.update("INSERT INTO sys_config (name, config_key, config_value, config_type) VALUES (?,?,?,?)",
+                        "系统版本", "sys.version", "1.0.0", "Y");
+                jdbcTemplate.update("INSERT INTO sys_config (name, config_key, config_value, config_type) VALUES (?,?,?,?)",
+                        "每页条数", "sys.pageSize", "10", "Y");
+            }
+        } catch (Exception ignored) {}
     }
 
     private SysMenu createMenu(String name, Long parentId, int sort, String path, String component, String type, String perms) {
