@@ -25,6 +25,7 @@ const collapsed = ref(window.innerWidth < 768)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 const menuOptions = ref<MenuOption[]>([])
 const liveStats = ref({ uptime: '', sessions: 0 })
+const searchQuery = ref("")
 
 window.addEventListener('resize', () => {
   if (window.innerWidth < 768) collapsed.value = true
@@ -106,6 +107,11 @@ const userMenuOptions = [
 ]
 
 function handleUserMenu(key: string) {
+function globalSearch() {
+  if (searchQuery.value.trim()) {
+    window.open(`/api/search?q=${encodeURIComponent(searchQuery.value)}`, "_blank")
+  }
+}
   if (key === 'profile') router.push('/profile')
   if (key === 'logout') handleLogout()
 }
@@ -135,6 +141,9 @@ useKeyboard({
             <n-button text @click="collapsed = !collapsed" style="font-size:18px;">
               {{ collapsed ? '☰' : '☰' }}
             </n-button>
+            <n-input v-model:value="searchQuery" placeholder="全局搜索..." size="small" clearable style="width:160px" @keyup:enter="globalSearch">
+              <template #prefix>🔍</template>
+            </n-input>
             <n-breadcrumb>
               <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
                 {{ b.label }}
