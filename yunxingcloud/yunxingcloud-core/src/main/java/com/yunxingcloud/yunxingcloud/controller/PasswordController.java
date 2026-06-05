@@ -5,6 +5,9 @@ import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.PasswordResetTokenRepository;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
+import com.yunxingcloud.yunxingcloud.service.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +20,21 @@ import java.util.UUID;
 @RequestMapping("/api/password")
 public class PasswordController {
 
+    private static final Logger log = LoggerFactory.getLogger(PasswordController.class);
+
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public PasswordController(UserRepository userRepository,
                                PasswordResetTokenRepository tokenRepository,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               EmailService emailService) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @PostMapping("/forgot")
@@ -45,11 +53,17 @@ public class PasswordController {
         PasswordResetToken resetToken = new PasswordResetToken(user.getId(), token);
         tokenRepository.save(resetToken);
 
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "重置令牌已生成",
-                "token", token
-        ));
+        try {
+            emailService.sendPasswordResetEmail(email, token);
+            return ResponseEntity.ok(Map.of("success", true, "message", "重置链接已发送至邮箱"));
+        } catch (Exception e) {
+            log.warn("邮件发送失败，降级返回 token");
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "邮件发送失败，请使用以下令牌重置",
+                    "token", token
+            ));
+        }
     }
 
     @PostMapping("/reset")

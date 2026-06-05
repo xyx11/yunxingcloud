@@ -11,6 +11,7 @@ import {
 import type { MenuOption } from 'naive-ui'
 import { RouterLinkOutlined } from '@vicons/material'
 import { useKeyboard } from '@/composables/useKeyboard'
+import CommandPalette from '@/components/CommandPalette.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -146,6 +147,7 @@ useKeyboard({
         </n-layout-footer>
       </n-layout>
     </n-layout>
+    <CommandPalette />
   </n-config-provider>
 </template>
 

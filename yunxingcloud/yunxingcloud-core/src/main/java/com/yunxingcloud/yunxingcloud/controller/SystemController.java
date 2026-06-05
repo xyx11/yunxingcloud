@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,9 +17,11 @@ import java.util.*;
 public class SystemController {
 
     private final CacheManager cacheManager;
+    private final TokenStore tokenStore;
 
-    public SystemController(CacheManager cacheManager) {
+    public SystemController(CacheManager cacheManager, TokenStore tokenStore) {
         this.cacheManager = cacheManager;
+        this.tokenStore = tokenStore;
     }
 
     @GetMapping("/info")
@@ -52,6 +55,22 @@ public class SystemController {
             data.put(name, "active");
         }
         return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/sessions")
+    public ResponseEntity<Map<String, Object>> sessions() {
+        return ResponseEntity.ok(Map.of("count", tokenStore.count(), "sessions", tokenStore.activeSessions()));
+    }
+
+    @PreAuthorize("hasAuthority('config:write')")
+    @PostMapping("/sessions/revoke")
+    public ResponseEntity<Map<String, Object>> revokeSession(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        if (username != null) {
+            tokenStore.revokeByUser(username);
+            return ResponseEntity.ok(Map.of("success", true, "message", "已强制下线: " + username));
+        }
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "缺少 username"));
     }
 
     @PreAuthorize("hasAuthority('config:write')")

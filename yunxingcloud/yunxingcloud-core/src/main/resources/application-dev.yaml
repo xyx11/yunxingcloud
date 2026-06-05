@@ -13,6 +13,10 @@ spring:
   flyway:
     enabled: false
 
+  mail:
+    host: localhost
+    port: 25
+
 logging:
   pattern:
     console: "%d{HH:mm:ss} [%X{requestId}] %-5level %logger{20} - %msg%n"

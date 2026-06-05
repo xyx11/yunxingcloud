@@ -4,10 +4,14 @@ import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.UserRepository;
 import com.yunxingcloud.usercenter.service.DeptRoleService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -15,10 +19,14 @@ public class UserManageController {
 
     private final UserRepository userRepository;
     private final DeptRoleService deptRoleService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserManageController(UserRepository userRepository, DeptRoleService deptRoleService) {
+    public UserManageController(UserRepository userRepository,
+                                 DeptRoleService deptRoleService,
+                                 PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.deptRoleService = deptRoleService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -62,5 +70,37 @@ public class UserManageController {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return ResponseEntity.ok(List.of());
         return ResponseEntity.ok(deptRoleService.getUserPermissions(auth.getName()));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<Map<String, Object>> importUsers(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件为空"));
+        }
+        int success = 0, fail = 0;
+        try (var reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            reader.readLine(); // skip header
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length < 3) { fail++; continue; }
+                try {
+                    String username = parts[0].trim();
+                    String password = parts[1].trim();
+                    String email = parts.length > 2 ? parts[2].trim() : "";
+                    if (userRepository.existsByUsername(username)) { fail++; continue; }
+                    User u = new User();
+                    u.setUsername(username);
+                    u.setPassword(passwordEncoder.encode(password));
+                    u.setEmail(email);
+                    u.setRegisterSource("import");
+                    userRepository.save(u);
+                    success++;
+                } catch (Exception e) { fail++; }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "解析失败: " + e.getMessage()));
+        }
+        return ResponseEntity.ok(Map.of("success", true, "imported", success, "failed", fail));
     }
 }

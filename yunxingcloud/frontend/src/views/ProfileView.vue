@@ -3,17 +3,19 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
-import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode } from 'naive-ui'
+import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode, NUpload } from 'naive-ui'
 
 const router = useRouter()
 const notify = useNotify()
-const user = ref<{username:string,nickname:string,email:string,registerSource:string,authorities:string[]} | null>(null)
+const user = ref<{username:string,nickname:string,email:string,registerSource:string,authorities:string[],avatarUrl?:string} | null>(null)
 const showToken = ref(false)
 const tokenPreview = ref('')
+const avatarUrl = ref('')
 
 onMounted(async () => {
   const userRes = await request.get('/api/user')
   user.value = userRes.data
+  avatarUrl.value = userRes.data.avatarUrl || ''
   const t = localStorage.getItem('accessToken') || ''
   tokenPreview.value = t ? t.substring(0, 40) + '...' : ''
 })
@@ -22,11 +24,30 @@ function copyToken() {
   const t = localStorage.getItem('accessToken') || ''
   navigator.clipboard.writeText(t).then(() => notify.success('Token 已复制到剪贴板'))
 }
+
+async function handleUpload({ file }: any) {
+  const form = new FormData()
+  form.append('file', file.file)
+  const res = await request.post('/api/files/upload', form)
+  if (res.data.success) {
+    avatarUrl.value = res.data.url
+    notify.success('头像上传成功')
+  }
+}
 </script>
 
 <template>
   <div style="padding:24px;max-width:800px;">
     <n-card title="个人中心">
+      <n-space align="center" style="margin-bottom:16px">
+        <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:28px;">
+          <img v-if="avatarUrl" :src="avatarUrl" style="width:100%;height:100%;object-fit:cover" />
+          <span v-else>{{ user?.username?.charAt(0)?.toUpperCase() }}</span>
+        </div>
+        <n-upload :show-file-list="false" accept="image/*" :custom-request="handleUpload">
+          <n-button size="small">更换头像</n-button>
+        </n-upload>
+      </n-space>
       <n-descriptions v-if="user" bordered :column="2" label-placement="left">
         <n-descriptions-item label="用户名">{{ user.username }}</n-descriptions-item>
         <n-descriptions-item label="昵称">{{ user.nickname || '-' }}</n-descriptions-item>

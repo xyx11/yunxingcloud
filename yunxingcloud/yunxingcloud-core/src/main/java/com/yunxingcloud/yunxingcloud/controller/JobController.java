@@ -4,12 +4,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysJob;
+import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysJobRepository;
+import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -18,11 +21,13 @@ import java.util.Map;
 public class JobController {
 
     private final SysJobRepository jobRepository;
+    private final SysOperLogRepository operLogRepository;
 
     @Autowired(required = false)
     private Scheduler scheduler;
 
-    public JobController(SysJobRepository jobRepository) { this.jobRepository = jobRepository; }
+    public JobController(SysJobRepository jobRepository, SysOperLogRepository operLogRepository) { this.jobRepository = jobRepository;
+        this.operLogRepository = operLogRepository; }
 
     @GetMapping
     public ResponseEntity<List<SysJob>> list() { return ResponseEntity.ok(jobRepository.findAll()); }
@@ -77,6 +82,13 @@ public class JobController {
         jobRepository.findById(id).ifPresent(j -> {
             if (scheduler != null) {
                 try { scheduler.triggerJob(new JobKey(j.getJobName(), j.getJobGroup())); } catch (Exception ignored) {}
+            // log execution
+            SysOperLog operLog = new SysOperLog();
+            operLog.setTitle("任务执行: " + j.getJobName());
+            operLog.setBusinessType("OTHER");
+            operLog.setOperName("system");
+            operLog.setStatus(0);
+            operLogRepository.save(operLog);
             }
         });
         return ResponseEntity.ok(Map.of("success", true, "message", "执行成功"));

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.yunxingcloud.yunxingcloud.config.RateLimitService;
 import com.yunxingcloud.yunxingcloud.config.TokenBlacklist;
+import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,19 +40,22 @@ public class AuthController {
     private final RateLimitService rateLimitService;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TokenStore tokenStore;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenService jwtTokenService,
                           TokenBlacklist tokenBlacklist,
                           RateLimitService rateLimitService,
                           UserRepository userRepository,
-                          ApplicationEventPublisher eventPublisher) {
+                          ApplicationEventPublisher eventPublisher,
+                          TokenStore tokenStore) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.tokenBlacklist = tokenBlacklist;
         this.rateLimitService = rateLimitService;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
+        this.tokenStore = tokenStore;
     }
 
     @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
@@ -96,6 +100,7 @@ public class AuthController {
             userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
 
             String accessToken = jwtTokenService.createAccessToken(auth.getName());
+            tokenStore.add(accessToken, auth.getName(), System.currentTimeMillis() + JwtTokenService.ACCESS_EXPIRATION * 1000);
             eventPublisher.publishEvent(new AuditEvent("LOGIN_SUCCESS", auth.getName(), ip));
             String refreshToken = jwtTokenService.createRefreshToken(auth.getName());
 
@@ -146,6 +151,7 @@ public class AuthController {
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             tokenBlacklist.add(bearer.substring(7));
+            tokenStore.remove(bearer.substring(7));
             String username = jwtTokenService.getUsernameFromToken(bearer.substring(7));
             eventPublisher.publishEvent(new AuditEvent("LOGOUT", username, request.getRemoteAddr()));
         }
