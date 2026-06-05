@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.config;
 
+import com.yunxingcloud.common.core.ErrorCode;
 import com.yunxingcloud.common.core.R;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,13 +16,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public R<Void> handleBadCredentials(BadCredentialsException e) {
-        return R.fail("用户名或密码错误");
+        return R.fail(ErrorCode.LOGIN_FAILED.getCode(), ErrorCode.LOGIN_FAILED.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public R<Void> handleAccessDenied(AccessDeniedException e) {
-        return R.fail(403, "权限不足");
+        return R.fail(ErrorCode.FORBIDDEN.getCode(), ErrorCode.FORBIDDEN.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,19 +30,19 @@ public class GlobalExceptionHandler {
     public R<Void> handleValidation(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(f -> f.getField() + ": " + f.getDefaultMessage())
-                .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
-        return R.fail(400, msg);
+                .reduce((a, b) -> a + "; " + b).orElse(ErrorCode.BAD_REQUEST.getMessage());
+        return R.fail(ErrorCode.BAD_REQUEST.getCode(), msg);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleIllegalArgument(IllegalArgumentException e) {
-        return R.fail(e.getMessage());
+        return R.fail(ErrorCode.BAD_REQUEST.getCode(), e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public R<Void> handleException(Exception e) {
-        return R.fail("服务器内部错误");
+        return R.fail(ErrorCode.INTERNAL_ERROR.getCode(), ErrorCode.INTERNAL_ERROR.getMessage());
     }
 }
