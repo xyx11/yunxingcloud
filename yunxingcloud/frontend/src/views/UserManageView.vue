@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NSelect, NSpace, NTag, NInput } from 'naive-ui'
 
 interface UserInfo { id: number; username: string; nickname: string; email: string; departmentId: number; registerSource: string; enabled: boolean; roles: { id: number; name: string; code: string }[] }
@@ -8,6 +9,7 @@ interface Dept { id: number; name: string }
 interface Role { id: number; name: string; code: string }
 
 const users = ref<UserInfo[]>([])
+const notify = useNotify()
 const depts = ref<Dept[]>([])
 const allRoles = ref<Role[]>([])
 const searchKeyword = ref('')
@@ -29,9 +31,9 @@ const selectedDeptId = ref<number | null>(null)
 const selectedRoleIds = ref<number[]>([])
 
 const columns = [
-  { title: '用户名', key: 'username', width: 100 },
+  { title: '用户名', key: 'username', width: 100, sorter: true },
   { title: '昵称', key: 'nickname', width: 100 },
-  { title: '邮箱', key: 'email', width: 150, ellipsis: { tooltip: true } },
+  { title: '邮箱', key: 'email', width: 150, sorter: true, ellipsis: { tooltip: true } },
   { title: '来源', key: 'registerSource', width: 70, render: (row: UserInfo) => h(NTag, { type: row.registerSource === 'local' ? 'info' : 'success', size: 'small' }, { default: () => row.registerSource }) },
   { title: '部门', key: 'departmentId', width: 70 },
   {
@@ -81,6 +83,7 @@ async function saveDept() {
   if (!selectedUser.value) return
   await request.put(`/api/users/${selectedUser.value.id}/department`, { departmentId: selectedDeptId.value })
   showDeptModal.value = false
+    notify.success('部门分配成功')
   await loadData()
 }
 
@@ -88,6 +91,7 @@ async function saveRoles() {
   if (!selectedUser.value) return
   await request.put(`/api/users/${selectedUser.value.id}/roles`, { roleIds: selectedRoleIds.value })
   showRoleModal.value = false
+    notify.success('角色分配成功')
   await loadData()
 }
 

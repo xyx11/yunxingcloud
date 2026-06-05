@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NInputNumber, NSelect, NSpace, NPopconfirm, NTag, NSwitch
@@ -14,6 +15,7 @@ interface Menu {
 }
 
 const menus = ref<Menu[]>([])
+const notify = useNotify()
 const allMenus = ref<Menu[]>([])
 const loading = ref(false)
 const showModal = ref(false)
@@ -51,7 +53,7 @@ const columns: DataTableColumns<Menu> = [
   { title: '路由', key: 'path', width: 140 },
   { title: '组件', key: 'component', width: 140 },
   { title: '权限标识', key: 'perms', width: 160 },
-  { title: '排序', key: 'sortOrder', width: 60 },
+  { title: '排序', key: 'sortOrder', width: 60, sorter: true },
   {
     title: '可见', key: 'visible', width: 60,
     render: (row) => row.visible ? '是' : '否'
@@ -104,11 +106,13 @@ async function saveMenu() {
     await request.post('/api/menus', form.value)
   }
   showModal.value = false
+    notify.success(editing.value ? '更新成功' : '创建成功')
   await loadMenus()
 }
 
 async function delMenu(id: number) {
   await request.delete(`/api/menus/${id}`)
+  notify.success('删除成功')
   await loadMenus()
 }
 

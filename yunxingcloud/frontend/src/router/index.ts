@@ -20,6 +20,7 @@ const ConfigView = () => import('@/views/ConfigView.vue')
 const JobView = () => import('@/views/JobView.vue')
 const GenView = () => import('@/views/GenView.vue')
 const SwaggerView = () => import('@/views/SwaggerView.vue')
+const ProfileView = () => import('@/views/ProfileView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password']
@@ -45,6 +46,7 @@ const router = createRouter({
         { path: 'job', name: 'Job', component: JobView },
         { path: 'generator', name: 'Generator', component: GenView },
         { path: 'swagger', name: 'Swagger', component: SwaggerView },
+        { path: 'profile', name: 'Profile', component: ProfileView },
       ],
     },
     { path: '/oauth2/consent', name: 'Consent', component: ConsentView },

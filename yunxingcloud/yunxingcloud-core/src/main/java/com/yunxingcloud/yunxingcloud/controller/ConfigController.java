@@ -1,4 +1,5 @@
 package com.yunxingcloud.yunxingcloud.controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
@@ -27,6 +28,7 @@ public class ConfigController {
         return configRepository.findByConfigKey(key).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @PostMapping
     public ResponseEntity<?> create(@RequestBody SysConfig config) {
@@ -36,6 +38,7 @@ public class ConfigController {
         return ResponseEntity.ok(configRepository.save(config));
     }
 
+    @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
     public ResponseEntity<SysConfig> update(@PathVariable Long id, @RequestBody SysConfig body) {
@@ -46,6 +49,7 @@ public class ConfigController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {

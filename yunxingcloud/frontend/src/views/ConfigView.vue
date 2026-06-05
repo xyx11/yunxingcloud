@@ -27,7 +27,7 @@ const typeOptions = [
 
 const columns: DataTableColumns<SysConfig> = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '名称', key: 'name', width: 140 },
+  { title: '名称', key: 'name', width: 140, sorter: true },
   { title: '键名', key: 'configKey', width: 160 },
   { title: '键值', key: 'configValue', width: 200, ellipsis: { tooltip: true } },
   {
@@ -77,6 +77,7 @@ async function saveConfig() {
       await request.post('/api/config', form.value)
     }
     showModal.value = false
+    notify.success(editing.value ? '更新成功' : '创建成功')
     await loadConfigs()
   } catch (e: any) {
     notify.error(e.response?.data?.message || '保存失败')

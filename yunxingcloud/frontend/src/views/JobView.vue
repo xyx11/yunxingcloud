@@ -42,7 +42,7 @@ const concurrentOptions = [
 
 const columns: DataTableColumns<SysJob> = [
   { title: 'ID', key: 'id', width: 50 },
-  { title: '任务名称', key: 'jobName', width: 130 },
+  { title: '任务名称', key: 'jobName', width: 130, sorter: true },
   { title: '任务组', key: 'jobGroup', width: 90 },
   { title: '调用目标', key: 'invokeTarget', width: 160, ellipsis: { tooltip: true } },
   { title: 'Cron表达式', key: 'cronExpression', width: 130 },
@@ -102,6 +102,7 @@ async function saveJob() {
     await request.post('/api/job', form.value)
   }
   showModal.value = false
+    notify.success(editing.value ? '更新成功' : '创建成功')
   await loadJobs()
 }
 

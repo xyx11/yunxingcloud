@@ -1,6 +1,8 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
+import com.yunxingcloud.yunxingcloud.event.AuditEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.yunxingcloud.yunxingcloud.config.RateLimitService;
@@ -36,17 +38,20 @@ public class AuthController {
     private final TokenBlacklist tokenBlacklist;
     private final RateLimitService rateLimitService;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenService jwtTokenService,
                           TokenBlacklist tokenBlacklist,
                           RateLimitService rateLimitService,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          ApplicationEventPublisher eventPublisher) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.tokenBlacklist = tokenBlacklist;
         this.rateLimitService = rateLimitService;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
@@ -91,6 +96,7 @@ public class AuthController {
             userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
 
             String accessToken = jwtTokenService.createAccessToken(auth.getName());
+            eventPublisher.publishEvent(new AuditEvent("LOGIN_SUCCESS", auth.getName(), ip));
             String refreshToken = jwtTokenService.createRefreshToken(auth.getName());
 
             return ResponseEntity.ok(Map.of(
@@ -103,6 +109,7 @@ public class AuthController {
             ));
         } catch (BadCredentialsException e) {
             userOpt.ifPresent(u -> { u.onLoginFailed(); userRepository.save(u); });
+            eventPublisher.publishEvent(new AuditEvent("LOGIN_FAILED", request.getUsername(), ip));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "success", false, "message", "用户名或密码错误"
             ));
@@ -139,6 +146,8 @@ public class AuthController {
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             tokenBlacklist.add(bearer.substring(7));
+            String username = jwtTokenService.getUsernameFromToken(bearer.substring(7));
+            eventPublisher.publishEvent(new AuditEvent("LOGOUT", username, request.getRemoteAddr()));
         }
         return ResponseEntity.ok(Map.of("success", true, "message", "已登出"));
     }

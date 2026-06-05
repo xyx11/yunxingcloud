@@ -1,4 +1,5 @@
 package com.yunxingcloud.yunxingcloud.controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
@@ -26,6 +27,7 @@ public class JobController {
     @GetMapping
     public ResponseEntity<List<SysJob>> list() { return ResponseEntity.ok(jobRepository.findAll()); }
 
+    @PreAuthorize("hasAuthority('job:write')")
     @Log(title = "定时任务", businessType = BusinessType.INSERT)
     @PostMapping
     public ResponseEntity<SysJob> create(@RequestBody SysJob job) throws SchedulerException {
@@ -42,6 +44,7 @@ public class JobController {
         return ResponseEntity.ok(saved);
     }
 
+    @PreAuthorize("hasAuthority('job:write')")
     @Log(title = "定时任务", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
     public ResponseEntity<SysJob> update(@PathVariable Long id, @RequestBody SysJob body) throws SchedulerException {
@@ -55,6 +58,7 @@ public class JobController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('job:write')")
     @Log(title = "定时任务", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) throws SchedulerException {
@@ -67,6 +71,7 @@ public class JobController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('job:write')")
     @PostMapping("/{id}/run")
     public ResponseEntity<Map<String, Object>> run(@PathVariable Long id) throws SchedulerException {
         jobRepository.findById(id).ifPresent(j -> {

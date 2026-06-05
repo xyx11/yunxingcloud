@@ -3,12 +3,20 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>yunxingcloud SSO</title>
+  <meta name="theme-color" content="#667eea"/>
+  <meta name="description" content="yunxingcloud 分布式微服务平台"/>
+  <title>yunxingcloud</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.ico"/>
-  <script type="module" crossorigin src="/assets/index-CHoUe_2n.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CjJRK9QM.css">
+  <link rel="manifest" href="/manifest.json"/>
+  <script type="module" crossorigin src="/assets/index-Brdb4NIO.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-ChnMjR4M.css">
 </head>
 <body>
 <div id="app"></div>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  }
+</script>
 </body>
 </html>

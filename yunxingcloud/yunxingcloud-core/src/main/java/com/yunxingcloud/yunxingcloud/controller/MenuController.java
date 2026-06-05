@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -46,6 +47,7 @@ public class MenuController {
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
+    @PreAuthorize("hasAuthority('menu:write')")
     @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PostMapping
     public ResponseEntity<SysMenu> create(@RequestBody SysMenu menu) {
@@ -53,6 +55,7 @@ public class MenuController {
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
+    @PreAuthorize("hasAuthority('menu:write')")
     @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<SysMenu> update(@PathVariable Long id, @RequestBody SysMenu body) {
@@ -67,6 +70,7 @@ public class MenuController {
     }
 
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
+    @PreAuthorize("hasAuthority('menu:write')")
     @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {

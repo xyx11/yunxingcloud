@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NTag, NPopconfirm, NSpace
+  NConfigProvider, NCard, NDataTable, NButton, NTag, NPopconfirm, NSpace, NInput, NSelect
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
@@ -12,8 +13,19 @@ interface OperLog {
   jsonResult: string; status: number; errorMsg: string; costTime: number; operTime: string
 }
 
+const notify = useNotify()
 const logs = ref<OperLog[]>([])
 const loading = ref(false)
+const checkedKeys = ref<number[]>([])
+const filterType = ref<string | null>(null)
+const filterUser = ref('')
+
+const typeOptions = [
+  { label: '全部类型', value: null },
+  { label: '新增', value: 'INSERT' },
+  { label: '修改', value: 'UPDATE' },
+  { label: '删除', value: 'DELETE' },
+]
 
 const businessTypeMap: Record<string, string> = {
   INSERT: '新增', UPDATE: '修改', DELETE: '删除', OTHER: '其他'
@@ -36,8 +48,8 @@ const columns: DataTableColumns<OperLog> = [
     render: (row) => h(NTag, { type: row.status === 0 ? 'success' : 'error', size: 'small' },
       { default: () => row.status === 0 ? '成功' : '失败' })
   },
-  { title: '耗时(ms)', key: 'costTime', width: 80 },
-  { title: '操作时间', key: 'operTime', width: 160 },
+  { title: '耗时(ms)', key: 'costTime', width: 80, sorter: true },
+  { title: '操作时间', key: 'operTime', width: 160, sorter: true },
   {
     title: '操作', key: 'actions', width: 120,
     render: (row) => h(NSpace, null, {
@@ -62,7 +74,10 @@ function showDetail(log: OperLog) {
 
 async function loadLogs() {
   loading.value = true
-  const res = await request.get('/api/operlog')
+  const params: any = {}
+  if (filterType.value) params.type = filterType.value
+  if (filterUser.value) params.user = filterUser.value
+  const res = await request.get('/api/operlog', { params })
   logs.value = res.data
   loading.value = false
 }
@@ -74,11 +89,24 @@ async function delLog(id: number) {
 
 async function cleanLogs() {
   await request.delete('/api/operlog/clean')
+  checkedKeys.value = []
   await loadLogs()
+}
+
+async function batchDelete() {
+  if (checkedKeys.value.length === 0) { notify.warning('请先选择日志'); return }
+  await request.delete('/api/operlog/batch', { data: { ids: checkedKeys.value } })
+  checkedKeys.value = []
+  await loadLogs()
+  notify.success('批量删除成功')
 }
 
 function exportLogs() {
   window.open('/api/operlog/export', '_blank')
+}
+
+function handleCheck(rowKeys: number[]) {
+  checkedKeys.value = rowKeys
 }
 
 onMounted(loadLogs)
@@ -89,14 +117,22 @@ onMounted(loadLogs)
     <div style="padding: 24px">
       <n-card title="操作日志">
         <template #header-extra>
+          <n-select v-model:value="filterType" :options="typeOptions" size="small" style="width:120px;margin-right:8px" @update:value="loadLogs" />
+          <n-input v-model:value="filterUser" placeholder="操作人" size="small" style="width:120px;margin-right:8px" clearable @keyup:enter="loadLogs" @clear="loadLogs" />
+          <n-button size="small" @click="loadLogs" style="margin-right:8px">搜索</n-button>
           <n-button size="small" @click="exportLogs" style="margin-right:8px">导出CSV</n-button>
+          <n-popconfirm @positive-click="batchDelete" v-if="checkedKeys.length > 0">
+            <template #trigger><n-button type="warning" size="small" style="margin-right:8px">批量删除({{ checkedKeys.length }})</n-button></template>
+            确认删除选中的 {{ checkedKeys.length }} 条日志?
+          </n-popconfirm>
           <n-popconfirm @positive-click="cleanLogs">
             <template #trigger><n-button type="error" size="small" secondary>清空日志</n-button></template>
             确认清空所有操作日志?
           </n-popconfirm>
         </template>
         <n-data-table :columns="columns" :data="logs" :loading="loading" :pagination="{ pageSize: 10 }"
-          :row-key="(row: OperLog) => row.id" :max-height="600" />
+          :row-key="(row: OperLog) => row.id" :max-height="600"
+          :checked-row-keys="checkedKeys" @update:checked-row-keys="handleCheck" />
 
         <n-modal v-model:show="detailVisible" title="日志详情" style="width:640px">
           <div v-if="detailLog" style="max-height:500px; overflow-y:auto">

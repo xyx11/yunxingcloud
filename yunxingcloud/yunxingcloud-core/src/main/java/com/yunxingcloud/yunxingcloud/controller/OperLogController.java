@@ -8,10 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/operlog")
@@ -22,7 +23,21 @@ public class OperLogController {
     public OperLogController(SysOperLogRepository logRepository) { this.logRepository = logRepository; }
 
     @GetMapping
-    public ResponseEntity<List<SysOperLog>> list() { return ResponseEntity.ok(logRepository.findAll()); }
+    public ResponseEntity<List<SysOperLog>> list(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String user) {
+        List<SysOperLog> all = logRepository.findAll();
+        if (type != null && !type.isEmpty()) {
+            all = all.stream().filter(l -> type.equals(l.getBusinessType())).toList();
+        }
+        if (user != null && !user.isEmpty()) {
+            all = all.stream().filter(l -> l.getOperName() != null && l.getOperName().contains(user)).toList();
+        }
+        all = all.stream()
+                .sorted(Comparator.comparing(SysOperLog::getOperTime, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+        return ResponseEntity.ok(all);
+    }
 
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
@@ -68,5 +83,12 @@ public class OperLogController {
     public ResponseEntity<Map<String, Object>> clean() {
         logRepository.deleteAll();
         return ResponseEntity.ok(Map.of("success", true, "message", "日志已清空"));
+    }
+
+    @DeleteMapping("/batch")
+    public ResponseEntity<Map<String, Object>> batchDelete(@RequestBody Map<String, List<Long>> body) {
+        List<Long> ids = body.getOrDefault("ids", List.of());
+        logRepository.deleteAllById(ids);
+        return ResponseEntity.ok(Map.of("success", true, "message", "已删除 " + ids.size() + " 条日志"));
     }
 }

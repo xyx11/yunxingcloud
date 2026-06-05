@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import request from '@/api/request'
+import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
 interface Dept { id: number; name: string; parentId: number | null; sortOrder: number; enabled: boolean; children: Dept[] }
 
 const depts = ref<Dept[]>([])
+const notify = useNotify()
 const loading = ref(false)
 const showModal = ref(false)
 const editing = ref<Dept | null>(null)
@@ -60,11 +62,13 @@ async function saveDept() {
     await request.post('/api/departments', form.value)
   }
   showModal.value = false
+    notify.success(editing.value ? '更新成功' : '创建成功')
   await loadDepts()
 }
 
 async function delDept(id: number) {
   await request.delete(`/api/departments/${id}`)
+  notify.success('删除成功')
   await loadDepts()
 }
 

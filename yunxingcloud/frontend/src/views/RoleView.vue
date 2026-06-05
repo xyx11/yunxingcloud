@@ -24,7 +24,7 @@ const editing = ref<Role | null>(null)
 const form = ref({ name: '', code: '', description: '', permissions: '' })
 
 const columns = [
-  { title: '名称', key: 'name', width: 120 },
+  { title: '名称', key: 'name', width: 120, sorter: true },
   { title: '编码', key: 'code', width: 120 },
   { title: '描述', key: 'description', width: 160 },
   { title: '权限', key: 'permissions', width: 200 },
@@ -66,6 +66,7 @@ async function saveRole() {
       await request.post('/api/roles', form.value)
     }
     showModal.value = false
+    notify.success(editing.value ? '更新成功' : '创建成功')
     await loadRoles()
   } catch (e: any) {
     notify.error(e.response?.data?.message || '保存失败')
@@ -74,6 +75,7 @@ async function saveRole() {
 
 async function delRole(id: number) {
   await request.delete(`/api/roles/${id}`)
+  notify.success('删除成功')
   await loadRoles()
 }
 
