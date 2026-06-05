@@ -12,10 +12,13 @@ import type { MenuOption } from 'naive-ui'
 import { RouterLinkOutlined } from '@vicons/material'
 import { useKeyboard } from '@/composables/useKeyboard'
 import CommandPalette from '@/components/CommandPalette.vue'
+import { useI18n } from 'vue-i18n'
+import { switchLocale } from '@/locales'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 
 const collapsed = ref(window.innerWidth < 768)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
@@ -124,6 +127,9 @@ useKeyboard({
             </n-breadcrumb>
           </div>
           <div class="header-right">
+            <n-button text size="small" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')" style="margin-right:4px;font-size:12px;">
+              {{ locale === 'zh' ? 'EN' : '中' }}
+            </n-button>
             <n-button text @click="toggleTheme" style="font-size:18px;margin-right:12px;">
               {{ isDark ? '☀️' : '🌙' }}
             </n-button>
@@ -143,7 +149,7 @@ useKeyboard({
           </router-view>
         </n-layout-content>
         <n-layout-footer class="footer">
-          yunxingcloud {{ new Date().getFullYear() }} · Distributed Microservice Platform
+          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }}
         </n-layout-footer>
       </n-layout>
     </n-layout>
