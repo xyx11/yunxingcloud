@@ -14,6 +14,7 @@ const showModal = ref(false)
 const editing = ref<Dept | null>(null)
 const form = ref({ name: '', parentId: null as number | null, sortOrder: 0 })
 const deptSearch = ref("")
+const flatDepts = computed(() => { const r: {label:string,value:number}[] = []; function walk(ds: Dept[]) { ds.forEach(d => { r.push({label:d.name,value:d.id}); if(d.children) walk(d.children) }) }; walk(depts.value); return r })
 function filterTree(list: Dept[], kw: string): Dept[] {
   if (!kw) return list
   return list.reduce((acc: Dept[], d: Dept) => {
@@ -103,7 +104,7 @@ onMounted(loadDepts)
               <n-input v-model:value="form.name" />
             </n-form-item>
             <n-form-item label="上级部门">
-              <n-select v-model:value="form.parentId" :options="[{label:'无',value:null},...depts.flatMap(d=>[{label:d.name,value:d.id}])]" clearable placeholder="选择上级" />
+              <n-select v-model:value="form.parentId" :options="[{label:'无(根部门)',value:null},...flatDepts]" clearable placeholder="选择上级部门" />
             </n-form-item>
             <n-form-item label="排序">
               <n-input-number v-model:value="form.sortOrder" :min="0" />
