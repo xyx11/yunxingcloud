@@ -92,7 +92,9 @@ function convertMenus(menus: any[]): MenuOption[] {
 }
 
 function handleMenuUpdate(key: string) {
-  router.push(key === 'home' ? '/' : `/${key}`)
+  if (key === 'home') { router.push('/'); return }
+  if (key.startsWith('menu-')) return // 目录类型不跳转
+  router.push(`/${key}`)
 }
 
 async function handleLogout() {
