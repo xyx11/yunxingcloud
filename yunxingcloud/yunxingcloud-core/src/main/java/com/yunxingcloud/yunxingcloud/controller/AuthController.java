@@ -184,7 +184,6 @@ public class AuthController {
         private String username;
 
         @NotBlank(message = "密码不能为空")
-        @Size(min = 4, max = 100, message = "密码长度4-100位")
         private String password;
 
         private String code;

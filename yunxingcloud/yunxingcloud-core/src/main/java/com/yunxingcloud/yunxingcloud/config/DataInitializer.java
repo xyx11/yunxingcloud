@@ -109,6 +109,8 @@ public class DataInitializer implements CommandLineRunner {
             SysMenu job = createMenu("定时任务", monitor.getId(), 2, "/job", "JobView", "C", "monitor:job:list");
             menuRepository.save(job);
             SysMenu apiDoc = createMenu("API文档", monitor.getId(), 3, "/swagger", "SwaggerView", "C", "monitor:swagger:view");
+            SysMenu sysMonitor = createMenu("系统监控", monitor.getId(), 4, "/monitor", "SystemMonitorView", "C", "monitor:system:view");
+            menuRepository.save(sysMonitor);
             menuRepository.save(apiDoc);
 
             SysMenu tools = createMenu("系统工具", null, 3, "tools", null, "M", null);

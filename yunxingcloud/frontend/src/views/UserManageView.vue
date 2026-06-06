@@ -30,6 +30,12 @@ const selectedUser = ref<UserInfo | null>(null)
 const selectedDeptId = ref<number | null>(null)
 const selectedRoleIds = ref<number[]>([])
 
+async function batchToggle(enabled: boolean) {
+  await Promise.all(users.value.map(u => request.put(`/api/users/${u.id}/toggle`).catch(() => {})))
+  await loadData()
+  notify.success(enabled ? "已批量启用" : "已批量禁用")
+}
+
 async function toggleUser(user: UserInfo) {
   await request.put(`/api/users/${user.id}/toggle`)
   await loadData()
@@ -108,7 +114,9 @@ onMounted(loadData)
     <div style="padding: 24px;">
       <n-card title="用户管理">
         <template #header-extra>
-          <n-input v-model:value="searchKeyword" placeholder="搜索用户名/昵称/邮箱..." clearable style="width:220px" />
+          <n-input v-model:value="searchKeyword" placeholder="搜索..." clearable style="width:180px;margin-right:8px" size="small" />
+          <n-button size="small" @click="batchToggle(true)" style="margin-right:4px" secondary>启用全部</n-button>
+          <n-button size="small" @click="batchToggle(false)" secondary>禁用全部</n-button>
         </template>
         <n-data-table :columns="columns" :data="filteredUsers" :loading="loading" :pagination="{ pageSize: 10 }" :row-key="(row: UserInfo) => row.id" />
 

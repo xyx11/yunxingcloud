@@ -19,6 +19,7 @@ const OperLogView = () => import('@/views/OperLogView.vue')
 const ConfigView = () => import('@/views/ConfigView.vue')
 const JobView = () => import('@/views/JobView.vue')
 const GenView = () => import('@/views/GenView.vue')
+const SystemMonitorView = () => import('@/views/SystemMonitorView.vue')
 const SwaggerView = () => import('@/views/SwaggerView.vue')
 const ProfileView = () => import('@/views/ProfileView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
@@ -46,6 +47,7 @@ const router = createRouter({
         { path: 'job', name: 'Job', component: JobView },
         { path: 'generator', name: 'Generator', component: GenView },
         { path: 'swagger', name: 'Swagger', component: SwaggerView },
+        { path: 'monitor', name: 'Monitor', component: SystemMonitorView },
         { path: 'profile', name: 'Profile', component: ProfileView },
       ],
     },

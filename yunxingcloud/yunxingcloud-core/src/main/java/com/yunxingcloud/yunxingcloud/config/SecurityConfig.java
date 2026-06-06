@@ -26,7 +26,7 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC_PATHS = {
-            "/login", "/register", "/forgot-password", "/reset-password", "/oauth2/consent", "/api/csrf", "/api/login", "/api/register", "/api/captcha", "/api/publicKey", "/api/password/**", "/api/refresh", "/v3/api-docs/**", "/swagger-ui/**", "/doc.html", "/actuator/health"
+            "/", "/index.html", "/login", "/register", "/forgot-password", "/reset-password", "/oauth2/consent", "/api/csrf", "/api/login", "/api/register", "/api/captcha", "/api/publicKey", "/api/password/**", "/api/refresh", "/v3/api-docs/**", "/swagger-ui/**", "/doc.html", "/actuator/health", "/manifest.json", "/sw.js"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

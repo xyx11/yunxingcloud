@@ -45,7 +45,7 @@ const breadcrumbs = computed(() => {
   const map: Record<string, string> = {
     departments: '部门管理', roles: '角色管理', users: '用户管理',
     menus: '菜单管理', operlog: '操作日志', job: '定时任务',
-    config: '系统参数', generator: '代码生成', profile: '个人中心',
+    config: '系统参数', generator: '代码生成', monitor: '系统监控', profile: '个人中心',
   }
   for (const p of parts) {
     items.push({ label: map[p] || p, path: `/${p}` })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import {
@@ -19,6 +19,8 @@ const loading = ref(false)
 const showModal = ref(false)
 const editing = ref<SysConfig | null>(null)
 const form = ref({ name: '', configKey: '', configValue: '', configType: 'Y' })
+const cfgSearch = ref("")
+const filteredConfigs = computed(() => { const kw = cfgSearch.value.toLowerCase(); if (!kw) return configs.value; return configs.value.filter(c => c.name.toLowerCase().includes(kw) || c.configKey.toLowerCase().includes(kw)) })
 
 const typeOptions = [
   { label: '是 (Y)', value: 'Y' },
@@ -97,9 +99,10 @@ onMounted(loadConfigs)
     <div style="padding: 24px">
       <n-card title="参数配置">
         <template #header-extra>
+          <n-input v-model:value="cfgSearch" placeholder="搜索..." size="small" clearable style="width:160px;margin-right:8px" />
           <n-button type="primary" size="small" @click="addConfig">新增参数</n-button>
         </template>
-        <n-data-table :columns="columns" :data="configs" :loading="loading" :pagination="{ pageSize: 10 }"
+        <n-data-table :columns="columns" :data="filteredConfigs" :loading="loading" :pagination="{ pageSize: 10 }"
           :row-key="(row: SysConfig) => row.id" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑参数' : '新增参数'">
