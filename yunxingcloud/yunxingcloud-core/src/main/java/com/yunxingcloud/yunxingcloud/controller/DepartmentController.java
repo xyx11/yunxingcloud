@@ -16,19 +16,17 @@ public class DepartmentController {
 
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> tree() {
-        List<Map<String, Object>> all = jdbc.queryForList("SELECT id, name, parent_id, sort_order, enabled FROM department ORDER BY sort_order");
+        List<Map<String, Object>> all = jdbc.queryForList("SELECT id AS id, name AS name, parent_id AS parentId, sort_order AS sortOrder, enabled AS enabled FROM department ORDER BY sort_order");
         Map<Long, Map<String, Object>> map = new LinkedHashMap<>();
         List<Map<String, Object>> roots = new ArrayList<>();
         for (Map<String, Object> d : all) {
-            d.put("parentId", d.remove("parent_id"));
-            d.put("sortOrder", d.remove("sort_order"));
             d.put("children", new ArrayList<>());
-            map.put((Long) d.get("id"), d);
+            map.put(((Number) d.get("id")).longValue(), d);
         }
         for (Map<String, Object> d : all) {
-            Long parentId = (Long) d.get("parentId");
-            if (parentId == null || parentId == 0) roots.add(d);
-            else { Map<String, Object> p = map.get(parentId); if (p != null) ((List<Map<String, Object>>) p.get("children")).add(d); }
+            Number pid = (Number) d.get("parentId");
+            if (pid == null || pid.longValue() == 0) roots.add(d);
+            else { Map<String, Object> p = map.get(pid.longValue()); if (p != null) ((List<Map<String, Object>>) p.get("children")).add(d); }
         }
         return ResponseEntity.ok(roots);
     }

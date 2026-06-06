@@ -16,7 +16,8 @@ public class RoleController {
 
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
-        List<Map<String, Object>> roles = jdbc.queryForList("SELECT id, name, code, description, permissions, enabled, created_at FROM role ORDER BY id");
+        List<Map<String, Object>> roles = jdbc.queryForList(
+            "SELECT id AS id, name AS name, code AS code, description AS description, permissions AS permissions, enabled AS enabled, created_at AS created_at FROM role ORDER BY id");
         return ResponseEntity.ok(roles);
     }
 
