@@ -90,7 +90,7 @@ public class DataInitializer implements CommandLineRunner {
     private void initMenus() {
 
         if (menuRepository.count() == 0) {
-            SysMenu system = createMenu("系统管理", null, 1, "system", null, "M", null);
+            SysMenu system = createMenu("系统管理", null, 1, "", null, "M", null);
             menuRepository.save(system);
 
             SysMenu userMgr = createMenu("用户管理", system.getId(), 1, "/users", "UserManageView", "C", "system:user:list");
@@ -102,7 +102,7 @@ public class DataInitializer implements CommandLineRunner {
             SysMenu menuMgr = createMenu("菜单管理", system.getId(), 4, "/menus", "MenuView", "C", "system:menu:list");
             menuRepository.save(menuMgr);
 
-            SysMenu monitor = createMenu("系统监控", null, 2, "monitor", null, "M", null);
+            SysMenu monitor = createMenu("系统监控", null, 2, "", null, "M", null);
             menuRepository.save(monitor);
             SysMenu operlog = createMenu("操作日志", monitor.getId(), 1, "/operlog", "OperLogView", "C", "monitor:operlog:list");
             menuRepository.save(operlog);
@@ -113,7 +113,7 @@ public class DataInitializer implements CommandLineRunner {
             menuRepository.save(sysMonitor);
             menuRepository.save(apiDoc);
 
-            SysMenu tools = createMenu("系统工具", null, 3, "tools", null, "M", null);
+            SysMenu tools = createMenu("系统工具", null, 3, "", null, "M", null);
             menuRepository.save(tools);
             SysMenu gen = createMenu("代码生成", tools.getId(), 1, "/generator", "GenView", "C", "tool:gen:list");
             menuRepository.save(gen);
