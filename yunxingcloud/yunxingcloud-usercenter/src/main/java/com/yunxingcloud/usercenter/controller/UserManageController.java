@@ -112,4 +112,42 @@ public class UserManageController {
             return ResponseEntity.ok(Map.<String, Object>of("success", true, "enabled", u.isEnabled()));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String password = body.get("password");
+        String nickname = body.get("nickname");
+        String email = body.get("email");
+        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名不能为空"));
+        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "密码至少6位"));
+        if (userRepository.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名已存在"));
+        User u = new User();
+        u.setUsername(username);
+        u.setPassword(passwordEncoder.encode(password));
+        u.setNickname(nickname);
+        u.setEmail(email);
+        u.setRegisterSource("manual");
+        userRepository.save(u);
+        return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "创建成功"));
+    }
+
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return userRepository.findById(id).map(u -> {
+            if (body.containsKey("nickname")) u.setNickname(body.get("nickname"));
+            if (body.containsKey("email")) u.setEmail(body.get("email"));
+            userRepository.save(u);
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "更新成功"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/reset-pwd")
+    public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id) {
+        return userRepository.findById(id).map(u -> {
+            u.setPassword(passwordEncoder.encode("123456"));
+            userRepository.save(u);
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "密码已重置为 123456"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
