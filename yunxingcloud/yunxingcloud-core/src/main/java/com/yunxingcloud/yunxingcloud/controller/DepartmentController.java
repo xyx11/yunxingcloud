@@ -14,9 +14,16 @@ public class DepartmentController {
 
     public DepartmentController(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    private Map<String, Object> lowerKeys(Map<String, Object> row) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        row.forEach((k, v) -> m.put(k.toLowerCase(), v));
+        return m;
+    }
+
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> tree() {
-        List<Map<String, Object>> all = jdbc.queryForList("SELECT id AS id, name AS name, parent_id AS parentId, sort_order AS sortOrder, enabled AS enabled FROM department ORDER BY sort_order");
+        List<Map<String, Object>> all = jdbc.queryForList("SELECT id, name, parent_id, sort_order, enabled FROM department ORDER BY sort_order")
+                .stream().map(this::lowerKeys).toList();
         Map<Long, Map<String, Object>> map = new LinkedHashMap<>();
         List<Map<String, Object>> roots = new ArrayList<>();
         for (Map<String, Object> d : all) {
@@ -24,7 +31,7 @@ public class DepartmentController {
             map.put(((Number) d.get("id")).longValue(), d);
         }
         for (Map<String, Object> d : all) {
-            Number pid = (Number) d.get("parentId");
+            Number pid = (Number) d.get("parent_id");
             if (pid == null || pid.longValue() == 0) roots.add(d);
             else { Map<String, Object> p = map.get(pid.longValue()); if (p != null) ((List<Map<String, Object>>) p.get("children")).add(d); }
         }

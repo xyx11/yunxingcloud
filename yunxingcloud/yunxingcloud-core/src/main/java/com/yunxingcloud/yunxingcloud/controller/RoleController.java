@@ -14,11 +14,17 @@ public class RoleController {
 
     public RoleController(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    private Map<String, Object> lowerKeys(Map<String, Object> row) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        row.forEach((k, v) -> m.put(k.toLowerCase(), v));
+        return m;
+    }
+
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
         List<Map<String, Object>> roles = jdbc.queryForList(
-            "SELECT id AS id, name AS name, code AS code, description AS description, permissions AS permissions, enabled AS enabled, created_at AS created_at FROM role ORDER BY id");
-        return ResponseEntity.ok(roles);
+            "SELECT id, name, code, description, permissions, enabled, created_at FROM role ORDER BY id");
+        return ResponseEntity.ok(roles.stream().map(this::lowerKeys).toList());
     }
 
     @GetMapping("/{id}")
