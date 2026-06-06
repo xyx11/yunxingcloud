@@ -32,13 +32,13 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         initRoles();
+        initDepts();
         initUsers();
         initMenus();
         initDemoData();
     }
 
     private void initRoles() {
-        // fallback DDL when Flyway is disabled (e.g., H2 tests)
         try {
             jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS role (
@@ -56,6 +56,14 @@ public class DataInitializer implements CommandLineRunner {
                     role_id BIGINT NOT NULL,
                     PRIMARY KEY (user_id, role_id)
                 )""");
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS department (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    parent_id BIGINT,
+                    sort_order INT DEFAULT 0,
+                    enabled BOOLEAN DEFAULT TRUE
+                )""");
         } catch (Exception ignored) {}
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM role", Integer.class);
@@ -67,6 +75,15 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
                 "普通用户", "user", "普通用户", "user:read,dept:read");
+        }
+    }
+
+    private void initDepts() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM department", Integer.class);
+        if (count != null && count == 0) {
+            jdbcTemplate.update("INSERT INTO department (name, parent_id, sort_order) VALUES (?,?,?)", "总公司", null, 1);
+            jdbcTemplate.update("INSERT INTO department (name, parent_id, sort_order) VALUES (?,?,?)", "研发部", 1, 1);
+            jdbcTemplate.update("INSERT INTO department (name, parent_id, sort_order) VALUES (?,?,?)", "市场部", 1, 2);
         }
     }
 
