@@ -72,29 +72,37 @@ onMounted(async () => {
   } catch {
     menuOptions.value = [
       { label: '首页', key: 'home' },
-      { label: '部门管理', key: 'departments' },
-      { label: '角色管理', key: 'roles' },
       { label: '用户管理', key: 'users' },
+      { label: '角色管理', key: 'roles' },
+      { label: '部门管理', key: 'departments' },
+      { label: '菜单管理', key: 'menus' },
+      { label: '操作日志', key: 'operlog' },
+      { label: '定时任务', key: 'job' },
+      { label: '代码生成', key: 'generator' },
+      { label: '参数配置', key: 'config' },
     ]
   }
 })
 
 function convertMenus(menus: any[]): MenuOption[] {
-  return menus
-    .filter((m: any) => m.menuType !== 'F' && m.visible)
-    .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
-    .map((m: any) => ({
-      label: m.name,
-      key: m.path ? m.path.replace('/', '') : `menu-${m.id}`,
-      icon: m.icon ? () => h('span', m.icon) : undefined,
-      children: m.children ? convertMenus(m.children) : undefined,
-    }))
+  const result: MenuOption[] = [{ label: '首页', key: 'home' }]
+  function walk(list: any[]): MenuOption[] {
+    return list
+      .filter((m: any) => m.menuType !== 'F' && m.visible)
+      .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      .map((m: any) => ({
+        label: m.name,
+        key: m.path ? m.path.replace('/', '') : `menu-${m.id}`,
+        children: m.children ? walk(m.children) : undefined,
+      }))
+  }
+  return [...result, ...walk(menus)]
 }
 
 function handleMenuUpdate(key: string) {
-  if (key === 'home') { router.push('/'); return }
-  if (key.startsWith('menu-')) return // 目录类型不跳转
-  router.push(`/${key}`)
+  if (key === 'home') return router.push('/')
+  if (key.startsWith('menu-')) return
+  router.push('/' + key)
 }
 
 async function handleLogout() {
