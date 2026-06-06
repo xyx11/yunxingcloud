@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag } from 'naive-ui'
@@ -13,6 +13,17 @@ const loading = ref(false)
 const showModal = ref(false)
 const editing = ref<Dept | null>(null)
 const form = ref({ name: '', parentId: null as number | null, sortOrder: 0 })
+const deptSearch = ref("")
+function filterTree(list: Dept[], kw: string): Dept[] {
+  if (!kw) return list
+  return list.reduce((acc: Dept[], d: Dept) => {
+    const match = d.name.toLowerCase().includes(kw)
+    const kids = d.children ? filterTree(d.children, kw) : []
+    if (match || kids.length) acc.push({ ...d, children: kids })
+    return acc
+  }, [] as Dept[])
+}
+const filteredDepts = computed(() => filterTree(depts.value, deptSearch.value.toLowerCase()))
 
 const columns: DataTableColumns<Dept> = [
   { title: 'ID', key: 'id', width: 60 },
@@ -81,8 +92,9 @@ onMounted(loadDepts)
       <n-card title="部门管理">
         <template #header-extra>
           <n-button type="primary" size="small" @click="addDept">新增部门</n-button>
+          <n-input v-model:value="deptSearch" placeholder="搜索..." size="small" clearable style="width:160px;margin-right:8px" />
         </template>
-        <n-data-table :columns="columns" :data="depts" :loading="loading" :pagination="{ pageSize: 10 }"
+        <n-data-table :columns="columns" :data="filteredDepts" :loading="loading" :pagination="{ pageSize: 10 }"
           default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'" />
 
         <n-modal v-model:show="showModal" :title="editing ? '编辑部门' : '新增部门'">
@@ -90,8 +102,8 @@ onMounted(loadDepts)
             <n-form-item label="名称">
               <n-input v-model:value="form.name" />
             </n-form-item>
-            <n-form-item label="上级ID">
-              <n-input-number v-model:value="form.parentId" :min="0" placeholder="0为根部门" />
+            <n-form-item label="上级部门">
+              <n-select v-model:value="form.parentId" :options="[{label:'无',value:null},...depts.flatMap(d=>[{label:d.name,value:d.id}])]" clearable placeholder="选择上级" />
             </n-form-item>
             <n-form-item label="排序">
               <n-input-number v-model:value="form.sortOrder" :min="0" />

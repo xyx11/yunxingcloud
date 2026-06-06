@@ -25,6 +25,7 @@ const form = ref({
   path: '', component: '', icon: '', menuType: 'M', perms: '', visible: true
 })
 
+const iconOptions = ["home","person","people","settings","folder","document","chart","monitor","tool","lock","key","shield"].map(i=>({label:i,value:i}))
 const typeOptions = [
   { label: '目录 (M)', value: 'M' },
   { label: '菜单 (C)', value: 'C' },
@@ -147,7 +148,7 @@ onMounted(loadMenus)
               <n-input v-model:value="form.component" placeholder="ExampleView" />
             </n-form-item>
             <n-form-item label="图标">
-              <n-input v-model:value="form.icon" placeholder="icon-name" />
+              <n-select v-model:value="form.icon" :options="iconOptions" placeholder="选择图标" clearable filterable />
             </n-form-item>
             <n-form-item label="权限标识">
               <n-input v-model:value="form.perms" placeholder="system:example:list" />

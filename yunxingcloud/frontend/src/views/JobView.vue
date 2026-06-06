@@ -141,6 +141,7 @@ onMounted(loadJobs)
               <n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" />
             </n-form-item>
             <n-form-item label="Cron表达式">
+              <div style="font-size:11px;color:#999;margin-top:4px">示例: 0/10 * * * * ? (每10秒) | 0 0 8 * * ? (每天8点) | 0 0/30 * * * ? (每30分钟)</div>
               <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
             </n-form-item>
             <n-form-item label="状态">
