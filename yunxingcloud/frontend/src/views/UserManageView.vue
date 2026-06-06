@@ -52,7 +52,7 @@ const columns = [
   { title: '昵称', key: 'nickname', width: 100 },
   { title: '邮箱', key: 'email', width: 150, sorter: true, ellipsis: { tooltip: true } },
   { title: '来源', key: 'registerSource', width: 70, render: (row: UserInfo) => h(NTag, { type: row.registerSource === 'local' ? 'info' : 'success', size: 'small' }, { default: () => row.registerSource }) },
-  { title: '部门', key: 'departmentId', width: 70 },
+  { title: '部门', key: 'departmentName', width: 100, ellipsis: { tooltip: true }
   { title: '角色', key: 'roles', width: 150, render: (row: UserInfo) => h(NSpace, { size: 4 }, { default: () => (row.roles || []).map(r => h(NTag, { type: 'info', size: 'small' }, { default: () => r.name })) }) },
   { title: '状态', key: 'enabled', width: 60, render: (row: UserInfo) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleUser(row) }) },
   { title: '操作', key: 'actions', width: 80, render: (row: UserInfo) => h(NDropdown, { options: actionOptions(row), onSelect: (k: string) => handleAction(k, row), size: 'small' }, { default: () => h(NButton, { size: 'small' }, { default: () => '更多 ▾' }) }) },

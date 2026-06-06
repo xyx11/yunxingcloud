@@ -3,10 +3,12 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -14,17 +16,22 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbc;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JdbcTemplate jdbc) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbc = jdbc;
     }
 
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
+        Map<Long, String> deptNames = new HashMap<>();
+        try { jdbc.queryForList("SELECT id, name FROM department").forEach(r -> deptNames.put(((Number)r.get("id")).longValue(), (String)r.get("name"))); } catch (Exception ignored) {}
         return ResponseEntity.ok(userRepository.findAll().stream().map(u -> Map.<String, Object>of(
                 "id", u.getId(), "username", u.getUsername(), "nickname", u.getNickname() != null ? u.getNickname() : "",
                 "email", u.getEmail() != null ? u.getEmail() : "", "departmentId", u.getDepartmentId() != null ? u.getDepartmentId() : 0,
+                "departmentName", deptNames.getOrDefault(u.getDepartmentId(), "-"),
                 "registerSource", u.getRegisterSource(), "enabled", u.isEnabled(), "roles", List.of()
         )).toList());
     }
