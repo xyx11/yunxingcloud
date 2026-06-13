@@ -2,6 +2,9 @@ spring:
   application:
     name: yunxingcloud-core
 
+  config:
+    import: optional:nacos:${spring.application.name}.yaml
+
   cloud:
     nacos:
       discovery:
