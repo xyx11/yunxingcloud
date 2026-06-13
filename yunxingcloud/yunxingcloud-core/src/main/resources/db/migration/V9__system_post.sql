@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS sys_post (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    post_code VARCHAR(64) NOT NULL UNIQUE,
+    post_name VARCHAR(100) NOT NULL,
+    sort_order INT DEFAULT 0,
+    status CHAR(1) DEFAULT '0',
+    remark VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,1 @@
+ALTER TABLE sys_notice ADD COLUMN publish_at TIMESTAMP NULL;
