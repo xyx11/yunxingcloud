@@ -11,7 +11,8 @@ const user = ref<{username:string,nickname:string,email:string,registerSource:st
 const showToken = ref(false)
 const tokenPreview = ref('')
 const avatarUrl = ref('')
-const accessToken = computed(() => localStorage.getItem('accessToken') || '')
+const storage = globalThis.localStorage
+const accessToken = computed(() => storage.getItem('accessToken') || '')
 const showPwdModal = ref(false)
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const pwdLoading = ref(false)
@@ -144,7 +145,7 @@ async function handleUpload({ file }: any) {
         </n-space>
         <n-space align="center">
           <span style="width:80px">每页条数</span>
-          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+'条',value:n}))" size="small" style="width:100px" @update:value="(v:number)=>localStorage.setItem('pageSize',String(v))" />
+          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+'条',value:n}))" size="small" style="width:100px" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
         </n-space>
       </n-space>
     </n-card>

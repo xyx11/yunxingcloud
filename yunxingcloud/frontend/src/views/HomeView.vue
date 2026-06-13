@@ -353,7 +353,7 @@ useKeyboard({
                 v-for="child in item.children"
                 :key="child.key"
                 :class="['menu-item', { active: currentKey === child.key }]"
-                @click="currentKey = child.key; router.push(child.key === 'home' ? '/' : '/' + child.key).catch(()=>{})"
+                @click="currentKey = String(child.key); router.push(child.key === 'home' ? '/' : '/' + String(child.key)).catch(()=>{})"
               >
                 <span v-if="child.icon" class="menu-icon"><component :is="child.icon" /></span>
                 <span v-show="!collapsed" class="menu-label">{{ child.label }}</span>

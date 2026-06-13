@@ -50,6 +50,7 @@ const showDetailModal = ref(false)
 const detailUser = ref<UserInfo | null>(null)
 
 function viewDetail(row: UserInfo) { detailUser.value = row; showDetailModal.value = true }
+function getPostName(user: UserInfo | null) { return user ? (posts.value.find(p => p.id === user.postId)?.postName || '-') : '-' }
 
 // 表单校验
 const addFormRef = ref<FormInst | null>(null)
@@ -190,7 +191,7 @@ onMounted(loadData)
             </n-button>
             <template v-if="showSearch">
               <n-input v-model:value="searchKeyword" placeholder="用户名/昵称/邮箱" clearable style="width:160px" size="small" @keyup:enter="searchData" />
-              <n-select v-model:value="filterDept" :options="[{label:'全部部门',value:null},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
+              <n-select v-model:value="filterDept" :options="[{label:'全部部门',value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
               <n-select v-model:value="filterRole" :options="[{label:'全部角色',value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="width:110px" @update:value="searchData" />
               <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:'正常',value:'true'},{label:'停用',value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
               <n-button type="primary" size="small" @click="searchData">搜索</n-button>
@@ -221,7 +222,7 @@ onMounted(loadData)
           <n-button size="small" @click="checkedRowKeys = []">取消选择</n-button>
         </n-space>
         <n-data-table
-          :columns="visibleColumns" :data="users" :loading="loading" size="small" :bordered="false" :checked-row-keys="checkedRowKeys" @update:checked-row-keys="(ks: number[]) => checkedRowKeys = ks"
+          :columns="visibleColumns" :data="users" :loading="loading" size="small" :bordered="false" :checked-row-keys="checkedRowKeys" @update:checked-row-keys="(ks) => checkedRowKeys = ks as number[]"
           :pagination="{ page: page, pageSize: pageSize, itemCount: total, pageSizes: [10,20,50,100], onChange: onPageChange, onUpdatePageSize: onPageSizeChange }"
           :row-key="(row: UserInfo) => row.id" remote
         />
@@ -291,7 +292,7 @@ onMounted(loadData)
             <p><strong>邮箱：</strong>{{ detailUser.email || '-' }}</p>
             <p><strong>来源：</strong>{{ dictLabel('sys_user_source', detailUser.registerSource) }}</p>
             <p><strong>部门：</strong>{{ detailUser.departmentName || '-' }}</p>
-            <p><strong>岗位：</strong>{{ posts.find(p=>p.id===detailUser.postId)?.postName || '-' }}</p>
+            <p><strong>岗位：</strong>{{ getPostName(detailUser) }}</p>
             <p><strong>角色：</strong>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</p>
             <p><strong>状态：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?'正常':'停用' }}</n-tag></p>
             <p><strong>最后登录：</strong>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</p>
