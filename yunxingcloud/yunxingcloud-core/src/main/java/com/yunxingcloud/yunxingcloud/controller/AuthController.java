@@ -100,7 +100,8 @@ public class AuthController {
             userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
             userOpt.ifPresent(u -> { u.setLastLoginTime(java.time.LocalDateTime.now()); userRepository.save(u); });
 
-            String accessToken = jwtTokenService.createAccessToken(auth.getName());
+            String accessToken = jwtTokenService.createAccessToken(auth.getName(),
+                    auth.getAuthorities().stream().map(Object::toString).toList());
             tokenStore.add(accessToken, auth.getName(), System.currentTimeMillis() + JwtTokenService.ACCESS_EXPIRATION * 1000);
             eventPublisher.publishEvent(new AuditEvent("LOGIN_SUCCESS", auth.getName(), ip));
             String refreshToken = jwtTokenService.createRefreshToken(auth.getName());

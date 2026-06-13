@@ -32,6 +32,7 @@ public class UserService {
         user.setNickname(username);
         user.setRegisterSource("local");
         user.setEnabled(true);
+        user.setApproved(false);
         return userRepository.save(user);
     }
 

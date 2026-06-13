@@ -31,7 +31,11 @@ public class User {
 
     private Long departmentId;
 
+    private Long postId;
+
     private boolean enabled = true;
+
+    private boolean approved = true;
 
     private int failedAttempts = 0;
     private LocalDateTime lockedUntil;
@@ -77,8 +81,12 @@ public class User {
     public void setRegisterSource(String registerSource) { this.registerSource = registerSource; }
     public Long getDepartmentId() { return departmentId; }
     public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+    public Long getPostId() { return postId; }
+    public void setPostId(Long postId) { this.postId = postId; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public boolean isApproved() { return approved; }
+    public void setApproved(boolean approved) { this.approved = approved; }
     public int getFailedAttempts() { return failedAttempts; }
     public void setFailedAttempts(int failedAttempts) { this.failedAttempts = failedAttempts; }
     public LocalDateTime getLockedUntil() { return lockedUntil; }

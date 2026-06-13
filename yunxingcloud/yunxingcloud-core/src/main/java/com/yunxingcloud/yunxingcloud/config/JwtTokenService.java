@@ -5,7 +5,9 @@ import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtTokenService {
@@ -25,13 +27,19 @@ public class JwtTokenService {
         this.blacklist = blacklist;
     }
 
-    public String createAccessToken(String username) {
+    public String createAccessToken(String username, List<String> authorities) {
         return Jwts.builder()
                 .subject(username)
+                .claim("authorities", authorities != null ? String.join(",", authorities) : "")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRATION * 1000))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    // Keep backwards compatibility for callers without authorities
+    public String createAccessToken(String username) {
+        return createAccessToken(username, List.of());
     }
 
     public String createRefreshToken(String username) {
@@ -46,6 +54,12 @@ public class JwtTokenService {
 
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public List<String> getAuthoritiesFromToken(String token) {
+        String auth = parseClaims(token).get("authorities", String.class);
+        if (auth == null || auth.isBlank()) return List.of();
+        return Arrays.asList(auth.split(","));
     }
 
     public boolean validateToken(String token) {
