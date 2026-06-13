@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -51,6 +52,7 @@ public class StatsController {
     }
 
     @GetMapping("/dashboard")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> dashboard() {
         Map<String, Object> data = new LinkedHashMap<>();
 

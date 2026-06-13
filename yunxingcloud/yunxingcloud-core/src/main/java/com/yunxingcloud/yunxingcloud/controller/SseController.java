@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -21,6 +22,7 @@ public class SseController {
     }
 
     @GetMapping(value = "/dashboard", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public SseEmitter stream() {
         SseEmitter emitter = new SseEmitter(0L);
         emitters.add(emitter);

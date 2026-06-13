@@ -3,6 +3,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.yunxingcloud.yunxingcloud.entity.Message;
 import com.yunxingcloud.yunxingcloud.repository.MessageRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
