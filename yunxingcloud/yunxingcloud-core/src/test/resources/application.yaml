@@ -7,6 +7,8 @@ spring:
         import-check:
           enabled: false
         enabled: false
+    sentinel:
+      enabled: false
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
     username: sa
@@ -25,6 +27,11 @@ spring:
   mail:
     host: localhost
     port: 25
+
+app:
+  ratelimit:
+    max-attempts: 1000
+    window-ms: 1000
 
 jwt:
   secret: test-secret-key-for-unit-tests-only
