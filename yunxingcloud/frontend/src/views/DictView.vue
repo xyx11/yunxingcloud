@@ -32,8 +32,8 @@ const typeSearch = ref("")
 const dataSearch = ref("")
 
 const statusOptions = [
-  { label: '正常', value: '0' },
-  { label: '停用', value: '1' },
+  { label: t('user.enabledLabel'), value: '0' },
+  { label: t('user.disabledLabel'), value: '1' },
 ]
 
 const filteredTypes = computed(() => {
@@ -55,17 +55,17 @@ const typeColumns: DataTableColumns<DictType> = [
   {
     title: '状态', key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? '正常' : '停用' })
+      { default: () => row.status === '0' ? t('user.enabledLabel') : t('user.disabledLabel') })
   },
   {
     title: '操作', key: 'actions', width: 100,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => selectType(row) }, { default: () => '查看' }),
-        h(NButton, { size: 'tiny', onClick: () => editType(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => selectType(row) }, { default: () => t('common.view') }),
+        h(NButton, { size: 'tiny', onClick: () => editType(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delType(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -80,21 +80,21 @@ const dataColumns: DataTableColumns<DictData> = [
   {
     title: '默认', key: 'isDefault', width: 55,
     render: (row) => h(NTag, { type: row.isDefault === 'Y' ? 'info' : 'default', size: 'small' },
-      { default: () => row.isDefault === 'Y' ? '是' : '否' })
+      { default: () => row.isDefault === 'Y' ? t('common.yes') : t('common.no') })
   },
   {
     title: '状态', key: 'status', width: 55,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? '正常' : '停用' })
+      { default: () => row.status === '0' ? t('user.enabledLabel') : t('user.disabledLabel') })
   },
   {
     title: '操作', key: 'actions', width: 100,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => editData(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => editData(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delData(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -254,7 +254,7 @@ onMounted(loadTypes)
             <n-input-number v-model:value="dataForm.sortOrder" :min="0" style="width:100%" />
           </n-form-item>
           <n-form-item label="是否默认">
-            <n-select v-model:value="dataForm.isDefault" :options="[{label:'是',value:'Y'},{label:'否',value:'N'}]" />
+            <n-select v-model:value="dataForm.isDefault" :options="[{label:t('common.yes'),value:'Y'},{label:t('common.no'),value:'N'}]" />
           </n-form-item>
           <n-form-item label="状态">
             <n-select v-model:value="dataForm.status" :options="statusOptions" />

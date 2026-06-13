@@ -32,7 +32,7 @@ const typeOptions = [
 ]
 
 const statusOptions = [
-  { label: '正常', value: '0' },
+  { label: t('user.enabledLabel'), value: '0' },
   { label: '关闭', value: '1' },
 ]
 
@@ -54,7 +54,7 @@ const columns: DataTableColumns<Notice> = [
   {
     title: '状态', key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? '正常' : '关闭' })
+      { default: () => row.status === '0' ? t('user.enabledLabel') : '关闭' })
   },
   { title: '创建时间', key: 'createdAt', width: 150 },
   {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
@@ -10,6 +11,7 @@ interface Dept { id: number; name: string }
 interface Role { id: number; name: string; code: string }
 interface Post { id: number; postCode: string; postName: string }
 
+const { t } = useI18n()
 const users = ref<UserInfo[]>([])
 const notify = useNotify()
 const depts = ref<Dept[]>([])
@@ -193,7 +195,7 @@ onMounted(loadData)
               <n-input v-model:value="searchKeyword" placeholder="用户名/昵称/邮箱" clearable style="width:160px" size="small" @keyup:enter="searchData" />
               <n-select v-model:value="filterDept" :options="[{label:'全部部门',value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
               <n-select v-model:value="filterRole" :options="[{label:'全部角色',value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="width:110px" @update:value="searchData" />
-              <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:'正常',value:'true'},{label:'停用',value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
+              <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
               <n-button type="primary" size="small" @click="searchData">搜索</n-button>
               <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; searchData()">重置</n-button>
             </template>
@@ -294,7 +296,7 @@ onMounted(loadData)
             <p><strong>部门：</strong>{{ detailUser.departmentName || '-' }}</p>
             <p><strong>岗位：</strong>{{ getPostName(detailUser) }}</p>
             <p><strong>角色：</strong>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</p>
-            <p><strong>状态：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?'正常':'停用' }}</n-tag></p>
+            <p><strong>状态：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></p>
             <p><strong>最后登录：</strong>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</p>
           </div>
         </n-modal>

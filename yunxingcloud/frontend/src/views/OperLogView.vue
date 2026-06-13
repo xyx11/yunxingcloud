@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
@@ -6,7 +7,10 @@ import {
   NConfigProvider, NCard, NDataTable, NButton, NTag, NPopconfirm, NSpace, NInput, NSelect, NDatePicker,
   darkTheme, lightTheme
 } from 'naive-ui'
+
+const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
+
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart } from 'echarts/charts'

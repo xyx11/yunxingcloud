@@ -71,7 +71,7 @@ const columns: DataTableColumns<Menu> = [
   { title: '排序', key: 'sortOrder', width: 60, sorter: true },
   {
     title: '可见', key: 'visible', width: 60,
-    render: (row) => row.visible ? '是' : '否'
+    render: (row) => row.visible ? t('common.yes') : t('common.no')
   },
   {
     title: '操作', key: 'actions', width: 180,

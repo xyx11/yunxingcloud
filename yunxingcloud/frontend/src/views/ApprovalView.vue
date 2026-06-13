@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSpace, NTag, darkTheme, lightTheme } from 'naive-ui'
+
+const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
+
 
 interface Approval { id:number; applicant:string; approver:string; type:string; title:string; content:string; status:string; remark:string; createdAt:string }
 

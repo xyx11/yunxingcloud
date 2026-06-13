@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchClientInfo } from '@/api/consent'
 import {
   NConfigProvider, NCard, NButton, NSpace, NTag, NSpin,
 } from 'naive-ui'
+
+const { t } = useI18n()
 
 const route = useRoute()
 

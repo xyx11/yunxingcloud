@@ -48,14 +48,14 @@ const columns = computed<DataTableColumns<Role>>(() => [
   { title: 'ID', key: 'id', width: 60 },
   { title: t('role.name'), key: 'name', width: 120, sorter: true },
   { title: t('role.code'), key: 'code', width: 100 },
-  { title: '用户数', key: 'user_count', width: 60 },
-  { title: '权限数', key: 'permissions', width: 60, render: (row: any) => row.permissions ? row.permissions.split(',').filter((s:string)=>s.trim()).length : 0 },
+  { title: t('role.userCount'), key: 'user_count', width: 60 },
+  { title: t('role.permCount'), key: 'permissions', width: 60, render: (row: any) => row.permissions ? row.permissions.split(',').filter((s:string)=>s.trim()).length : 0 },
   { title: t('role.desc'), key: 'description', width: 120, ellipsis: { tooltip: true } },
   { title: t('role.enabled'), key: 'enabled', width: 70, render: (row) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleRole(row) }) },
-  { title: 'Created', key: 'createdAt', width: 140, render: (row) => row.createdAt || '-' },
+  { title: t('role.created'), key: 'createdAt', width: 140, render: (row) => row.createdAt || '-' },
   { title: t('user.actions'), key: 'actions', width: 140, render: (row) => h(NSpace, null, { default: () => [
-    h(NButton, { size: 'small', type: 'primary', onClick: () => editRole(row) }, { default: () => '编辑' }),
-    h(NPopconfirm, { onPositiveClick: () => delRole(row.id) }, { trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }), default: () => '确认删除?' })
+    h(NButton, { size: 'small', type: 'primary', onClick: () => editRole(row) }, { default: () => t('common.edit') }),
+    h(NPopconfirm, { onPositiveClick: () => delRole(row.id) }, { trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
   ]}) },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(columns, 'roles')
@@ -106,24 +106,24 @@ async function saveRole() {
     saving.value = true
     if (editing.value) await request.put(`/api/roles/${editing.value.id}`, body)
     else await request.post('/api/roles', body)
-    showModal.value = false; notify.success(editing.value ? '修改成功' : '新增成功'); await loadAll()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+    showModal.value = false; notify.success(editing.value ? t('role.updateSuccess') : t('role.createSuccess')); await loadAll()
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.error')) } finally { saving.value = false }
 }
 
-async function delRole(id: number) { await request.delete(`/api/roles/${id}`); notify.success('删除成功'); await loadAll() }
+async function delRole(id: number) { await request.delete(`/api/roles/${id}`); notify.success(t('role.deleteSuccess')); await loadAll() }
 
 function exportCSV() {
-  const headers = ['ID', '名称', '编码', '描述', '权限', '状态', '创建时间']
-  const rows = filteredRoles.value.map(r => [r.id, r.name, r.code, r.description, r.permissions, r.enabled ? '正常' : '停用', r.createdAt || '-'])
+  const headers = t('role.csvHeaders') as unknown as string[]
+  const rows = filteredRoles.value.map(r => [r.id, r.name, r.code, r.description, r.permissions, r.enabled ? t('user.enabledLabel') : t('user.disabledLabel'), r.createdAt || '-'])
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = '角色列表.csv'; a.click(); URL.revokeObjectURL(url)
-  notify.success('导出成功')
+  notify.success(t('role.exportSuccess'))
 }
 
 async function toggleRole(role: Role) {
   await request.put(`/api/roles/${role.id}`, { name: role.name, code: role.code, description: role.description, permissions: role.permissions, enabled: !role.enabled })
-  notify.success(role.enabled ? '已停用' : '已启用')
+  notify.success(role.enabled ? t('role.toggleDisabled') : t('role.toggleEnabled'))
   await loadAll()
 }
 
@@ -135,19 +135,19 @@ onMounted(loadAll)
     <div style="padding:20px">
       <n-card :title="t('nav.roles')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>t('common.add')</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="roleSearch" placeholder="角色名称" clearable style="width:180px" size="small" />
-            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
-            <n-button size="small" @click="roleSearch = ''">重置</n-button>
+            <n-input v-model:value="roleSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
+            <n-button type="primary" size="small" @click="() => {}">t('common.search')</n-button>
+            <n-button size="small" @click="roleSearch = ''">t('common.reset')</n-button>
           </n-space>
           <n-space>
-            <n-button size="small" @click="loadAll" secondary>刷新</n-button>
+            <n-button size="small" @click="loadAll" secondary>t('common.refresh')</n-button>
             <n-popover trigger="click" placement="bottom-end" :width="180">
               <template #trigger>
-                <n-button size="small" secondary>列选项</n-button>
+                <n-button size="small" secondary>t('common.columnOptions')</n-button>
               </template>
               <div style="max-height:300px;overflow-y:auto">
                 <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">

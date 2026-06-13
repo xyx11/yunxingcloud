@@ -48,7 +48,7 @@ const allColumns = ref<DataTableColumns<SysConfig>>([
   {
     title: '系统内置', key: 'configType', width: 80,
     render: (row) => h(NTag, { type: row.configType === 'Y' ? 'info' : 'default', size: 'small' },
-      { default: () => row.configType === 'Y' ? '是' : '否' })
+      { default: () => row.configType === 'Y' ? t('common.yes') : t('common.no') })
   },
   { title: '创建时间', key: 'createdAt', width: 160 },
   {

@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NSpace, NTag, NPopconfirm, darkTheme, lightTheme } from 'naive-ui'
+
+const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
+
 
 interface OnlineSession {
   token: string; username: string; createdAt: string; expiresAt: string; lastAccessTime: string

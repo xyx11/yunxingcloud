@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode, NUpload, NModal, NForm, NFormItem, NInput } from 'naive-ui'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const notify = useNotify()

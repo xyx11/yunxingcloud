@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, onBeforeUnmount } from 'vue'
 import request from '@/api/request'
 import { NCard, NGrid, NGridItem, NTag, NButton, NSpace, NDataTable, NStatistic, NPopconfirm, NInput } from 'naive-ui'
+
+const { t } = useI18n()
 import { useNotify } from '@/composables/useNotify'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'

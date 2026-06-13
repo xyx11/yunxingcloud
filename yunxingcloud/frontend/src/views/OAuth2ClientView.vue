@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm, darkTheme, lightTheme } from 'naive-ui'
+
+const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
+
 
 interface Client { id: string; client_id: string; client_name: string; client_secret: string; redirect_uris: string; scopes: string; created_at: string }
 

@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NCard, NGrid, NGridItem, NStatistic, NButton, NSpace, NPopconfirm, NInputNumber } from 'naive-ui'
+
+const { t } = useI18n()
 
 const notify = useNotify()
 const stats = ref<any>({})

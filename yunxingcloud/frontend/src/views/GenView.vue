@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
@@ -6,7 +7,10 @@ import {
   NConfigProvider, NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode, NSpin,
   darkTheme, lightTheme
 } from 'naive-ui'
+
+const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
+
 
 interface TableInfo { TABLE_NAME: string; TABLE_COMMENT: string }
 interface ColumnInfo { COLUMN_NAME: string; DATA_TYPE: string; COLUMN_COMMENT: string; IS_NULLABLE: string; COLUMN_KEY: string }

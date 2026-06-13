@@ -27,8 +27,8 @@ const form = ref({ postCode: '', postName: '', sortOrder: 0, status: '0', remark
 const searchKeyword = ref('')
 
 const statusOptions = [
-  { label: '正常', value: '0' },
-  { label: '停用', value: '1' },
+  { label: t('user.enabledLabel'), value: '0' },
+  { label: t('user.disabledLabel'), value: '1' },
 ]
 
 const filteredPosts = computed(() => {
@@ -46,7 +46,7 @@ const columns: DataTableColumns<Post> = [
   {
     title: '状态', key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? '正常' : '停用' })
+      { default: () => row.status === '0' ? t('user.enabledLabel') : t('user.disabledLabel') })
   },
   { title: '创建时间', key: 'createdAt', width: 150 },
   {
