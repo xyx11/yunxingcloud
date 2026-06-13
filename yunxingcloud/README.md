@@ -6,14 +6,14 @@
 
 | 层级 | 技术 |
 |------|------|
-| 后端 | Java 17 · Spring Boot 4.0 · Spring Security · OAuth2/OIDC · JPA · Quartz |
+| 后端 | Java 17 · Spring Boot 4.0 · Spring Security · OAuth2/OIDC · JPA · Quartz · Sentinel |
 | 认证 | JWT (JJWT 0.12) · OAuth2 Authorization Server · Nimbus JOSE |
 | 数据库 | MySQL 8 (生产) · H2 (开发/测试) · Flyway 版本迁移 |
-| 缓存 | Caffeine (本地) · Spring Cache |
+| 缓存 | Redis + Caffeine · Spring Cache |
 | 前端 | Vue 3 · TypeScript · Vite 5 · Pinia · Naive UI 2 · ECharts |
 | 文档 | Knife4j 4.5 · Swagger UI · OpenAPI 3 |
 | 部署 | Docker · docker-compose · Shell 脚本 · GitHub Actions CI |
-| 监控 | Actuator · 自定义健康检查 · Logback · 请求追踪 ID |
+| 监控 | Actuator · Prometheus · Sentinel Dashboard · 请求追踪 ID |
 
 ## 项目结构
 
@@ -51,21 +51,21 @@ graph TB
 
     subgraph 数据层
         MySQL["MySQL 8"]
-        Cache["Caffeine Cache"]
+        Redis["Redis"]
     end
 
     subgraph 运维层
         Docker["Docker / K8s"]
         CI["GitHub Actions"]
-        Monitor["Actuator + SSE"]
+        Monitor["Actuator + Prometheus"]
     end
 
     Browser --> Gateway
     Gateway --> Core
     Gateway --> UC
     Core --> MySQL
+    Core --> Redis
     UC --> MySQL
-    Core --> Cache
     Docker --> Core
     Docker --> UC
     CI --> Docker
@@ -100,7 +100,7 @@ make test
 
 ```bash
 make dev              # 启动开发服务器
-make test             # 运行全部测试 (20 tests)
+make test             # 运行全部测试 (28 tests)
 make build            # 编译后端 + 构建前端
 make package          # Maven 打包
 make docker-build     # 构建 Docker 镜像
@@ -149,7 +149,8 @@ make deploy           # 一键部署到阿里云
 ## 安全特性
 
 - **认证**: JWT 双 Token (access 2h + refresh 7d) + 黑名单登出
-- **限流**: 登录接口 IP 级别 10次/分钟
+- **限流**: Sentinel 全链路流控 (QPS) + IP 级别 10次/分钟
+- **熔断**: Sentinel 降级 (慢调用/异常比例)
 - **锁定**: 5次失败锁定 30 分钟
 - **密码**: 8位 + 大写 + 小写 + 数字 + 特殊字符
 - **权限**: RBAC (user_roles 多对多) + @PreAuthorize 方法级控制
@@ -199,8 +200,8 @@ docker-compose up -d
 # 全部测试
 ./mvnw test -pl yunxingcloud-core,yunxingcloud-usercenter
 
-# 测试覆盖 (20 tests)
-# core: Auth/Menu/Stats/Config (13 tests)
+# 测试覆盖 (28 tests)
+# core: Auth/Menu/Stats/Password (21 tests)
 # usercenter: User/Role/Dept (7 tests)
 ```
 

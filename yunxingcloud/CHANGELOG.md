@@ -114,6 +114,10 @@
 - 数据库 25+ 表
 
 ### 安全加固
+- Sentinel 全链路流控降级 (core/usercenter/gateway 三层)
+- Nacos 动态规则持久化 (flow/degrade 双规则)
+- Gateway 路由级限流 + JSON block handler
+- @SentinelResource 注解保护登录/注册/密码重置等高危端点
 - CSP安全头
 - Strict-Transport-Security
 - Cross-Origin-Resource-Policy
@@ -121,3 +125,8 @@
 - 数据权限 (部门级隔离, 非admin只看本部门)
 - 密码策略 (大小写+数字+特殊字符)
 - 账户锁定 (5次/30分钟)
+- @PreAuthorize 方法级权限控制
+
+### 测试
+- 新增 PasswordControllerTest (5 tests)
+- 测试覆盖提升至 28 tests (core 21 + usercenter 7)
