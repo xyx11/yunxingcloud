@@ -126,6 +126,12 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
         </dependency>
+        <!-- Multi-datasource -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
+            <version>4.3.1</version>
+        </dependency>
         <!-- Spring Cloud + Nacos -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
