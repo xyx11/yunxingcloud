@@ -119,6 +119,11 @@ server:
     mime-types: text/html,text/css,application/javascript,application/json
   shutdown: graceful
 
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%X{requestId}] %-5level %logger{36} - %msg%n"
