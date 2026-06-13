@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: yunxingcloud:latest
+          image: yunxingcloud-core:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -30,6 +30,8 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "prod"
+            - name: SERVICE_NAME
+              value: "yunxingcloud-core"
           resources:
             requests:
               memory: "256Mi"
@@ -37,6 +39,13 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1000m"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /actuator/health
@@ -47,6 +56,128 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-usercenter
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-usercenter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yunxingcloud-usercenter
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-usercenter
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-usercenter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVICE_NAME
+              value: "yunxingcloud-usercenter"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-gateway
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yunxingcloud-gateway
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-gateway
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: NACOS_SERVER
+              value: "nacos-service:8848"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8090
             initialDelaySeconds: 15
             periodSeconds: 5
       restartPolicy: Always

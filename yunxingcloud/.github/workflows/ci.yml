@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -9,29 +9,74 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test123
+          MYSQL_DATABASE: test_yunxingcloud
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Build & Test
+      - name: Compile & Test
         run: ./mvnw verify -pl yunxingcloud-core -q
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/test_yunxingcloud
+          DB_USERNAME: root
+          DB_PASSWORD: test123
 
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install & Build
+      - name: Lint
+        run: cd frontend && npm ci && npx eslint src/ --ext .vue,.ts --max-warnings 50
+      - name: Type Check & Build
+        run: cd frontend && npm run build
+
+  docker:
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Frontend (for JAR)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: cd frontend && npm ci && npm run build
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Package JAR
+        run: ./mvnw package -pl yunxingcloud-core -am -DskipTests -q
+      - name: Build Docker Image
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/yunxingcloud:${{ github.sha }} -t ghcr.io/${{ github.repository_owner }}/yunxingcloud:latest .
+      - name: Push to GHCR
+        if: github.ref == 'refs/heads/main'
         run: |
-          cd frontend
-          npm ci
-          npm run build
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/${{ github.repository_owner }}/yunxingcloud:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/yunxingcloud:latest

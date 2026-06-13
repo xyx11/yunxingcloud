@@ -1,15 +1,42 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: yunxingcloud-service
+  name: yunxingcloud-core
   namespace: yunxingcloud
 spec:
   selector:
     app: yunxingcloud-core
   ports:
-    - name: http
-      port: 8080
+    - port: 8080
       targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yunxingcloud-usercenter
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: yunxingcloud-usercenter
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yunxingcloud-gateway
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: yunxingcloud-gateway
+  ports:
+    - port: 8090
+      targetPort: 8090
       protocol: TCP
   type: ClusterIP
 ---

@@ -63,3 +63,61 @@
 ### 文档
 - README.md (架构图/快速开始/API文档/部署指南)
 - CHANGELOG.md
+
+## v1.1.0 (2026-06-13)
+
+### 新增模块
+- 字典管理 (sys_dict_type + sys_dict_data, 分屏CRUD)
+- 通知公告 (sys_notice, 横幅弹窗, 首页公告)
+- 岗位管理 (sys_post, 用户岗位分配)
+- 登录日志 (sys_logininfor, 统计卡片, 设备/Browser记录)
+- 在线用户管理 (实时会话列表, 强踢下线)
+- 数据备份恢复 (mysqldump, 列表/删除/恢复)
+- 定时任务增强 (暂停/恢复/执行日志, Cron快捷预设)
+- 代码生成器增强 (完整CRUD + Flyway迁移 + 菜单SQL + Vue组件)
+- IP黑名单管理 (封禁/解除, 自动检测)
+- 站内信系统 (收件箱/已发送, 未读红点)
+- 审批流程 (申请/通过/驳回)
+- OAuth2客户端管理 (可视化CRUD)
+- 数据大屏 (全屏深色, 实时刷新, 6统计卡片+3图表)
+- 系统日志查看 (实时查看日志文件)
+- 邮件测试工具
+
+### 体验增强
+- Redis 集成 (替换Caffeine, Token/限流/黑名单迁移)
+- Prometheus 监控 (/actuator/prometheus, 33个JVM指标)
+- WebSocket (SockJS STOMP, 实时推送)
+- 服务端分页 (UserManageView + OperLogView)
+- 表单校验 (用户名/密码/邮箱格式)
+- 导出增强 (用户/字典/公告/岗位/部门/配置 CSV)
+- 搜索增强 (9种类型, 结果总数)
+- 登录页美化 (渐变动画, 毛玻璃, 卡片入场)
+- 菜单排序 (↑↓ 上移下移)
+- 部门排序 (↑↓ 上移下移)
+- 角色权限树 (可视化勾选, 全选/取消)
+- 头像上传 (默认渐变头像)
+- 中文语言包补全
+- ESLint 配置
+- 标签页持久化 (sessionStorage)
+- 个人设置 (主题色, 每页条数)
+- 操作日志图表 (类型分布柱状图)
+- 通知公告弹窗 (首次登录自动弹出)
+
+### 基础设施
+- 多阶段 Docker 构建 (JDK编译→JRE运行, 非root用户)
+- K8s HPA (2-10 pod 自动扩缩)
+- CI/CD 增强 (Redis服务, Lint, GHCR推送)
+- Nginx CSP头 + WebSocket代理
+- 优雅关闭 (30s)
+- Gzip 压缩
+- Flyway V7-V16 (10个迁移)
+- 数据库 25+ 表
+
+### 安全加固
+- CSP安全头
+- Strict-Transport-Security
+- Cross-Origin-Resource-Policy
+- X-Permitted-Cross-Domain-Policies
+- 数据权限 (部门级隔离, 非admin只看本部门)
+- 密码策略 (大小写+数字+特殊字符)
+- 账户锁定 (5次/30分钟)
