@@ -2,43 +2,64 @@ spring:
   application:
     name: yunxingcloud-usercenter
 
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+      config:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yaml
+    loadbalancer:
+      nacos:
+        enabled: true
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8082}
+      eager: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/sso_yunxingcloud?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    url: jdbc:mysql://localhost:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: yunxingcloud123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     open-in-view: false
 
   sql:
     init:
-      mode: always
+      mode: never
 
   security:
     oauth2:
       client:
         registration:
           wechat:
-            client-id: ${WECHAT_CLIENT_ID:}
-            client-secret: ${WECHAT_CLIENT_SECRET:}
+            client-id: ${WECHAT_CLIENT_ID:none}
+            client-secret: ${WECHAT_CLIENT_SECRET:none}
             client-name: 微信
             redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
             authorization-grant-type: authorization_code
             scope: snsapi_login
           qq:
-            client-id: ${QQ_CLIENT_ID:}
-            client-secret: ${QQ_CLIENT_SECRET:}
+            client-id: ${QQ_CLIENT_ID:none}
+            client-secret: ${QQ_CLIENT_SECRET:none}
             client-name: QQ
             redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
             authorization-grant-type: authorization_code
             scope: get_user_info
           alipay:
-            client-id: ${ALIPAY_CLIENT_ID:}
-            client-secret: ${ALIPAY_CLIENT_SECRET:}
+            client-id: ${ALIPAY_CLIENT_ID:none}
+            client-secret: ${ALIPAY_CLIENT_SECRET:none}
             client-name: 支付宝
             redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
             authorization-grant-type: authorization_code
@@ -59,6 +80,15 @@ spring:
             token-uri: https://openapi.alipay.com/gateway.do
             user-info-uri: https://openapi.alipay.com/gateway.do
             user-name-attribute: user_id
+
+  mail:
+    host: localhost
+    port: 25
+
+management:
+  health:
+    mail:
+      enabled: false
 
 server:
   port: 8081

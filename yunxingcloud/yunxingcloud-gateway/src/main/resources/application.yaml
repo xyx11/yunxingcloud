@@ -5,6 +5,77 @@ spring:
   application:
     name: yunxingcloud-gateway
 
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+      config:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yaml
+
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8082}
+      eager: true
+
+    gateway:
+      routes:
+        # Auth endpoints -> core (JWT login/refresh)
+        - id: core-auth
+          uri: lb://yunxingcloud-core
+          predicates:
+            - Path=/api/login,/api/refresh,/api/logout,/api/csrf,/api/captcha,/api/publicKey
+        # Register -> usercenter
+        - id: usercenter-register
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/api/register,/api/user
+        # User management -> usercenter
+        - id: usercenter-users
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/api/users/**
+        # Roles -> usercenter
+        - id: usercenter-roles
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/api/roles/**
+        # Departments -> usercenter
+        - id: usercenter-depts
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/api/departments/**
+        # OAuth2/social login -> usercenter
+        - id: usercenter-oauth2
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/oauth2/**,/login/**
+        # .well-known -> usercenter
+        - id: usercenter-wellknown
+          uri: lb://yunxingcloud-usercenter
+          predicates:
+            - Path=/.well-known/**
+        # Business API -> core
+        - id: core-api
+          uri: lb://yunxingcloud-core
+          predicates:
+            - Path=/api/**
+        # WebSocket -> core
+        - id: core-ws
+          uri: lb://yunxingcloud-core
+          predicates:
+            - Path=/ws/**
+        # SPA frontend -> core
+        - id: core-spa
+          uri: lb://yunxingcloud-core
+          predicates:
+            - Path=/**
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin
+
 logging:
   level:
     com.yunxingcloud: DEBUG
+    org.springframework.cloud.gateway: DEBUG

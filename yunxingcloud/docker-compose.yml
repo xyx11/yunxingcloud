@@ -1,6 +1,38 @@
 version: '3.8'
 
 services:
+  nacos:
+    image: nacos/nacos-server:v2.4.3
+    container_name: yunxingcloud-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - nacos_data:/home/nacos/data
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sentinel:
+    image: bladex/sentinel-dashboard:1.8.8
+    container_name: yunxingcloud-sentinel
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SENTINEL_AUTH_USERNAME: admin
+      SENTINEL_AUTH_PASSWORD: admin
+    networks:
+      - yunxingcloud
+
   mysql:
     image: mysql:8.0
     container_name: yunxingcloud-mysql
@@ -12,28 +44,140 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - yunxingcloud
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
-  app:
-    build: .
-    container_name: yunxingcloud-app
+  redis:
+    image: redis:7-alpine
+    container_name: yunxingcloud-redis
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  usercenter:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-usercenter
+        PORT: 8081
+    container_name: yunxingcloud-usercenter
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/sso_yunxingcloud?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
       OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID:-test-client}
       OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET:-secret}
+      NACOS_SERVER: nacos:8848
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
+      nacos:
+        condition: service_healthy
       mysql:
         condition: service_healthy
 
+  core:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-core
+        PORT: 8080
+    container_name: yunxingcloud-core
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NACOS_SERVER: nacos:8848
+    volumes:
+      - upload_data:/app/uploads
+      - log_data:/app/logs
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      usercenter:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-gateway
+        PORT: 8090
+    container_name: yunxingcloud-gateway
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      NACOS_SERVER: nacos:8848
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      nacos:
+        condition: service_healthy
+      core:
+        condition: service_healthy
+      usercenter:
+        condition: service_healthy
+
 volumes:
+  nacos_data:
   mysql_data:
+  redis_data:
+  upload_data:
+  log_data:
+
+networks:
+  yunxingcloud:
+    driver: bridge

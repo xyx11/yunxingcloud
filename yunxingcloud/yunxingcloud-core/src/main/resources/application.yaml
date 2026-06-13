@@ -1,17 +1,29 @@
 spring:
   application:
-    name: yunxingcloud
+    name: yunxingcloud-core
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+      config:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yaml
+    loadbalancer:
+      nacos:
+        enabled: true
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8082}
+      eager: true
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/sso_yunxingcloud?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    url: jdbc:mysql://localhost:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: yunxingcloud123
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=30m
 
   jpa:
     hibernate:
@@ -22,6 +34,29 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 30m
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 0
+
+  mail:
+    host: localhost
+    port: 25
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
 jwt:
   secret: ${JWT_SECRET:yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
@@ -36,13 +71,33 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when_authorized
+  health:
+    mail:
+      enabled: false
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+info:
+  app:
+    name: yunxingcloud
+    description: 分布式微服务平台
+    version: 1.0.0
 
 server:
   port: 8080
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,application/javascript,application/json
+  shutdown: graceful
 
 logging:
   pattern:
