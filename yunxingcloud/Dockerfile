@@ -5,6 +5,7 @@ ARG SERVICE=yunxingcloud-core
 RUN ./mvnw package -pl ${SERVICE} -am -DskipTests -q
 
 FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache wget
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 ARG SERVICE=yunxingcloud-core

@@ -16,7 +16,7 @@ build:
 	cd frontend && npm run build
 
 package:
-	./mvnw package -pl yunxingcloud-core -DskipTests -q
+	./mvnw package -pl yunxingcloud-core,yunxingcloud-usercenter,yunxingcloud-gateway -DskipTests -q
 
 # ---- 测试 ----
 test:
@@ -33,7 +33,13 @@ clean:
 # ---- Docker ----
 docker-build:
 	./mvnw package -pl yunxingcloud-core -DskipTests -q
-	docker build -t yunxingcloud:latest .
+	docker build --build-arg SERVICE=yunxingcloud-core --build-arg PORT=8080 -t yunxingcloud-core:latest .
+
+docker-build-all:
+	./mvnw package -pl yunxingcloud-core,yunxingcloud-usercenter,yunxingcloud-gateway -DskipTests -q
+	docker build --build-arg SERVICE=yunxingcloud-core --build-arg PORT=8080 -t yunxingcloud-core:latest .
+	docker build --build-arg SERVICE=yunxingcloud-usercenter --build-arg PORT=8081 -t yunxingcloud-usercenter:latest .
+	docker build --build-arg SERVICE=yunxingcloud-gateway --build-arg PORT=8090 -t yunxingcloud-gateway:latest .
 
 docker-up:
 	docker-compose up -d
