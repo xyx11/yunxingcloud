@@ -1,5 +1,8 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.PasswordValidator;
 import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
 import com.yunxingcloud.yunxingcloud.entity.User;
@@ -8,6 +11,7 @@ import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import com.yunxingcloud.yunxingcloud.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +43,7 @@ public class PasswordController {
     }
 
     @PostMapping("/forgot")
+    @SentinelResource(value = "passwordForgotFlow", blockHandler = "forgotPasswordBlockHandler")
     public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         if (email == null || email.isBlank()) {
@@ -68,6 +73,7 @@ public class PasswordController {
     }
 
     @PostMapping("/reset")
+    @SentinelResource(value = "passwordResetFlow", blockHandler = "resetPasswordBlockHandler")
     public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> body) {
         String token = body.get("token");
         String newPassword = body.get("newPassword");
@@ -100,6 +106,30 @@ public class PasswordController {
         tokenRepository.save(resetToken);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "密码重置成功，请使用新密码登录"));
+    }
+
+    public ResponseEntity<Map<String, Object>> forgotPasswordBlockHandler(Map<String, String> body,
+                                                                           BlockException ex) {
+        if (ex instanceof DegradeException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "success", false, "message", "邮件服务暂时不可用，请稍后重试"
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "success", false, "message", "请求过于频繁，请稍后再试"
+        ));
+    }
+
+    public ResponseEntity<Map<String, Object>> resetPasswordBlockHandler(Map<String, String> body,
+                                                                          BlockException ex) {
+        if (ex instanceof DegradeException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "success", false, "message", "服务暂时不可用，请稍后重试"
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "success", false, "message", "请求过于频繁，请稍后再试"
+        ));
     }
 
     @PostMapping("/change")

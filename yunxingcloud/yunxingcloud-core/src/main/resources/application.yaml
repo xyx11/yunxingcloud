@@ -18,6 +18,23 @@ spring:
       transport:
         dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8082}
       eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            data-id: ${spring.application.name}-sentinel-flow
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: flow
+        degrade:
+          nacos:
+            server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            data-id: ${spring.application.name}-sentinel-degrade
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: degrade
 
   datasource:
     url: jdbc:mysql://localhost:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai

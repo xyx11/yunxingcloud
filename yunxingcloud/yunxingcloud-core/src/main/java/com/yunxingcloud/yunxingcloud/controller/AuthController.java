@@ -1,5 +1,8 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
 import com.yunxingcloud.yunxingcloud.event.AuditEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -60,6 +63,7 @@ public class AuthController {
 
     @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
     @PostMapping("/login")
+    @SentinelResource(value = "loginFlow", blockHandler = "loginBlockHandler")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
@@ -127,7 +131,21 @@ public class AuthController {
         }
     }
 
+    public ResponseEntity<Map<String, Object>> loginBlockHandler(LoginRequest request,
+                                                                  HttpServletRequest httpRequest,
+                                                                  BlockException ex) {
+        if (ex instanceof DegradeException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "success", false, "message", "服务暂时不可用，请稍后重试"
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "success", false, "message", "请求过于频繁，请稍后再试"
+        ));
+    }
+
     @PostMapping("/refresh")
+    @SentinelResource(value = "refreshFlow", blockHandler = "refreshBlockHandler")
     public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> body) {
         String refreshToken = body.get("refreshToken");
         if (refreshToken == null || !jwtTokenService.validateToken(refreshToken)) {
@@ -145,6 +163,18 @@ public class AuthController {
                 "refreshToken", newRefreshToken,
                 "tokenType", "Bearer",
                 "expiresIn", JwtTokenService.ACCESS_EXPIRATION
+        ));
+    }
+
+    public ResponseEntity<Map<String, Object>> refreshBlockHandler(Map<String, String> body,
+                                                                    BlockException ex) {
+        if (ex instanceof DegradeException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "success", false, "message", "服务暂时不可用，请稍后重试"
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "success", false, "message", "请求过于频繁，请稍后再试"
         ));
     }
 

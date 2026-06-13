@@ -1,8 +1,12 @@
 package com.yunxingcloud.usercenter.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.PasswordValidator;
 import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +24,7 @@ public class RegisterController {
     }
 
     @PostMapping("/register")
+    @SentinelResource(value = "registerFlow", blockHandler = "registerBlockHandler")
     public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest request) {
         if (request.username() == null || request.username().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名不能为空"));
@@ -46,6 +51,18 @@ public class RegisterController {
                     "message", e.getMessage()
             ));
         }
+    }
+
+    public ResponseEntity<Map<String, Object>> registerBlockHandler(RegisterRequest request,
+                                                                      BlockException ex) {
+        if (ex instanceof DegradeException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "success", false, "message", "注册服务暂时不可用，请稍后重试"
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
+                "success", false, "message", "注册请求过于频繁，请稍后再试"
+        ));
     }
 
     record RegisterRequest(String username, String password, String email) {}
