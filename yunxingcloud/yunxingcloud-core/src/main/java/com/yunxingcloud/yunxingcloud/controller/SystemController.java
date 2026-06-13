@@ -100,6 +100,7 @@ public class SystemController {
         return ResponseEntity.ok(data);
     }
 
+    @PreAuthorize("hasAuthority('config:read')")
     @GetMapping("/cache")
     public ResponseEntity<Map<String, Object>> cacheInfo() {
         List<Map<String, Object>> details = new ArrayList<>();
@@ -129,6 +130,7 @@ public class SystemController {
         return ResponseEntity.ok(new ArrayList<>(history));
     }
 
+    @PreAuthorize("hasAuthority('config:read')")
     @GetMapping("/sessions")
     public ResponseEntity<Map<String, Object>> sessions() {
         return ResponseEntity.ok(Map.of("count", tokenStore.count(), "sessions", tokenStore.activeSessions()));

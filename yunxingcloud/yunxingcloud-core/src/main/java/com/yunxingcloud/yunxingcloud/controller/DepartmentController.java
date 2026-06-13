@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -53,6 +54,7 @@ public class DepartmentController {
         return ResponseEntity.ok(depts.get(0));
     }
 
+    @PreAuthorize("hasAuthority('dept:write')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
         jdbcTemplate.update(
@@ -64,6 +66,7 @@ public class DepartmentController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('dept:write')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         int updated = jdbcTemplate.update(
@@ -79,6 +82,7 @@ public class DepartmentController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('dept:write')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         jdbcTemplate.update("DELETE FROM department WHERE id = ?", id);

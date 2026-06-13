@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class RoleController {
         return ResponseEntity.ok(roles.get(0));
     }
 
+    @PreAuthorize("hasAuthority('role:write')")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         String code = (String) body.get("code");
@@ -51,6 +53,7 @@ public class RoleController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('role:write')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         int updated = jdbcTemplate.update(
@@ -66,6 +69,7 @@ public class RoleController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('role:write')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         jdbcTemplate.update("DELETE FROM role WHERE id = ?", id);

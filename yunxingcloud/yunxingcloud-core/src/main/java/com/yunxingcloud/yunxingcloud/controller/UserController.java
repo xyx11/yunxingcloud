@@ -107,18 +107,21 @@ public class UserController {
         return ResponseEntity.ok(Map.of("items", items, "total", pageResult.getTotalElements()));
     }
 
+    @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/department")
     public ResponseEntity<Map<String, Object>> setDepartment(@PathVariable Long id, @RequestBody Map<String, Long> body) {
         userRepository.findById(id).ifPresent(u -> { u.setDepartmentId(body.get("departmentId")); userRepository.save(u); });
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/post")
     public ResponseEntity<Map<String, Object>> setPost(@PathVariable Long id, @RequestBody Map<String, Long> body) {
         userRepository.findById(id).ifPresent(u -> { u.setPostId(body.get("postId")); userRepository.save(u); });
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/roles")
     public ResponseEntity<Map<String, Object>> setRoles(@PathVariable Long id, @RequestBody Map<String, List<Long>> body) {
         List<Long> roleIds = body.get("roleIds");
@@ -151,6 +154,7 @@ public class UserController {
         return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "创建成功"));
     }
 
+    @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/profile")
     public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return userRepository.findById(id).map(u -> { if (body.containsKey("nickname")) u.setNickname(body.get("nickname")); if (body.containsKey("email")) u.setEmail(body.get("email")); userRepository.save(u); return ResponseEntity.ok(Map.<String, Object>of("success", true)); }).orElse(ResponseEntity.notFound().build());

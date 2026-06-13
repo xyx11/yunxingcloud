@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -123,18 +124,21 @@ public class OperLogController {
         return val;
     }
 
+    @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         logRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/clean")
     public ResponseEntity<Map<String, Object>> clean() {
         logRepository.deleteAll();
         return ResponseEntity.ok(Map.of("success", true, "message", "日志已清空"));
     }
 
+    @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/batch")
     public ResponseEntity<Map<String, Object>> batchDelete(@RequestBody Map<String, List<Long>> body) {
         List<Long> ids = body.getOrDefault("ids", List.of());

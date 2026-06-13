@@ -55,6 +55,7 @@ public class FileController {
         }
     }
 
+    @PreAuthorize("hasAuthority('file:read')")
     @GetMapping("/list")
     public ResponseEntity<List<Map<String, Object>>> list() {
         try (Stream<Path> stream = Files.list(uploadDir)) {
