@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import request from '@/api/request'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { NConfigProvider, NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -58,7 +60,7 @@ async function handleSubmit() {
     <div class="page">
       <n-card class="card">
         <h1 class="title">重置密码</h1>
-        <p class="subtitle">输入重置令牌和新密码</p>
+        <p class="subtitle">{{ t('pwd.change') }}</p>
 
         <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
         <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
@@ -68,10 +70,10 @@ async function handleSubmit() {
             <n-input v-model:value="token" placeholder="输入邮箱收到的重置令牌" size="large" />
           </n-form-item>
           <n-form-item label="新密码">
-            <n-input v-model:value="newPassword" type="password" placeholder="至少6位" size="large" />
+            <n-input v-model:value="newPassword" type="password" placeholder="至少8位，含大小写字母和数字" size="large" show-password-on="click" />
           </n-form-item>
           <n-form-item label="确认密码">
-            <n-input v-model:value="confirmPassword" type="password" placeholder="再次输入新密码" size="large" />
+            <n-input v-model:value="confirmPassword" type="password" placeholder="再次输入新密码" size="large" show-password-on="click" />
           </n-form-item>
           <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
             重置密码
@@ -89,8 +91,8 @@ async function handleSubmit() {
 <style scoped>
 .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .card { width: 420px; border-radius: 12px; padding: 8px; }
-.title { text-align: center; color: #333; margin-bottom: 4px; font-size: 24px; }
-.subtitle { text-align: center; color: #888; margin-bottom: 28px; font-size: 14px; }
+.title { text-align: center; color: var(--n-text-color, #333); margin-bottom: 4px; font-size: 24px; }
+.subtitle { text-align: center; color: var(--n-text-color-3, #888); margin-bottom: 28px; font-size: 14px; }
 .back-link { text-align: center; margin-top: 16px; font-size: 13px; }
-.back-link a { color: #667eea; text-decoration: none; }
+.back-link a { color: var(--primary-color, #667eea); text-decoration: none; }
 </style>

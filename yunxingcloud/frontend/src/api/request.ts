@@ -63,8 +63,11 @@ request.interceptors.response.use(
       authStore.clear()
       window.location.hash = `#/login?redirect=${encodeURIComponent(window.location.hash.slice(1) || '/')}`
     }
-    if (error.response?.data?.message) {
-      console.error(`[${error.response.status}] ${error.response.data.message}`)
+    // 非401且非网络中断的错误日志
+    if (error.response) {
+      if (error.response.status !== 401) {
+        console.error(`[${error.response.status}] ${error.response.data?.message || '服务器错误'}`)
+      }
     }
     return Promise.reject(error)
   },

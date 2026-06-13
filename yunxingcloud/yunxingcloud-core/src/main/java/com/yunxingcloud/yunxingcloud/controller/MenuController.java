@@ -6,8 +6,6 @@ import com.yunxingcloud.yunxingcloud.entity.SysMenu;
 import com.yunxingcloud.yunxingcloud.repository.SysMenuRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +21,6 @@ public class MenuController {
 
     public MenuController(SysMenuRepository menuRepository) { this.menuRepository = menuRepository; }
 
-    @Cacheable(value = "menuTree")
     @GetMapping("/tree")
     public ResponseEntity<List<SysMenu>> tree() {
         List<SysMenu> all = menuRepository.findByVisibleTrueOrderBySortOrder();
@@ -37,7 +34,6 @@ public class MenuController {
         return ResponseEntity.ok(roots);
     }
 
-    @Cacheable(value = "menuList")
     @GetMapping
     public ResponseEntity<List<SysMenu>> list() { return ResponseEntity.ok(menuRepository.findAll()); }
 
@@ -48,7 +44,6 @@ public class MenuController {
 
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
     @PreAuthorize("hasAuthority('menu:write')")
-    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PostMapping
     public ResponseEntity<SysMenu> create(@RequestBody SysMenu menu) {
         return ResponseEntity.ok(menuRepository.save(menu));
@@ -56,7 +51,6 @@ public class MenuController {
 
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
     @PreAuthorize("hasAuthority('menu:write')")
-    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<SysMenu> update(@PathVariable Long id, @RequestBody SysMenu body) {
         return menuRepository.findById(id).map(m -> {
@@ -71,10 +65,32 @@ public class MenuController {
 
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
     @PreAuthorize("hasAuthority('menu:write')")
-    @CacheEvict(value = {"menuTree", "menuList"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         menuRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
+    @PreAuthorize("hasAuthority('menu:write')")
+    @PutMapping("/{id}/move")
+    public ResponseEntity<Map<String, Object>> move(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        int direction = body.getOrDefault("direction", 0);
+        return menuRepository.findById(id).map(m -> {
+            List<SysMenu> siblings = m.getParentId() != null ? menuRepository.findByParentId(m.getParentId()) : menuRepository.findAll().stream().filter(s -> s.getParentId() == null).toList();
+            siblings.sort((a, b) -> Integer.compare(a.getSortOrder() != null ? a.getSortOrder() : 0, b.getSortOrder() != null ? b.getSortOrder() : 0));
+            int idx = -1;
+            for (int i = 0; i < siblings.size(); i++) { if (siblings.get(i).getId().equals(m.getId())) { idx = i; break; } }
+            int swapIdx = idx + direction;
+            if (swapIdx >= 0 && swapIdx < siblings.size()) {
+                SysMenu other = siblings.get(swapIdx);
+                int tmp = m.getSortOrder() != null ? m.getSortOrder() : 0;
+                m.setSortOrder(other.getSortOrder() != null ? other.getSortOrder() : 0);
+                other.setSortOrder(tmp);
+                menuRepository.save(m);
+                menuRepository.save(other);
+            }
+            return ResponseEntity.ok(Map.of("success", (Object) true));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

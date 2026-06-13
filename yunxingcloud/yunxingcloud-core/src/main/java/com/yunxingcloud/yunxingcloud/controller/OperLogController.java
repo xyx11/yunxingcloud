@@ -2,17 +2,20 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/operlog")
@@ -23,25 +26,72 @@ public class OperLogController {
     public OperLogController(SysOperLogRepository logRepository) { this.logRepository = logRepository; }
 
     @GetMapping
-    public ResponseEntity<List<SysOperLog>> list(
+    public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String user) {
-        List<SysOperLog> all = logRepository.findAll();
-        if (type != null && !type.isEmpty()) {
-            all = all.stream().filter(l -> type.equals(l.getBusinessType())).toList();
+            @RequestParam(required = false) String user,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String method,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        PageRequest pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "operTime"));
+        Page<SysOperLog> result;
+        if (keyword != null && !keyword.isEmpty()) {
+            result = logRepository.findByTitleContaining(keyword, pageable);
+        } else if ((type != null && !type.isEmpty()) && (user != null && !user.isEmpty())) {
+            result = logRepository.findByBusinessTypeAndOperNameContaining(type, user, pageable);
+        } else if (type != null && !type.isEmpty()) {
+            result = logRepository.findByBusinessType(type, pageable);
+        } else if (user != null && !user.isEmpty()) {
+            result = logRepository.findByOperNameContaining(user, pageable);
+        } else {
+            result = logRepository.findAll(pageable);
         }
-        if (user != null && !user.isEmpty()) {
-            all = all.stream().filter(l -> l.getOperName() != null && l.getOperName().contains(user)).toList();
-        }
-        all = all.stream()
-                .sorted(Comparator.comparing(SysOperLog::getOperTime, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
-        return ResponseEntity.ok(all);
+
+        // 日期范围 + 方法筛选(Java侧过滤，操作日志量通常不大)
+        var items = result.getContent().stream().filter(log -> {
+            if (method != null && !method.isEmpty() && !method.equals(log.getMethod())) return false;
+            if (startTime != null && log.getOperTime() != null && log.getOperTime().isBefore(java.time.LocalDateTime.parse(startTime))) return false;
+            if (endTime != null && log.getOperTime() != null && log.getOperTime().isAfter(java.time.LocalDateTime.parse(endTime))) return false;
+            return true;
+        }).toList();
+
+        return ResponseEntity.ok(Map.of(
+            "items", items,
+            "total", result.getTotalElements(),
+            "page", page,
+            "pageSize", pageSize
+        ));
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> export() {
-        List<SysOperLog> logs = logRepository.findAll();
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String user,
+            @RequestParam(required = false) String method,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        PageRequest limit = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "operTime"));
+        List<SysOperLog> logs;
+        if (type != null && !type.isEmpty() && user != null && !user.isEmpty()) {
+            logs = logRepository.findByBusinessTypeAndOperNameContaining(type, user, limit).getContent();
+        } else if (type != null && !type.isEmpty()) {
+            logs = logRepository.findByBusinessType(type, limit).getContent();
+        } else if (user != null && !user.isEmpty()) {
+            logs = logRepository.findByOperNameContaining(user, limit).getContent();
+        } else {
+            logs = logRepository.findAll(limit).getContent();
+        }
+        // 方法/日期范围过滤
+        if (method != null && !method.isEmpty()) {
+            logs = logs.stream().filter(l -> method.equals(l.getMethod())).collect(Collectors.toList());
+        }
+        if (startTime != null && !startTime.isEmpty()) {
+            LocalDateTime s = LocalDateTime.parse(startTime);
+            LocalDateTime e = endTime != null && !endTime.isEmpty() ? LocalDateTime.parse(endTime) : null;
+            logs = logs.stream().filter(l -> l.getOperTime() != null && !l.getOperTime().isBefore(s) && (e == null || !l.getOperTime().isAfter(e))).collect(Collectors.toList());
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("ID,标题,业务类型,操作人,IP,URL,状态,耗时(ms),操作时间\n");
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

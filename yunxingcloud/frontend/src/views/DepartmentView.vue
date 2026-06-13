@@ -2,14 +2,18 @@
 import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
-import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag, NSelect, darkTheme, lightTheme } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
 interface Dept { id: number; name: string; parentId: number | null; sortOrder: number; enabled: boolean; children: Dept[] }
 
+const { t } = useI18n()
+const currentTheme = computed(() => localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme)
 const depts = ref<Dept[]>([])
 const notify = useNotify()
 const loading = ref(false)
+const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<Dept | null>(null)
 const form = ref({ name: '', parentId: null as number | null, sortOrder: 0 })
@@ -26,32 +30,36 @@ function filterTree(list: Dept[], kw: string): Dept[] {
 }
 const filteredDepts = computed(() => filterTree(depts.value, deptSearch.value.toLowerCase()))
 
-const columns: DataTableColumns<Dept> = [
+const columns = computed<DataTableColumns<Dept>>(() => [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '名称', key: 'name', width: 160 },
-  { title: '排序', key: 'sortOrder', width: 60 },
+  { title: t('department.name'), key: 'name', width: 160 },
+  { title: t('department.sort'), key: 'sortOrder', width: 60 },
   {
-    title: '状态', key: 'enabled', width: 60,
-    render: (row) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, { default: () => row.enabled ? '启用' : '停用' })
+    title: t('department.enabled'), key: 'enabled', width: 60,
+    render: (row) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, { default: () => row.enabled ? 'Active' : 'Inactive' })
   },
   {
-    title: '操作', key: 'actions', width: 160,
+    title: t('user.actions'), key: 'actions', width: 200,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'small', onClick: () => editDept(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, -1) }, { default: () => '↑' }),
+        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, 1) }, { default: () => '↓' }),
+        h(NButton, { size: 'tiny', onClick: () => editDept(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delDept(row.id) }, {
-          trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
   },
-]
+])
 
 async function loadDepts() {
   loading.value = true
-  const res = await request.get('/api/departments')
-  depts.value = res.data
+  try {
+    const res = await request.get('/api/departments')
+    depts.value = res.data
+  } catch {}
   loading.value = false
 }
 
@@ -68,13 +76,21 @@ function editDept(dept: Dept) {
 }
 
 async function saveDept() {
-  if (editing.value) {
-    await request.put(`/api/departments/${editing.value.id}`, form.value)
-  } else {
-    await request.post('/api/departments', form.value)
-  }
-  showModal.value = false
+  saving.value = true
+  try {
+    if (editing.value) {
+      await request.put(`/api/departments/${editing.value.id}`, form.value)
+    } else {
+      await request.post('/api/departments', form.value)
+    }
+    showModal.value = false
     notify.success(editing.value ? '更新成功' : '创建成功')
+    await loadDepts()
+  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+}
+
+async function moveDept(id: number, direction: number) {
+  await request.put(`/api/departments/${id}/move`, { direction })
   await loadDepts()
 }
 
@@ -88,32 +104,43 @@ onMounted(loadDepts)
 </script>
 
 <template>
-  <n-config-provider>
-    <div style="padding: 24px">
-      <n-card title="部门管理">
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
+      <n-card :title="t('nav.departments')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addDept">新增部门</n-button>
-          <n-input v-model:value="deptSearch" placeholder="搜索..." size="small" clearable style="width:160px;margin-right:8px" />
+          <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>新增</n-button>
         </template>
-        <n-data-table :columns="columns" :data="filteredDepts" :loading="loading" :pagination="{ pageSize: 10 }"
-          default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'" />
+        <n-space style="margin-bottom:12px" justify="space-between">
+          <n-space>
+            <n-input v-model:value="deptSearch" placeholder="部门名称" size="small" clearable style="width:180px" />
+            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
+            <n-button size="small" @click="deptSearch = ''">重置</n-button>
+          </n-space>
+          <n-space>
+            <n-button size="small" @click="loadDepts" secondary>刷新</n-button>
+          </n-space>
+        </n-space>
+        <n-data-table
+          :columns="columns" :data="filteredDepts" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+          default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'"
+        />
 
-        <n-modal v-model:show="showModal" :title="editing ? '编辑部门' : '新增部门'">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px" preset="card" display-directive="show">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="名称">
+            <n-form-item :label="t('department.name')">
               <n-input v-model:value="form.name" />
             </n-form-item>
-            <n-form-item label="上级部门">
-              <n-select v-model:value="form.parentId" :options="[{label:'无(根部门)',value:null},...flatDepts]" clearable placeholder="选择上级部门" />
+            <n-form-item :label="t('department.parent')">
+              <n-select v-model:value="form.parentId" :options="flatDepts" clearable placeholder="-" />
             </n-form-item>
-            <n-form-item label="排序">
+            <n-form-item :label="t('department.sort')">
               <n-input-number v-model:value="form.sortOrder" :min="0" />
             </n-form-item>
           </n-form>
           <template #footer>
             <n-space justify="end">
-              <n-button @click="showModal = false">取消</n-button>
-              <n-button type="primary" @click="saveDept">保存</n-button>
+              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+              <n-button type="primary" :loading="saving" @click="saveDept">{{ t('common.save') }}</n-button>
             </n-space>
           </template>
         </n-modal>

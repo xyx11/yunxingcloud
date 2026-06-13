@@ -27,9 +27,13 @@ public class CacheWarmer {
         log.info("缓存预热开始...");
         long start = System.currentTimeMillis();
         try {
-            menuRepository.findByVisibleTrueOrderBySortOrder(); // 加载菜单树到缓存
-            jdbcTemplate.queryForList("SELECT config_key, config_value FROM sys_config"); // 配置
-        } catch (Exception ignored) {}
+            menuRepository.findByVisibleTrueOrderBySortOrder();
+            jdbcTemplate.queryForList("SELECT config_key, config_value FROM sys_config");
+            jdbcTemplate.queryForList("SELECT id, name, code FROM role");
+            jdbcTemplate.queryForList("SELECT id, name FROM department");
+        } catch (Exception e) {
+            log.warn("缓存预热部分失败: {}", e.getMessage());
+        }
         log.info("缓存预热完成 ({}ms)", System.currentTimeMillis() - start);
     }
 }

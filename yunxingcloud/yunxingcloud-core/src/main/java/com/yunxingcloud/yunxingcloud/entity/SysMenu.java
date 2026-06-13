@@ -1,13 +1,14 @@
 package com.yunxingcloud.yunxingcloud.entity;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "sys_menu")
-public class SysMenu {
+public class SysMenu implements Serializable {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

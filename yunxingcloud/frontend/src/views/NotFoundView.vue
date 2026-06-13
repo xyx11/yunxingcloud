@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { NConfigProvider, NCard, NButton, NSpace, NTag } from 'naive-ui'
+import { NConfigProvider, NButton, NSpace, NTag } from 'naive-ui'
 
 const router = useRouter()
 const links = [
@@ -17,14 +17,18 @@ const links = [
     <div class="page">
       <div class="container">
         <div class="code">404</div>
-        <div class="divider"></div>
+        <div class="divider" />
         <div class="title">页面未找到</div>
         <div class="subtitle">您访问的页面不存在或已被移除</div>
         <div style="margin: 28px 0 20px;">
           <n-space justify="center" size="small">
-            <n-tag v-for="link in links" :key="link.path"
+            <n-tag
+              v-for="link in links" :key="link.path"
               type="info" size="medium" style="cursor:pointer"
-              @click="router.push(link.path)">{{ link.label }}</n-tag>
+              @click="router.push(link.path)"
+            >
+              {{ link.label }}
+            </n-tag>
           </n-space>
         </div>
         <n-button type="primary" size="large" @click="router.push('/')">

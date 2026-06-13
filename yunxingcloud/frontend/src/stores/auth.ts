@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
       username.value = res.data.username
       localStorage.setItem('accessToken', res.data.accessToken)
       localStorage.setItem('refreshToken', res.data.refreshToken)
-      return '/'
+      return res.data.redirectUrl || '/'
     }
     throw new Error(res.data.message || '登录失败')
   }

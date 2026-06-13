@@ -1,31 +1,35 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { NModal, NInput, NTag } from 'naive-ui'
 
+const { t, locale } = useI18n()
 const router = useRouter()
 const visible = ref(false)
 const query = ref('')
 
-const commands = [
-  { label: '仪表盘', path: '/', icon: '📊', tag: '首页' },
-  { label: '用户管理', path: '/users', icon: '👥', tag: '管理' },
-  { label: '角色管理', path: '/roles', icon: '🔑', tag: '管理' },
-  { label: '部门管理', path: '/departments', icon: '🏢', tag: '管理' },
-  { label: '菜单管理', path: '/menus', icon: '📋', tag: '管理' },
-  { label: '操作日志', path: '/operlog', icon: '📄', tag: '监控' },
-  { label: '定时任务', path: '/job', icon: '⏰', tag: '监控' },
-  { label: '参数配置', path: '/config', icon: '⚙️', tag: '系统' },
-  { label: '代码生成', path: '/generator', icon: '🔧', tag: '工具' },
-  { label: 'API文档', path: '/swagger', icon: '📖', tag: '工具' },
-  { label: '个人中心', path: '/profile', icon: '👤', tag: '系统' },
-  { label: '暗色模式', action: 'toggle-theme', icon: '🌓', tag: '系统' },
-]
+const commands = computed(() => [
+  { label: t('nav.dashboard'), path: '/', icon: '📊', tag: t('nav.home') },
+  { label: t('nav.users'), path: '/users', icon: '👥', tag: t('common.add') },
+  { label: t('nav.roles'), path: '/roles', icon: '🔑', tag: t('common.add') },
+  { label: t('nav.departments'), path: '/departments', icon: '🏢', tag: t('common.add') },
+  { label: t('nav.menus'), path: '/menus', icon: '📋', tag: t('common.add') },
+  { label: t('nav.operlog'), path: '/operlog', icon: '📄', tag: t('nav.monitor') },
+  { label: t('nav.jobs'), path: '/job', icon: '⏰', tag: t('nav.monitor') },
+  { label: t('nav.config'), path: '/config', icon: '⚙️', tag: 'System' },
+  { label: t('nav.generator'), path: '/generator', icon: '🔧', tag: 'Tool' },
+  { label: t('nav.swagger'), path: '/swagger', icon: '📖', tag: 'Tool' },
+  { label: t('nav.monitor'), path: '/monitor', icon: '📈', tag: t('nav.monitor') },
+  { label: t('nav.maintenance'), path: '/maintenance', icon: '🧹', tag: 'System' },
+  { label: t('nav.profile'), path: '/profile', icon: '👤', tag: 'System' },
+  { label: locale.value === 'zh' ? '暗色模式' : 'Dark Mode', action: 'toggle-theme', icon: '🌓', tag: 'System' },
+])
 
 const filtered = computed(() => {
   const q = query.value.toLowerCase()
-  if (!q) return commands
-  return commands.filter(c => c.label.toLowerCase().includes(q) || c.tag.includes(q))
+  if (!q) return commands.value
+  return commands.value.filter(c => c.label.toLowerCase().includes(q) || c.tag.toLowerCase().includes(q))
 })
 
 const selectedIndex = ref(0)
@@ -33,9 +37,14 @@ const selectedIndex = ref(0)
 function onKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault()
-    visible.value = true
-    query.value = ''
-    selectedIndex.value = 0
+    openPalette()
+    return
+  }
+  if (e.key === '?' && !visible.value && !isInputFocused()) {
+    e.preventDefault()
+    openPalette()
+    query.value = '?'
+    return
   }
   if (!visible.value) return
   if (e.key === 'ArrowDown') { e.preventDefault(); selectedIndex.value = Math.min(selectedIndex.value + 1, filtered.value.length - 1) }
@@ -44,13 +53,25 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') visible.value = false
 }
 
-function execute(cmd: typeof commands[0]) {
+function openPalette() {
+  visible.value = true
+  query.value = ''
+  selectedIndex.value = 0
+}
+
+function isInputFocused() {
+  const el = document.activeElement
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || (el as HTMLElement).isContentEditable)
+}
+
+function execute(cmd: { label: string; path?: string; action?: string; icon: string; tag: string }) {
   visible.value = false
   if (cmd.path) router.push(cmd.path)
   if (cmd.action === 'toggle-theme') {
     const current = localStorage.getItem('theme') === 'dark' ? 'light' : 'dark'
     localStorage.setItem('theme', current)
-    location.reload()
+    document.documentElement.setAttribute('theme', current)
+    window.dispatchEvent(new CustomEvent('theme-change', { detail: current }))
   }
 }
 
@@ -63,7 +84,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <div class="palette">
       <n-input v-model:value="query" placeholder="搜索页面..." size="large" :autofocus="true" clearable>
         <template #prefix>🔍</template>
-        <template #suffix><n-tag size="small" :bordered="false" style="opacity:.5">Ctrl+K</n-tag></template>
+        <template #suffix><n-tag size="small" :bordered="false" style="opacity:.5">Ctrl+K / ?</n-tag></template>
       </n-input>
       <div class="results" v-if="filtered.length">
         <div v-for="(cmd, i) in filtered" :key="cmd.label"

@@ -11,7 +11,7 @@ export const i18n = createI18n({
   messages: { zh, en },
 })
 
-export function switchLocale(locale: string) {
+export function switchLocale(locale: 'zh' | 'en') {
   i18n.global.locale.value = locale
-  localStorage.setItem('locale', locale)
+  localStorage.setItem('locale', locale as string)
 }

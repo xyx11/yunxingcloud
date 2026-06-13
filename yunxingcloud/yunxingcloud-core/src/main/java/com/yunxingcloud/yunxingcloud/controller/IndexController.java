@@ -35,4 +35,18 @@ public class IndexController {
     public String resetPassword() {
         return "forward:/index.html";
     }
+
+    // SPA 路由转发
+    @GetMapping("/dict")
+    public String dict() { return "forward:/index.html"; }
+    @GetMapping("/notices")
+    public String notices() { return "forward:/index.html"; }
+    @GetMapping("/posts")
+    public String posts() { return "forward:/index.html"; }
+    @GetMapping("/loginlog")
+    public String loginlog() { return "forward:/index.html"; }
+    @GetMapping("/online")
+    public String online() { return "forward:/index.html"; }
+    @GetMapping("/backup")
+    public String backup() { return "forward:/index.html"; }
 }

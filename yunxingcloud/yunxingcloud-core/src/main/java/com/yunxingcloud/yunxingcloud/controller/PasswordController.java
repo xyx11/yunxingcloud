@@ -9,6 +9,7 @@ import com.yunxingcloud.yunxingcloud.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,15 +56,15 @@ public class PasswordController {
 
         try {
             emailService.sendPasswordResetEmail(email, token);
-            return ResponseEntity.ok(Map.of("success", true, "message", "重置链接已发送至邮箱"));
         } catch (Exception e) {
-            log.warn("邮件发送失败，降级返回 token");
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "邮件发送失败，请使用以下令牌重置",
-                    "token", token
+            log.error("邮件发送失败: {}", e.getMessage());
+            tokenRepository.delete(resetToken);
+            return ResponseEntity.status(503).body(Map.of(
+                    "success", false,
+                    "message", "邮件服务暂时不可用，请稍后重试"
             ));
         }
+        return ResponseEntity.ok(Map.of("success", true, "message", "重置链接已发送至邮箱"));
     }
 
     @PostMapping("/reset")
@@ -99,5 +100,39 @@ public class PasswordController {
         tokenRepository.save(resetToken);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "密码重置成功，请使用新密码登录"));
+    }
+
+    @PostMapping("/change")
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> body) {
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+
+        if (oldPassword == null || oldPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请输入当前密码"));
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请输入新密码"));
+        }
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户不存在"));
+        }
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "当前密码不正确"));
+        }
+
+        List<String> pwErrors = PasswordValidator.validate(newPassword);
+        if (!pwErrors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, "message", "密码强度不足",
+                "details", String.join("; ", pwErrors)));
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("success", true, "message", "密码修改成功"));
     }
 }

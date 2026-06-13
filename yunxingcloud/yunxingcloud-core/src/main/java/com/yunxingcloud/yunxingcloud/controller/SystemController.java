@@ -2,17 +2,21 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.management.ManagementFactory;
+import javax.sql.DataSource;
+import java.lang.management.*;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/api/system")
@@ -22,19 +26,27 @@ public class SystemController {
     private final TokenStore tokenStore;
     private final FeatureFlags featureFlags;
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
+    private final List<Map<String, Object>> history = new CopyOnWriteArrayList<>();
+    private static final int MAX_HISTORY = 60;
 
-    public SystemController(CacheManager cacheManager, TokenStore tokenStore, FeatureFlags featureFlags, JdbcTemplate jdbcTemplate) {
+    public SystemController(CacheManager cacheManager, TokenStore tokenStore,
+                            FeatureFlags featureFlags, JdbcTemplate jdbcTemplate,
+                            DataSource dataSource) {
         this.cacheManager = cacheManager;
         this.tokenStore = tokenStore;
         this.featureFlags = featureFlags;
         this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = dataSource;
     }
 
     @GetMapping("/info")
     public ResponseEntity<Map<String, Object>> info() {
         var runtime = Runtime.getRuntime();
         var mem = ManagementFactory.getMemoryMXBean();
+        var osBean = ManagementFactory.getOperatingSystemMXBean();
         var uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+        var threadBean = ManagementFactory.getThreadMXBean();
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("startTime", LocalDateTime.now()
@@ -47,20 +59,74 @@ public class SystemController {
         data.put("maxMemory", formatBytes(runtime.maxMemory()));
         data.put("heapUsed", formatBytes(mem.getHeapMemoryUsage().getUsed()));
         data.put("heapMax", formatBytes(mem.getHeapMemoryUsage().getMax()));
+        data.put("heapUsedRaw", mem.getHeapMemoryUsage().getUsed());
+        data.put("heapMaxRaw", mem.getHeapMemoryUsage().getMax());
         data.put("osName", System.getProperty("os.name"));
         data.put("javaVersion", System.getProperty("java.version"));
+        data.put("threadCount", threadBean.getThreadCount());
+        data.put("peakThreadCount", threadBean.getPeakThreadCount());
+
+        // CPU load
+        if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
+            data.put("cpuLoad", String.format("%.1f%%", sunOsBean.getCpuLoad() * 100));
+            data.put("cpuLoadRaw", sunOsBean.getCpuLoad());
+        } else {
+            data.put("cpuLoad", "N/A");
+            data.put("cpuLoadRaw", 0.0);
+        }
+
+        // GC info
+        long gcCount = 0, gcTime = 0;
+        for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            gcCount += gcBean.getCollectionCount();
+            gcTime += gcBean.getCollectionTime();
+        }
+        data.put("gcCount", gcCount);
+        data.put("gcTimeMs", gcTime);
+
+        // HikariCP pool info
+        try {
+            if (dataSource instanceof HikariDataSource hds) {
+                var pool = hds.getHikariPoolMXBean();
+                if (pool != null) {
+                    data.put("dbActive", pool.getActiveConnections());
+                    data.put("dbIdle", pool.getIdleConnections());
+                    data.put("dbTotal", pool.getTotalConnections());
+                    data.put("dbWaiting", pool.getThreadsAwaitingConnection());
+                }
+            }
+        } catch (Exception ignored) {}
 
         return ResponseEntity.ok(data);
     }
 
     @GetMapping("/cache")
     public ResponseEntity<Map<String, Object>> cacheInfo() {
-        Map<String, Object> data = new LinkedHashMap<>();
+        List<Map<String, Object>> details = new ArrayList<>();
+        List<String> names = new ArrayList<>();
         for (String name : cacheManager.getCacheNames()) {
+            names.add(name);
             var cache = cacheManager.getCache(name);
-            data.put(name, "active");
+            details.add(Map.of("name", name, "status", "active"));
         }
-        return ResponseEntity.ok(data);
+        return ResponseEntity.ok(Map.of("cacheNames", names, "details", details));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<Map<String, Object>>> history() {
+        // Add current snapshot
+        var mem = ManagementFactory.getMemoryMXBean();
+        var osBean = ManagementFactory.getOperatingSystemMXBean();
+        Map<String, Object> snap = new LinkedHashMap<>();
+        snap.put("time", Instant.now().toString());
+        snap.put("heapUsed", mem.getHeapMemoryUsage().getUsed());
+        snap.put("sessions", tokenStore.count());
+        if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
+            snap.put("cpuLoad", sunOsBean.getCpuLoad());
+        }
+        history.add(snap);
+        if (history.size() > MAX_HISTORY) history.remove(0);
+        return ResponseEntity.ok(new ArrayList<>(history));
     }
 
     @GetMapping("/sessions")
@@ -97,6 +163,18 @@ public class SystemController {
         data.put("features", featureFlags.getAll());
         data.put("announcement", featureFlags.getAnnouncement());
         return ResponseEntity.ok(data);
+    }
+
+    @PreAuthorize("hasAuthority('config:write')")
+    @PostMapping("/flags")
+    public ResponseEntity<Map<String, Object>> updateFlags(@RequestBody Map<String, String> body) {
+        if (body.containsKey("announcement")) {
+            jdbcTemplate.update("DELETE FROM sys_config WHERE config_key = 'sys.announcement'");
+            jdbcTemplate.update("INSERT INTO sys_config (name, config_key, config_value, config_type) VALUES (?,?,?,?)",
+                    "系统公告", "sys.announcement", body.get("announcement"), "Y");
+            featureFlags.refresh();
+        }
+        return ResponseEntity.ok(Map.of("success", true, "message", "公告已更新"));
     }
 
     @PreAuthorize("hasAuthority('config:write')")

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode
+  NConfigProvider, NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode, NSpin,
+  darkTheme, lightTheme
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
@@ -28,7 +29,7 @@ const tableColumns: DataTableColumns<TableInfo> = [
     render: (row) => h(NSpace, null, {
       default: () => [
         h(NButton, { size: 'small', onClick: () => viewColumns(row.TABLE_NAME) }, { default: () => '查看字段' }),
-        h(NButton, { size: 'small', type: 'primary', onClick: () => genCode(row.TABLE_NAME) }, { default: () => '生成代码' }),
+        h(NButton, { size: 'small', type: 'primary', loading: generatingTable.value === row.TABLE_NAME, onClick: () => genCode(row.TABLE_NAME) }, { default: () => '生成代码' }),
       ]
     })
   },
@@ -54,9 +55,20 @@ const codeTabs = [
   { label: 'Controller', key: 'controller' },
   { label: 'Repository', key: 'repository' },
   { label: 'Service', key: 'service' },
+  { label: 'Migration', key: 'migration' },
+  { label: 'MenuSQL', key: 'menuSql' },
+  { label: 'VueApi', key: 'vueApi' },
+  { label: 'VueView', key: 'vueView' },
 ]
 
+const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
 const activeCodeTab = ref('entity')
+const generatingTable = ref('')
+
+function copyCode() {
+  const code = generatedCode.value[activeCodeTab.value] || ''
+  navigator.clipboard.writeText(code).then(() => notify.success('已复制到剪贴板'))
+}
 
 async function loadTables() {
   loading.value = true
@@ -76,42 +88,63 @@ async function viewColumns(tableName: string) {
 
 async function genCode(tableName: string) {
   selectedTable.value = tableName
-  const res = await request.post(`/api/generator/generate/${tableName}`, { packageName: packageName.value })
-  generatedCode.value = res.data
-  activeCodeTab.value = 'entity'
-  showCodeModal.value = true
+  generatingTable.value = tableName
+  try {
+    const res = await request.post(`/api/generator/generate/${tableName}`, { packageName: packageName.value })
+    generatedCode.value = res.data
+    activeCodeTab.value = 'entity'
+    showCodeModal.value = true
+  } catch { notify.error('代码生成失败') }
+  generatingTable.value = ''
 }
 
 onMounted(loadTables)
 </script>
 
 <template>
-  <n-config-provider>
-    <div style="padding: 24px">
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
       <n-card title="代码生成">
         <template #header-extra>
+          <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>刷新</n-button>
           <n-input v-model:value="packageName" placeholder="包名" style="width:200px;margin-right:8px" />
         </template>
-        <n-data-table :columns="tableColumns" :data="tables" :loading="loading" :pagination="{ pageSize: 10 }"
-          :row-key="(row: TableInfo) => row.TABLE_NAME" />
+        <n-data-table
+          :columns="tableColumns" :data="tables" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+          :row-key="(row: TableInfo) => row.TABLE_NAME"
+        />
 
         <!-- 字段查看弹窗 -->
         <n-modal v-model:show="showColumnsModal" :title="`表字段: ${selectedTable}`" style="width:700px">
-          <n-data-table :columns="colsColumns" :data="columns"
-            :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400" />
+          <n-data-table
+            :columns="colsColumns" :data="columns"
+            :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
+          />
         </n-modal>
 
         <!-- 代码预览弹窗 -->
         <n-modal v-model:show="showCodeModal" :title="`生成代码: ${selectedTable}`" style="width:800px">
           <n-space vertical style="margin-bottom:12px">
-            <n-space>
-              <n-button v-for="tab in codeTabs" :key="tab.key"
-                :type="activeCodeTab === tab.key ? 'primary' : 'default'"
-                size="small" @click="activeCodeTab = tab.key">{{ tab.label }}</n-button>
+            <n-space justify="space-between">
+              <n-space>
+                <n-button
+                  v-for="tab in codeTabs" :key="tab.key"
+                  :type="activeCodeTab === tab.key ? 'primary' : 'default'"
+                  size="small" @click="activeCodeTab = tab.key"
+                >
+                  {{ tab.label }}
+                </n-button>
+              </n-space>
+              <n-button size="small" @click="copyCode">复制代码</n-button>
             </n-space>
           </n-space>
-          <n-code :code="generatedCode[activeCodeTab] || ''" language="java"
-            style="max-height:500px; overflow:auto" />
+          <n-spin :show="!!generatingTable">
+            <n-code
+              :code="generatedCode[activeCodeTab] || ''"
+              :language="activeCodeTab.startsWith('vue') ? 'html' : 'java'"
+              style="max-height:500px; overflow:auto"
+            />
+          </n-spin>
         </n-modal>
       </n-card>
     </div>

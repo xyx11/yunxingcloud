@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
+import { useI18n } from 'vue-i18n'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
-  NInput, NSelect, NSpace, NPopconfirm, NTag
+  NInput, NSelect, NSpace, NPopconfirm, NTag,
+  darkTheme, lightTheme
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
@@ -14,9 +16,12 @@ interface SysJob {
   status: string; remark: string; createdAt: string; updatedAt: string
 }
 
+const { t } = useI18n()
 const notify = useNotify()
+const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
 const jobs = ref<SysJob[]>([])
 const loading = ref(false)
+const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<SysJob | null>(null)
 const form = ref({
@@ -58,13 +63,17 @@ const columns: DataTableColumns<SysJob> = [
   },
   { title: '备注', key: 'remark', width: 120, ellipsis: { tooltip: true } },
   {
-    title: '操作', key: 'actions', width: 200,
+    title: '操作', key: 'actions', width: 280,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'small', onClick: () => runJob(row.id) }, { default: () => '执行' }),
-        h(NButton, { size: 'small', onClick: () => editJob(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => runJob(row.id) }, { default: () => '执行' }),
+        row.status === '0'
+          ? h(NButton, { size: 'tiny', onClick: () => pauseJob(row.id) }, { default: () => '暂停' })
+          : h(NButton, { size: 'tiny', type: 'success', onClick: () => resumeJob(row.id) }, { default: () => '恢复' }),
+        h(NButton, { size: 'tiny', onClick: () => viewLogs(row.id, row.jobName) }, { default: () => '日志' }),
+        h(NButton, { size: 'tiny', onClick: () => editJob(row) }, { default: () => '编辑' }),
         h(NPopconfirm, { onPositiveClick: () => delJob(row.id) }, {
-          trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
           default: () => '确认删除?'
         })
       ]
@@ -74,8 +83,10 @@ const columns: DataTableColumns<SysJob> = [
 
 async function loadJobs() {
   loading.value = true
-  const res = await request.get('/api/job')
-  jobs.value = res.data
+  try {
+    const res = await request.get('/api/job')
+    jobs.value = res.data
+  } catch {}
   loading.value = false
 }
 
@@ -96,19 +107,31 @@ function editJob(job: SysJob) {
 }
 
 async function saveJob() {
-  if (editing.value) {
-    await request.put(`/api/job/${editing.value.id}`, form.value)
-  } else {
-    await request.post('/api/job', form.value)
-  }
-  showModal.value = false
+  saving.value = true
+  try {
+    if (editing.value) await request.put(`/api/job/${editing.value.id}`, form.value)
+    else await request.post('/api/job', form.value)
+    showModal.value = false
     notify.success(editing.value ? '更新成功' : '创建成功')
-  await loadJobs()
+    await loadJobs()
+  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
 }
 
 async function delJob(id: number) {
   await request.delete(`/api/job/${id}`)
   await loadJobs()
+}
+
+const showLogModal = ref(false)
+const jobLogs = ref<any[]>([])
+const logJobName = ref('')
+
+async function pauseJob(id: number) { await request.post(`/api/job/${id}/pause`); await loadJobs() }
+async function resumeJob(id: number) { await request.post(`/api/job/${id}/resume`); await loadJobs() }
+async function viewLogs(id: number, name: string) {
+  logJobName.value = name
+  try { const res = await request.get(`/api/job/${id}/logs`); jobLogs.value = res.data } catch {}
+  showLogModal.value = true
 }
 
 async function runJob(id: number) {
@@ -120,17 +143,20 @@ onMounted(loadJobs)
 </script>
 
 <template>
-  <n-config-provider>
-    <div style="padding: 24px">
-      <n-card title="定时任务">
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
+      <n-card :title="t('nav.jobs')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addJob">新增任务</n-button>
+          <n-button type="primary" size="small" @click="addJob"><template #icon>＋</template>新增</n-button>
         </template>
-        <n-data-table :columns="columns" :data="jobs" :loading="loading" :pagination="{ pageSize: 10 }"
-          :row-key="(row: SysJob) => row.id" />
+        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadJobs" secondary>刷新</n-button></n-space>
+        <n-data-table
+          :columns="columns" :data="jobs" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+          :row-key="(row: SysJob) => row.id"
+        />
 
-        <n-modal v-model:show="showModal" :title="editing ? '编辑任务' : '新增任务'" style="width:560px">
-          <n-form label-placement="left" label-width="90">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:560px">
+          <n-form label-placement="left" label-width="80">
             <n-form-item label="任务名称">
               <n-input v-model:value="form.jobName" />
             </n-form-item>
@@ -141,8 +167,14 @@ onMounted(loadJobs)
               <n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" />
             </n-form-item>
             <n-form-item label="Cron表达式">
-              <div style="font-size:11px;color:#999;margin-top:4px">示例: 0/10 * * * * ? (每10秒) | 0 0 8 * * ? (每天8点) | 0 0/30 * * * ? (每30分钟)</div>
               <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
+              <n-space style="margin-top:4px">
+                <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">每10秒</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">每30秒</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">每分钟</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0/30 * * * ?'">每30分钟</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0 8 * * ?'">每天8点</n-button>
+              </n-space>
             </n-form-item>
             <n-form-item label="状态">
               <n-select v-model:value="form.status" :options="statusOptions" />
@@ -159,10 +191,23 @@ onMounted(loadJobs)
           </n-form>
           <template #footer>
             <n-space justify="end">
-              <n-button @click="showModal = false">取消</n-button>
-              <n-button type="primary" @click="saveJob">保存</n-button>
+              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+              <n-button type="primary" :loading="saving" @click="saveJob">{{ t('common.save') }}</n-button>
             </n-space>
           </template>
+        </n-modal>
+
+        <!-- 执行日志弹窗 -->
+        <n-modal v-model:show="showLogModal" :title="`执行日志: ${logJobName}`" style="width:700px">
+          <n-dataTable
+            v-if="jobLogs.length" :columns="[
+              {title:'开始时间',key:'startTime',width:150,render:(r:any)=>r.startTime?.substring(0,19)||'-'},
+              {title:'结束时间',key:'endTime',width:150,render:(r:any)=>r.endTime?.substring(0,19)||'-'},
+              {title:'状态',key:'status',width:60,render:(r:any)=>h(NTag,{type:r.status==='0'?'success':'error',size:'small'},{default:()=>r.status==='0'?'成功':'失败'})},
+              {title:'结果',key:'result',width:200,ellipsis:{tooltip:true}},
+            ]" :data="jobLogs" size="small" :row-key="(r:any)=>r.id" :max-height="400"
+          />
+          <span v-else style="color:#999">暂无执行记录</span>
         </n-modal>
       </n-card>
     </div>

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.http.HttpStatus;
@@ -19,14 +20,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private static final String[] STATIC_RESOURCES = {
-            "/css/**", "/js/**", "/images/**", "/favicon.ico", "/assets/**", "/index.html"
+            "/css/**", "/js/**", "/images/**", "/favicon.ico", "/favicon.svg", "/assets/**", "/index.html"
     };
 
     private static final String[] PUBLIC_PATHS = {
-            "/", "/index.html", "/login", "/register", "/forgot-password", "/reset-password", "/oauth2/consent", "/api/csrf", "/api/login", "/api/register", "/api/captcha", "/api/publicKey", "/api/password/**", "/api/refresh", "/v3/api-docs/**", "/swagger-ui/**", "/doc.html", "/actuator/health", "/manifest.json", "/sw.js"
+            "/", "/index.html", "/login", "/register", "/forgot-password", "/reset-password", "/oauth2/consent", "/api/csrf", "/api/login", "/api/register", "/api/captcha", "/api/publicKey", "/api/password/forgot", "/api/password/reset", "/api/refresh", "/api/notices/latest", "/v3/api-docs/**", "/swagger-ui/**", "/doc.html", "/actuator/health", "/actuator/prometheus", "/manifest.json", "/sw.js"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -43,6 +45,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(STATIC_RESOURCES).permitAll()
                 .requestMatchers(PUBLIC_PATHS).permitAll()
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

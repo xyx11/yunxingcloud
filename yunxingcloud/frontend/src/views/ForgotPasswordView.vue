@@ -2,8 +2,10 @@
 import { ref } from 'vue'
 import request from '@/api/request'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { NConfigProvider, NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
+const { t } = useI18n()
 const router = useRouter()
 const email = ref('')
 const loading = ref(false)
@@ -35,7 +37,7 @@ async function handleSubmit() {
   <n-config-provider>
     <div class="page">
       <n-card class="card">
-        <h1 class="title">忘记密码</h1>
+        <h1 class="title">{{ t('login.forgot') }}</h1>
         <p class="subtitle">输入注册邮箱，获取重置链接</p>
 
         <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
@@ -47,8 +49,8 @@ async function handleSubmit() {
         </n-alert>
 
         <n-form v-if="!token" @submit.prevent="handleSubmit">
-          <n-form-item label="邮箱">
-            <n-input v-model:value="email" placeholder="请输入注册邮箱" size="large" type="email" />
+          <n-form-item :label="t('register.email')">
+            <n-input v-model:value="email" :placeholder="t('register.email')" size="large" />
           </n-form-item>
           <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
             发送重置链接
@@ -62,7 +64,7 @@ async function handleSubmit() {
         </div>
 
         <div class="back-link">
-          <router-link to="/login">返回登录</router-link>
+          <router-link to="/login">{{ t('common.back') }}</router-link>
         </div>
       </n-card>
     </div>
@@ -72,8 +74,8 @@ async function handleSubmit() {
 <style scoped>
 .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .card { width: 420px; border-radius: 12px; padding: 8px; }
-.title { text-align: center; color: #333; margin-bottom: 4px; font-size: 24px; }
-.subtitle { text-align: center; color: #888; margin-bottom: 28px; font-size: 14px; }
+.title { text-align: center; color: var(--n-text-color, #333); margin-bottom: 4px; font-size: 24px; }
+.subtitle { text-align: center; color: var(--n-text-color-3, #888); margin-bottom: 28px; font-size: 14px; }
 .back-link { text-align: center; margin-top: 16px; font-size: 13px; }
-.back-link a { color: #667eea; text-decoration: none; }
+.back-link a { color: var(--primary-color, #667eea); text-decoration: none; }
 </style>
