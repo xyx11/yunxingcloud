@@ -4,6 +4,7 @@ import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.UserRepository;
 import com.yunxingcloud.usercenter.service.DeptRoleService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +31,7 @@ public class UserManageController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('user:read')")
     public ResponseEntity<List<Map<String, Object>>> list() {
         List<Map<String, Object>> users = userRepository.findAll().stream()
                 .<Map<String, Object>>map(u -> {
@@ -52,6 +54,7 @@ public class UserManageController {
     }
 
     @PutMapping("/{id}/department")
+    @PreAuthorize("hasAuthority('dept:write')")
     public ResponseEntity<Map<String, Object>> setDepartment(@PathVariable Long id,
                                                               @RequestBody Map<String, Long> body) {
         deptRoleService.setUserDepartment(id, body.get("departmentId"));
@@ -59,6 +62,7 @@ public class UserManageController {
     }
 
     @PutMapping("/{id}/roles")
+    @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<Map<String, Object>> setRoles(@PathVariable Long id,
                                                          @RequestBody Map<String, List<Long>> body) {
         deptRoleService.setUserRoles(id, body.getOrDefault("roleIds", List.of()));
@@ -73,6 +77,7 @@ public class UserManageController {
     }
 
     @PostMapping("/import")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> importUsers(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件为空"));
@@ -105,6 +110,7 @@ public class UserManageController {
     }
 
     @PutMapping("/{id}/toggle")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> toggleUser(@PathVariable Long id) {
         return userRepository.findById(id).map(u -> {
             u.setEnabled(!u.isEnabled());
@@ -114,6 +120,7 @@ public class UserManageController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> body) {
         String username = body.get("username");
         String password = body.get("password");
@@ -133,6 +140,7 @@ public class UserManageController {
     }
 
     @PutMapping("/{id}/profile")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return userRepository.findById(id).map(u -> {
             if (body.containsKey("nickname")) u.setNickname(body.get("nickname"));
@@ -143,6 +151,7 @@ public class UserManageController {
     }
 
     @PostMapping("/{id}/reset-pwd")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id) {
         return userRepository.findById(id).map(u -> {
             u.setPassword(passwordEncoder.encode("123456"));

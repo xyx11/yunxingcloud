@@ -5,6 +5,7 @@ import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.DepartmentRepository;
 import com.yunxingcloud.usercenter.service.DeptRoleService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,11 +25,13 @@ public class DepartmentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('dept:read')")
     public ResponseEntity<List<Department>> tree() {
         return ResponseEntity.ok(deptRoleService.getDepartmentTree());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('dept:read')")
     public ResponseEntity<Department> getById(@PathVariable Long id) {
         return departmentRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -36,11 +39,13 @@ public class DepartmentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('dept:write')")
     public ResponseEntity<Department> create(@RequestBody Department dept) {
         return ResponseEntity.ok(departmentRepository.save(dept));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('dept:write')")
     public ResponseEntity<Department> update(@PathVariable Long id, @RequestBody Department body) {
         return departmentRepository.findById(id).map(dept -> {
             dept.setName(body.getName());
@@ -52,12 +57,14 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('dept:write')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         departmentRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     @GetMapping("/{id}/users")
+    @PreAuthorize("hasAuthority('dept:read')")
     public ResponseEntity<List<Map<String, Object>>> users(@PathVariable Long id) {
         List<Map<String, Object>> users = deptRoleService.getDepartmentUsers(id).stream()
                 .<Map<String, Object>>map(u -> Map.of(

@@ -3,6 +3,7 @@ package com.yunxingcloud.usercenter.controller;
 import com.yunxingcloud.usercenter.entity.Role;
 import com.yunxingcloud.usercenter.repository.RoleRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +20,13 @@ public class RoleController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<List<Role>> list() {
         return ResponseEntity.ok(roleRepository.findAll());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<Role> getById(@PathVariable Long id) {
         return roleRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -31,6 +34,7 @@ public class RoleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<?> create(@RequestBody Role role) {
         if (roleRepository.existsByCode(role.getCode())) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "角色编码已存在"));
@@ -39,6 +43,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<Role> update(@PathVariable Long id, @RequestBody Role body) {
         return roleRepository.findById(id).map(role -> {
             role.setName(body.getName());
@@ -51,6 +56,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         roleRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
