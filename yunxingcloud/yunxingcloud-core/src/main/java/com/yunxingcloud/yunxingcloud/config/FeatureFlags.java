@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.config;
 
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -11,9 +12,11 @@ import java.util.stream.Collectors;
 public class FeatureFlags {
 
     private final JdbcTemplate jdbcTemplate;
+    private final CacheManager cacheManager;
 
-    public FeatureFlags(JdbcTemplate jdbcTemplate) {
+    public FeatureFlags(JdbcTemplate jdbcTemplate, CacheManager cacheManager) {
         this.jdbcTemplate = jdbcTemplate;
+        this.cacheManager = cacheManager;
     }
 
     @Cacheable("featureFlags")
@@ -37,5 +40,10 @@ public class FeatureFlags {
 
     public String getAnnouncement() {
         return getAll().getOrDefault("sys.announcement", "");
+    }
+
+    public void refresh() {
+        var cache = cacheManager.getCache("featureFlags");
+        if (cache != null) cache.clear();
     }
 }

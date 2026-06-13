@@ -4,8 +4,11 @@ import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import {
   NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
-  NInput, NSelect, NSpace, NPopconfirm, NTag
+  NInput, NSelect, NSpace, NPopconfirm, NTag, NPopover, NCheckbox,
+  darkTheme, lightTheme
 } from 'naive-ui'
+import { useColumnManager } from '@/composables/useColumnManager'
+import { useI18n } from 'vue-i18n'
 import type { DataTableColumns } from 'naive-ui'
 
 interface SysConfig {
@@ -13,21 +16,31 @@ interface SysConfig {
   configType: string; createdAt: string
 }
 
+const { t } = useI18n()
 const notify = useNotify()
+const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
 const configs = ref<SysConfig[]>([])
 const loading = ref(false)
+const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<SysConfig | null>(null)
 const form = ref({ name: '', configKey: '', configValue: '', configType: 'Y' })
 const cfgSearch = ref("")
-const filteredConfigs = computed(() => { const kw = cfgSearch.value.toLowerCase(); if (!kw) return configs.value; return configs.value.filter(c => c.name.toLowerCase().includes(kw) || c.configKey.toLowerCase().includes(kw)) })
+const cfgTypeFilter = ref('')
+const filteredConfigs = computed(() => {
+  let list = configs.value
+  if (cfgTypeFilter.value) list = list.filter(c => c.configType === cfgTypeFilter.value)
+  const kw = cfgSearch.value.toLowerCase()
+  if (kw) list = list.filter(c => c.name.toLowerCase().includes(kw) || c.configKey.toLowerCase().includes(kw))
+  return list
+})
 
 const typeOptions = [
   { label: '是 (Y)', value: 'Y' },
   { label: '否 (N)', value: 'N' },
 ]
 
-const columns: DataTableColumns<SysConfig> = [
+const allColumns = ref<DataTableColumns<SysConfig>>([
   { title: 'ID', key: 'id', width: 60 },
   { title: '名称', key: 'name', width: 140, sorter: true },
   { title: '键名', key: 'configKey', width: 160 },
@@ -50,12 +63,19 @@ const columns: DataTableColumns<SysConfig> = [
       ]
     })
   },
-]
+])
+const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(allColumns, 'config')
+const columnOptions = computed(() => (allColumns.value as any[])
+  .filter((c: any) => c.key && c.key !== 'actions')
+  .map((c: any) => ({ key: c.key, title: c.title })),
+)
 
 async function loadConfigs() {
   loading.value = true
-  const res = await request.get('/api/config')
-  configs.value = res.data
+  try {
+    const res = await request.get('/api/config')
+    configs.value = res.data
+  } catch {}
   loading.value = false
 }
 
@@ -72,18 +92,17 @@ function editConfig(config: SysConfig) {
 }
 
 async function saveConfig() {
+  saving.value = true
   try {
-    if (editing.value) {
-      await request.put(`/api/config/${editing.value.id}`, form.value)
-    } else {
-      await request.post('/api/config', form.value)
-    }
+    if (editing.value) await request.put(`/api/config/${editing.value.id}`, form.value)
+    else await request.post('/api/config', form.value)
     showModal.value = false
     notify.success(editing.value ? '更新成功' : '创建成功')
     await loadConfigs()
-  } catch (e: any) {
-    notify.error(e.response?.data?.message || '保存失败')
-  }
+    if (form.value.configKey?.startsWith('feature.')) {
+      request.post('/api/config/refresh-flags').catch(() => {})
+    }
+  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
 }
 
 async function delConfig(id: number) {
@@ -95,17 +114,44 @@ onMounted(loadConfigs)
 </script>
 
 <template>
-  <n-config-provider>
-    <div style="padding: 24px">
-      <n-card title="参数配置">
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
+      <n-card :title="t('nav.config')">
         <template #header-extra>
-          <n-input v-model:value="cfgSearch" placeholder="搜索..." size="small" clearable style="width:160px;margin-right:8px" />
-          <n-button type="primary" size="small" @click="addConfig">新增参数</n-button>
+          <n-button type="primary" size="small" @click="addConfig"><template #icon>＋</template>新增</n-button>
         </template>
-        <n-data-table :columns="columns" :data="filteredConfigs" :loading="loading" :pagination="{ pageSize: 10 }"
-          :row-key="(row: SysConfig) => row.id" />
+        <n-space style="margin-bottom:12px" justify="space-between">
+          <n-space>
+            <n-button size="small" :type="cfgTypeFilter===''?'primary':'default'" @click="cfgTypeFilter=''">全部</n-button>
+            <n-button size="small" :type="cfgTypeFilter==='Y'?'primary':'default'" @click="cfgTypeFilter='Y'">系统内置</n-button>
+            <n-button size="small" :type="cfgTypeFilter==='N'?'primary':'default'" @click="cfgTypeFilter='N'">用户配置</n-button>
+            <n-input v-model:value="cfgSearch" placeholder="参数名称" size="small" clearable style="width:160px" />
+            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
+            <n-button size="small" @click="cfgSearch = ''; cfgTypeFilter = ''">重置</n-button>
+          </n-space>
+          <n-space>
+            <n-button size="small" @click="loadConfigs" secondary>刷新</n-button>
+            <n-popover trigger="click" placement="bottom-end" :width="180">
+              <template #trigger>
+                <n-button size="small" secondary>列选项</n-button>
+              </template>
+              <div style="max-height:300px;overflow-y:auto">
+                <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
+                  <n-checkbox :checked="!hiddenKeys.has(opt.key)"
+                              @update:checked="toggleColumn(opt.key)">
+                    {{ opt.title }}
+                  </n-checkbox>
+                </div>
+              </div>
+            </n-popover>
+          </n-space>
+        </n-space>
+        <n-data-table
+          :columns="visibleColumns" :data="filteredConfigs" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+          :row-key="(row: SysConfig) => row.id"
+        />
 
-        <n-modal v-model:show="showModal" :title="editing ? '编辑参数' : '新增参数'">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px">
           <n-form label-placement="left" label-width="80">
             <n-form-item label="参数名称">
               <n-input v-model:value="form.name" />
@@ -122,8 +168,8 @@ onMounted(loadConfigs)
           </n-form>
           <template #footer>
             <n-space justify="end">
-              <n-button @click="showModal = false">取消</n-button>
-              <n-button type="primary" @click="saveConfig">保存</n-button>
+              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+              <n-button type="primary" :loading="saving" @click="saveConfig">{{ t('common.save') }}</n-button>
             </n-space>
           </template>
         </n-modal>
