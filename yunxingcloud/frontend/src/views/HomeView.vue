@@ -337,8 +337,10 @@ useKeyboard({
     <AnnouncementBanner />
     <div v-if="isMobile && mobileOverlay" class="mobile-backdrop" @click="mobileOverlay = false" />
     <n-layout style="min-height: 100vh" :has-sider="true">
-      <n-layout-sider bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
-        :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}">
+      <n-layout-sider
+        bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
+        :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
+      >
         <div class="logo">
           <span v-if="!collapsed">yunxingcloud</span>
           <span v-else style="font-size:16px;">YC</span>

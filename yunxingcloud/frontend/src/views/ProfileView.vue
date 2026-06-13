@@ -138,10 +138,12 @@ async function handleUpload({ file }: any) {
     </n-card>
     <n-card title="个人设置" style="margin-top:16px">
       <n-space vertical>
-        <n-space align="center"><span style="width:80px">主题色</span>
+        <n-space align="center">
+          <span style="width:80px">主题色</span>
           <n-button v-for="c in themeColors" :key="c" size="tiny" :style="{background:c,width:'28px',height:'28px',borderRadius:'50%',border:currentColor===c?'3px solid #fff':''}" @click="setThemeColor(c)" />
         </n-space>
-        <n-space align="center"><span style="width:80px">每页条数</span>
+        <n-space align="center">
+          <span style="width:80px">每页条数</span>
           <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+'条',value:n}))" size="small" style="width:100px" @update:value="(v:number)=>localStorage.setItem('pageSize',String(v))" />
         </n-space>
       </n-space>

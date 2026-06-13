@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '../yunxingcloud-core/src/main/resources/static'] },
+  { ignores: ['dist', 'node_modules', '../yunxingcloud-core/src/main/resources/static', 'public/sw.js'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -15,7 +15,7 @@ export default tseslint.config(
   },
   {
     languageOptions: {
-      globals: { localStorage: 'readonly', sessionStorage: 'readonly', window: 'readonly', document: 'readonly', navigator: 'readonly', console: 'readonly', fetch: 'readonly', EventSource: 'readonly', CustomEvent: 'readonly', EventListener: 'readonly', setInterval: 'readonly', clearInterval: 'readonly', setTimeout: 'readonly', KeyboardEvent: 'readonly', HTMLElement: 'readonly', HTMLFormElement: 'readonly', URLSearchParams: 'readonly', URL: 'readonly', FormData: 'readonly', Blob: 'readonly' }
+      globals: { localStorage: 'readonly', sessionStorage: 'readonly', window: 'readonly', document: 'readonly', navigator: 'readonly', console: 'readonly', fetch: 'readonly', EventSource: 'readonly', CustomEvent: 'readonly', EventListener: 'readonly', setInterval: 'readonly', clearInterval: 'readonly', setTimeout: 'readonly', KeyboardEvent: 'readonly', HTMLElement: 'readonly', HTMLFormElement: 'readonly', URLSearchParams: 'readonly', URL: 'readonly', FormData: 'readonly', Blob: 'readonly', Notification: 'readonly' }
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

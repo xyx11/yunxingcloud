@@ -40,26 +40,28 @@ onMounted(loadItems)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme"><div style="padding:20px">
-    <n-card title="审批流程">
-      <template #header-extra>
-        <n-space>
-          <n-button :type="tab==='my'?'primary':'default'" size="small" @click="tab='my';loadItems()">我的申请</n-button>
-          <n-button :type="tab==='pending'?'primary':'default'" size="small" @click="tab='pending';loadItems()">待审批</n-button>
-          <n-button type="primary" size="small" @click="showModal=true"><template #icon>＋</template>新建申请</n-button>
-        </n-space>
-      </template>
-      <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{pageSize:10}" :row-key="(r:Approval)=>r.id" />
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
+      <n-card title="审批流程">
+        <template #header-extra>
+          <n-space>
+            <n-button :type="tab==='my'?'primary':'default'" size="small" @click="tab='my';loadItems()">我的申请</n-button>
+            <n-button :type="tab==='pending'?'primary':'default'" size="small" @click="tab='pending';loadItems()">待审批</n-button>
+            <n-button type="primary" size="small" @click="showModal=true"><template #icon>＋</template>新建申请</n-button>
+          </n-space>
+        </template>
+        <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{pageSize:10}" :row-key="(r:Approval)=>r.id" />
 
-      <n-modal v-model:show="showModal" title="新建申请" preset="card" display-directive="show" style="width:480px">
-        <n-form label-placement="left" label-width="60">
-          <n-form-item label="审批人"><n-input v-model:value="form.approver" /></n-form-item>
-          <n-form-item label="类型"><n-select v-model:value="form.type" :options="[{label:'请假',value:'请假'},{label:'报销',value:'报销'},{label:'出差',value:'出差'}]" /></n-form-item>
-          <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
-          <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" :rows="3" /></n-form-item>
-        </n-form>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="submit">提交</n-button></n-space></template>
-      </n-modal>
-    </n-card>
-  </div></n-config-provider>
+        <n-modal v-model:show="showModal" title="新建申请" preset="card" display-directive="show" style="width:480px">
+          <n-form label-placement="left" label-width="60">
+            <n-form-item label="审批人"><n-input v-model:value="form.approver" /></n-form-item>
+            <n-form-item label="类型"><n-select v-model:value="form.type" :options="[{label:'请假',value:'请假'},{label:'报销',value:'报销'},{label:'出差',value:'出差'}]" /></n-form-item>
+            <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
+            <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" :rows="3" /></n-form-item>
+          </n-form>
+          <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="submit">提交</n-button></n-space></template>
+        </n-modal>
+      </n-card>
+    </div>
+  </n-config-provider>
 </template>

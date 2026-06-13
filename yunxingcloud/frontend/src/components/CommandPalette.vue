@@ -87,9 +87,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         <template #suffix><n-tag size="small" :bordered="false" style="opacity:.5">Ctrl+K / ?</n-tag></template>
       </n-input>
       <div class="results" v-if="filtered.length">
-        <div v-for="(cmd, i) in filtered" :key="cmd.label"
+        <div
+          v-for="(cmd, i) in filtered" :key="cmd.label"
           class="item" :class="{ active: i === selectedIndex }"
-          @click="execute(cmd)" @mouseenter="selectedIndex = i">
+          @click="execute(cmd)" @mouseenter="selectedIndex = i"
+        >
           <span class="icon">{{ cmd.icon }}</span>
           <span class="label">{{ cmd.label }}</span>
           <n-tag size="tiny" :bordered="false" style="opacity:.6;margin-left:auto;">{{ cmd.tag }}</n-tag>

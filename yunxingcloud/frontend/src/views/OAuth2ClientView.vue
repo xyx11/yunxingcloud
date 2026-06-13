@@ -44,23 +44,25 @@ onMounted(loadClients)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme"><div style="padding:20px">
-    <n-card title="OAuth2 客户端管理">
-      <template #header-extra>
-        <n-button type="primary" size="small" @click="showModal = true"><template #icon>＋</template>新增</n-button>
-      </template>
-      <n-dataTable :columns="columns" :data="clients" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(r: Client) => r.id" />
+  <n-config-provider :theme="currentTheme">
+    <div style="padding:20px">
+      <n-card title="OAuth2 客户端管理">
+        <template #header-extra>
+          <n-button type="primary" size="small" @click="showModal = true"><template #icon>＋</template>新增</n-button>
+        </template>
+        <n-dataTable :columns="columns" :data="clients" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(r: Client) => r.id" />
 
-      <n-modal v-model:show="showModal" title="新增OAuth2客户端" preset="card" display-directive="show" style="width:520px">
-        <n-form label-placement="left" label-width="80">
-          <n-form-item label="客户端ID"><n-input v-model:value="form.clientId" placeholder="my-app" /></n-form-item>
-          <n-form-item label="名称"><n-input v-model:value="form.clientName" placeholder="我的应用" /></n-form-item>
-          <n-form-item label="Secret"><n-input v-model:value="form.secret" placeholder="留空自动生成" /></n-form-item>
-          <n-form-item label="回调地址"><n-input v-model:value="form.redirectUris" /></n-form-item>
-          <n-form-item label="授权范围"><n-input v-model:value="form.scopes" /></n-form-item>
-        </n-form>
-        <template #footer><n-space justify="end"><n-button @click="showModal = false">取消</n-button><n-button type="primary" :loading="saving" @click="saveClient">创建</n-button></n-space></template>
-      </n-modal>
-    </n-card>
-  </div></n-config-provider>
+        <n-modal v-model:show="showModal" title="新增OAuth2客户端" preset="card" display-directive="show" style="width:520px">
+          <n-form label-placement="left" label-width="80">
+            <n-form-item label="客户端ID"><n-input v-model:value="form.clientId" placeholder="my-app" /></n-form-item>
+            <n-form-item label="名称"><n-input v-model:value="form.clientName" placeholder="我的应用" /></n-form-item>
+            <n-form-item label="Secret"><n-input v-model:value="form.secret" placeholder="留空自动生成" /></n-form-item>
+            <n-form-item label="回调地址"><n-input v-model:value="form.redirectUris" /></n-form-item>
+            <n-form-item label="授权范围"><n-input v-model:value="form.scopes" /></n-form-item>
+          </n-form>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">取消</n-button><n-button type="primary" :loading="saving" @click="saveClient">创建</n-button></n-space></template>
+        </n-modal>
+      </n-card>
+    </div>
+  </n-config-provider>
 </template>

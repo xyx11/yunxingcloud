@@ -137,8 +137,10 @@ onMounted(loadConfigs)
               </template>
               <div style="max-height:300px;overflow-y:auto">
                 <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
-                  <n-checkbox :checked="!hiddenKeys.has(opt.key)"
-                              @update:checked="toggleColumn(opt.key)">
+                  <n-checkbox
+                    :checked="!hiddenKeys.has(opt.key)"
+                    @update:checked="toggleColumn(opt.key)"
+                  >
                     {{ opt.title }}
                   </n-checkbox>
                 </div>
