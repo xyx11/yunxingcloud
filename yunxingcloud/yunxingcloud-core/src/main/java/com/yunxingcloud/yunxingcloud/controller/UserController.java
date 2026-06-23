@@ -114,6 +114,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/department")
     public ResponseEntity<Map<String, Object>> setDepartment(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+        if (body.get("departmentId") == null) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
         userRepository.findById(id).ifPresent(u -> { u.setDepartmentId(body.get("departmentId")); userRepository.save(u); });
         return ResponseEntity.ok(Map.of("success", true));
     }
@@ -121,6 +122,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/post")
     public ResponseEntity<Map<String, Object>> setPost(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+        if (body.get("postId") == null) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
         userRepository.findById(id).ifPresent(u -> { u.setPostId(body.get("postId")); userRepository.save(u); });
         return ResponseEntity.ok(Map.of("success", true));
     }

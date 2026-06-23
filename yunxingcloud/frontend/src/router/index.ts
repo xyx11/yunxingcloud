@@ -96,17 +96,19 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   const authStore = useAuthStore()
-  if (!authStore.isAuthenticated) {
-    try {
-      await authStore.fetchUser()
-      next()
-      return
-    } catch {
-      next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
-      return
-    }
+  if (authStore.isAuthenticated) { next(); return }
+
+  const token = localStorage.getItem('accessToken')
+  if (!token) {
+    next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
+    return
   }
-  next()
+  try {
+    await authStore.fetchUser()
+    next()
+  } catch {
+    next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
+  }
 })
 
 export default router
