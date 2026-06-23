@@ -27,13 +27,21 @@ public class GatewayRouteConfig {
                 .route("usercenter-wellknown", r -> r
                         .path("/.well-known/**")
                         .uri("lb://yunxingcloud-usercenter"))
-                // Roles -> core
-                .route("core-roles", r -> r
+                // User management -> usercenter
+                .route("usercenter-users", r -> r
+                        .path("/api/users/**", "/api/user/**")
+                        .uri("lb://yunxingcloud-usercenter"))
+                // Roles -> usercenter (usercenter has full RoleController)
+                .route("usercenter-roles", r -> r
                         .path("/api/roles/**")
-                        .uri("lb://yunxingcloud-core"))
-                // Departments -> core
-                .route("core-depts", r -> r
+                        .uri("lb://yunxingcloud-usercenter"))
+                // Departments -> usercenter
+                .route("usercenter-depts", r -> r
                         .path("/api/departments/**")
+                        .uri("lb://yunxingcloud-usercenter"))
+                // Password endpoints -> core
+                .route("core-password", r -> r
+                        .path("/api/password/**")
                         .uri("lb://yunxingcloud-core"))
                 // Business API -> core
                 .route("core-api", r -> r
