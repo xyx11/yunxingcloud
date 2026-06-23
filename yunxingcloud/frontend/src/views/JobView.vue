@@ -8,7 +8,7 @@ import {
   NInput, NSelect, NSpace, NPopconfirm, NTag,
   darkTheme, lightTheme
 } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface SysJob {
   id: number; jobName: string; jobGroup: string; invokeTarget: string
@@ -24,6 +24,12 @@ const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<SysJob | null>(null)
+const formRef = ref<FormInst>()
+const rules: FormRules = {
+  jobName: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  invokeTarget: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  cronExpression: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const form = ref({
   jobName: '', jobGroup: 'DEFAULT', invokeTarget: '', cronExpression: '',
   misfirePolicy: '3', concurrent: '1', status: '0', remark: ''
@@ -107,6 +113,7 @@ function editJob(job: SysJob) {
 }
 
 async function saveJob() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editing.value) await request.put(`/api/job/${editing.value.id}`, form.value)
@@ -156,7 +163,7 @@ onMounted(loadJobs)
         />
 
         <n-modal v-model:show="showModal" :title="editing ? t('job.edit') : t('job.add')" preset="card" display-directive="show" style="max-width:560px;width:95%">
-          <n-form label-placement="left" label-width="80">
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('job.name')">
               <n-input v-model:value="form.jobName" />
             </n-form-item>

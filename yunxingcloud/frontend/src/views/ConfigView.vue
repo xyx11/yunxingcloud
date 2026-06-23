@@ -9,7 +9,7 @@ import {
 } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface SysConfig {
   id: number; name: string; configKey: string; configValue: string
@@ -24,6 +24,11 @@ const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<SysConfig | null>(null)
+const formRef = ref<FormInst>()
+const rules: FormRules = {
+  name: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  configKey: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const form = ref({ name: '', configKey: '', configValue: '', configType: 'Y' })
 const cfgSearch = ref("")
 const cfgTypeFilter = ref('')
@@ -92,6 +97,7 @@ function editConfig(config: SysConfig) {
 }
 
 async function saveConfig() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editing.value) await request.put(`/api/config/${editing.value.id}`, form.value)
@@ -154,7 +160,7 @@ onMounted(loadConfigs)
         />
 
         <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-          <n-form label-placement="left" label-width="80">
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('config.nameLabel')">
               <n-input v-model:value="form.name" />
             </n-form-item>
