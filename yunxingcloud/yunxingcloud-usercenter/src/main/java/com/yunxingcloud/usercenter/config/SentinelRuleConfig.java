@@ -20,24 +20,38 @@ public class SentinelRuleConfig {
 
     @PostConstruct
     public void initRules() {
-        // 流控规则: /api/register QPS=5, 防止批量注册
+        // 流控规则
         List<FlowRule> flowRules = new ArrayList<>();
-        FlowRule registerRule = new FlowRule("registerFlow");
-        registerRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        registerRule.setCount(5);
-        flowRules.add(registerRule);
+        addFlowRule(flowRules, "registerFlow", 5);          // /api/register QPS=5
+        addFlowRule(flowRules, "userServiceFlow", 50);       // /api/users/** QPS=50
+        addFlowRule(flowRules, "roleServiceFlow", 30);       // /api/roles/** QPS=30
+        addFlowRule(flowRules, "deptServiceFlow", 30);       // /api/departments/** QPS=30
         FlowRuleManager.loadRules(flowRules);
         log.info("Sentinel 流控规则已加载: {} 条", flowRules.size());
 
         // 降级规则: 异常比例 > 0.3 时降级，恢复窗口 30s
         List<DegradeRule> degradeRules = new ArrayList<>();
-        DegradeRule registerDegrade = new DegradeRule("registerFlow");
-        registerDegrade.setGrade(RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO);
-        registerDegrade.setCount(0.3);
-        registerDegrade.setTimeWindow(30);
-        registerDegrade.setMinRequestAmount(5);
-        degradeRules.add(registerDegrade);
+        addDegradeRule(degradeRules, "registerFlow", 0.3);
+        addDegradeRule(degradeRules, "userServiceFlow", 0.3);
+        addDegradeRule(degradeRules, "roleServiceFlow", 0.3);
+        addDegradeRule(degradeRules, "deptServiceFlow", 0.3);
         DegradeRuleManager.loadRules(degradeRules);
         log.info("Sentinel 降级规则已加载: {} 条", degradeRules.size());
+    }
+
+    private void addFlowRule(List<FlowRule> rules, String resource, int qps) {
+        FlowRule rule = new FlowRule(resource);
+        rule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        rule.setCount(qps);
+        rules.add(rule);
+    }
+
+    private void addDegradeRule(List<DegradeRule> rules, String resource, double threshold) {
+        DegradeRule rule = new DegradeRule(resource);
+        rule.setGrade(RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO);
+        rule.setCount(threshold);
+        rule.setTimeWindow(30);
+        rule.setMinRequestAmount(5);
+        rules.add(rule);
     }
 }

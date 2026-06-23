@@ -26,50 +26,35 @@ public class SentinelRuleConfig {
 
     private void initFlowRules() {
         List<FlowRule> rules = new ArrayList<>();
-
-        FlowRule loginRule = new FlowRule("loginFlow");
-        loginRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        loginRule.setCount(10);
-        rules.add(loginRule);
-
-        FlowRule refreshRule = new FlowRule("refreshFlow");
-        refreshRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        refreshRule.setCount(20);
-        rules.add(refreshRule);
-
-        FlowRule forgotRule = new FlowRule("passwordForgotFlow");
-        forgotRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        forgotRule.setCount(5);
-        rules.add(forgotRule);
-
-        FlowRule resetRule = new FlowRule("passwordResetFlow");
-        resetRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        resetRule.setCount(10);
-        rules.add(resetRule);
-
+        add(rules, "loginFlow", 10, RuleConstant.FLOW_GRADE_QPS);
+        add(rules, "refreshFlow", 20, RuleConstant.FLOW_GRADE_QPS);
+        add(rules, "passwordForgotFlow", 5, RuleConstant.FLOW_GRADE_QPS);
+        add(rules, "passwordResetFlow", 10, RuleConstant.FLOW_GRADE_QPS);
+        add(rules, "searchFlow", 20, RuleConstant.FLOW_GRADE_QPS);      // 全局搜索
+        add(rules, "fileUploadFlow", 10, RuleConstant.FLOW_GRADE_QPS);   // 文件上传
+        add(rules, "exportFlow", 5, RuleConstant.FLOW_GRADE_QPS);        // 数据导出
         FlowRuleManager.loadRules(rules);
         log.info("Sentinel 流控规则已加载: {} 条", rules.size());
     }
 
     private void initDegradeRules() {
         List<DegradeRule> rules = new ArrayList<>();
-
-        DegradeRule loginDegrade = new DegradeRule("loginFlow");
-        loginDegrade.setGrade(RuleConstant.DEGRADE_GRADE_RT);
-        loginDegrade.setCount(2000);
-        loginDegrade.setTimeWindow(10);
-        loginDegrade.setMinRequestAmount(5);
-        loginDegrade.setSlowRatioThreshold(0.2);
-        rules.add(loginDegrade);
-
-        DegradeRule forgotDegrade = new DegradeRule("passwordForgotFlow");
-        forgotDegrade.setGrade(RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO);
-        forgotDegrade.setCount(0.3);
-        forgotDegrade.setTimeWindow(30);
-        forgotDegrade.setMinRequestAmount(5);
-        rules.add(forgotDegrade);
-
+        addDegrade(rules, "loginFlow", 2000, RuleConstant.DEGRADE_GRADE_RT, 10);
+        addDegrade(rules, "passwordForgotFlow", 0.3, RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO, 30);
+        addDegrade(rules, "refreshFlow", 0.2, RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO, 30);
+        addDegrade(rules, "searchFlow", 1000, RuleConstant.DEGRADE_GRADE_RT, 10); // 搜索超500ms降级
+        addDegrade(rules, "fileUploadFlow", 0.3, RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO, 60);
         DegradeRuleManager.loadRules(rules);
         log.info("Sentinel 降级规则已加载: {} 条", rules.size());
+    }
+
+    private void add(List<FlowRule> rules, String r, int qps, int grade) {
+        FlowRule rule = new FlowRule(r); rule.setGrade(grade); rule.setCount(qps); rules.add(rule);
+    }
+    private void addDegrade(List<DegradeRule> rules, String r, double threshold, int grade, int window) {
+        DegradeRule rule = new DegradeRule(r);
+        rule.setGrade(grade); rule.setCount(threshold); rule.setTimeWindow(window); rule.setMinRequestAmount(5);
+        if (grade == RuleConstant.DEGRADE_GRADE_RT) rule.setSlowRatioThreshold(0.2);
+        rules.add(rule);
     }
 }
