@@ -184,4 +184,7 @@ function handleSocialLogin(provider: string) {
 .social-name { font-size: 12px; color: #666; }
 .brand { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
 .version-badge { font-size: 13px; color: #667eea; font-weight: 500; background: rgba(102,126,234,0.1); padding: 2px 10px; border-radius: 10px; }
+:deep(.el-input__wrapper) { box-shadow: none; }
+:deep(.el-input.is-focus .el-input__wrapper) { box-shadow: 0 0 0 1px #667eea inset; }
+:deep(.el-input:hover .el-input__wrapper) { box-shadow: 0 0 0 1px #dcdfe6 inset; }
 </style>
