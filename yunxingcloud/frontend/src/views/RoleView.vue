@@ -135,19 +135,19 @@ onMounted(loadAll)
     <div style="padding:20px">
       <n-card :title="t('nav.roles')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>t('common.add')</n-button>
+          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
             <n-input v-model:value="roleSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
-            <n-button type="primary" size="small" @click="() => {}">t('common.search')</n-button>
-            <n-button size="small" @click="roleSearch = ''">t('common.reset')</n-button>
+            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="roleSearch = ''">{{ t('common.reset') }}</n-button>
           </n-space>
           <n-space>
-            <n-button size="small" @click="loadAll" secondary>t('common.refresh')</n-button>
+            <n-button size="small" @click="loadAll" secondary>{{ t('common.refresh') }}</n-button>
             <n-popover trigger="click" placement="bottom-end" :width="180">
               <template #trigger>
-                <n-button size="small" secondary>t('common.columnOptions')</n-button>
+                <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
               </template>
               <div style="max-height:300px;overflow-y:auto">
                 <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">

@@ -116,7 +116,7 @@ function handleSocialLogin(provider: string) {
         <el-form-item v-if="captchaEnabled" prop="code">
           <div style="display:flex; gap:12px; width:100%;">
             <el-input v-model="model.code" :placeholder="t('login.captcha')" size="large" style="flex:1;" :prefix-icon="Key" />
-            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" style="height:40px;width:120px;cursor:pointer;border-radius:4px;" :title="t('login.refreshCaptcha')">
+            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" :alt="t('login.captcha')" :title="t('login.refreshCaptcha')" style="height:40px;width:120px;cursor:pointer;border-radius:4px;">
           </div>
         </el-form-item>
 

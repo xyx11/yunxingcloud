@@ -36,7 +36,7 @@ const columns = computed<DataTableColumns<Dept>>(() => [
   { title: t('department.sort'), key: 'sortOrder', width: 60 },
   {
     title: t('department.enabled'), key: 'enabled', width: 60,
-    render: (row) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, { default: () => row.enabled ? 'Active' : 'Inactive' })
+    render: (row) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, { default: () => row.enabled ? t('user.enabledLabel') : t('user.disabledLabel') })
   },
   {
     title: t('user.actions'), key: 'actions', width: 200,
