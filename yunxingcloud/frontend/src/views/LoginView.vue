@@ -43,8 +43,8 @@ onMounted(async () => {
     const encPwd = Cookies.get('encPassword')
     if (encPwd) model.value.password = encPwd
   }
+  appVersion.value = '1.0.0'
   await getCaptcha()
-  request.get('/api/config/key/sys.version').then(r => appVersion.value = r.data.configValue || '').catch(() => {})
   if (route.query.error !== undefined) error.value = t('login.badCredentials')
 })
 
