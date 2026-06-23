@@ -2,6 +2,11 @@ spring:
   application:
     name: yunxingcloud-usercenter
 
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   config:
     import: optional:nacos:${spring.application.name}.yaml
 
@@ -51,7 +56,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: false
     open-in-view: false
 

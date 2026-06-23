@@ -26,7 +26,7 @@ async function handleSubmit() {
       }
     }
   } catch (e: any) {
-    error.value = e.response?.data?.message || '操作失败'
+    error.value = e.response?.data?.message || t('common.error')
   } finally {
     loading.value = false
   }
@@ -38,13 +38,13 @@ async function handleSubmit() {
     <div class="page">
       <n-card class="card">
         <h1 class="title">{{ t('login.forgot') }}</h1>
-        <p class="subtitle">输入注册邮箱，获取重置链接</p>
+        <p class="subtitle">{{ t('pwd.forgotInstruction') }}</p>
 
         <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
         <n-alert v-if="message" type="success" style="margin-bottom: 20px">
           <div>{{ message }}</div>
           <div v-if="token" style="margin-top: 12px; word-break: break-all; font-size: 12px; color: #666;">
-            重置令牌: {{ token }}
+            {{ t('pwd.tokenLabel') }}: {{ token }}
           </div>
         </n-alert>
 
@@ -53,13 +53,13 @@ async function handleSubmit() {
             <n-input v-model:value="email" :placeholder="t('register.email')" size="large" />
           </n-form-item>
           <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
-            发送重置链接
+            {{ t('pwd.sendEmail') }}
           </n-button>
         </n-form>
 
         <div v-if="token" style="margin-top: 20px; text-align: center;">
           <n-button type="primary" @click="router.push({ path: '/reset-password', query: { token } })">
-            前往重置密码
+            {{ t('pwd.goReset') }}
           </n-button>
         </div>
 

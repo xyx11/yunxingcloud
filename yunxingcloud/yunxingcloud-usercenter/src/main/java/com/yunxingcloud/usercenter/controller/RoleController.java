@@ -1,5 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
+import com.yunxingcloud.usercenter.config.I18nService;
 import com.yunxingcloud.usercenter.entity.Role;
 import com.yunxingcloud.usercenter.repository.RoleRepository;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,11 @@ import java.util.Map;
 public class RoleController {
 
     private final RoleRepository roleRepository;
+    private final I18nService i18n;
 
-    public RoleController(RoleRepository roleRepository) {
+    public RoleController(RoleRepository roleRepository, I18nService i18n) {
         this.roleRepository = roleRepository;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -37,7 +40,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<?> create(@RequestBody Role role) {
         if (roleRepository.existsByCode(role.getCode())) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "角色编码已存在"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("role.code_exists")));
         }
         return ResponseEntity.ok(roleRepository.save(role));
     }

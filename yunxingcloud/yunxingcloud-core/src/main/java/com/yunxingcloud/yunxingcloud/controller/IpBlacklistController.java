@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.IpBlacklist;
 import com.yunxingcloud.yunxingcloud.repository.IpBlacklistRepository;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,12 @@ import java.util.Map;
 public class IpBlacklistController {
 
     private final IpBlacklistRepository repo;
+    private final I18nService i18n;
 
-    public IpBlacklistController(IpBlacklistRepository repo) { this.repo = repo; }
+    public IpBlacklistController(IpBlacklistRepository repo, I18nService i18n) {
+        this.repo = repo;
+        this.i18n = i18n;
+    }
 
     @GetMapping
     public ResponseEntity<List<IpBlacklist>> list() { return ResponseEntity.ok(repo.findAll()); }
@@ -26,7 +31,7 @@ public class IpBlacklistController {
     @Log(title = "IP黑名单", businessType = BusinessType.INSERT)
     @PostMapping
     public ResponseEntity<?> add(@RequestBody IpBlacklist item) {
-        if (repo.existsByIp(item.getIp())) return ResponseEntity.badRequest().body(Map.of("message", "IP已存在"));
+        if (repo.existsByIp(item.getIp())) return ResponseEntity.badRequest().body(Map.of("message", i18n.msg("ip_blacklist.exists")));
         return ResponseEntity.ok(repo.save(item));
     }
 

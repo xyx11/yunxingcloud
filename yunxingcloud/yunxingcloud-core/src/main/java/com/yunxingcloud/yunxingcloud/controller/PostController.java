@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysPost;
 import com.yunxingcloud.yunxingcloud.repository.SysPostRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,10 +20,12 @@ public class PostController {
 
     private final SysPostRepository postRepository;
     private final JdbcTemplate jdbc;
+    private final I18nService i18n;
 
-    public PostController(SysPostRepository postRepository, JdbcTemplate jdbc) {
+    public PostController(SysPostRepository postRepository, JdbcTemplate jdbc, I18nService i18n) {
         this.postRepository = postRepository;
         this.jdbc = jdbc;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -44,7 +47,7 @@ public class PostController {
     @PostMapping
     public ResponseEntity<?> create(@RequestBody SysPost post) {
         if (postRepository.existsByPostCode(post.getPostCode())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "岗位编码已存在"));
+            return ResponseEntity.badRequest().body(Map.of("message", i18n.msg("post.code_exists")));
         }
         return ResponseEntity.ok(postRepository.save(post));
     }

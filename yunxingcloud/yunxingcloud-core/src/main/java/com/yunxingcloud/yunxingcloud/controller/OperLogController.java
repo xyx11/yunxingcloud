@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
 import org.springframework.data.domain.Page;
@@ -23,8 +24,12 @@ import java.util.stream.Collectors;
 public class OperLogController {
 
     private final SysOperLogRepository logRepository;
+    private final I18nService i18n;
 
-    public OperLogController(SysOperLogRepository logRepository) { this.logRepository = logRepository; }
+    public OperLogController(SysOperLogRepository logRepository, I18nService i18n) {
+        this.logRepository = logRepository;
+        this.i18n = i18n;
+    }
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
@@ -135,7 +140,7 @@ public class OperLogController {
     @DeleteMapping("/clean")
     public ResponseEntity<Map<String, Object>> clean() {
         logRepository.deleteAll();
-        return ResponseEntity.ok(Map.of("success", true, "message", "日志已清空"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("operlog.cleaned")));
     }
 
     @PreAuthorize("hasAuthority('operlog:write')")
@@ -143,6 +148,6 @@ public class OperLogController {
     public ResponseEntity<Map<String, Object>> batchDelete(@RequestBody Map<String, List<Long>> body) {
         List<Long> ids = body.getOrDefault("ids", List.of());
         logRepository.deleteAllById(ids);
-        return ResponseEntity.ok(Map.of("success", true, "message", "已删除 " + ids.size() + " 条日志"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("operlog.batch_delete", ids.size())));
     }
 }

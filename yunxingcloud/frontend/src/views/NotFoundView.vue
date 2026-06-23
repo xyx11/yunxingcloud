@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { NConfigProvider, NButton, NSpace, NTag } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const links = [
-  { label: '首页', path: '/' },
-  { label: '用户管理', path: '/users' },
-  { label: '角色管理', path: '/roles' },
-  { label: '菜单管理', path: '/menus' },
-  { label: '系统监控', path: '/operlog' },
+  { label: t('nav.home'), path: '/' },
+  { label: t('nav.users'), path: '/users' },
+  { label: t('nav.roles'), path: '/roles' },
+  { label: t('nav.menus'), path: '/menus' },
+  { label: t('nav.operlog'), path: '/operlog' },
 ]
 </script>
 
@@ -18,8 +20,8 @@ const links = [
       <div class="container">
         <div class="code">404</div>
         <div class="divider" />
-        <div class="title">页面未找到</div>
-        <div class="subtitle">您访问的页面不存在或已被移除</div>
+        <div class="title">{{ t('notFound.title') }}</div>
+        <div class="subtitle">{{ t('notFound.subtitle') }}</div>
         <div style="margin: 28px 0 20px;">
           <n-space justify="center" size="small">
             <n-tag
@@ -32,7 +34,7 @@ const links = [
           </n-space>
         </div>
         <n-button type="primary" size="large" @click="router.push('/')">
-          返回首页
+          {{ t('notFound.backHome') }}
         </n-button>
       </div>
     </div>

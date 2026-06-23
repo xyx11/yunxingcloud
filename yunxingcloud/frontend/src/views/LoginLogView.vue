@@ -31,7 +31,7 @@ const pageSize = ref(10)
 const filterUser = ref('')
 const filterStatus = ref('')
 const stats = ref({ todaySuccess: 0, todayFail: 0, todayTotal: 0 })
-const hourOption = ref({ tooltip:{trigger:'axis'}, grid:{left:40,right:10,top:10,bottom:20}, xAxis:{type:'category',data:Array.from({length:24},(_,i)=>i+'时')}, yAxis:{type:'value'}, series:[{data:Array(24).fill(0),type:'bar',itemStyle:{color:'#667eea',borderRadius:[3,3,0,0]}}] })
+const hourOption = ref({ tooltip:{trigger:'axis'}, grid:{left:40,right:10,top:10,bottom:20}, xAxis:{type:'category',data:Array.from({length:24},(_,i)=>i + t('loginlog.hourSuffix'))}, yAxis:{type:'value'}, series:[{data:Array(24).fill(0),type:'bar',itemStyle:{color:'#667eea',borderRadius:[3,3,0,0]}}] })
 
 async function loadStats() {
   try { const res = await request.get('/api/logininfor/stats'); stats.value = res.data } catch {}
@@ -45,30 +45,30 @@ async function loadStats() {
 }
 
 const statusOptions = [
-  { label: '全部', value: '' },
-  { label: '成功', value: '0' },
-  { label: '失败', value: '1' },
+  { label: t('common.all'), value: '' },
+  { label: t('loginlog.success'), value: '0' },
+  { label: t('loginlog.fail'), value: '1' },
 ]
 
 const columns: DataTableColumns<LoginInfo> = [
-  { title: 'ID', key: 'id', width: 60 },
-  { title: '用户名', key: 'userName', width: 100 },
-  { title: 'IP地址', key: 'ipaddr', width: 130 },
-  { title: '登录地点', key: 'loginLocation', width: 120 },
-  { title: '浏览器', key: 'browser', width: 80 },
-  { title: '操作系统', key: 'os', width: 80 },
+  { title: t('loginlog.id'), key: 'id', width: 60 },
+  { title: t('loginlog.username'), key: 'userName', width: 100 },
+  { title: t('loginlog.ip'), key: 'ipaddr', width: 130 },
+  { title: t('loginlog.location'), key: 'loginLocation', width: 120 },
+  { title: t('loginlog.browser'), key: 'browser', width: 80 },
+  { title: t('loginlog.os'), key: 'os', width: 80 },
   {
-    title: '状态', key: 'status', width: 70,
+    title: t('loginlog.status'), key: 'status', width: 70,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'error', size: 'small' },
-      { default: () => row.status === '0' ? '成功' : '失败' })
+      { default: () => row.status === '0' ? t('loginlog.success') : t('loginlog.fail') })
   },
-  { title: '消息', key: 'msg', width: 160, ellipsis: { tooltip: true } },
-  { title: '登录时间', key: 'loginTime', width: 160 },
+  { title: t('loginlog.msg'), key: 'msg', width: 160, ellipsis: { tooltip: true } },
+  { title: t('loginlog.time'), key: 'loginTime', width: 160 },
   {
-    title: '操作', key: 'actions', width: 80,
+    title: t('loginlog.actions'), key: 'actions', width: 80,
     render: (row) => h(NPopconfirm, { onPositiveClick: () => delItem(row.id) }, {
-      trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-      default: () => '确认删除?'
+      trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+      default: () => t('common.confirmDelete')
     })
   },
 ]
@@ -94,9 +94,9 @@ async function delItem(id: number) {
 async function cleanAll() {
   try {
     await request.delete('/api/logininfor/clean')
-    notify.success('登录日志已清空')
+    notify.success(t('loginlog.cleanSuccess'))
     await loadItems()
-  } catch (e: any) { notify.error('清空失败') }
+  } catch (e: any) { notify.error(t('loginlog.cleanFailed')) }
 }
 
 function onPageChange(p: number) { page.value = p; loadItems() }
@@ -110,27 +110,27 @@ onMounted(() => { loadItems(); loadStats() })
     <div style="padding:20px">
       <n-card :title="t('nav.loginlog')">
         <n-grid cols="3" x-gap="12" style="margin-bottom:16px">
-          <n-grid-item><n-card size="small"><n-statistic label="总登录次数" :value="stats.todayTotal" /></n-card></n-grid-item>
-          <n-grid-item><n-card size="small"><n-statistic label="今日成功"><template #prefix>✅</template>{{ stats.todaySuccess }}</n-statistic></n-card></n-grid-item>
-          <n-grid-item><n-card size="small"><n-statistic label="今日失败"><template #prefix>⚠️</template>{{ stats.todayFail }}</n-statistic></n-card></n-grid-item>
+          <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.totalLogins')" :value="stats.todayTotal" /></n-card></n-grid-item>
+          <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.todayLogins')"><template #prefix>✅</template>{{ stats.todaySuccess }}</n-statistic></n-card></n-grid-item>
+          <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.todayFailures')"><template #prefix>⚠️</template>{{ stats.todayFail }}</n-statistic></n-card></n-grid-item>
         </n-grid>
         <v-chart :option="hourOption" style="height:160px;margin-bottom:12px" autoresize />
         <template #header-extra>
           <n-space>
             <n-popconfirm @positive-click="cleanAll">
-              <template #trigger><n-button size="small" type="error">清空日志</n-button></template>
-              确认清空所有登录日志?
+              <template #trigger><n-button size="small" type="error">{{ t('loginlog.clean') }}</n-button></template>
+              {{ t('loginlog.cleanConfirm') }}
             </n-popconfirm>
           </n-space>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="filterUser" placeholder="用户名" size="small" clearable style="width:120px" />
+            <n-input v-model:value="filterUser" :placeholder="t('loginlog.username')" size="small" clearable style="width:120px" />
             <n-select v-model:value="filterStatus" :options="statusOptions" size="small" style="width:80px" />
-            <n-button type="primary" size="small" @click="() => { page = 1; loadItems() }">搜索</n-button>
-            <n-button size="small" @click="filterUser = ''; filterStatus = ''; page = 1; loadItems()">重置</n-button>
+            <n-button type="primary" size="small" @click="() => { page = 1; loadItems() }">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="filterUser = ''; filterStatus = ''; page = 1; loadItems()">{{ t('common.reset') }}</n-button>
           </n-space>
-          <n-space><n-button size="small" @click="loadItems" secondary>刷新</n-button></n-space>
+          <n-space><n-button size="small" @click="loadItems" secondary>{{ t('common.refresh') }}</n-button></n-space>
         </n-space>
         <n-dataTable
           :columns="columns" :data="items" :loading="loading" size="small"

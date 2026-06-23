@@ -173,22 +173,15 @@ const menuIcons: Record<string, () => any> = {
 const breadcrumbs = computed(() => {
   const path = route.path
   const parts = path.split('/').filter(Boolean)
-  const isZh = locale.value === 'zh'
-  const items = [{ label: isZh ? '首页' : 'Home', path: '/' }]
-  const map: Record<string, string> = isZh ? {
-    departments: '部门管理', roles: '角色管理', users: '用户管理',
-    menus: '菜单管理', operlog: '操作日志', job: '定时任务',
-    config: '系统参数', generator: '代码生成', monitor: '系统监控',
-    swagger: 'API文档', maintenance: '数据维护', profile: '个人中心',
-    dict: '字典管理', notices: '通知公告', posts: '岗位管理', loginlog: '登录日志', online: '在线用户', backup: '数据备份',
-    approval: '审批流程', 'register-approval': '注册审核',
-  } : {
-    departments: 'Departments', roles: 'Roles', users: 'Users',
-    menus: 'Menus', operlog: 'Operation Log', job: 'Jobs',
-    config: 'Config', generator: 'Generator', monitor: 'Monitor',
-    swagger: 'API Docs', maintenance: 'Maintenance', profile: 'Profile',
-    dict: 'Dictionary', notices: 'Notices', posts: 'Positions', loginlog: 'Login Log', online: 'Online Users', backup: 'Backup',
-    approval: 'Approval', 'register-approval': 'Registration Approval',
+  const items = [{ label: t('nav.home'), path: '/' }]
+  const map: Record<string, string> = {
+    departments: t('nav.departments'), roles: t('nav.roles'), users: t('nav.users'),
+    menus: t('nav.menus'), operlog: t('nav.operlog'), job: t('nav.jobs'),
+    config: t('nav.config'), generator: t('nav.generator'), monitor: t('nav.monitor'),
+    swagger: t('nav.swagger'), maintenance: t('nav.maintenance'), profile: t('nav.profile'),
+    dict: t('nav.dict'), notices: t('nav.notice'), posts: t('nav.posts'), loginlog: t('nav.loginlog'),
+    online: t('nav.online'), backup: t('nav.backup'),
+    approval: t('nav.approval'), 'register-approval': t('nav.registerApproval'),
   }
   for (const p of parts) {
     items.push({ label: map[p] || p, path: `/${p}` })
@@ -198,21 +191,14 @@ const breadcrumbs = computed(() => {
 
 const pageTitle = computed(() => {
   const p = route.path.split('/')[1]
-  const isZh = locale.value === 'zh'
-  const map: Record<string, string> = isZh ? {
-    '': '仪表盘', departments: '部门管理', roles: '角色管理', users: '用户管理',
-    menus: '菜单管理', operlog: '操作日志', job: '定时任务',
-    config: '系统参数', generator: '代码生成', monitor: '系统监控',
-    swagger: 'API文档', maintenance: '数据维护', profile: '个人中心',
-    dict: '字典管理', notices: '通知公告', posts: '岗位管理', loginlog: '登录日志', online: '在线用户', backup: '数据备份',
-    approval: '审批流程', 'register-approval': '注册审核',
-  } : {
-    '': 'Dashboard', departments: 'Departments', roles: 'Roles', users: 'Users',
-    menus: 'Menus', operlog: 'Operation Log', job: 'Jobs',
-    config: 'Config', generator: 'Generator', monitor: 'Monitor',
-    swagger: 'API Docs', maintenance: 'Maintenance', profile: 'Profile',
-    dict: 'Dictionary', notices: 'Notices', posts: 'Positions', loginlog: 'Login Log', online: 'Online Users', backup: 'Backup',
-    approval: 'Approval', 'register-approval': 'Registration Approval',
+  const map: Record<string, string> = {
+    '': t('nav.dashboard'), departments: t('nav.departments'), roles: t('nav.roles'), users: t('nav.users'),
+    menus: t('nav.menus'), operlog: t('nav.operlog'), job: t('nav.jobs'),
+    config: t('nav.config'), generator: t('nav.generator'), monitor: t('nav.monitor'),
+    swagger: t('nav.swagger'), maintenance: t('nav.maintenance'), profile: t('nav.profile'),
+    dict: t('nav.dict'), notices: t('nav.notice'), posts: t('nav.posts'), loginlog: t('nav.loginlog'),
+    online: t('nav.online'), backup: t('nav.backup'),
+    approval: t('nav.approval'), 'register-approval': t('nav.registerApproval'),
   }
   return map[p] || ''
 })
@@ -241,7 +227,7 @@ onMounted(async () => {
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission()
   window.addEventListener('theme-change', ((e: CustomEvent) => { isDark.value = e.detail === 'dark' }) as EventListener)
   fetchStats()
-  request.get('/api/messages/unread-count').then(r => { unreadCount.value = r.data.count; if (r.data.count > 0 && Notification.permission === 'granted') new Notification('yunxingcloud', { body: `您有 ${r.data.count} 条未读消息`, icon: '/favicon.svg' }) }).catch(() => {})
+  request.get('/api/messages/unread-count').then(r => { unreadCount.value = r.data.count; if (r.data.count > 0 && Notification.permission === 'granted') new Notification('yunxingcloud', { body: t('message.unreadNotification', { count: r.data.count }), icon: '/favicon.svg' }) }).catch(() => {})
   setInterval(fetchStats, 30000)
   setInterval(() => request.get('/api/messages/unread-count').then(r => unreadCount.value = r.data.count).catch(() => {}), 30000)
   try {
@@ -249,31 +235,31 @@ onMounted(async () => {
     menuOptions.value = convertMenus(res.data)
   } catch {
     menuOptions.value = [
-      { label: '首页', key: 'home', icon: menuIcons.home },
-      { label: '用户管理', key: 'users', icon: menuIcons.users },
-      { label: '角色管理', key: 'roles', icon: menuIcons.roles },
-      { label: '部门管理', key: 'departments', icon: menuIcons.departments },
-      { label: '菜单管理', key: 'menus', icon: menuIcons.menus },
-      { label: '操作日志', key: 'operlog', icon: menuIcons.operlog },
-      { label: '定时任务', key: 'job', icon: menuIcons.job },
-      { label: '代码生成', key: 'generator', icon: menuIcons.generator },
-      { label: '参数配置', key: 'config', icon: menuIcons.config },
-      { label: '系统监控', key: 'monitor', icon: menuIcons.monitor },
-      { label: 'API文档', key: 'swagger', icon: menuIcons.swagger },
-      { label: '数据维护', key: 'maintenance', icon: menuIcons.maintenance },
-      { label: '字典管理', key: 'dict', icon: menuIcons.dict },
-      { label: '通知公告', key: 'notices', icon: menuIcons.notice },
-      { label: '岗位管理', key: 'posts', icon: menuIcons.posts },
-      { label: '登录日志', key: 'loginlog', icon: menuIcons.loginlog },
-      { label: '在线用户', key: 'online', icon: menuIcons.online },
-      { label: '数据备份', key: 'backup', icon: menuIcons.backup },
-      { label: '注册审核', key: 'register-approval', icon: menuIcons['register-approval'] },
+      { label: t('nav.home'), key: 'home', icon: menuIcons.home },
+      { label: t('nav.users'), key: 'users', icon: menuIcons.users },
+      { label: t('nav.roles'), key: 'roles', icon: menuIcons.roles },
+      { label: t('nav.departments'), key: 'departments', icon: menuIcons.departments },
+      { label: t('nav.menus'), key: 'menus', icon: menuIcons.menus },
+      { label: t('nav.operlog'), key: 'operlog', icon: menuIcons.operlog },
+      { label: t('nav.jobs'), key: 'job', icon: menuIcons.job },
+      { label: t('nav.generator'), key: 'generator', icon: menuIcons.generator },
+      { label: t('nav.config'), key: 'config', icon: menuIcons.config },
+      { label: t('nav.monitor'), key: 'monitor', icon: menuIcons.monitor },
+      { label: t('nav.swagger'), key: 'swagger', icon: menuIcons.swagger },
+      { label: t('nav.maintenance'), key: 'maintenance', icon: menuIcons.maintenance },
+      { label: t('nav.dict'), key: 'dict', icon: menuIcons.dict },
+      { label: t('nav.notice'), key: 'notices', icon: menuIcons.notice },
+      { label: t('nav.posts'), key: 'posts', icon: menuIcons.posts },
+      { label: t('nav.loginlog'), key: 'loginlog', icon: menuIcons.loginlog },
+      { label: t('nav.online'), key: 'online', icon: menuIcons.online },
+      { label: t('nav.backup'), key: 'backup', icon: menuIcons.backup },
+      { label: t('nav.registerApproval'), key: 'register-approval', icon: menuIcons['register-approval'] },
     ]
   }
 })
 
 function convertMenus(menus: any[]): MenuOption[] {
-  const result: MenuOption[] = [{ label: '首页', key: 'home', icon: menuIcons.home }]
+  const result: MenuOption[] = [{ label: t('nav.home'), key: 'home', icon: menuIcons.home }]
   function walk(list: any[]): MenuOption[] {
     return list
       .filter((m: any) => m.menuType !== 'F' && m.visible)
@@ -314,10 +300,24 @@ async function handleLogout() {
   router.push('/login')
 }
 
-const userMenuOptions = [
-  { label: '个人中心', key: 'profile' },
-  { label: '退出登录', key: 'logout' },
-]
+const userMenuOptions = computed(() => [
+  { label: t('nav.profile'), key: 'profile' },
+  { label: t('nav.logout'), key: 'logout' },
+])
+
+const contextMenuOptions = computed(() => [
+  { label: t('nav.closeCurrent'), key: 'close' },
+  { label: t('nav.closeOthers'), key: 'other' },
+  { label: t('nav.closeAll'), key: 'all' },
+])
+
+const ctxMenuDropdownOptions = computed(() => [
+  { label: t('common.refresh'), key: 'refresh' },
+  { label: t('common.close'), key: 'close' },
+  { label: t('nav.closeLeft'), key: 'closeLeft' },
+  { label: t('nav.closeRight'), key: 'closeRight' },
+  { label: t('nav.closeOthers'), key: 'other' },
+])
 
 function handleUserMenu(key: string) {
   if (key === 'profile') router.push('/profile')
@@ -372,68 +372,68 @@ useKeyboard({
             <n-popover trigger="manual" :show="showSearchResults" placement="bottom-start" :width="320" @clickoutside="showSearchResults = false">
               <template #trigger>
                 <n-input
-                  v-model:value="searchQuery" placeholder="全局搜索..." size="small" clearable style="width:160px"
+                  v-model:value="searchQuery" :placeholder="t('nav.searchPlaceholder')" size="small" clearable style="width:160px"
                   @keyup:enter="globalSearch" @clear="showSearchResults = false" @focus="searchQuery && globalSearch()"
                 >
                   <template #prefix>🔍</template>
                 </n-input>
               </template>
               <div v-if="!searchQuery && searchHistory.length && !showSearchResults" style="max-height:200px;overflow-y:auto">
-                <div style="font-size:11px;color:#999;padding:2px 8px">最近搜索</div>
+                <div style="font-size:11px;color:#999;padding:2px 8px">{{ t('nav.recentSearches') }}</div>
                 <div v-for="h in searchHistory" :key="h" class="search-item" @click="searchQuery = h; globalSearch()" style="justify-content:flex-start">{{ h }}</div>
               </div>
               <div v-if="hasSearchResults" style="max-height:360px;overflow-y:auto">
                 <div v-if="searchResults.users?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">用户</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.users') }}</div>
                   <div v-for="u in searchResults.users" :key="u.id" class="search-item" @click="navigateFromSearch('users', u)">
                     <span>{{ u.username }}</span><span style="color:#999;font-size:12px">{{ u.nickname }} {{ u.email }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.roles?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">角色</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.roles') }}</div>
                   <div v-for="r in searchResults.roles" :key="r.id" class="search-item" @click="navigateFromSearch('roles', r)">
                     <span>{{ r.name }}</span><span style="color:#999;font-size:12px">{{ r.code }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.menus?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">菜单</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.menus') }}</div>
                   <div v-for="m in searchResults.menus" :key="m.id" class="search-item" @click="navigateFromSearch('menus', m)">
                     <span>{{ m.name }}</span><span style="color:#999;font-size:12px">{{ m.path }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.configs?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">配置</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.config') }}</div>
                   <div v-for="c in searchResults.configs" :key="c.id" class="search-item" @click="navigateFromSearch('configs', c)">
                     <span>{{ c.name }}</span><span style="color:#999;font-size:12px">{{ c.config_key }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.dict?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">字典</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.dict') }}</div>
                   <div v-for="d in searchResults.dict" :key="d.id" class="search-item" @click="navigateFromSearch('dict', d)">
                     <span>{{ d.dict_name }}</span><span style="color:#999;font-size:12px">{{ d.dict_type }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.notices?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">公告</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.notice') }}</div>
                   <div v-for="n in searchResults.notices" :key="n.id" class="search-item" @click="navigateFromSearch('notices', n)">
                     <span>{{ n.notice_title }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.posts?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">岗位</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.posts') }}</div>
                   <div v-for="p in searchResults.posts" :key="p.id" class="search-item" @click="navigateFromSearch('posts', p)">
                     <span>{{ p.post_name }}</span><span style="color:#999;font-size:12px">{{ p.post_code }}</span>
                   </div>
                 </div>
                 <div v-if="searchResults.departments?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">部门</div>
+                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.departments') }}</div>
                   <div v-for="d in searchResults.departments" :key="d.id" class="search-item" @click="navigateFromSearch('departments', d)">
                     <span>{{ d.name }}</span>
                   </div>
                 </div>
-                <div v-if="searchResults.total" style="font-size:11px;color:#999;text-align:center;padding:4px 0;border-top:1px solid var(--n-border-color,#eee)">共 {{ searchResults.total }} 条结果</div>
+                <div v-if="searchResults.total" style="font-size:11px;color:#999;text-align:center;padding:4px 0;border-top:1px solid var(--n-border-color,#eee)">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
               </div>
-              <div v-else style="color:#999;padding:8px;text-align:center">无匹配结果</div>
+              <div v-else style="color:#999;padding:8px;text-align:center">{{ t('nav.noResults') }}</div>
             </n-popover>
             <n-breadcrumb>
               <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
@@ -442,7 +442,7 @@ useKeyboard({
             </n-breadcrumb>
           </div>
           <div class="header-right">
-            <n-button text @click="toggleFullscreen" style="font-size:16px;margin-right:8px;" title="全屏">⛶</n-button>
+            <n-button text @click="toggleFullscreen" style="font-size:16px;margin-right:8px;" :title="t('nav.fullscreen')">⛶</n-button>
             <n-button text size="small" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')" style="margin-right:4px;font-size:12px;">
               {{ locale === 'zh' ? 'EN' : '中' }}
             </n-button>
@@ -450,7 +450,7 @@ useKeyboard({
               {{ isDark ? '☀️' : '🌙' }}
             </n-button>
             <n-badge :value="unreadCount" :max="99" style="margin-right:12px;">
-              <n-button text @click="router.push('/messages')" style="font-size:18px;" title="站内信">📬</n-button>
+              <n-button text @click="router.push('/messages')" style="font-size:18px;" :title="t('nav.openMessages')">📬</n-button>
             </n-badge>
             <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
               <div class="user-area">
@@ -470,10 +470,10 @@ useKeyboard({
             {{ tag.title }}
             <span v-if="tag.path !== '/'" class="tag-close" @click.stop="tagsViewStore.removeTag(tag.path)">×</span>
           </span>
-          <n-dropdown trigger="click" :options="[{label:'关闭当前',key:'close'},{label:'关闭其他',key:'other'},{label:'关闭全部',key:'all'}]" @select="(k:string) => { if(k==='close') tagsViewStore.removeTag(tagsViewStore.activePath); if(k==='other') tagsViewStore.closeOther(tagsViewStore.activePath); if(k==='all') tagsViewStore.closeAll(); router.push(tagsViewStore.activePath) }">
+          <n-dropdown trigger="click" :options="contextMenuOptions" @select="(k:string) => { if(k==='close') tagsViewStore.removeTag(tagsViewStore.activePath); if(k==='other') tagsViewStore.closeOther(tagsViewStore.activePath); if(k==='all') tagsViewStore.closeAll(); router.push(tagsViewStore.activePath) }">
             <span class="tag-close-all">▼</span>
           </n-dropdown>
-          <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="[{label:'刷新',key:'refresh'},{label:'关闭',key:'close'},{label:'关闭左侧',key:'closeLeft'},{label:'关闭右侧',key:'closeRight'},{label:'关闭其他',key:'other'}]" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
+          <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="ctxMenuDropdownOptions" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
         </div>
         <n-layout-content :style="{ padding:'20px', background: isDark ? '#101014' : '#f0f2f5', minHeight:'calc(100vh - 96px)' }" class="content-area">
           <n-message-provider>
@@ -485,7 +485,7 @@ useKeyboard({
           </n-message-provider>
         </n-layout-content>
         <n-layout-footer class="footer">
-          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · 运行 {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} 在线<template v-if="appVersion"> · v{{ appVersion }}</template>
+          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
         </n-layout-footer>
       </n-layout>
     </n-layout>

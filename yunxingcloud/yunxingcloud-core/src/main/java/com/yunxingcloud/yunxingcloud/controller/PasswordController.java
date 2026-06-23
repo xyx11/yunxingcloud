@@ -4,6 +4,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.PasswordValidator;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.PasswordResetTokenRepository;
@@ -31,15 +32,18 @@ public class PasswordController {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final I18nService i18n;
 
     public PasswordController(UserRepository userRepository,
                                PasswordResetTokenRepository tokenRepository,
                                PasswordEncoder passwordEncoder,
-                               EmailService emailService) {
+                               EmailService emailService,
+                               I18nService i18n) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.i18n = i18n;
     }
 
     @PostMapping("/forgot")
@@ -47,12 +51,12 @@ public class PasswordController {
     public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请输入邮箱地址"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.blank_email")));
         }
 
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
-            return ResponseEntity.ok(Map.of("success", true, "message", "如果该邮箱已注册，重置链接已发送"));
+            return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.email_sent")));
         }
 
         String token = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
@@ -66,10 +70,10 @@ public class PasswordController {
             tokenRepository.delete(resetToken);
             return ResponseEntity.status(503).body(Map.of(
                     "success", false,
-                    "message", "邮件服务暂时不可用，请稍后重试"
+                    "message", i18n.msg("password.email_failed")
             ));
         }
-        return ResponseEntity.ok(Map.of("success", true, "message", "重置链接已发送至邮箱"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.email_sent")));
     }
 
     @PostMapping("/reset")
@@ -79,24 +83,24 @@ public class PasswordController {
         String newPassword = body.get("newPassword");
 
         if (token == null || token.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "无效的重置令牌"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.invalid_token")));
         }
 
         PasswordResetToken resetToken = tokenRepository.findByToken(token).orElse(null);
         if (resetToken == null || !resetToken.isValid()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "重置令牌无效或已过期"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.invalid_token")));
         }
 
         List<String> pwErrors = PasswordValidator.validate(newPassword);
         if (!pwErrors.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false, "message", "密码强度不足",
+                "success", false, "message", i18n.msg("password.weak"),
                 "details", String.join("; ", pwErrors)));
         }
 
         User user = userRepository.findById(resetToken.getUserId()).orElse(null);
         if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户不存在"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.not_found")));
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -105,18 +109,18 @@ public class PasswordController {
         resetToken.setUsed(true);
         tokenRepository.save(resetToken);
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "密码重置成功，请使用新密码登录"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.reset_success")));
     }
 
     public ResponseEntity<Map<String, Object>> forgotPasswordBlockHandler(Map<String, String> body,
                                                                            BlockException ex) {
         if (ex instanceof DegradeException) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                    "success", false, "message", "邮件服务暂时不可用，请稍后重试"
+                    "success", false, "message", i18n.msg("password.email_failed")
             ));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
-                "success", false, "message", "请求过于频繁，请稍后再试"
+                "success", false, "message", i18n.msg("ratelimit.too_many_requests")
         ));
     }
 
@@ -124,11 +128,11 @@ public class PasswordController {
                                                                           BlockException ex) {
         if (ex instanceof DegradeException) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                    "success", false, "message", "服务暂时不可用，请稍后重试"
+                    "success", false, "message", i18n.msg("circuit_breaker.unavailable")
             ));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
-                "success", false, "message", "请求过于频繁，请稍后再试"
+                "success", false, "message", i18n.msg("ratelimit.too_many_requests")
         ));
     }
 
@@ -138,31 +142,31 @@ public class PasswordController {
         String newPassword = body.get("newPassword");
 
         if (oldPassword == null || oldPassword.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请输入当前密码"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
         }
         if (newPassword == null || newPassword.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请输入新密码"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
         }
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户不存在"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.not_found")));
         }
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "当前密码不正确"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.old_wrong")));
         }
 
         List<String> pwErrors = PasswordValidator.validate(newPassword);
         if (!pwErrors.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false, "message", "密码强度不足",
+                "success", false, "message", i18n.msg("password.weak"),
                 "details", String.join("; ", pwErrors)));
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        return ResponseEntity.ok(Map.of("success", true, "message", "密码修改成功"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.change_success")));
     }
 }

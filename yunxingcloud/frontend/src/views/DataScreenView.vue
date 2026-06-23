@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+const { t } = useI18n()
 import request from '@/api/request'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -62,17 +63,17 @@ onBeforeUnmount(() => clearInterval(timer))
 <template>
   <div class="screen">
     <header class="screen-header">
-      <span class="screen-title">yunxingcloud 数据大屏</span>
+      <span class="screen-title">yunxingcloud {{ t('dataScreen.title') }}</span>
       <span class="screen-time">{{ time }}</span>
     </header>
 
     <div class="stat-row">
-      <div class="stat-card" style="--c:#667eea"><span class="stat-val">{{ stats.userCount||0 }}</span><span class="stat-label">用户总数</span></div>
-      <div class="stat-card" style="--c:#43e97b"><span class="stat-val">{{ stats.sessions||0 }}</span><span class="stat-label">在线用户</span></div>
-      <div class="stat-card" style="--c:#f093fb"><span class="stat-val">{{ stats.todayLoginCount||0 }}</span><span class="stat-label">今日登录</span></div>
-      <div class="stat-card" style="--c:#4facfe"><span class="stat-val">{{ stats.operLogCount||0 }}</span><span class="stat-label">操作总数</span></div>
-      <div class="stat-card" style="--c:#ff9a9e"><span class="stat-val">{{ stats.deptCount||0 }}</span><span class="stat-label">部门数</span></div>
-      <div class="stat-card" style="--c:#ffd700"><span class="stat-val">{{ stats.noticeCount||0 }}</span><span class="stat-label">公告数</span></div>
+      <div class="stat-card" style="--c:#667eea"><span class="stat-val">{{ stats.userCount||0 }}</span><span class="stat-label">{{ t('dataScreen.totalUsers') }}</span></div>
+      <div class="stat-card" style="--c:#43e97b"><span class="stat-val">{{ stats.sessions||0 }}</span><span class="stat-label">{{ t('dashboard.onlineUsers') }}</span></div>
+      <div class="stat-card" style="--c:#f093fb"><span class="stat-val">{{ stats.todayLoginCount||0 }}</span><span class="stat-label">{{ t('dashboard.todayLoginSuccess') }}</span></div>
+      <div class="stat-card" style="--c:#4facfe"><span class="stat-val">{{ stats.operLogCount||0 }}</span><span class="stat-label">{{ t('dashboard.totalOps') }}</span></div>
+      <div class="stat-card" style="--c:#ff9a9e"><span class="stat-val">{{ stats.deptCount||0 }}</span><span class="stat-label">{{ t('dataScreen.totalDepts') }}</span></div>
+      <div class="stat-card" style="--c:#ffd700"><span class="stat-val">{{ stats.noticeCount||0 }}</span><span class="stat-label">{{ t('dataScreen.totalJobs') }}</span></div>
     </div>
 
     <div class="chart-row">

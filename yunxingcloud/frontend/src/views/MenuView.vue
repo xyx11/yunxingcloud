@@ -41,9 +41,9 @@ const iconOptions = [
   {label:'📈 趋势',value:'trend'},{label:'🏢 建筑',value:'building'},{label:'🌐 网络',value:'globe'},
 ]
 const typeOptions = [
-  { label: '目录 (M)', value: 'M' },
-  { label: '菜单 (C)', value: 'C' },
-  { label: '按钮 (F)', value: 'F' },
+  { label: `${t('menu.typeDir')} (M)`, value: 'M' },
+  { label: `${t('menu.typeMenu')} (C)`, value: 'C' },
+  { label: `${t('menu.typeBtn')} (F)`, value: 'F' },
 ]
 
 const parentOptions = ref<{ label: string; value: number | null }[]>([])
@@ -58,31 +58,31 @@ function buildParentOptions(list: Menu[], prefix = '') {
 }
 
 const columns: DataTableColumns<Menu> = [
-  { title: '名称', key: 'name', width: 160 },
-  { title: '图标', key: 'icon', width: 80 },
+  { title: t('menu.name'), key: 'name', width: 160 },
+  { title: t('menu.icon'), key: 'icon', width: 80 },
   {
-    title: '类型', key: 'menuType', width: 80,
+    title: t('menu.type'), key: 'menuType', width: 80,
     render: (row) => h(NTag, { type: row.menuType === 'M' ? 'info' : row.menuType === 'C' ? 'success' : 'default', size: 'small' },
-      { default: () => ({ M: '目录', C: '菜单', F: '按钮' }[row.menuType] || row.menuType) })
+      { default: () => ({ M: t('menu.typeDir'), C: t('menu.typeMenu'), F: t('menu.typeBtn') }[row.menuType] || row.menuType) })
   },
-  { title: '路由', key: 'path', width: 140 },
-  { title: '组件', key: 'component', width: 140 },
-  { title: '权限标识', key: 'perms', width: 160 },
-  { title: '排序', key: 'sortOrder', width: 60, sorter: true },
+  { title: t('menu.path'), key: 'path', width: 140 },
+  { title: t('menu.component'), key: 'component', width: 140 },
+  { title: t('menu.perms'), key: 'perms', width: 160 },
+  { title: t('menu.sort'), key: 'sortOrder', width: 60, sorter: true },
   {
-    title: '可见', key: 'visible', width: 60,
+    title: t('menu.visible'), key: 'visible', width: 60,
     render: (row) => row.visible ? t('common.yes') : t('common.no')
   },
   {
-    title: '操作', key: 'actions', width: 180,
+    title: t('menu.actions'), key: 'actions', width: 180,
     render: (row) => h(NSpace, null, {
       default: () => [
         h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, -1) }, { default: () => '↑' }),
         h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, 1) }, { default: () => '↓' }),
-        h(NButton, { size: 'tiny', onClick: () => editMenu(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => editMenu(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delMenu(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -96,7 +96,7 @@ async function loadMenus() {
     menus.value = res.data
     const flat = await request.get('/api/menus')
     allMenus.value = flat.data
-    parentOptions.value = [{ label: '无 (根目录)', value: null }]
+    parentOptions.value = [{ label: t('menu.noneParent'), value: null }]
     buildParentOptions(res.data)
   } catch {}
   loading.value = false
@@ -124,9 +124,9 @@ async function saveMenu() {
     if (editing.value) await request.put(`/api/menus/${editing.value.id}`, form.value)
     else await request.post('/api/menus', form.value)
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('menu.updateSuccess') : t('menu.createSuccess'))
     await loadMenus()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function moveMenu(id: number, direction: number) {
@@ -136,7 +136,7 @@ async function moveMenu(id: number, direction: number) {
 
 async function delMenu(id: number) {
   await request.delete(`/api/menus/${id}`)
-  notify.success('删除成功')
+  notify.success(t('common.success'))
   await loadMenus()
 }
 
@@ -148,41 +148,41 @@ onMounted(loadMenus)
     <div style="padding:20px">
       <n-card :title="t('nav.menus')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addMenu"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addMenu"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
-        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadMenus" secondary>刷新</n-button></n-space>
+        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadMenus" secondary>{{ t('common.refresh') }}</n-button></n-space>
         <n-data-table
           :columns="columns" :data="menus" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
           default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:600px">
+        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" style="width:600px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="名称">
+            <n-form-item :label="t('menu.name')">
               <n-input v-model:value="form.name" />
             </n-form-item>
-            <n-form-item label="类型">
+            <n-form-item :label="t('menu.type')">
               <n-select v-model:value="form.menuType" :options="typeOptions" />
             </n-form-item>
-            <n-form-item label="上级菜单">
+            <n-form-item :label="t('menu.parent')">
               <n-select v-model:value="form.parentId" :options="parentOptions as any" />
             </n-form-item>
-            <n-form-item label="路由路径">
+            <n-form-item :label="t('menu.path')">
               <n-input v-model:value="form.path" placeholder="/example" />
             </n-form-item>
-            <n-form-item label="组件名称">
+            <n-form-item :label="t('menu.component')">
               <n-input v-model:value="form.component" placeholder="ExampleView" />
             </n-form-item>
-            <n-form-item label="图标">
-              <n-select v-model:value="form.icon" :options="iconOptions" placeholder="选择图标" clearable filterable />
+            <n-form-item :label="t('menu.icon')">
+              <n-select v-model:value="form.icon" :options="iconOptions" :placeholder="t('menu.selectIcon')" clearable filterable />
             </n-form-item>
-            <n-form-item label="权限标识">
+            <n-form-item :label="t('menu.perms')">
               <n-input v-model:value="form.perms" placeholder="system:example:list" />
             </n-form-item>
-            <n-form-item label="排序">
+            <n-form-item :label="t('menu.sort')">
               <n-input-number v-model:value="form.sortOrder" :min="0" />
             </n-form-item>
-            <n-form-item label="可见">
+            <n-form-item :label="t('menu.visible')">
               <n-switch v-model:value="form.visible" />
             </n-form-item>
           </n-form>

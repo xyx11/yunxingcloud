@@ -30,51 +30,51 @@ const form = ref({
 })
 
 const statusOptions = [
-  { label: '运行', value: '0' },
-  { label: '暂停', value: '1' },
+  { label: t('job.statusRunning'), value: '0' },
+  { label: t('job.statusPaused'), value: '1' },
 ]
 
 const misfireOptions = [
-  { label: '立即执行', value: '1' },
-  { label: '执行一次', value: '2' },
-  { label: '放弃执行', value: '3' },
+  { label: t('job.misfireImmediate'), value: '1' },
+  { label: t('job.misfireOnce'), value: '2' },
+  { label: t('job.misfireDiscard'), value: '3' },
 ]
 
 const concurrentOptions = [
-  { label: '允许', value: '1' },
-  { label: '禁止', value: '0' },
+  { label: t('job.concurrentAllowed'), value: '1' },
+  { label: t('job.concurrentForbidden'), value: '0' },
 ]
 
 const columns: DataTableColumns<SysJob> = [
   { title: 'ID', key: 'id', width: 50 },
-  { title: '任务名称', key: 'jobName', width: 130, sorter: true },
-  { title: '任务组', key: 'jobGroup', width: 90 },
-  { title: '调用目标', key: 'invokeTarget', width: 160, ellipsis: { tooltip: true } },
-  { title: 'Cron表达式', key: 'cronExpression', width: 130 },
+  { title: t('job.name'), key: 'jobName', width: 130, sorter: true },
+  { title: t('job.group'), key: 'jobGroup', width: 90 },
+  { title: t('job.target'), key: 'invokeTarget', width: 160, ellipsis: { tooltip: true } },
+  { title: t('job.cron'), key: 'cronExpression', width: 130 },
   {
-    title: '状态', key: 'status', width: 60,
+    title: t('job.status'), key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? '运行' : '暂停' })
+      { default: () => row.status === '0' ? t('job.statusRunning') : t('job.statusPaused') })
   },
   {
-    title: '并发', key: 'concurrent', width: 60,
+    title: t('job.concurrent'), key: 'concurrent', width: 60,
     render: (row) => h(NTag, { type: row.concurrent === '1' ? 'info' : 'warning', size: 'small' },
-      { default: () => row.concurrent === '1' ? '允许' : '禁止' })
+      { default: () => row.concurrent === '1' ? t('job.concurrentAllowed') : t('job.concurrentForbidden') })
   },
-  { title: '备注', key: 'remark', width: 120, ellipsis: { tooltip: true } },
+  { title: t('job.remark'), key: 'remark', width: 120, ellipsis: { tooltip: true } },
   {
-    title: '操作', key: 'actions', width: 280,
+    title: t('job.actions'), key: 'actions', width: 280,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => runJob(row.id) }, { default: () => '执行' }),
+        h(NButton, { size: 'tiny', onClick: () => runJob(row.id) }, { default: () => t('job.run') }),
         row.status === '0'
-          ? h(NButton, { size: 'tiny', onClick: () => pauseJob(row.id) }, { default: () => '暂停' })
-          : h(NButton, { size: 'tiny', type: 'success', onClick: () => resumeJob(row.id) }, { default: () => '恢复' }),
-        h(NButton, { size: 'tiny', onClick: () => viewLogs(row.id, row.jobName) }, { default: () => '日志' }),
-        h(NButton, { size: 'tiny', onClick: () => editJob(row) }, { default: () => '编辑' }),
+          ? h(NButton, { size: 'tiny', onClick: () => pauseJob(row.id) }, { default: () => t('job.pause') })
+          : h(NButton, { size: 'tiny', type: 'success', onClick: () => resumeJob(row.id) }, { default: () => t('job.resume') }),
+        h(NButton, { size: 'tiny', onClick: () => viewLogs(row.id, row.jobName) }, { default: () => t('job.logs') }),
+        h(NButton, { size: 'tiny', onClick: () => editJob(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delJob(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -112,9 +112,9 @@ async function saveJob() {
     if (editing.value) await request.put(`/api/job/${editing.value.id}`, form.value)
     else await request.post('/api/job', form.value)
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('job.updateSuccess') : t('job.createSuccess'))
     await loadJobs()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delJob(id: number) {
@@ -136,7 +136,7 @@ async function viewLogs(id: number, name: string) {
 
 async function runJob(id: number) {
   await request.post(`/api/job/${id}/run`)
-  notify.success('任务已触发执行')
+  notify.success(t('job.triggerSuccess'))
 }
 
 onMounted(loadJobs)
@@ -147,45 +147,45 @@ onMounted(loadJobs)
     <div style="padding:20px">
       <n-card :title="t('nav.jobs')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addJob"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addJob"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
-        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadJobs" secondary>刷新</n-button></n-space>
+        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadJobs" secondary>{{ t('common.refresh') }}</n-button></n-space>
         <n-data-table
           :columns="columns" :data="jobs" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
           :row-key="(row: SysJob) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:560px">
+        <n-modal v-model:show="showModal" :title="editing ? t('job.edit') : t('job.add')" style="width:560px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="任务名称">
+            <n-form-item :label="t('job.name')">
               <n-input v-model:value="form.jobName" />
             </n-form-item>
-            <n-form-item label="任务组">
+            <n-form-item :label="t('job.group')">
               <n-input v-model:value="form.jobGroup" />
             </n-form-item>
-            <n-form-item label="调用目标">
+            <n-form-item :label="t('job.target')">
               <n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" />
             </n-form-item>
-            <n-form-item label="Cron表达式">
+            <n-form-item :label="t('job.cron')">
               <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
               <n-space style="margin-top:4px">
-                <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">每10秒</n-button>
-                <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">每30秒</n-button>
-                <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">每分钟</n-button>
-                <n-button size="tiny" @click="form.cronExpression='0 0/30 * * * ?'">每30分钟</n-button>
-                <n-button size="tiny" @click="form.cronExpression='0 0 8 * * ?'">每天8点</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">{{ t('job.cron10s') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">{{ t('job.cron30s') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">{{ t('job.cron1m') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0/30 * * * ?'">{{ t('job.cron30m') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0 8 * * ?'">{{ t('job.cron8h') }}</n-button>
               </n-space>
             </n-form-item>
-            <n-form-item label="状态">
+            <n-form-item :label="t('job.status')">
               <n-select v-model:value="form.status" :options="statusOptions" />
             </n-form-item>
-            <n-form-item label="并发执行">
+            <n-form-item :label="t('job.concurrentLabel')">
               <n-select v-model:value="form.concurrent" :options="concurrentOptions" />
             </n-form-item>
-            <n-form-item label="错过策略">
+            <n-form-item :label="t('job.misfireLabel')">
               <n-select v-model:value="form.misfirePolicy" :options="misfireOptions" />
             </n-form-item>
-            <n-form-item label="备注">
+            <n-form-item :label="t('job.remark')">
               <n-input v-model:value="form.remark" type="textarea" />
             </n-form-item>
           </n-form>
@@ -198,16 +198,16 @@ onMounted(loadJobs)
         </n-modal>
 
         <!-- 执行日志弹窗 -->
-        <n-modal v-model:show="showLogModal" :title="`执行日志: ${logJobName}`" style="width:700px">
+        <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" style="width:700px">
           <n-dataTable
             v-if="jobLogs.length" :columns="[
-              {title:'开始时间',key:'startTime',width:150,render:(r:any)=>r.startTime?.substring(0,19)||'-'},
-              {title:'结束时间',key:'endTime',width:150,render:(r:any)=>r.endTime?.substring(0,19)||'-'},
-              {title:'状态',key:'status',width:60,render:(r:any)=>h(NTag,{type:r.status==='0'?'success':'error',size:'small'},{default:()=>r.status==='0'?'成功':'失败'})},
-              {title:'结果',key:'result',width:200,ellipsis:{tooltip:true}},
+              {title:t('job.startTime'),key:'startTime',width:150,render:(r:any)=>r.startTime?.substring(0,19)||'-'},
+              {title:t('job.endTime'),key:'endTime',width:150,render:(r:any)=>r.endTime?.substring(0,19)||'-'},
+              {title:t('job.status'),key:'status',width:60,render:(r:any)=>h(NTag,{type:r.status==='0'?'success':'error',size:'small'},{default:()=>r.status==='0'?t('common.success'):t('common.error')})},
+              {title:t('job.result'),key:'result',width:200,ellipsis:{tooltip:true}},
             ]" :data="jobLogs" size="small" :row-key="(r:any)=>r.id" :max-height="400"
           />
-          <span v-else style="color:#999">暂无执行记录</span>
+          <span v-else style="color:#999">{{ t('job.noLogs') }}</span>
         </n-modal>
       </n-card>
     </div>

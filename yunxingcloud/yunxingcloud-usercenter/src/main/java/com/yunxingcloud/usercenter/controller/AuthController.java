@@ -1,5 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
+import com.yunxingcloud.usercenter.config.I18nService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -26,11 +27,13 @@ public class AuthController {
     private static final String SAVED_REQUEST_ATTR = "SPRING_SECURITY_SAVED_REQUEST";
 
     private final AuthenticationManager authenticationManager;
+    private final I18nService i18n;
     private final HttpSessionSecurityContextRepository securityContextRepository =
             new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, I18nService i18n) {
         this.authenticationManager = authenticationManager;
+        this.i18n = i18n;
     }
 
     @PostMapping("/login")
@@ -55,7 +58,7 @@ public class AuthController {
             ));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", "用户名或密码错误"
+                    "success", false, "message", i18n.msg("auth.bad_credentials")
             ));
         } catch (DisabledException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
@@ -63,7 +66,7 @@ public class AuthController {
             ));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", "认证失败，请重试"
+                    "success", false, "message", i18n.msg("auth.login_failed")
             ));
         }
     }

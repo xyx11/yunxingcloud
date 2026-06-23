@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysDictData;
 import com.yunxingcloud.yunxingcloud.entity.SysDictType;
 import com.yunxingcloud.yunxingcloud.repository.SysDictDataRepository;
@@ -23,11 +24,14 @@ public class DictController {
 
     private final SysDictTypeRepository dictTypeRepository;
     private final SysDictDataRepository dictDataRepository;
+    private final I18nService i18n;
 
     public DictController(SysDictTypeRepository dictTypeRepository,
-                          SysDictDataRepository dictDataRepository) {
+                          SysDictDataRepository dictDataRepository,
+                          I18nService i18n) {
         this.dictTypeRepository = dictTypeRepository;
         this.dictDataRepository = dictDataRepository;
+        this.i18n = i18n;
     }
 
     // ---- Dict Type endpoints ----
@@ -49,7 +53,7 @@ public class DictController {
     @PostMapping("/types")
     public ResponseEntity<?> createType(@RequestBody SysDictType dictType) {
         if (dictTypeRepository.existsByDictType(dictType.getDictType())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "字典类型已存在"));
+            return ResponseEntity.badRequest().body(Map.of("message", i18n.msg("dict.type_exists")));
         }
         return ResponseEntity.ok(dictTypeRepository.save(dictType));
     }
@@ -145,6 +149,6 @@ public class DictController {
                 dictDataRepository.save(d); count++;
             } catch (Exception ignored) {}
         }
-        return ResponseEntity.ok(Map.of("success", (Object) true, "message", "导入 " + count + " 条"));
+        return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("dict.import_count", count)));
     }
 }

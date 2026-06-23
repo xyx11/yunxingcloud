@@ -18,17 +18,22 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final I18nService i18n;
+
+    public GlobalExceptionHandler(I18nService i18n) {
+        this.i18n = i18n;
+    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("success", false, "message", "权限不足"));
+                .body(Map.of("success", false, "message", i18n.msg("auth.access_denied")));
     }
 
     @ExceptionHandler(BlockException.class)
     public ResponseEntity<Map<String, Object>> handleBlock(BlockException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of("success", false, "message", "请求过于频繁，请稍后再试"));
+                .body(Map.of("success", false, "message", i18n.msg("ratelimit.too_many_requests")));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -40,25 +45,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(f -> f.getField() + ": " + f.getDefaultMessage())
-                .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
+                .reduce((a, b) -> a + "; " + b).orElse(i18n.msg("validate.body_malformed"));
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", msg));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest().body(Map.of("success", false, "message",
-                "参数类型错误: " + e.getName()));
+                i18n.msg("validate.type_mismatch") + ": " + e.getName()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleNotReadable(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请求格式错误"));
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("validate.body_malformed")));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception e) {
         log.error("未处理异常: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "服务器内部错误"));
+                .body(Map.of("success", false, "message", i18n.msg("common.internal_error")));
     }
 }

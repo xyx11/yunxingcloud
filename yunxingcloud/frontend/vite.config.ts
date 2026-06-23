@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '^/(api|login|logout|oauth2|userinfo|\\.well-known)': {
+      '^/(api|oauth2|userinfo|\\.well-known)': {
         target: 'http://localhost:8090',
         changeOrigin: true,
         cookieDomainRewrite: { 'localhost:8090': 'localhost:5173' },

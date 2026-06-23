@@ -1,6 +1,7 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.cache.CacheManager;
@@ -27,17 +28,19 @@ public class SystemController {
     private final FeatureFlags featureFlags;
     private final JdbcTemplate jdbcTemplate;
     private final DataSource dataSource;
+    private final I18nService i18n;
     private final List<Map<String, Object>> history = new CopyOnWriteArrayList<>();
     private static final int MAX_HISTORY = 60;
 
     public SystemController(CacheManager cacheManager, TokenStore tokenStore,
                             FeatureFlags featureFlags, JdbcTemplate jdbcTemplate,
-                            DataSource dataSource) {
+                            DataSource dataSource, I18nService i18n) {
         this.cacheManager = cacheManager;
         this.tokenStore = tokenStore;
         this.featureFlags = featureFlags;
         this.jdbcTemplate = jdbcTemplate;
         this.dataSource = dataSource;
+        this.i18n = i18n;
     }
 
     @GetMapping("/info")
@@ -142,9 +145,9 @@ public class SystemController {
         String username = body.get("username");
         if (username != null) {
             tokenStore.revokeByUser(username);
-            return ResponseEntity.ok(Map.of("success", true, "message", "已强制下线: " + username));
+            return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("system.revoke_success", username)));
         }
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "缺少 username"));
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("system.username_required")));
     }
 
     @GetMapping("/benchmark")
@@ -176,7 +179,7 @@ public class SystemController {
                     "系统公告", "sys.announcement", body.get("announcement"), "Y");
             featureFlags.refresh();
         }
-        return ResponseEntity.ok(Map.of("success", true, "message", "公告已更新"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("system.announcement_updated")));
     }
 
     @PreAuthorize("hasAuthority('config:write')")
@@ -186,7 +189,7 @@ public class SystemController {
             var cache = cacheManager.getCache(name);
             if (cache != null) cache.clear();
         }
-        return ResponseEntity.ok(Map.of("success", true, "message", "缓存已清除"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("system.cache_cleared")));
     }
 
     private String formatDuration(long millis) {

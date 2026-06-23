@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 // 布局组件同步加载（首屏必需）
@@ -40,7 +40,7 @@ const NotFoundView = () => import('@/views/NotFoundView.vue')
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password']
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes: [
     { path: '/login', name: 'Login', component: LoginView, meta: { title: '登录' } },
     { path: '/register', name: 'Register', component: RegisterView, meta: { title: '注册' } },

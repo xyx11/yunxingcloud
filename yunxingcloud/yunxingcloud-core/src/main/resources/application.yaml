@@ -2,6 +2,11 @@ spring:
   application:
     name: yunxingcloud-core
 
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   config:
     import: optional:nacos:${spring.application.name}.yaml
 
@@ -118,11 +123,6 @@ server:
     enabled: true
     mime-types: text/html,text/css,application/javascript,application/json
   shutdown: graceful
-
-  messages:
-    basename: i18n/messages
-    encoding: UTF-8
-    fallback-to-system-locale: false
 
 logging:
   pattern:

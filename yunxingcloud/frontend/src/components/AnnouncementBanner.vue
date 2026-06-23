@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import request from '@/api/request'
 import { NModal, NButton, NSpace } from 'naive-ui'
+
+const { t } = useI18n()
 
 const announcement = ref('')
 const noticeContent = ref('')
@@ -44,10 +47,10 @@ onBeforeUnmount(() => clearInterval(timer))
     <button @click="dismiss" class="close-btn">✕</button>
   </div>
   <n-modal v-model:show="showPopup" preset="card" :title="announcement" style="width:500px">
-    <div style="line-height:1.8" v-html="noticeContent || '暂无详细内容'" />
+    <div style="line-height:1.8" v-html="noticeContent || t('common.noDetail')" />
     <template #footer>
       <n-space justify="end">
-        <n-button type="primary" @click="closePopup">我知道了</n-button>
+        <n-button type="primary" @click="closePopup">{{ t('common.gotIt') }}</n-button>
       </n-space>
     </template>
   </n-modal>

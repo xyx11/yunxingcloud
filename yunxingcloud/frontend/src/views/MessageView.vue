@@ -21,23 +21,23 @@ const form = ref({ toUser: '', title: '', content: '' })
 const saving = ref(false)
 
 const columns: DataTableColumns<Msg> = [
-  { title: '标题', key: 'title', width: 180, ellipsis: { tooltip: true } },
-  { title: tab.value === 'sent' ? '收件人' : '发件人', key: tab.value === 'sent' ? 'toUser' : 'fromUser', width: 100 },
+  { title: t('message.title'), key: 'title', width: 180, ellipsis: { tooltip: true } },
+  { title: t('message.toOrFrom'), key: tab.value === 'sent' ? 'toUser' : 'fromUser', width: 100 },
   {
-    title: '状态', key: 'isRead', width: 60,
-    render: (row) => h(NTag, { type: row.isRead ? 'default' : 'info', size: 'small' }, { default: () => row.isRead ? '已读' : '未读' })
+    title: t('message.status'), key: 'isRead', width: 60,
+    render: (row) => h(NTag, { type: row.isRead ? 'default' : 'info', size: 'small' }, { default: () => row.isRead ? t('message.read') : t('message.unread') })
   },
-  { title: '时间', key: 'createdAt', width: 160, render: (row: any) => row.createdAt?.substring(0, 19).replace('T', ' ') || '-' },
+  { title: t('message.time'), key: 'createdAt', width: 160, render: (row: any) => row.createdAt?.substring(0, 19).replace('T', ' ') || '-' },
   {
-    title: '操作', key: 'actions', width: 140,
+    title: t('message.actions'), key: 'actions', width: 140,
     render: (row) => h(NSpace, null, {
       default: () => [
         tab.value === 'inbox' && !row.isRead
-          ? h(NButton, { size: 'tiny', onClick: () => readMsg(row.id) }, { default: () => '标为已读' })
+          ? h(NButton, { size: 'tiny', onClick: () => readMsg(row.id) }, { default: () => t('message.markRead') })
           : null,
         h(NPopconfirm, { onPositiveClick: () => delMsg(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -58,8 +58,8 @@ async function readMsg(id: number) { await request.put(`/api/messages/${id}/read
 async function delMsg(id: number) { await request.delete(`/api/messages/${id}`); loadMsgs() }
 async function sendMsg() {
   saving.value = true
-  try { await request.post('/api/messages', form.value); showModal.value = false; form.value = { toUser: '', title: '', content: '' }; notify.success('发送成功'); loadMsgs() }
-  catch { notify.error('发送失败') }
+  try { await request.post('/api/messages', form.value); showModal.value = false; form.value = { toUser: '', title: '', content: '' }; notify.success(t('message.sendSuccess')); loadMsgs() }
+  catch { notify.error(t('message.sendFailed')) }
   finally { saving.value = false }
 }
 
@@ -69,23 +69,23 @@ onMounted(loadMsgs)
 <template>
   <n-config-provider :theme="currentTheme">
     <div style="padding:20px">
-      <n-card title="站内信">
+      <n-card :title="t('nav.messages')">
         <template #header-extra>
           <n-space>
-            <n-button :type="tab === 'inbox' ? 'primary' : 'default'" size="small" @click="switchTab('inbox')">收件箱</n-button>
-            <n-button :type="tab === 'sent' ? 'primary' : 'default'" size="small" @click="switchTab('sent')">已发送</n-button>
-            <n-button type="primary" size="small" @click="showModal = true"><template #icon>＋</template>发信</n-button>
+            <n-button :type="tab === 'inbox' ? 'primary' : 'default'" size="small" @click="switchTab('inbox')">{{ t('message.inbox') }}</n-button>
+            <n-button :type="tab === 'sent' ? 'primary' : 'default'" size="small" @click="switchTab('sent')">{{ t('message.sent') }}</n-button>
+            <n-button type="primary" size="small" @click="showModal = true"><template #icon>＋</template>{{ t('message.compose') }}</n-button>
           </n-space>
         </template>
         <n-dataTable :columns="columns" :data="messages" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: Msg) => row.id" />
 
-        <n-modal v-model:show="showModal" title="发送站内信" preset="card" display-directive="show" style="width:480px">
+        <n-modal v-model:show="showModal" :title="t('message.send')" preset="card" display-directive="show" style="width:480px">
           <n-form label-placement="left" label-width="60">
-            <n-form-item label="收件人"><n-input v-model:value="form.toUser" /></n-form-item>
-            <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
-            <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" :rows="4" /></n-form-item>
+            <n-form-item :label="t('message.toUser')"><n-input v-model:value="form.toUser" /></n-form-item>
+            <n-form-item :label="t('message.title')"><n-input v-model:value="form.title" /></n-form-item>
+            <n-form-item :label="t('message.content')"><n-input v-model:value="form.content" type="textarea" :rows="4" /></n-form-item>
           </n-form>
-          <template #footer><n-space justify="end"><n-button @click="showModal = false">取消</n-button><n-button type="primary" :loading="saving" @click="sendMsg">发送</n-button></n-space></template>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="sendMsg">{{ t('message.send') }}</n-button></n-space></template>
         </n-modal>
       </n-card>
     </div>

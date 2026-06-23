@@ -21,25 +21,25 @@ async function loadStats() {
 async function cleanLogs() {
   try {
     await request.post(`/api/maintenance/clean-logs?days=${cleanDays.value}`)
-    notify.success(`已清理 ${cleanDays.value} 天前的操作日志`)
+    notify.success(t('maintenance.logCleanupSuccess', { days: cleanDays.value }))
     await loadStats()
-  } catch { notify.error('清理失败') }
+  } catch { notify.error(t('maintenance.cleanFailed')) }
 }
 
 async function cleanTokens() {
   try {
     await request.post('/api/maintenance/clean-tokens')
-    notify.success('已清理过期的密码重置令牌')
+    notify.success(t('maintenance.tokenCleanupSuccess'))
     await loadStats()
-  } catch { notify.error('清理失败') }
+  } catch { notify.error(t('maintenance.cleanFailed')) }
 }
 
 async function vacuum() {
   try {
     await request.post('/api/maintenance/vacuum')
-    notify.success('整体清理完成')
+    notify.success(t('maintenance.vacuumSuccess'))
     await loadStats()
-  } catch { notify.error('清理失败') }
+  } catch { notify.error(t('maintenance.cleanFailed')) }
 }
 
 onMounted(loadStats)
@@ -47,51 +47,51 @@ onMounted(loadStats)
 
 <template>
   <div style="padding:20px">
-    <n-card title="数据维护">
+    <n-card :title="t('maintenance.title')">
       <n-grid cols="4" x-gap="16" y-gap="16" responsive="screen">
         <n-grid-item span="4 m:2 l:1">
-          <n-card size="small"><n-statistic label="用户数" :value="stats.userCount ?? '-'" /></n-card>
+          <n-card size="small"><n-statistic :label="t('maintenance.userCount')" :value="stats.userCount ?? '-'" /></n-card>
         </n-grid-item>
         <n-grid-item span="4 m:2 l:1">
-          <n-card size="small"><n-statistic label="角色数" :value="stats.roleCount ?? '-'" /></n-card>
+          <n-card size="small"><n-statistic :label="t('maintenance.roleCount')" :value="stats.roleCount ?? '-'" /></n-card>
         </n-grid-item>
         <n-grid-item span="4 m:2 l:1">
-          <n-card size="small"><n-statistic label="菜单数" :value="stats.menuCount ?? '-'" /></n-card>
+          <n-card size="small"><n-statistic :label="t('maintenance.menuCount')" :value="stats.menuCount ?? '-'" /></n-card>
         </n-grid-item>
         <n-grid-item span="4 m:2 l:1">
-          <n-card size="small"><n-statistic label="日志数" :value="stats.operLogCount ?? '-'" /></n-card>
+          <n-card size="small"><n-statistic :label="t('maintenance.logCount')" :value="stats.operLogCount ?? '-'" /></n-card>
         </n-grid-item>
       </n-grid>
     </n-card>
 
-    <n-card title="日志清理" style="margin-top:16px">
+    <n-card :title="t('maintenance.logCleanup')" style="margin-top:16px">
       <n-space align="center">
-        <span>清理</span>
+        <span>{{ t('maintenance.cleanLabel') }}</span>
         <n-input-number v-model:value="cleanDays" :min="1" :max="365" style="width:100px" size="small" />
-        <span>天之前的操作日志</span>
+        <span>{{ t('maintenance.daysBefore') }}</span>
         <n-popconfirm @positive-click="cleanLogs">
-          <template #trigger><n-button type="warning" size="small">执行清理</n-button></template>
-          确认删除 {{ cleanDays }} 天前的操作日志?
+          <template #trigger><n-button type="warning" size="small">{{ t('maintenance.executeClean') }}</n-button></template>
+          {{ t('maintenance.cleanConfirm', { days: cleanDays }) }}
         </n-popconfirm>
       </n-space>
     </n-card>
 
-    <n-card title="令牌清理" style="margin-top:16px">
+    <n-card :title="t('maintenance.tokenCleanup')" style="margin-top:16px">
       <n-space align="center">
-        <span>清理所有过期的密码重置令牌</span>
+        <span>{{ t('maintenance.tokenCleanupDesc') }}</span>
         <n-popconfirm @positive-click="cleanTokens">
-          <template #trigger><n-button type="warning" size="small">清理令牌</n-button></template>
-          确认清理所有过期的密码重置令牌?
+          <template #trigger><n-button type="warning" size="small">{{ t('maintenance.cleanTokenBtn') }}</n-button></template>
+          {{ t('maintenance.tokenCleanConfirm') }}
         </n-popconfirm>
       </n-space>
     </n-card>
 
-    <n-card title="整体清理" style="margin-top:16px">
+    <n-card :title="t('maintenance.vacuum')" style="margin-top:16px">
       <n-space align="center">
-        <span>执行全部清理操作（清理90天前日志 + 过期令牌）</span>
+        <span>{{ t('maintenance.vacuumDesc') }}</span>
         <n-popconfirm @positive-click="vacuum">
-          <template #trigger><n-button type="error" size="small">一键清理</n-button></template>
-          确认执行全部清理操作? 此操作不可撤销!
+          <template #trigger><n-button type="error" size="small">{{ t('maintenance.vacuumBtn') }}</n-button></template>
+          {{ t('maintenance.vacuumConfirm') }}
         </n-popconfirm>
       </n-space>
     </n-card>

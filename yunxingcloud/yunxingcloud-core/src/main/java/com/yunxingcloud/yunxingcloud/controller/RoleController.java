@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,9 +14,11 @@ import java.util.Map;
 public class RoleController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final I18nService i18n;
 
-    public RoleController(JdbcTemplate jdbcTemplate) {
+    public RoleController(JdbcTemplate jdbcTemplate, I18nService i18n) {
         this.jdbcTemplate = jdbcTemplate;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -42,7 +45,7 @@ public class RoleController {
                 "SELECT COUNT(*) FROM role WHERE code = ?", Integer.class, code);
         if (count != null && count > 0) {
             return ResponseEntity.badRequest().body(
-                    Map.of("success", false, "message", "角色编码已存在"));
+                    Map.of("success", false, "message", i18n.msg("role.code_exists")));
         }
         jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions, enabled) VALUES (?,?,?,?,?)",

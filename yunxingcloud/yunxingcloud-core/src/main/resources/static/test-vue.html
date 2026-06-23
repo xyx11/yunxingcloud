@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Vue Test</title></head><body>
+<div id="app">
+  <input v-model="user" placeholder="user"><br>
+  <input v-model="pass" type="password" placeholder="pass"><br>
+  <button @click="login" :disabled="loading">{{ loading ? '...' : 'Login' }}</button>
+  <pre>{{ result }}</pre>
+</div>
+<script type="importmap">
+{ "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js" } }
+</script>
+<script type="module">
+import { createApp, ref } from 'vue'
+createApp({
+  setup() {
+    const user = ref('admin')
+    const pass = ref('admin123')
+    const loading = ref(false)
+    const result = ref('')
+    async function login() {
+      loading.value = true; result.value = 'calling...';
+      try {
+        const res = await fetch('/api/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: user.value, password: pass.value })
+        })
+        const d = await res.json()
+        result.value = JSON.stringify(d, null, 2)
+      } catch(e) { result.value = 'ERROR: ' + e.message }
+      finally { loading.value = false }
+    }
+    return { user, pass, loading, result, login }
+  }
+}).mount('#app')
+</script>
+</body></html>

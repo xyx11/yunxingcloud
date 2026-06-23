@@ -20,20 +20,20 @@ const loading = ref(false)
 let timer: ReturnType<typeof setInterval>
 
 const columns: DataTableColumns<OnlineSession> = [
-  { title: '会话ID', key: 'token', width: 140, ellipsis: { tooltip: true } },
-  { title: '用户名', key: 'username', width: 100 },
-  { title: '登录时间', key: 'createdAt', width: 160, render: (row) => row.createdAt ? row.createdAt.substring(0,19).replace('T',' ') : '-' },
-  { title: '过期时间', key: 'expiresAt', width: 160, render: (row) => row.expiresAt ? row.expiresAt.substring(0,19).replace('T',' ') : '-' },
-  { title: '最后活跃', key: 'lastAccessTime', width: 160, render: (row) => row.lastAccessTime ? row.lastAccessTime.substring(0,19).replace('T',' ') : '-' },
-  { title: '状态', key: 'status', width: 70, render: (row) => {
+  { title: t('monitor.sessionId'), key: 'token', width: 140, ellipsis: { tooltip: true } },
+  { title: t('monitor.user'), key: 'username', width: 100 },
+  { title: t('monitor.loginTime'), key: 'createdAt', width: 160, render: (row) => row.createdAt ? row.createdAt.substring(0,19).replace('T',' ') : '-' },
+  { title: t('monitor.expiresAt'), key: 'expiresAt', width: 160, render: (row) => row.expiresAt ? row.expiresAt.substring(0,19).replace('T',' ') : '-' },
+  { title: t('monitor.lastActive'), key: 'lastAccessTime', width: 160, render: (row) => row.lastAccessTime ? row.lastAccessTime.substring(0,19).replace('T',' ') : '-' },
+  { title: t('monitor.status'), key: 'status', width: 70, render: (row) => {
     const expired = row.expiresAt ? new Date(row.expiresAt).getTime() < Date.now() : false
-    return h(NTag, { type: expired ? 'default' : 'success', size: 'small' }, { default: () => expired ? '离线' : '在线' })
+    return h(NTag, { type: expired ? 'default' : 'success', size: 'small' }, { default: () => expired ? t('monitor.offline') : t('monitor.online') })
   }},
   {
-    title: '操作', key: 'actions', width: 100,
+    title: t('monitor.actions'), key: 'actions', width: 100,
     render: (row) => h(NPopconfirm, { onPositiveClick: () => kickUser(row.username) }, {
-      trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '强退' }),
-      default: () => `确认强退 ${row.username}？`
+      trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('monitor.kickOut') }),
+      default: () => t('monitor.revokeConfirm', { username: row.username })
     })
   },
 ]
@@ -50,7 +50,7 @@ async function loadSessions() {
 async function kickUser(username: string) {
   try {
     await request.post('/api/system/sessions/revoke', { username })
-    notify.success(`已强退 ${username}`)
+    notify.success(t('monitor.kickSuccess', { username }))
     await loadSessions()
   } catch {}
 }
@@ -62,11 +62,11 @@ onBeforeUnmount(() => clearInterval(timer))
 <template>
   <n-config-provider :theme="currentTheme">
     <div style="padding:20px">
-      <n-card title="在线用户">
+      <n-card :title="t('monitor.onlineTitle')">
         <template #header-extra>
           <n-space>
-            <n-tag type="info" size="small">共 {{ sessions.length }} 人在线</n-tag>
-            <n-button size="small" @click="loadSessions" secondary>刷新</n-button>
+            <n-tag type="info" size="small">{{ t('monitor.onlineCount', { n: sessions.length }) }}</n-tag>
+            <n-button size="small" @click="loadSessions" secondary>{{ t('monitor.refresh') }}</n-button>
           </n-space>
         </template>
         <n-dataTable

@@ -23,7 +23,7 @@ const commands = computed(() => [
   { label: t('nav.monitor'), path: '/monitor', icon: '📈', tag: t('nav.monitor') },
   { label: t('nav.maintenance'), path: '/maintenance', icon: '🧹', tag: 'System' },
   { label: t('nav.profile'), path: '/profile', icon: '👤', tag: 'System' },
-  { label: locale.value === 'zh' ? '暗色模式' : 'Dark Mode', action: 'toggle-theme', icon: '🌓', tag: 'System' },
+  { label: t('nav.darkMode'), action: 'toggle-theme', icon: '🌓', tag: 'System' },
 ])
 
 const filtered = computed(() => {
@@ -82,7 +82,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 <template>
   <n-modal v-model:show="visible" :closable="true" :mask-closable="true" style="width:520px;top:15vh;">
     <div class="palette">
-      <n-input v-model:value="query" placeholder="搜索页面..." size="large" :autofocus="true" clearable>
+      <n-input v-model:value="query" :placeholder="t('nav.searchPlaceholder')" size="large" :autofocus="true" clearable>
         <template #prefix>🔍</template>
         <template #suffix><n-tag size="small" :bordered="false" style="opacity:.5">Ctrl+K / ?</n-tag></template>
       </n-input>
@@ -97,7 +97,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           <n-tag size="tiny" :bordered="false" style="opacity:.6;margin-left:auto;">{{ cmd.tag }}</n-tag>
         </div>
       </div>
-      <div v-else class="empty">未找到匹配项</div>
+      <div v-else class="empty">{{ t('nav.noMatchResults') }}</div>
     </div>
   </n-modal>
 </template>

@@ -23,44 +23,44 @@ const passwordStrength = computed(() => {
   if (/[a-z]/.test(p)) score++
   if (/[0-9]/.test(p)) score++
   if (/[^A-Za-z0-9]/.test(p)) score++
-  return { score, pct: Math.min(100, score * 17), color: score <= 2 ? '#f5576c' : score <= 4 ? '#f093fb' : '#43e97b', label: score <= 2 ? '弱' : score <= 4 ? '中' : '强' }
+  return { score, pct: Math.min(100, score * 17), color: score <= 2 ? '#f5576c' : score <= 4 ? '#f093fb' : '#43e97b', label: score <= 2 ? t('passwordStrength.weak') : score <= 4 ? t('passwordStrength.medium') : t('passwordStrength.strong') }
 })
 
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度 3-50 位', trigger: 'blur' },
+    { required: true, message: () => t('login.usernameRequired'), trigger: 'blur' },
+    { min: 3, max: 50, message: () => t('validate.usernameLen'), trigger: 'blur' },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, message: '密码至少 8 位', trigger: 'blur' },
+    { required: true, message: () => t('login.passwordRequired'), trigger: 'blur' },
+    { min: 8, message: () => t('validate.passwordMinLen'), trigger: 'blur' },
     {
       validator: (_rule: any, value: string) => /[A-Z]/.test(value),
-      message: '需包含大写字母', trigger: 'blur',
+      message: () => t('validate.passwordNeedUpper'), trigger: 'blur',
     },
     {
       validator: (_rule: any, value: string) => /[a-z]/.test(value),
-      message: '需包含小写字母', trigger: 'blur',
+      message: () => t('validate.passwordNeedLower'), trigger: 'blur',
     },
     {
       validator: (_rule: any, value: string) => /[0-9]/.test(value),
-      message: '需包含数字', trigger: 'blur',
+      message: () => t('validate.passwordNeedDigit'), trigger: 'blur',
     },
     {
       validator: (_rule: any, value: string) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
-      message: '需包含特殊字符', trigger: 'blur',
+      message: () => t('validate.passwordNeedSpecial'), trigger: 'blur',
     },
   ],
   confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
+    { required: true, message: () => t('validate.confirmRequired'), trigger: 'blur' },
     {
       validator: (_rule: any, value: string) => value === model.value.password,
-      message: '两次输入的密码不一致',
+      message: () => t('validate.passwordMismatch'),
       trigger: 'blur',
     },
   ],
   email: [
-    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' },
+    { type: 'email', message: () => t('validate.emailValid'), trigger: 'blur' },
   ],
 }
 
@@ -78,16 +78,16 @@ async function handleRegister() {
     })
     if (res.data.success) {
       if (res.data.approved === false) {
-        success.value = '注册成功！您的账号需要管理员审核后才能登录。'
+        success.value = t('register.pendingApproval')
       } else {
-        success.value = '注册成功！正在跳转...'
+        success.value = t('register.success')
         setTimeout(() => { router.push('/') }, 1000)
       }
     } else {
-      error.value = res.data.message || '注册失败，请重试'
+      error.value = res.data.message || t('validate.registerFailed')
     }
   } catch (e: any) {
-    error.value = e.response?.data?.message || '注册失败，请重试'
+    error.value = e.response?.data?.message || t('validate.registerFailed')
   } finally {
     loading.value = false
   }

@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,9 +22,11 @@ public class MaintenanceController {
 
     private static final Logger log = LoggerFactory.getLogger(MaintenanceController.class);
     private final JdbcTemplate jdbcTemplate;
+    private final I18nService i18n;
 
-    public MaintenanceController(JdbcTemplate jdbcTemplate) {
+    public MaintenanceController(JdbcTemplate jdbcTemplate, I18nService i18n) {
         this.jdbcTemplate = jdbcTemplate;
+        this.i18n = i18n;
     }
 
     @PostMapping("/clean-logs")
@@ -33,7 +36,7 @@ public class MaintenanceController {
                 "DELETE FROM sys_oper_log WHERE oper_time < ?",
                 LocalDateTime.now().minusDays(days));
             return ResponseEntity.ok(Map.of("success", true, "deleted", deleted,
-                    "message", "已清理 " + days + " 天前的 " + deleted + " 条日志"));
+                    "message", i18n.msg("maintenance.log_cleaned", days, deleted)));
         } catch (Exception e) {
             log.warn("清理日志失败: {}", e.getMessage());
             return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
@@ -45,7 +48,7 @@ public class MaintenanceController {
         try {
             int deleted = jdbcTemplate.update(
                 "DELETE FROM password_reset_tokens WHERE expires_at < ?", LocalDateTime.now());
-            return ResponseEntity.ok(Map.of("success", true, "deleted", deleted, "message", "已清理过期令牌"));
+            return ResponseEntity.ok(Map.of("success", true, "deleted", deleted, "message", i18n.msg("maintenance.token_cleaned")));
         } catch (Exception e) {
             log.warn("清理令牌失败: {}", e.getMessage());
             return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
@@ -86,7 +89,7 @@ public class MaintenanceController {
             int exit = p.waitFor();
             long size = Files.size(file);
             return ResponseEntity.ok(Map.of("success", exit == 0, "filename", filename, "size", size,
-                "message", exit == 0 ? "备份成功 (" + (size/1024) + "KB)" : "备份失败, exit=" + exit));
+                "message", exit == 0 ? i18n.msg("maintenance.backup_success", size/1024) : i18n.msg("maintenance.backup_failed")));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
         }
@@ -115,12 +118,12 @@ public class MaintenanceController {
     public ResponseEntity<Map<String, Object>> restore(@PathVariable String filename) {
         try {
             Path file = Paths.get("uploads/backup/" + filename);
-            if (!Files.exists(file)) return ResponseEntity.ok(Map.of("success", false, "message", "文件不存在"));
+            if (!Files.exists(file)) return ResponseEntity.ok(Map.of("success", false, "message", i18n.msg("common.not_found")));
             ProcessBuilder pb = new ProcessBuilder("mysql", "-uroot", "-pyunxingcloud123", "sso_yunxingcloud");
             pb.redirectInput(file.toFile());
             Process p = pb.start();
             int exit = p.waitFor();
-            return ResponseEntity.ok(Map.of("success", exit == 0, "message", exit == 0 ? "恢复成功" : "恢复失败, exit=" + exit));
+            return ResponseEntity.ok(Map.of("success", exit == 0, "message", exit == 0 ? i18n.msg("maintenance.restore_success") : i18n.msg("maintenance.restore_failed", exit)));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
         }
@@ -131,7 +134,7 @@ public class MaintenanceController {
         try {
             Path file = Paths.get("uploads/backup/" + filename);
             Files.deleteIfExists(file);
-            return ResponseEntity.ok(Map.of("success", true, "message", "已删除"));
+            return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("maintenance.delete_success")));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("success", false, "message", e.getMessage()));
         }
@@ -145,6 +148,6 @@ public class MaintenanceController {
         try { logs = jdbcTemplate.update("DELETE FROM sys_oper_log WHERE oper_time < ?", LocalDateTime.now().minusDays(90)); } catch (Exception e) { log.warn("清理日志失败: {}", e.getMessage()); }
         try { tokens = jdbcTemplate.update("DELETE FROM password_reset_tokens WHERE expires_at < ?", LocalDateTime.now()); } catch (Exception e) { log.warn("清理令牌失败: {}", e.getMessage()); }
         return ResponseEntity.ok(Map.of("success", true, "logsDeleted", logs, "tokensDeleted", tokens,
-                "message", "清理完成"));
+                "message", i18n.msg("maintenance.vacuum_complete")));
     }
 }

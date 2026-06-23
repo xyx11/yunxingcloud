@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysLoginInfo;
 import com.yunxingcloud.yunxingcloud.repository.SysLoginInfoRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,10 +25,12 @@ public class LoginInfoController {
 
     private final SysLoginInfoRepository loginInfoRepository;
     private final JdbcTemplate jdbc;
+    private final I18nService i18n;
 
-    public LoginInfoController(SysLoginInfoRepository loginInfoRepository, JdbcTemplate jdbc) {
+    public LoginInfoController(SysLoginInfoRepository loginInfoRepository, JdbcTemplate jdbc, I18nService i18n) {
         this.loginInfoRepository = loginInfoRepository;
         this.jdbc = jdbc;
+        this.i18n = i18n;
     }
 
     @GetMapping("/stats")
@@ -81,6 +84,6 @@ public class LoginInfoController {
     @DeleteMapping("/clean")
     public ResponseEntity<Map<String, Object>> clean() {
         loginInfoRepository.deleteAll();
-        return ResponseEntity.ok(Map.of("success", true, "message", "登录日志已清空"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("loginlog.cleaned")));
     }
 }

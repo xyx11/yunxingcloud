@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import request from '@/api/request'
@@ -23,16 +23,16 @@ const codeUrl = ref('')
 const captchaEnabled = ref(true)
 const appVersion = ref('')
 
-const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
+const rules = computed<FormRules>(() => ({
+  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
+}))
 
-const socialProviders = [
-  { name: '微信', icon: '💬', provider: 'wechat' },
-  { name: 'QQ', icon: '🐧', provider: 'qq' },
-  { name: '支付宝', icon: '💙', provider: 'alipay' },
-]
+const socialProviders = computed(() => [
+  { name: t('login.wechat'), icon: '💬', provider: 'wechat' },
+  { name: t('login.qq'), icon: '🐧', provider: 'qq' },
+  { name: t('login.alipay'), icon: '💙', provider: 'alipay' },
+])
 
 onMounted(async () => {
   const savedUser = Cookies.get('username')
@@ -45,7 +45,7 @@ onMounted(async () => {
   }
   await getCaptcha()
   request.get('/api/config/key/sys.version').then(r => appVersion.value = r.data.configValue || '').catch(() => {})
-  if (route.query.error !== undefined) error.value = '用户名或密码错误'
+  if (route.query.error !== undefined) error.value = t('login.badCredentials')
 })
 
 async function getCaptcha() {
@@ -61,11 +61,12 @@ async function getPublicKey(): Promise<string> {
 }
 
 async function handleLogin() {
-  if (!formRef.value) return
-  await formRef.value.validate().catch(() => {})
   loading.value = true
   error.value = ''
   try {
+    if (formRef.value) {
+      try { await formRef.value.validate() } catch {}
+    }
     let password = model.value.password
     const publicKey = await getPublicKey()
     if (publicKey) {
@@ -85,7 +86,7 @@ async function handleLogin() {
     const finalUrl = redirectUrl !== '/' ? redirectUrl : (route.query.redirect as string) || '/'
     router.push(finalUrl)
   } catch (e: any) {
-    error.value = e.response?.data?.message || e.message || '用户名或密码错误'
+    error.value = e.response?.data?.message || e.message || t('login.badCredentials')
     await getCaptcha()
   } finally { loading.value = false }
 }
@@ -115,7 +116,7 @@ function handleSocialLogin(provider: string) {
         <el-form-item v-if="captchaEnabled" prop="code">
           <div style="display:flex; gap:12px; width:100%;">
             <el-input v-model="model.code" :placeholder="t('login.captcha')" size="large" style="flex:1;" :prefix-icon="Key" />
-            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" style="height:40px;width:120px;cursor:pointer;border-radius:4px;" title="点击刷新验证码">
+            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" style="height:40px;width:120px;cursor:pointer;border-radius:4px;" :title="t('login.refreshCaptcha')">
           </div>
         </el-form-item>
 
@@ -155,6 +156,7 @@ function handleSocialLogin(provider: string) {
 }
 .login-page::before {
   content: ''; position: absolute; inset: 0;
+  pointer-events: none;
   background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
               radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
   animation: floatParticles 10s ease-in-out infinite alternate;

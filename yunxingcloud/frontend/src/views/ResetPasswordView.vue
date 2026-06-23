@@ -25,15 +25,15 @@ onMounted(() => {
 
 async function handleSubmit() {
   if (newPassword.value.length < 8) {
-    error.value = '密码至少 8 位'
+    error.value = t('validate.passwordMinLen')
     return
   }
   if (!/[A-Z]/.test(newPassword.value) || !/[a-z]/.test(newPassword.value) || !/[0-9]/.test(newPassword.value)) {
-    error.value = '密码需包含大写字母、小写字母和数字'
+    error.value = t('validate.passwordComplexity')
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    error.value = '两次输入的密码不一致'
+    error.value = t('validate.passwordMismatch')
     return
   }
   loading.value = true
@@ -48,7 +48,7 @@ async function handleSubmit() {
       setTimeout(() => router.push('/login'), 2000)
     }
   } catch (e: any) {
-    error.value = e.response?.data?.message || '重置失败'
+    error.value = e.response?.data?.message || t('pwd.resetFailed')
   } finally {
     loading.value = false
   }
@@ -59,29 +59,29 @@ async function handleSubmit() {
   <n-config-provider>
     <div class="page">
       <n-card class="card">
-        <h1 class="title">重置密码</h1>
+        <h1 class="title">{{ t('pwd.reset') }}</h1>
         <p class="subtitle">{{ t('pwd.change') }}</p>
 
         <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
         <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
 
         <n-form v-if="!success" @submit.prevent="handleSubmit">
-          <n-form-item label="重置令牌">
-            <n-input v-model:value="token" placeholder="输入邮箱收到的重置令牌" size="large" />
+          <n-form-item :label="t('pwd.token')">
+            <n-input v-model:value="token" :placeholder="t('pwd.tokenPlaceholder')" size="large" />
           </n-form-item>
-          <n-form-item label="新密码">
-            <n-input v-model:value="newPassword" type="password" placeholder="至少8位，含大小写字母和数字" size="large" show-password-on="click" />
+          <n-form-item :label="t('pwd.new')">
+            <n-input v-model:value="newPassword" type="password" :placeholder="t('pwd.newPasswordPlaceholder')" size="large" show-password-on="click" />
           </n-form-item>
-          <n-form-item label="确认密码">
-            <n-input v-model:value="confirmPassword" type="password" placeholder="再次输入新密码" size="large" show-password-on="click" />
+          <n-form-item :label="t('pwd.confirm')">
+            <n-input v-model:value="confirmPassword" type="password" :placeholder="t('pwd.confirmPlaceholder')" size="large" show-password-on="click" />
           </n-form-item>
           <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
-            重置密码
+            {{ t('pwd.reset') }}
           </n-button>
         </n-form>
 
         <div class="back-link">
-          <router-link to="/login">返回登录</router-link>
+          <router-link to="/login">{{ t('login.backToLogin') }}</router-link>
         </div>
       </n-card>
     </div>

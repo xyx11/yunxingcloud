@@ -2,6 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysJob;
 import com.yunxingcloud.yunxingcloud.entity.SysJobLog;
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
@@ -27,13 +28,16 @@ public class JobController {
     private final SysOperLogRepository operLogRepository;
     private final SysJobLogRepository jobLogRepository;
     private final Scheduler scheduler;
+    private final I18nService i18n;
 
     public JobController(SysJobRepository jobRepository, SysOperLogRepository operLogRepository,
-                         SysJobLogRepository jobLogRepository, Scheduler scheduler) {
+                         SysJobLogRepository jobLogRepository, Scheduler scheduler,
+                         I18nService i18n) {
         this.jobRepository = jobRepository;
         this.operLogRepository = operLogRepository;
         this.jobLogRepository = jobLogRepository;
         this.scheduler = scheduler;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -107,7 +111,7 @@ public class JobController {
             }
             jobLogRepository.save(jobLog);
         });
-        return ResponseEntity.ok(Map.of("success", (Object) true, "message", "执行成功"));
+        return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("job.run_success")));
     }
 
     @PreAuthorize("hasAuthority('job:write')")
@@ -119,7 +123,7 @@ public class JobController {
             try {
                 if (scheduler != null) scheduler.pauseJob(new JobKey(j.getJobName(), j.getJobGroup()));
             } catch (Exception e) { log.warn("暂停失败: {}", e.getMessage()); }
-            return ResponseEntity.ok(Map.of("success", (Object) true, "message", "已暂停"));
+            return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("job.pause_success")));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -132,7 +136,7 @@ public class JobController {
             try {
                 if (scheduler != null) scheduler.resumeJob(new JobKey(j.getJobName(), j.getJobGroup()));
             } catch (Exception e) { log.warn("恢复失败: {}", e.getMessage()); }
-            return ResponseEntity.ok(Map.of("success", (Object) true, "message", "已恢复"));
+            return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("job.resume_success")));
         }).orElse(ResponseEntity.notFound().build());
     }
 

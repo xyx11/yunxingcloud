@@ -35,30 +35,30 @@ const filteredConfigs = computed(() => {
   return list
 })
 
-const typeOptions = [
-  { label: '是 (Y)', value: 'Y' },
-  { label: '否 (N)', value: 'N' },
-]
+const typeOptions = computed(() => [
+  { label: `${t('common.yes')} (Y)`, value: 'Y' },
+  { label: `${t('common.no')} (N)`, value: 'N' },
+])
 
 const allColumns = ref<DataTableColumns<SysConfig>>([
   { title: 'ID', key: 'id', width: 60 },
-  { title: '名称', key: 'name', width: 140, sorter: true },
-  { title: '键名', key: 'configKey', width: 160 },
-  { title: '键值', key: 'configValue', width: 200, ellipsis: { tooltip: true } },
+  { title: t('config.name'), key: 'name', width: 140, sorter: true },
+  { title: t('config.key'), key: 'configKey', width: 160 },
+  { title: t('config.value'), key: 'configValue', width: 200, ellipsis: { tooltip: true } },
   {
-    title: '系统内置', key: 'configType', width: 80,
+    title: t('config.builtin'), key: 'configType', width: 80,
     render: (row) => h(NTag, { type: row.configType === 'Y' ? 'info' : 'default', size: 'small' },
       { default: () => row.configType === 'Y' ? t('common.yes') : t('common.no') })
   },
-  { title: '创建时间', key: 'createdAt', width: 160 },
+  { title: t('common.createdAt'), key: 'createdAt', width: 160 },
   {
-    title: '操作', key: 'actions', width: 140,
+    title: t('user.actions'), key: 'actions', width: 140,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'small', onClick: () => editConfig(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'small', onClick: () => editConfig(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delConfig(row.id) }, {
-          trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -97,12 +97,12 @@ async function saveConfig() {
     if (editing.value) await request.put(`/api/config/${editing.value.id}`, form.value)
     else await request.post('/api/config', form.value)
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('user.updateSuccess') : t('user.createSuccess'))
     await loadConfigs()
     if (form.value.configKey?.startsWith('feature.')) {
       request.post('/api/config/refresh-flags').catch(() => {})
     }
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delConfig(id: number) {
@@ -118,22 +118,22 @@ onMounted(loadConfigs)
     <div style="padding:20px">
       <n-card :title="t('nav.config')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addConfig"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addConfig"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-button size="small" :type="cfgTypeFilter===''?'primary':'default'" @click="cfgTypeFilter=''">全部</n-button>
-            <n-button size="small" :type="cfgTypeFilter==='Y'?'primary':'default'" @click="cfgTypeFilter='Y'">系统内置</n-button>
-            <n-button size="small" :type="cfgTypeFilter==='N'?'primary':'default'" @click="cfgTypeFilter='N'">用户配置</n-button>
-            <n-input v-model:value="cfgSearch" placeholder="参数名称" size="small" clearable style="width:160px" />
-            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
-            <n-button size="small" @click="cfgSearch = ''; cfgTypeFilter = ''">重置</n-button>
+            <n-button size="small" :type="cfgTypeFilter===''?'primary':'default'" @click="cfgTypeFilter=''">{{ t('common.all') }}</n-button>
+            <n-button size="small" :type="cfgTypeFilter==='Y'?'primary':'default'" @click="cfgTypeFilter='Y'">{{ t('config.builtin') }}</n-button>
+            <n-button size="small" :type="cfgTypeFilter==='N'?'primary':'default'" @click="cfgTypeFilter='N'">{{ t('config.userConfig') }}</n-button>
+            <n-input v-model:value="cfgSearch" :placeholder="t('config.searchPlaceholder')" size="small" clearable style="width:160px" />
+            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="cfgSearch = ''; cfgTypeFilter = ''">{{ t('common.reset') }}</n-button>
           </n-space>
           <n-space>
-            <n-button size="small" @click="loadConfigs" secondary>刷新</n-button>
+            <n-button size="small" @click="loadConfigs" secondary>{{ t('common.refresh') }}</n-button>
             <n-popover trigger="click" placement="bottom-end" :width="180">
               <template #trigger>
-                <n-button size="small" secondary>列选项</n-button>
+                <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
               </template>
               <div style="max-height:300px;overflow-y:auto">
                 <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
@@ -155,16 +155,16 @@ onMounted(loadConfigs)
 
         <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="参数名称">
+            <n-form-item :label="t('config.nameLabel')">
               <n-input v-model:value="form.name" />
             </n-form-item>
-            <n-form-item label="参数键名">
+            <n-form-item :label="t('config.keyLabel')">
               <n-input v-model:value="form.configKey" :disabled="!!editing" />
             </n-form-item>
-            <n-form-item label="参数键值">
+            <n-form-item :label="t('config.valueLabel')">
               <n-input v-model:value="form.configValue" />
             </n-form-item>
-            <n-form-item label="系统内置">
+            <n-form-item :label="t('config.builtin')">
               <n-select v-model:value="form.configType" :options="typeOptions" />
             </n-form-item>
           </n-form>

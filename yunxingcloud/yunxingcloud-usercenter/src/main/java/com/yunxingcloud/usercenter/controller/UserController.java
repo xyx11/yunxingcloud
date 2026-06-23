@@ -1,5 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
+import com.yunxingcloud.usercenter.config.I18nService;
 import com.yunxingcloud.usercenter.repository.SocialAccountRepository;
 import com.yunxingcloud.usercenter.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -17,10 +18,12 @@ public class UserController {
 
     private final UserService userService;
     private final SocialAccountRepository socialAccountRepository;
+    private final I18nService i18n;
 
-    public UserController(UserService userService, SocialAccountRepository socialAccountRepository) {
+    public UserController(UserService userService, SocialAccountRepository socialAccountRepository, I18nService i18n) {
         this.userService = userService;
         this.socialAccountRepository = socialAccountRepository;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -74,7 +77,7 @@ public class UserController {
         return socialAccountRepository.findById(id)
                 .map(sa -> {
                     socialAccountRepository.delete(sa);
-                    return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "解绑成功"));
+                    return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.unbind_success")));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

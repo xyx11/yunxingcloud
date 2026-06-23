@@ -26,30 +26,30 @@ const generatedCode = ref<Record<string, string>>({})
 const packageName = ref('com.yunxingcloud')
 
 const tableColumns: DataTableColumns<TableInfo> = [
-  { title: '表名', key: 'TABLE_NAME', width: 200 },
-  { title: '注释', key: 'TABLE_COMMENT', width: 200 },
+  { title: t('generator.tableName'), key: 'TABLE_NAME', width: 200 },
+  { title: t('generator.comment'), key: 'TABLE_COMMENT', width: 200 },
   {
-    title: '操作', key: 'actions', width: 200,
+    title: t('generator.actions'), key: 'actions', width: 200,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'small', onClick: () => viewColumns(row.TABLE_NAME) }, { default: () => '查看字段' }),
-        h(NButton, { size: 'small', type: 'primary', loading: generatingTable.value === row.TABLE_NAME, onClick: () => genCode(row.TABLE_NAME) }, { default: () => '生成代码' }),
+        h(NButton, { size: 'small', onClick: () => viewColumns(row.TABLE_NAME) }, { default: () => t('generator.viewColumns') }),
+        h(NButton, { size: 'small', type: 'primary', loading: generatingTable.value === row.TABLE_NAME, onClick: () => genCode(row.TABLE_NAME) }, { default: () => t('generator.generate') }),
       ]
     })
   },
 ]
 
 const colsColumns: DataTableColumns<ColumnInfo> = [
-  { title: '字段名', key: 'COLUMN_NAME', width: 140 },
-  { title: '类型', key: 'DATA_TYPE', width: 100 },
-  { title: '注释', key: 'COLUMN_COMMENT', width: 160 },
+  { title: t('generator.columnName'), key: 'COLUMN_NAME', width: 140 },
+  { title: t('generator.dataType'), key: 'DATA_TYPE', width: 100 },
+  { title: t('generator.comment'), key: 'COLUMN_COMMENT', width: 160 },
   {
-    title: '可空', key: 'IS_NULLABLE', width: 60,
+    title: t('generator.nullable'), key: 'IS_NULLABLE', width: 60,
     render: (row) => h(NTag, { type: row.IS_NULLABLE === 'YES' ? 'warning' : 'info', size: 'small' },
       { default: () => row.IS_NULLABLE })
   },
   {
-    title: '键', key: 'COLUMN_KEY', width: 60,
+    title: t('generator.key'), key: 'COLUMN_KEY', width: 60,
     render: (row) => row.COLUMN_KEY ? h(NTag, { type: 'success', size: 'small' }, { default: () => row.COLUMN_KEY }) : null
   },
 ]
@@ -71,7 +71,7 @@ const generatingTable = ref('')
 
 function copyCode() {
   const code = generatedCode.value[activeCodeTab.value] || ''
-  navigator.clipboard.writeText(code).then(() => notify.success('已复制到剪贴板'))
+  navigator.clipboard.writeText(code).then(() => notify.success(t('generator.copiedToClipboard')))
 }
 
 async function loadTables() {
@@ -79,7 +79,7 @@ async function loadTables() {
   try {
     const res = await request.get('/api/generator/tables')
     tables.value = res.data
-  } catch { notify.error('获取表列表失败，请确保使用MySQL数据库'); }
+  } catch { notify.error(t('generator.fetchFailed')); }
   loading.value = false
 }
 
@@ -98,7 +98,7 @@ async function genCode(tableName: string) {
     generatedCode.value = res.data
     activeCodeTab.value = 'entity'
     showCodeModal.value = true
-  } catch { notify.error('代码生成失败') }
+  } catch { notify.error(t('generator.genFailed')) }
   generatingTable.value = ''
 }
 
@@ -108,10 +108,10 @@ onMounted(loadTables)
 <template>
   <n-config-provider :theme="currentTheme">
     <div style="padding:20px">
-      <n-card title="代码生成">
+      <n-card :title="t('nav.generator')">
         <template #header-extra>
-          <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>刷新</n-button>
-          <n-input v-model:value="packageName" placeholder="包名" style="width:200px;margin-right:8px" />
+          <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>{{ t('common.refresh') }}</n-button>
+          <n-input v-model:value="packageName" :placeholder="t('generator.packageName')" style="width:200px;margin-right:8px" />
         </template>
         <n-data-table
           :columns="tableColumns" :data="tables" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
@@ -119,7 +119,7 @@ onMounted(loadTables)
         />
 
         <!-- 字段查看弹窗 -->
-        <n-modal v-model:show="showColumnsModal" :title="`表字段: ${selectedTable}`" style="width:700px">
+        <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="width:700px">
           <n-data-table
             :columns="colsColumns" :data="columns"
             :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
@@ -127,7 +127,7 @@ onMounted(loadTables)
         </n-modal>
 
         <!-- 代码预览弹窗 -->
-        <n-modal v-model:show="showCodeModal" :title="`生成代码: ${selectedTable}`" style="width:800px">
+        <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="width:800px">
           <n-space vertical style="margin-bottom:12px">
             <n-space justify="space-between">
               <n-space>
@@ -139,7 +139,7 @@ onMounted(loadTables)
                   {{ tab.label }}
                 </n-button>
               </n-space>
-              <n-button size="small" @click="copyCode">复制代码</n-button>
+              <n-button size="small" @click="copyCode">{{ t('generator.copyCode') }}</n-button>
             </n-space>
           </n-space>
           <n-spin :show="!!generatingTable">

@@ -18,19 +18,19 @@ const loading = ref(false)
 
 const columns: DataTableColumns<PendingUser> = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '用户名', key: 'username', width: 130 },
-  { title: '邮箱', key: 'email', width: 200, ellipsis: { tooltip: true } },
-  { title: '来源', key: 'registerSource', width: 70 },
+  { title: t('user.username'), key: 'username', width: 130 },
+  { title: t('user.email'), key: 'email', width: 200, ellipsis: { tooltip: true } },
+  { title: t('user.source'), key: 'registerSource', width: 70 },
   {
-    title: '操作', key: 'actions', width: 160,
+    title: t('user.actions'), key: 'actions', width: 160,
     render: (row) => h(NSpace, null, { default: () => [
       h(NPopconfirm, { onPositiveClick: () => approve(row.id) }, {
-        trigger: () => h(NButton, { size: 'small', type: 'success' }, { default: () => '通过' }),
-        default: () => '确认通过？'
+        trigger: () => h(NButton, { size: 'small', type: 'success' }, { default: () => t('common.approve') }),
+        default: () => t('user.approveConfirm')
       }),
       h(NPopconfirm, { onPositiveClick: () => reject(row.id) }, {
-        trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '拒绝' }),
-        default: () => '确认拒绝并删除？'
+        trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => t('common.reject') }),
+        default: () => t('user.rejectConfirm')
       }),
     ]}),
   },
@@ -47,13 +47,13 @@ async function loadPending() {
 
 async function approve(id: number) {
   await request.put(`/api/users/${id}/approve`)
-  notify.success('已通过')
+  notify.success(t('user.approveSuccess'))
   await loadPending()
 }
 
 async function reject(id: number) {
   await request.delete(`/api/users/${id}/reject`)
-  notify.success('已拒绝')
+  notify.success(t('user.rejectSuccess'))
   await loadPending()
 }
 
@@ -63,16 +63,16 @@ onMounted(loadPending)
 <template>
   <n-config-provider :theme="currentTheme">
     <div style="padding:24px">
-      <n-card title="注册审核">
+      <n-card :title="t('nav.registerApproval')">
         <template #header-extra>
-          <n-button size="small" @click="loadPending" secondary>刷新</n-button>
+          <n-button size="small" @click="loadPending" secondary>{{ t('common.refresh') }}</n-button>
         </template>
         <n-data-table
           :columns="columns" :data="items" :loading="loading" size="small" :bordered="false"
           :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row: PendingUser) => row.id"
         />
         <n-space v-if="!loading && items.length === 0" justify="center" style="padding:40px">
-          <span style="color:var(--n-text-color-3)">暂无待审核用户</span>
+          <span style="color:var(--n-text-color-3)">{{ t('common.noData') }}</span>
         </n-space>
       </n-card>
     </div>

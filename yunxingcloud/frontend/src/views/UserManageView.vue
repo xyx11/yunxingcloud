@@ -29,7 +29,7 @@ const checkedRowKeys = ref<number[]>([])
 async function batchDeleteUsers() {
   if (!checkedRowKeys.value.length) return
   await request.delete('/api/users/batch', { data: { ids: checkedRowKeys.value } })
-  notify.success(`已删除 ${checkedRowKeys.value.length} 个用户`)
+  notify.success(t('user.deleteBatch', { count: checkedRowKeys.value.length }))
   checkedRowKeys.value = []
   loadData()
 }
@@ -59,13 +59,13 @@ const addFormRef = ref<FormInst | null>(null)
 const editFormRef = ref<FormInst | null>(null)
 
 const addRules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }, { min: 2, max: 20, message: '2-20个字符', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, max: 30, message: '至少6位', trigger: 'blur' }],
-  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
+  username: [{ required: true, message: () => t('user.loginRequired'), trigger: 'blur' }, { min: 2, max: 20, message: () => t('validate.usernameLen'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('user.passwordRequired'), trigger: 'blur' }, { min: 6, max: 30, message: () => t('validate.passwordLen'), trigger: 'blur' }],
+  email: [{ type: 'email', message: () => t('validate.emailFormat'), trigger: 'blur' }],
 }
 
 const editRules: FormRules = {
-  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
+  email: [{ type: 'email', message: () => t('validate.emailFormat'), trigger: 'blur' }],
 }
 
 const currentTheme = computed(() => localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme)
@@ -77,13 +77,13 @@ function dictLabel(dictType: string, value: string): string {
 function searchData() { page.value = 1; loadData() }
 
 const actionOptions = (row: UserInfo) => [
-  { label: '查看详情', key: 'detail' },
-  { label: '编辑信息', key: 'edit' },
-  { label: '分配部门', key: 'dept' },
-  { label: '分配岗位', key: 'post' },
-  { label: '分配角色', key: 'role' },
-  { label: '重置密码', key: 'pwd' },
-  { label: row.enabled ? '禁用' : '启用', key: 'toggle' },
+  { label: t('user.viewDetail'), key: 'detail' },
+  { label: t('user.editInfo'), key: 'edit' },
+  { label: t('user.assignDept'), key: 'dept' },
+  { label: t('user.assignPost'), key: 'post' },
+  { label: t('user.assignRole'), key: 'role' },
+  { label: t('user.resetPwd'), key: 'pwd' },
+  { label: row.enabled ? t('user.disable') : t('user.enable'), key: 'toggle' },
 ]
 
 function handleAction(key: string, row: UserInfo) {
@@ -99,16 +99,16 @@ function handleAction(key: string, row: UserInfo) {
 }
 
 const allColumns = ref([
-  { title: '用户名', key: 'username', width: 100, sorter: true },
-  { title: '昵称', key: 'nickname', width: 100 },
-  { title: '邮箱', key: 'email', width: 160, ellipsis: { tooltip: true } },
-  { title: '来源', key: 'registerSource', width: 80, render: (row: UserInfo) => h(NTag, { type: row.registerSource === 'local' ? 'info' : 'success', size: 'small' }, { default: () => dictLabel('sys_user_source', row.registerSource) }) },
-  { title: '部门', key: 'departmentName', width: 100, ellipsis: { tooltip: true } },
-  { title: '岗位', key: 'postId', width: 90, render: (row: UserInfo) => { const p = posts.value.find(x => x.id === row.postId); return h('span', p ? p.postName : '-') } },
-  { title: '角色', key: 'roles', width: 150, render: (row: UserInfo) => h(NSpace, { size: 4 }, { default: () => (row.roles || []).map(r => h(NTag, { type: 'info', size: 'small' }, { default: () => r.name })) }) },
-  { title: '最后登录', key: 'lastLoginTime', width: 140, render: (row: any) => row.lastLoginTime ? row.lastLoginTime.substring(0,19).replace('T',' ') : '-' },
-  { title: '状态', key: 'enabled', width: 60, render: (row: UserInfo) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleUser(row) }) },
-  { title: '操作', key: 'actions', width: 80, render: (row: UserInfo) => h(NDropdown, { options: actionOptions(row), onSelect: (k: string) => handleAction(k, row), size: 'small' }, { default: () => h(NButton, { size: 'small' }, { default: () => '更多 ▾' }) }) },
+  { title: t('user.username'), key: 'username', width: 100, sorter: true },
+  { title: t('user.nickname'), key: 'nickname', width: 100 },
+  { title: t('user.email'), key: 'email', width: 160, ellipsis: { tooltip: true } },
+  { title: t('user.source'), key: 'registerSource', width: 80, render: (row: UserInfo) => h(NTag, { type: row.registerSource === 'local' ? 'info' : 'success', size: 'small' }, { default: () => dictLabel('sys_user_source', row.registerSource) }) },
+  { title: t('user.dept'), key: 'departmentName', width: 100, ellipsis: { tooltip: true } },
+  { title: t('user.post'), key: 'postId', width: 90, render: (row: UserInfo) => { const p = posts.value.find(x => x.id === row.postId); return h('span', p ? p.postName : '-') } },
+  { title: t('user.role'), key: 'roles', width: 150, render: (row: UserInfo) => h(NSpace, { size: 4 }, { default: () => (row.roles || []).map(r => h(NTag, { type: 'info', size: 'small' }, { default: () => r.name })) }) },
+  { title: t('user.lastLogin'), key: 'lastLoginTime', width: 140, render: (row: any) => row.lastLoginTime ? row.lastLoginTime.substring(0,19).replace('T',' ') : '-' },
+  { title: t('user.enabled'), key: 'enabled', width: 60, render: (row: UserInfo) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleUser(row) }) },
+  { title: t('user.actions'), key: 'actions', width: 80, render: (row: UserInfo) => h(NDropdown, { options: actionOptions(row), onSelect: (k: string) => handleAction(k, row), size: 'small' }, { default: () => h(NButton, { size: 'small' }, { default: () => t('user.moreActions') }) }) },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(allColumns, 'users')
 const columnOptions = computed(() => (allColumns.value as any[])
@@ -153,8 +153,8 @@ async function saveAdd() {
     showAddModal.value = false
     addForm.value = { username: '', password: '', nickname: '', email: '' }
     await loadData()
-    notify.success('创建成功')
-  } catch (e: any) { notify.error(e.response?.data?.message || '创建失败') }
+    notify.success(t('user.createSuccess'))
+  } catch (e: any) { notify.error(e.response?.data?.message || t('user.createFailed')) }
   finally { saving.value = false }
 }
 async function saveEdit() {
@@ -167,14 +167,14 @@ async function saveEdit() {
     await request.put(`/api/users/${selectedUser.value.id}/profile`, editForm.value)
     showEditModal.value = false
     await loadData()
-    notify.success('更新成功')
-  } catch (e: any) { notify.error(e.response?.data?.message || '更新失败') }
+    notify.success(t('user.updateSuccess'))
+  } catch (e: any) { notify.error(e.response?.data?.message || t('user.updateFailed')) }
   finally { saving.value = false }
 }
-async function saveDept() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/department`, { departmentId: selectedDeptId.value }); showDeptModal.value = false; await loadData(); notify.success('部门已分配') }
-async function savePost() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/post`, { postId: selectedPostId.value }); showPostModal.value = false; await loadData(); notify.success('岗位已分配') }
-async function saveRoles() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/roles`, { roleIds: selectedRoleIds.value }); showRoleModal.value = false; await loadData(); notify.success('角色已分配') }
-async function resetPwd() { if (!selectedUser.value) return; await request.post(`/api/users/${selectedUser.value.id}/reset-pwd`); showPwdModal.value = false; notify.success('密码已重置为 123456') }
+async function saveDept() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/department`, { departmentId: selectedDeptId.value }); showDeptModal.value = false; await loadData(); notify.success(t('user.deptAssigned')) }
+async function savePost() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/post`, { postId: selectedPostId.value }); showPostModal.value = false; await loadData(); notify.success(t('user.postAssigned')) }
+async function saveRoles() { if (!selectedUser.value) return; await request.put(`/api/users/${selectedUser.value.id}/roles`, { roleIds: selectedRoleIds.value }); showRoleModal.value = false; await loadData(); notify.success(t('user.roleAssigned')) }
+async function resetPwd() { if (!selectedUser.value) return; await request.post(`/api/users/${selectedUser.value.id}/reset-pwd`); showPwdModal.value = false; notify.success(t('user.pwdResetSuccess')) }
 
 onMounted(loadData)
 </script>
@@ -182,29 +182,29 @@ onMounted(loadData)
 <template>
   <n-config-provider :theme="currentTheme">
     <div style="padding:24px">
-      <n-card title="用户管理">
+      <n-card :title="t('nav.users')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="showAddModal = true"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="showAddModal = true"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
             <n-button size="small" @click="showSearch = !showSearch" :type="showSearch ? 'primary' : 'default'" secondary>
-              {{ showSearch ? '收起搜索' : '展开搜索' }}
+              {{ showSearch ? t('common.collapseSearch') : t('common.expandSearch') }}
             </n-button>
             <template v-if="showSearch">
-              <n-input v-model:value="searchKeyword" placeholder="用户名/昵称/邮箱" clearable style="width:160px" size="small" @keyup:enter="searchData" />
-              <n-select v-model:value="filterDept" :options="[{label:'全部部门',value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
-              <n-select v-model:value="filterRole" :options="[{label:'全部角色',value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="width:110px" @update:value="searchData" />
-              <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
-              <n-button type="primary" size="small" @click="searchData">搜索</n-button>
-              <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; searchData()">重置</n-button>
+              <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable style="width:160px" size="small" @keyup:enter="searchData" />
+              <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
+              <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="width:110px" @update:value="searchData" />
+              <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
+              <n-button type="primary" size="small" @click="searchData">{{ t('common.search') }}</n-button>
+              <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; searchData()">{{ t('common.reset') }}</n-button>
             </template>
           </n-space>
           <n-space>
-            <n-button size="small" @click="loadData" secondary>刷新</n-button>
+            <n-button size="small" @click="loadData" secondary>{{ t('common.refresh') }}</n-button>
             <n-popover trigger="click" placement="bottom-end" :width="180">
               <template #trigger>
-                <n-button size="small" secondary>列选项</n-button>
+                <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
               </template>
               <div style="max-height:300px;overflow-y:auto">
                 <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
@@ -220,8 +220,8 @@ onMounted(loadData)
           </n-space>
         </n-space>
         <n-space v-if="checkedRowKeys.length" style="margin-bottom:8px">
-          <n-button type="error" size="small" @click="batchDeleteUsers">删除选中({{ checkedRowKeys.length }})</n-button>
-          <n-button size="small" @click="checkedRowKeys = []">取消选择</n-button>
+          <n-button type="error" size="small" @click="batchDeleteUsers">{{ t('common.batchDelete') }}({{ checkedRowKeys.length }})</n-button>
+          <n-button size="small" @click="checkedRowKeys = []">{{ t('common.deselect') }}</n-button>
         </n-space>
         <n-data-table
           :columns="visibleColumns" :data="users" :loading="loading" size="small" :bordered="false" :checked-row-keys="checkedRowKeys" @update:checked-row-keys="(ks) => checkedRowKeys = ks as number[]"
@@ -230,74 +230,74 @@ onMounted(loadData)
         />
 
         <!-- 新增用户 -->
-        <n-modal v-model:show="showAddModal" title="新增用户" preset="card" display-directive="show" style="width:480px">
+        <n-modal v-model:show="showAddModal" :title="t('user.addUser')" preset="card" display-directive="show" style="width:480px">
           <n-form ref="addFormRef" :model="addForm" :rules="addRules" label-placement="left" label-width="100">
-            <n-form-item label="用户名" path="username">
-              <n-input v-model:value="addForm.username" placeholder="2-20个字符" />
+            <n-form-item :label="t('user.username')" path="username">
+              <n-input v-model:value="addForm.username" :placeholder="t('validate.usernameLen')" />
             </n-form-item>
-            <n-form-item label="密码" path="password">
-              <n-input v-model:value="addForm.password" type="password" placeholder="至少6位" />
+            <n-form-item :label="t('login.password')" path="password">
+              <n-input v-model:value="addForm.password" type="password" :placeholder="t('validate.passwordLen')" />
             </n-form-item>
-            <n-form-item label="昵称">
+            <n-form-item :label="t('user.nickname')">
               <n-input v-model:value="addForm.nickname" />
             </n-form-item>
-            <n-form-item label="邮箱" path="email">
-              <n-input v-model:value="addForm.email" placeholder="可选" />
+            <n-form-item :label="t('user.email')" path="email">
+              <n-input v-model:value="addForm.email" :placeholder="t('user.optional')" />
             </n-form-item>
           </n-form>
-          <template #footer><n-space justify="end"><n-button @click="showAddModal = false">取消</n-button><n-button type="primary" :loading="saving" @click="saveAdd">确定</n-button></n-space></template>
+          <template #footer><n-space justify="end"><n-button @click="showAddModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveAdd">{{ t('common.ok') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 编辑信息 -->
-        <n-modal v-model:show="showEditModal" title="编辑用户信息" preset="card" display-directive="show">
+        <n-modal v-model:show="showEditModal" :title="t('user.editUser')" preset="card" display-directive="show">
           <n-form ref="editFormRef" :model="editForm" :rules="editRules" label-placement="left" label-width="100">
-            <n-form-item label="用户名"><span>{{ selectedUser?.username }}</span></n-form-item>
-            <n-form-item label="昵称">
+            <n-form-item :label="t('user.username')"><span>{{ selectedUser?.username }}</span></n-form-item>
+            <n-form-item :label="t('user.nickname')">
               <n-input v-model:value="editForm.nickname" />
             </n-form-item>
-            <n-form-item label="邮箱" path="email">
+            <n-form-item :label="t('user.email')" path="email">
               <n-input v-model:value="editForm.email" />
             </n-form-item>
           </n-form>
-          <template #footer><n-space justify="end"><n-button @click="showEditModal = false">取消</n-button><n-button type="primary" :loading="saving" @click="saveEdit">保存</n-button></n-space></template>
+          <template #footer><n-space justify="end"><n-button @click="showEditModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveEdit">{{ t('common.save') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 分配部门 -->
-        <n-modal v-model:show="showDeptModal" title="分配部门" preset="card" display-directive="show">
-          <n-form><n-form-item label="用户">{{ selectedUser?.username }}</n-form-item><n-form-item label="部门"><n-select v-model:value="selectedDeptId" :options="depts.map(d=>({label:d.name,value:d.id}))" clearable /></n-form-item></n-form>
-          <template #footer><n-space justify="end"><n-button @click="showDeptModal = false">取消</n-button><n-button type="primary" @click="saveDept">保存</n-button></n-space></template>
+        <n-modal v-model:show="showDeptModal" :title="t('user.assignDept')" preset="card" display-directive="show">
+          <n-form><n-form-item :label="t('user.username')">{{ selectedUser?.username }}</n-form-item><n-form-item :label="t('user.dept')"><n-select v-model:value="selectedDeptId" :options="depts.map(d=>({label:d.name,value:d.id}))" clearable /></n-form-item></n-form>
+          <template #footer><n-space justify="end"><n-button @click="showDeptModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="saveDept">{{ t('common.save') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 分配岗位 -->
-        <n-modal v-model:show="showPostModal" title="分配岗位" preset="card" display-directive="show">
-          <n-form><n-form-item label="用户">{{ selectedUser?.username }}</n-form-item><n-form-item label="岗位"><n-select v-model:value="selectedPostId" :options="posts.map(p=>({label:p.postName,value:p.id}))" clearable /></n-form-item></n-form>
-          <template #footer><n-space justify="end"><n-button @click="showPostModal = false">取消</n-button><n-button type="primary" @click="savePost">保存</n-button></n-space></template>
+        <n-modal v-model:show="showPostModal" :title="t('user.assignPost')" preset="card" display-directive="show">
+          <n-form><n-form-item :label="t('user.username')">{{ selectedUser?.username }}</n-form-item><n-form-item :label="t('user.post')"><n-select v-model:value="selectedPostId" :options="posts.map(p=>({label:p.postName,value:p.id}))" clearable /></n-form-item></n-form>
+          <template #footer><n-space justify="end"><n-button @click="showPostModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="savePost">{{ t('common.save') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 分配角色 -->
-        <n-modal v-model:show="showRoleModal" title="分配角色" preset="card" display-directive="show">
-          <n-form><n-form-item label="用户">{{ selectedUser?.username }}</n-form-item><n-form-item label="角色"><n-select v-model:value="selectedRoleIds" :options="allRoles.map(r=>({label:r.name+'('+r.code+')',value:r.id}))" multiple /></n-form-item></n-form>
-          <template #footer><n-space justify="end"><n-button @click="showRoleModal = false">取消</n-button><n-button type="primary" @click="saveRoles">保存</n-button></n-space></template>
+        <n-modal v-model:show="showRoleModal" :title="t('user.assignRole')" preset="card" display-directive="show">
+          <n-form><n-form-item :label="t('user.username')">{{ selectedUser?.username }}</n-form-item><n-form-item :label="t('user.role')"><n-select v-model:value="selectedRoleIds" :options="allRoles.map(r=>({label:r.name+'('+r.code+')',value:r.id}))" multiple /></n-form-item></n-form>
+          <template #footer><n-space justify="end"><n-button @click="showRoleModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="saveRoles">{{ t('common.save') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 重置密码确认 -->
-        <n-modal v-model:show="showPwdModal" title="重置密码" preset="card" display-directive="show">
-          <p>确认将 <strong>{{ selectedUser?.username }}</strong> 的密码重置为 <strong>123456</strong>？</p>
-          <template #footer><n-space justify="end"><n-button @click="showPwdModal = false">取消</n-button><n-button type="primary" @click="resetPwd">确认重置</n-button></n-space></template>
+        <n-modal v-model:show="showPwdModal" :title="t('user.resetPwd')" preset="card" display-directive="show">
+          <p>{{ t('user.confirmResetPwd', { username: selectedUser?.username }) }}</p>
+          <template #footer><n-space justify="end"><n-button @click="showPwdModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="resetPwd">{{ t('user.confirmReset') }}</n-button></n-space></template>
         </n-modal>
 
         <!-- 用户详情 -->
-        <n-modal v-model:show="showDetailModal" title="用户详情" preset="card" display-directive="show" style="width:560px">
+        <n-modal v-model:show="showDetailModal" :title="t('user.userDetail')" preset="card" display-directive="show" style="width:560px">
           <div v-if="detailUser" style="line-height:2">
-            <p><strong>用户名：</strong>{{ detailUser.username }}</p>
-            <p><strong>昵称：</strong>{{ detailUser.nickname || '-' }}</p>
-            <p><strong>邮箱：</strong>{{ detailUser.email || '-' }}</p>
-            <p><strong>来源：</strong>{{ dictLabel('sys_user_source', detailUser.registerSource) }}</p>
-            <p><strong>部门：</strong>{{ detailUser.departmentName || '-' }}</p>
-            <p><strong>岗位：</strong>{{ getPostName(detailUser) }}</p>
-            <p><strong>角色：</strong>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</p>
-            <p><strong>状态：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></p>
-            <p><strong>最后登录：</strong>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</p>
+            <p><strong>{{ t('user.username') }}：</strong>{{ detailUser.username }}</p>
+            <p><strong>{{ t('user.nickname') }}：</strong>{{ detailUser.nickname || '-' }}</p>
+            <p><strong>{{ t('user.email') }}：</strong>{{ detailUser.email || '-' }}</p>
+            <p><strong>{{ t('user.source') }}：</strong>{{ dictLabel('sys_user_source', detailUser.registerSource) }}</p>
+            <p><strong>{{ t('user.dept') }}：</strong>{{ detailUser.departmentName || '-' }}</p>
+            <p><strong>{{ t('user.post') }}：</strong>{{ getPostName(detailUser) }}</p>
+            <p><strong>{{ t('user.role') }}：</strong>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</p>
+            <p><strong>{{ t('user.enabled') }}：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></p>
+            <p><strong>{{ t('user.lastLogin') }}：</strong>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</p>
           </div>
         </n-modal>
       </n-card>

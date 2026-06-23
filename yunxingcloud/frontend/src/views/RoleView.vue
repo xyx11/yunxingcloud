@@ -117,7 +117,7 @@ function exportCSV() {
   const rows = filteredRoles.value.map(r => [r.id, r.name, r.code, r.description, r.permissions, r.enabled ? t('user.enabledLabel') : t('user.disabledLabel'), r.createdAt || '-'])
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = '角色列表.csv'; a.click(); URL.revokeObjectURL(url)
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${t('nav.roles')}.csv`; a.click(); URL.revokeObjectURL(url)
   notify.success(t('role.exportSuccess'))
 }
 

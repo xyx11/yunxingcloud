@@ -27,13 +27,13 @@ const form = ref({ noticeTitle: '', noticeType: '1', noticeContent: '', status: 
 const searchKeyword = ref('')
 
 const typeOptions = [
-  { label: '通知', value: '1' },
-  { label: '公告', value: '2' },
+  { label: t('notice.types.notice'), value: '1' },
+  { label: t('notice.types.announcement'), value: '2' },
 ]
 
 const statusOptions = [
   { label: t('user.enabledLabel'), value: '0' },
-  { label: '关闭', value: '1' },
+  { label: t('notice.statusClosed'), value: '1' },
 ]
 
 const filteredNotices = computed(() => {
@@ -43,28 +43,28 @@ const filteredNotices = computed(() => {
 })
 
 const columns: DataTableColumns<Notice> = [
-  { title: 'ID', key: 'id', width: 50 },
-  { title: '标题', key: 'noticeTitle', width: 180, ellipsis: { tooltip: true } },
+  { title: t('notice.id'), key: 'id', width: 50 },
+  { title: t('notice.title'), key: 'noticeTitle', width: 180, ellipsis: { tooltip: true } },
   {
-    title: '类型', key: 'noticeType', width: 60,
+    title: t('notice.type'), key: 'noticeType', width: 60,
     render: (row) => h(NTag, { type: row.noticeType === '1' ? 'info' : 'warning', size: 'small' },
-      { default: () => row.noticeType === '1' ? '通知' : '公告' })
+      { default: () => row.noticeType === '1' ? t('notice.types.notice') : t('notice.types.announcement') })
   },
-  { title: '内容', key: 'noticeContent', width: 200, ellipsis: { tooltip: true }, render: (row: any) => h('div', { innerHTML: (row.noticeContent || '').replace(/<[^>]+>/g,'').substring(0, 50) }) },
+  { title: t('notice.content'), key: 'noticeContent', width: 200, ellipsis: { tooltip: true }, render: (row: any) => h('div', { innerHTML: (row.noticeContent || '').replace(/<[^>]+>/g,'').substring(0, 50) }) },
   {
-    title: '状态', key: 'status', width: 60,
+    title: t('notice.status'), key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
-      { default: () => row.status === '0' ? t('user.enabledLabel') : '关闭' })
+      { default: () => row.status === '0' ? t('user.enabledLabel') : t('notice.statusClosed') })
   },
-  { title: '创建时间', key: 'createdAt', width: 150 },
+  { title: t('common.createdAt'), key: 'createdAt', width: 150 },
   {
-    title: '操作', key: 'actions', width: 120,
+    title: t('notice.actions'), key: 'actions', width: 120,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => editNotice(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => editNotice(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delNotice(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -95,9 +95,9 @@ async function saveNotice() {
     if (editing.value) await request.put(`/api/notices/${editing.value.id}`, form.value)
     else await request.post('/api/notices', form.value)
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('notice.updateSuccess') : t('notice.createSuccess'))
     await loadNotices()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delNotice(id: number) {
@@ -113,15 +113,15 @@ onMounted(loadNotices)
     <div style="padding:20px">
       <n-card :title="t('nav.notice')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addNotice"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addNotice"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="searchKeyword" placeholder="标题" size="small" clearable style="width:180px" />
-            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
-            <n-button size="small" @click="searchKeyword = ''">重置</n-button>
+            <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable style="width:180px" />
+            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="searchKeyword = ''">{{ t('common.reset') }}</n-button>
           </n-space>
-          <n-space><n-button size="small" @click="loadNotices" secondary>刷新</n-button></n-space>
+          <n-space><n-button size="small" @click="loadNotices" secondary>{{ t('common.refresh') }}</n-button></n-space>
         </n-space>
         <n-dataTable
           :columns="columns" :data="filteredNotices" :loading="loading" size="small"
@@ -129,21 +129,21 @@ onMounted(loadNotices)
           :row-key="(row: Notice) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:560px">
+        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" style="width:560px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="标题">
+            <n-form-item :label="t('notice.title')">
               <n-input v-model:value="form.noticeTitle" />
             </n-form-item>
-            <n-form-item label="类型">
+            <n-form-item :label="t('notice.type')">
               <n-select v-model:value="form.noticeType" :options="typeOptions" />
             </n-form-item>
-            <n-form-item label="内容">
-              <n-input v-model:value="form.noticeContent" type="textarea" :rows="5" placeholder="支持HTML标签: <b>粗体</b> <br>换行 <a href=''>链接</a>" />
+            <n-form-item :label="t('notice.content')">
+              <n-input v-model:value="form.noticeContent" type="textarea" :rows="5" :placeholder="t('notice.contentPlaceholder')" />
             </n-form-item>
-            <n-form-item label="状态">
+            <n-form-item :label="t('notice.status')">
               <n-select v-model:value="form.status" :options="statusOptions" />
             </n-form-item>
-            <n-form-item label="备注">
+            <n-form-item :label="t('common.remark')">
               <n-input v-model:value="form.remark" />
             </n-form-item>
           </n-form>

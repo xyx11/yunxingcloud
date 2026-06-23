@@ -39,24 +39,24 @@ const filteredPosts = computed(() => {
 
 const columns: DataTableColumns<Post> = [
   { title: 'ID', key: 'id', width: 50 },
-  { title: '岗位编码', key: 'postCode', width: 100 },
-  { title: '用户数', key: 'user_count', width: 60 },
-  { title: '岗位名称', key: 'postName', width: 140 },
-  { title: '排序', key: 'sortOrder', width: 60 },
+  { title: t('post.code'), key: 'postCode', width: 100 },
+  { title: t('post.userCount'), key: 'user_count', width: 60 },
+  { title: t('post.name'), key: 'postName', width: 140 },
+  { title: t('post.sort'), key: 'sortOrder', width: 60 },
   {
-    title: '状态', key: 'status', width: 60,
+    title: t('post.status'), key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
       { default: () => row.status === '0' ? t('user.enabledLabel') : t('user.disabledLabel') })
   },
-  { title: '创建时间', key: 'createdAt', width: 150 },
+  { title: t('common.createdAt'), key: 'createdAt', width: 150 },
   {
-    title: '操作', key: 'actions', width: 120,
+    title: t('post.actions'), key: 'actions', width: 120,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => editPost(row) }, { default: () => '编辑' }),
+        h(NButton, { size: 'tiny', onClick: () => editPost(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delPost(row.id) }, {
-          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),
-          default: () => '确认删除?'
+          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
+          default: () => t('common.confirmDelete')
         })
       ]
     })
@@ -87,9 +87,9 @@ async function savePost() {
     if (editing.value) await request.put(`/api/posts/${editing.value.id}`, form.value)
     else await request.post('/api/posts', form.value)
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('post.updateSuccess') : t('post.createSuccess'))
     await loadPosts()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delPost(id: number) {
@@ -105,15 +105,15 @@ onMounted(loadPosts)
     <div style="padding:20px">
       <n-card :title="t('nav.posts')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addPost"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addPost"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="searchKeyword" placeholder="岗位名称/编码" size="small" clearable style="width:180px" />
-            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
-            <n-button size="small" @click="searchKeyword = ''">重置</n-button>
+            <n-input v-model:value="searchKeyword" :placeholder="t('post.searchPlaceholder')" size="small" clearable style="width:180px" />
+            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="searchKeyword = ''">{{ t('common.reset') }}</n-button>
           </n-space>
-          <n-space><n-button size="small" @click="loadPosts" secondary>刷新</n-button></n-space>
+          <n-space><n-button size="small" @click="loadPosts" secondary>{{ t('common.refresh') }}</n-button></n-space>
         </n-space>
         <n-dataTable
           :columns="columns" :data="filteredPosts" :loading="loading" size="small"
@@ -121,21 +121,21 @@ onMounted(loadPosts)
           :row-key="(row: Post) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px">
+        <n-modal v-model:show="showModal" :title="editing ? t('post.edit') : t('post.add')" style="width:480px">
           <n-form label-placement="left" label-width="80">
-            <n-form-item label="岗位编码">
+            <n-form-item :label="t('post.code')">
               <n-input v-model:value="form.postCode" :disabled="!!editing" />
             </n-form-item>
-            <n-form-item label="岗位名称">
+            <n-form-item :label="t('post.name')">
               <n-input v-model:value="form.postName" />
             </n-form-item>
-            <n-form-item label="排序">
+            <n-form-item :label="t('post.sort')">
               <n-input-number v-model:value="form.sortOrder" :min="0" style="width:100%" />
             </n-form-item>
-            <n-form-item label="状态">
+            <n-form-item :label="t('post.status')">
               <n-select v-model:value="form.status" :options="statusOptions" />
             </n-form-item>
-            <n-form-item label="备注">
+            <n-form-item :label="t('common.remark')">
               <n-input v-model:value="form.remark" />
             </n-form-item>
           </n-form>

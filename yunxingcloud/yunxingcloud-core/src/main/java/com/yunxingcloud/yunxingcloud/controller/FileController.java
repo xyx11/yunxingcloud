@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,9 +22,11 @@ import java.util.stream.Stream;
 public class FileController {
 
     private final Path uploadDir;
+    private final I18nService i18n;
 
-    public FileController(@Value("${app.upload-dir:uploads}") String dir) {
+    public FileController(@Value("${app.upload-dir:uploads}") String dir, I18nService i18n) {
         this.uploadDir = Paths.get(dir).toAbsolutePath();
+        this.i18n = i18n;
         try { Files.createDirectories(uploadDir); } catch (IOException ignored) {}
     }
 
@@ -31,14 +34,14 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> upload(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件为空"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.empty")));
         }
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "仅支持图片上传"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.image_only")));
         }
         if (file.getSize() > 2 * 1024 * 1024) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件大小不能超过2MB"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.size_exceed")));
         }
 
         try {
@@ -51,7 +54,7 @@ public class FileController {
                     "filename", name
             ));
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "上传失败"));
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", i18n.msg("file.upload_failed")));
         }
     }
 

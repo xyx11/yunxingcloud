@@ -84,9 +84,9 @@ async function saveDept() {
       await request.post('/api/departments', form.value)
     }
     showModal.value = false
-    notify.success(editing.value ? '更新成功' : '创建成功')
+    notify.success(editing.value ? t('department.updateSuccess') : t('department.createSuccess'))
     await loadDepts()
-  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }
+  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function moveDept(id: number, direction: number) {
@@ -96,7 +96,7 @@ async function moveDept(id: number, direction: number) {
 
 async function delDept(id: number) {
   await request.delete(`/api/departments/${id}`)
-  notify.success('删除成功')
+  notify.success(t('department.deleteSuccess'))
   await loadDepts()
 }
 
@@ -108,16 +108,16 @@ onMounted(loadDepts)
     <div style="padding:20px">
       <n-card :title="t('nav.departments')">
         <template #header-extra>
-          <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>新增</n-button>
+          <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="deptSearch" placeholder="部门名称" size="small" clearable style="width:180px" />
-            <n-button type="primary" size="small" @click="() => {}">搜索</n-button>
-            <n-button size="small" @click="deptSearch = ''">重置</n-button>
+            <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="width:180px" />
+            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+            <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
           </n-space>
           <n-space>
-            <n-button size="small" @click="loadDepts" secondary>刷新</n-button>
+            <n-button size="small" @click="loadDepts" secondary>{{ t('common.refresh') }}</n-button>
           </n-space>
         </n-space>
         <n-data-table

@@ -20,9 +20,9 @@ const loading = ref(false)
 const submitted = ref(false)
 
 const scopeDescriptions: Record<string, string> = {
-  'openid': '使用您的身份进行登录',
-  'profile': '读取您的基本资料',
-  'email': '读取您的邮箱地址',
+  'openid': t('consent.openid'),
+  'profile': t('consent.profile'),
+  'email': t('consent.email'),
 }
 
 function scopeLabel(scope: string): string {
@@ -76,11 +76,11 @@ function appendHidden(form: HTMLFormElement, name: string, value: string) {
   <n-config-provider>
     <div class="consent-page">
       <n-card class="consent-card">
-        <h1 class="title">授权确认</h1>
+        <h1 class="title">{{ t('consent.title') }}</h1>
 
         <n-spin :show="loading">
           <p class="prompt">
-            <strong>{{ clientName }}</strong> 正在请求以下访问权限：
+            <strong>{{ clientName }}</strong> {{ t('consent.prompt') }}
           </p>
 
           <n-space vertical class="scopes">
@@ -91,8 +91,8 @@ function appendHidden(form: HTMLFormElement, name: string, value: string) {
         </n-spin>
 
         <n-space justify="center" class="actions">
-          <n-button size="large" @click="deny" :disabled="submitted">拒绝</n-button>
-          <n-button type="primary" size="large" @click="approve" :loading="submitted">确认授权</n-button>
+          <n-button size="large" @click="deny" :disabled="submitted">{{ t('consent.deny') }}</n-button>
+          <n-button type="primary" size="large" @click="approve" :loading="submitted">{{ t('consent.approve') }}</n-button>
         </n-space>
       </n-card>
     </div>

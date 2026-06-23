@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,11 +28,14 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbc;
+    private final I18nService i18n;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JdbcTemplate jdbc) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JdbcTemplate jdbc,
+                          I18nService i18n) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jdbc = jdbc;
+        this.i18n = i18n;
     }
 
     private boolean isAdmin() {
@@ -126,7 +130,7 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> setRoles(@PathVariable Long id, @RequestBody Map<String, List<Long>> body) {
         List<Long> roleIds = body.get("roleIds");
         if (roleIds == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "roleIds 不能为空"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("user.role_ids_empty")));
         }
         jdbc.update("DELETE FROM user_roles WHERE user_id = ?", id);
         for (Long roleId : roleIds) {
@@ -145,13 +149,13 @@ public class UserController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> body) {
         String username = body.get("username"), password = body.get("password");
-        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名不能为空"));
-        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "密码至少6位"));
-        if (userRepository.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名已存在"));
+        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("register.username_blank")));
+        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("validate.password_min")));
+        if (userRepository.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("register.duplicate_username")));
         User u = new User(username, passwordEncoder.encode(password), body.get("email"));
         if (body.containsKey("nickname")) u.setNickname(body.get("nickname"));
         u.setRegisterSource("manual"); userRepository.save(u);
-        return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "创建成功"));
+        return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.create_success")));
     }
 
     @PreAuthorize("hasAuthority('user:write')")
@@ -164,9 +168,9 @@ public class UserController {
     @DeleteMapping("/batch")
     public ResponseEntity<Map<String, Object>> batchDelete(@RequestBody Map<String, List<Long>> body) {
         List<Long> ids = body.get("ids");
-        if (ids == null || ids.isEmpty()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "ids不能为空"));
+        if (ids == null || ids.isEmpty()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("user.ids_empty")));
         for (Long id : ids) { jdbc.update("DELETE FROM user_roles WHERE user_id = ?", id); userRepository.deleteById(id); }
-        return ResponseEntity.ok(Map.of("success", (Object) true, "message", "已删除 " + ids.size() + " 个用户"));
+        return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("user.delete_batch", ids.size())));
     }
 
     @GetMapping("/import-template")
@@ -178,7 +182,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('user:write')")
     @PostMapping("/import")
     public ResponseEntity<Map<String, Object>> importUsers(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件为空"));
+        if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.empty")));
         int created = 0, skipped = 0;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             reader.readLine(); // skip header
@@ -195,9 +199,9 @@ public class UserController {
                 created++;
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "导入失败: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("user.import_failed", e.getMessage())));
         }
-        return ResponseEntity.ok(Map.of("success", true, "created", created, "skipped", skipped, "message", "导入完成，成功 " + created + " 条，跳过 " + skipped + " 条"));
+        return ResponseEntity.ok(Map.of("success", true, "created", created, "skipped", skipped, "message", i18n.msg("user.import_complete", created, skipped)));
     }
 
     @PreAuthorize("hasAuthority('admin')")
@@ -206,13 +210,13 @@ public class UserController {
         if (!userRepository.existsById(id)) return ResponseEntity.notFound().build();
         jdbc.update("DELETE FROM user_roles WHERE user_id = ?", id);
         userRepository.deleteById(id);
-        return ResponseEntity.ok(Map.of("success", true, "message", "删除成功"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("user.delete_success")));
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PostMapping("/{id}/reset-pwd")
     public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id) {
-        return userRepository.findById(id).map(u -> { u.setPassword(passwordEncoder.encode("123456")); userRepository.save(u); return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "密码已重置为 123456")); }).orElse(ResponseEntity.notFound().build());
+        return userRepository.findById(id).map(u -> { u.setPassword(passwordEncoder.encode("123456")); userRepository.save(u); return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.pwd_reset"))); }).orElse(ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasAuthority('admin')")
@@ -235,7 +239,7 @@ public class UserController {
         return userRepository.findById(id).map(u -> {
             u.setApproved(true);
             userRepository.save(u);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "用户已通过审核"));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.approve_success")));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -245,7 +249,7 @@ public class UserController {
         return userRepository.findById(id).map(u -> {
             jdbc.update("DELETE FROM user_roles WHERE user_id = ?", id);
             userRepository.delete(u);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "用户已拒绝"));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.reject_success")));
         }).orElse(ResponseEntity.notFound().build());
     }
 

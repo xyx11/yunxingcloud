@@ -3,6 +3,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
 import com.yunxingcloud.yunxingcloud.event.AuditEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +45,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TokenStore tokenStore;
+    private final I18nService i18n;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenService jwtTokenService,
@@ -51,7 +53,8 @@ public class AuthController {
                           RateLimitService rateLimitService,
                           UserRepository userRepository,
                           ApplicationEventPublisher eventPublisher,
-                          TokenStore tokenStore) {
+                          TokenStore tokenStore,
+                          I18nService i18n) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.tokenBlacklist = tokenBlacklist;
@@ -59,6 +62,7 @@ public class AuthController {
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
         this.tokenStore = tokenStore;
+        this.i18n = i18n;
     }
 
     @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
@@ -69,7 +73,7 @@ public class AuthController {
         String ip = httpRequest.getRemoteAddr();
         if (!rateLimitService.isAllowed(ip)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
-                    "success", false, "message", "请求过于频繁，请稍后再试"
+                    "success", false, "message", i18n.msg("ratelimit.too_many_requests")
             ));
         }
 
@@ -77,7 +81,7 @@ public class AuthController {
             String sessionCaptcha = CaptchaController.getCaptcha(httpRequest.getSession());
             if (sessionCaptcha == null || !sessionCaptcha.equalsIgnoreCase(request.getCode())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                        "success", false, "message", "验证码错误"
+                        "success", false, "message", i18n.msg("auth.captcha_error")
                 ));
             }
         }
@@ -91,7 +95,7 @@ public class AuthController {
         var userOpt = userRepository.findByUsername(request.getUsername());
         if (userOpt.isPresent() && userOpt.get().isLocked()) {
             return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of(
-                    "success", false, "message", "账号已被锁定，请30分钟后重试"
+                    "success", false, "message", i18n.msg("auth.account_locked")
             ));
         }
 
@@ -122,11 +126,11 @@ public class AuthController {
             userOpt.ifPresent(u -> { u.onLoginFailed(); userRepository.save(u); });
             eventPublisher.publishEvent(new AuditEvent("LOGIN_FAILED", request.getUsername(), ip));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", "用户名或密码错误"
+                    "success", false, "message", i18n.msg("auth.bad_credentials")
             ));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", "认证失败，请重试"
+                    "success", false, "message", i18n.msg("auth.login_failed")
             ));
         }
     }
@@ -136,11 +140,11 @@ public class AuthController {
                                                                   BlockException ex) {
         if (ex instanceof DegradeException) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                    "success", false, "message", "服务暂时不可用，请稍后重试"
+                    "success", false, "message", i18n.msg("circuit_breaker.unavailable")
             ));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
-                "success", false, "message", "请求过于频繁，请稍后再试"
+                "success", false, "message", i18n.msg("ratelimit.too_many_requests")
         ));
     }
 
@@ -150,7 +154,7 @@ public class AuthController {
         String refreshToken = body.get("refreshToken");
         if (refreshToken == null || !jwtTokenService.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", "无效的刷新令牌"
+                    "success", false, "message", i18n.msg("auth.token_invalid")
             ));
         }
         String username = jwtTokenService.getUsernameFromToken(refreshToken);
@@ -170,11 +174,11 @@ public class AuthController {
                                                                     BlockException ex) {
         if (ex instanceof DegradeException) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                    "success", false, "message", "服务暂时不可用，请稍后重试"
+                    "success", false, "message", i18n.msg("circuit_breaker.unavailable")
             ));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
-                "success", false, "message", "请求过于频繁，请稍后再试"
+                "success", false, "message", i18n.msg("ratelimit.too_many_requests")
         ));
     }
 
@@ -187,7 +191,7 @@ public class AuthController {
             String username = jwtTokenService.getUsernameFromToken(bearer.substring(7));
             eventPublisher.publishEvent(new AuditEvent("LOGOUT", username, request.getRemoteAddr()));
         }
-        return ResponseEntity.ok(Map.of("success", true, "message", "已登出"));
+        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("auth.logout_success")));
     }
 
     @GetMapping("/user")
@@ -210,11 +214,11 @@ public class AuthController {
     }
 
     static class LoginRequest {
-        @NotBlank(message = "用户名不能为空")
-        @Size(min = 2, max = 50, message = "用户名长度2-50位")
+        @NotBlank(message = "{validate.not_blank}")
+        @Size(min = 2, max = 50, message = "{validate.username_size}")
         private String username;
 
-        @NotBlank(message = "密码不能为空")
+        @NotBlank(message = "{validate.not_blank}")
         private String password;
 
         private String code;

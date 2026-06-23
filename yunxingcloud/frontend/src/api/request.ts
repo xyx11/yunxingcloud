@@ -29,6 +29,10 @@ request.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    // 登录/公开页面的 401 直接透传（不拦截）
+    if (!originalRequest.url || originalRequest.url === '/api/login' || originalRequest.url.startsWith('/api/config/') || originalRequest.url.startsWith('/api/captcha') || originalRequest.url.startsWith('/api/publicKey')) {
+      return Promise.reject(error)
+    }
     if (error.response?.status === 401 && !originalRequest._retry) {
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
@@ -53,21 +57,14 @@ request.interceptors.response.use(
         } catch {
           const authStore = useAuthStore()
           authStore.clear()
-          window.location.hash = `#/login?redirect=${encodeURIComponent(window.location.hash.slice(1) || '/')}`
+          window.location.href = '/login'
           return Promise.reject(error)
         } finally {
           isRefreshing = false
         }
       }
-      const authStore = useAuthStore()
-      authStore.clear()
-      window.location.hash = `#/login?redirect=${encodeURIComponent(window.location.hash.slice(1) || '/')}`
-    }
-    // 非401且非网络中断的错误日志
-    if (error.response) {
-      if (error.response.status !== 401) {
-        console.error(`[${error.response.status}] ${error.response.data?.message || '服务器错误'}`)
-      }
+      // 未登录（无 refreshToken）的 401：不重定向，透传给调用方
+      return Promise.reject(error)
     }
     return Promise.reject(error)
   },

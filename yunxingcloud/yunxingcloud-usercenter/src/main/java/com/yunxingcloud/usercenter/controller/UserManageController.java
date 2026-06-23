@@ -1,5 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
+import com.yunxingcloud.usercenter.config.I18nService;
 import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.UserRepository;
 import com.yunxingcloud.usercenter.service.DeptRoleService;
@@ -21,13 +22,16 @@ public class UserManageController {
     private final UserRepository userRepository;
     private final DeptRoleService deptRoleService;
     private final PasswordEncoder passwordEncoder;
+    private final I18nService i18n;
 
     public UserManageController(UserRepository userRepository,
                                  DeptRoleService deptRoleService,
-                                 PasswordEncoder passwordEncoder) {
+                                 PasswordEncoder passwordEncoder,
+                                 I18nService i18n) {
         this.userRepository = userRepository;
         this.deptRoleService = deptRoleService;
         this.passwordEncoder = passwordEncoder;
+        this.i18n = i18n;
     }
 
     @GetMapping
@@ -80,7 +84,7 @@ public class UserManageController {
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> importUsers(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "文件为空"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.empty")));
         }
         int success = 0, fail = 0;
         try (var reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
@@ -104,7 +108,7 @@ public class UserManageController {
                 } catch (Exception e) { fail++; }
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "解析失败: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("file.parse_failed") + ": " + e.getMessage()));
         }
         return ResponseEntity.ok(Map.of("success", true, "imported", success, "failed", fail));
     }
@@ -126,9 +130,9 @@ public class UserManageController {
         String password = body.get("password");
         String nickname = body.get("nickname");
         String email = body.get("email");
-        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名不能为空"));
-        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "密码至少6位"));
-        if (userRepository.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户名已存在"));
+        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("register.username_blank")));
+        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("validate.password_min")));
+        if (userRepository.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("register.duplicate_username")));
         User u = new User();
         u.setUsername(username);
         u.setPassword(passwordEncoder.encode(password));
@@ -136,7 +140,7 @@ public class UserManageController {
         u.setEmail(email);
         u.setRegisterSource("manual");
         userRepository.save(u);
-        return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "创建成功"));
+        return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.create_success")));
     }
 
     @PutMapping("/{id}/profile")
@@ -146,7 +150,7 @@ public class UserManageController {
             if (body.containsKey("nickname")) u.setNickname(body.get("nickname"));
             if (body.containsKey("email")) u.setEmail(body.get("email"));
             userRepository.save(u);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "更新成功"));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.update_success")));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -156,7 +160,7 @@ public class UserManageController {
         return userRepository.findById(id).map(u -> {
             u.setPassword(passwordEncoder.encode("123456"));
             userRepository.save(u);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", "密码已重置为 123456"));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.pwd_reset")));
         }).orElse(ResponseEntity.notFound().build());
     }
 }

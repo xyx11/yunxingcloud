@@ -1,5 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
+import com.yunxingcloud.yunxingcloud.config.I18nService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -13,8 +14,12 @@ import java.util.Map;
 public class EmailController {
 
     private final JavaMailSender mailSender;
+    private final I18nService i18n;
 
-    public EmailController(JavaMailSender mailSender) { this.mailSender = mailSender; }
+    public EmailController(JavaMailSender mailSender, I18nService i18n) {
+        this.mailSender = mailSender;
+        this.i18n = i18n;
+    }
 
     @GetMapping("/templates")
     public ResponseEntity<Map<String, Object>> templates() {
@@ -36,9 +41,9 @@ public class EmailController {
             content = content.replace("{username}", body.getOrDefault("username", "用户")).replace("{message}", body.getOrDefault("message", ""));
             msg.setText(content);
             mailSender.send(msg);
-            return ResponseEntity.ok(Map.of("success", true, "message", "发送成功"));
+            return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("email.send_success")));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("success", false, "message", "发送失败: " + e.getMessage()));
+            return ResponseEntity.ok(Map.of("success", false, "message", i18n.msg("email.send_failed", e.getMessage())));
         }
     }
 }
