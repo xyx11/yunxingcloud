@@ -9,7 +9,7 @@ import {
   darkTheme, lightTheme
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface DictType { id: number; dictName: string; dictType: string; status: string; remark: string; createdAt: string }
 interface DictData { id: number; dictType: string; dictLabel: string; dictValue: string; cssClass: string; listClass: string; isDefault: string; sortOrder: number; status: string; remark: string; createdAt: string }
@@ -26,7 +26,17 @@ const showDataModal = ref(false)
 const editingType = ref<DictType | null>(null)
 const editingData = ref<DictData | null>(null)
 const selectedType = ref<DictType | null>(null)
+const typeFormRef = ref<FormInst>()
+const typeRules: FormRules = {
+  dictName: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  dictType: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const typeForm = ref({ dictName: '', dictType: '', status: '0', remark: '' })
+const dataFormRef = ref<FormInst>()
+const dataRules: FormRules = {
+  dictLabel: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  dictValue: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const dataForm = ref({ dictType: '', dictLabel: '', dictValue: '', cssClass: '', listClass: '', isDefault: 'N', sortOrder: 0, status: '0', remark: '' })
 const typeSearch = ref("")
 const dataSearch = ref("")
@@ -128,6 +138,7 @@ function editType(type: DictType) {
 }
 
 async function saveType() {
+  if (typeFormRef.value) { try { await typeFormRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editingType.value) await request.put(`/api/dict/types/${editingType.value.id}`, typeForm.value)
@@ -158,6 +169,7 @@ function editData(data: DictData) {
 }
 
 async function saveData() {
+  if (dataFormRef.value) { try { await dataFormRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editingData.value) await request.put(`/api/dict/data/${editingData.value.id}`, dataForm.value)
@@ -217,11 +229,11 @@ onMounted(loadTypes)
       </n-grid>
 
       <n-modal v-model:show="showTypeModal" :title="editingType ? t('dict.editType') : t('dict.addType')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form label-placement="left" label-width="80">
-          <n-form-item :label="t('dict.dictName')">
+        <n-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-placement="left" label-width="80">
+          <n-form-item path="dictName" :label="t('dict.dictName')">
             <n-input v-model:value="typeForm.dictName" />
           </n-form-item>
-          <n-form-item :label="t('dict.dictType')">
+          <n-form-item path="dictType" :label="t('dict.dictType')">
             <n-input v-model:value="typeForm.dictType" :disabled="!!editingType" :placeholder="t('dict.typePlaceholder')" />
           </n-form-item>
           <n-form-item :label="t('dict.status')">
@@ -240,14 +252,14 @@ onMounted(loadTypes)
       </n-modal>
 
       <n-modal v-model:show="showDataModal" :title="editingData ? t('dict.editData') : t('dict.addData')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form label-placement="left" label-width="80">
+        <n-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-placement="left" label-width="80">
           <n-form-item :label="t('dict.dictType')">
             <n-input :value="dataForm.dictType" disabled />
           </n-form-item>
-          <n-form-item :label="t('dict.dictLabel')">
+          <n-form-item path="dictLabel" :label="t('dict.dictLabel')">
             <n-input v-model:value="dataForm.dictLabel" :placeholder="t('dict.labelPlaceholder')" />
           </n-form-item>
-          <n-form-item :label="t('dict.dictValue')">
+          <n-form-item path="dictValue" :label="t('dict.dictValue')">
             <n-input v-model:value="dataForm.dictValue" :placeholder="t('dict.valuePlaceholder')" />
           </n-form-item>
           <n-form-item :label="t('dict.sortOrder')">

@@ -4,6 +4,7 @@ import { ref, onMounted, h, computed } from 'vue'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTag, darkTheme, lightTheme } from 'naive-ui'
+import type { FormRules, FormInst } from 'naive-ui'
 
 const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
@@ -16,6 +17,10 @@ const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? d
 const items = ref<IpItem[]>([])
 const loading = ref(false)
 const showModal = ref(false)
+const formRef = ref<FormInst>()
+const rules: FormRules = {
+  ip: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const form = ref({ ip: '', reason: '' })
 const saving = ref(false)
 
@@ -30,6 +35,7 @@ const columns: DataTableColumns<IpItem> = [
 async function loadItems() { loading.value = true; try { const r = await request.get('/api/ip-blacklist'); items.value = r.data } catch {}; loading.value = false }
 async function delItem(id: number) { await request.delete(`/api/ip-blacklist/${id}`); await loadItems() }
 async function saveItem() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try { await request.post('/api/ip-blacklist', form.value); showModal.value = false; form.value = { ip: '', reason: '' }; notify.success(t('ipBlacklist.blockSuccess')); await loadItems() }
   catch (e: any) { notify.error(e.response?.data?.message || t('ipBlacklist.blockFailed')) }
@@ -49,8 +55,8 @@ onMounted(loadItems)
         <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: IpItem) => row.id" />
 
         <n-modal v-model:show="showModal" :title="t('ipBlacklist.blockIp')" preset="card" display-directive="show" style="max-width:400px;width:95%">
-          <n-form label-placement="left" label-width="80">
-            <n-form-item :label="t('ipBlacklist.ip')"><n-input v-model:value="form.ip" placeholder="192.168.1.100" /></n-form-item>
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
+            <n-form-item path="ip" :label="t('ipBlacklist.ip')"><n-input v-model:value="form.ip" placeholder="192.168.1.100" /></n-form-item>
             <n-form-item :label="t('ipBlacklist.reason')"><n-input v-model:value="form.reason" :placeholder="t('ipBlacklist.reason')" /></n-form-item>
           </n-form>
           <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveItem">{{ t('common.ok') }}</n-button></n-space></template>
