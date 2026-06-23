@@ -99,7 +99,10 @@ function handleSocialLogin(provider: string) {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1 class="title">yunxingcloud</h1>
+      <div class="brand">
+        <h1 class="title">yunxingcloud</h1>
+        <span class="version-badge">v1.0.0</span>
+      </div>
       <p class="subtitle">{{ t('app.subtitle') }}</p>
 
       <el-alert v-if="error" :title="error" type="error" show-icon closable @close="error = ''" style="margin-bottom:20px" />
@@ -143,7 +146,6 @@ function handleSocialLogin(provider: string) {
         </div>
       </div>
     </div>
-    <div v-if="appVersion" class="login-version">v{{ appVersion }}</div>
   </div>
 </template>
 
@@ -165,7 +167,7 @@ function handleSocialLogin(provider: string) {
 @keyframes floatParticles { 0%{opacity:0.5;transform:scale(1)} 100%{opacity:1;transform:scale(1.1)} }
 
 .login-card {
-  width: 440px; border-radius: 16px; padding: 32px;
+  width: 440px; max-width: calc(100vw - 32px); border-radius: 16px; padding: 32px;
   background: rgba(255,255,255,0.92);
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   animation: cardIn 0.5s ease-out;
@@ -180,5 +182,6 @@ function handleSocialLogin(provider: string) {
 .social-btn:hover { background: #f5f5f5; }
 .social-icon { font-size: 28px; margin-bottom: 4px; }
 .social-name { font-size: 12px; color: #666; }
-.login-version { text-align: center; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.5); }
+.brand { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+.version-badge { font-size: 13px; color: #667eea; font-weight: 500; background: rgba(102,126,234,0.1); padding: 2px 10px; border-radius: 10px; }
 </style>
