@@ -6,3 +6,12 @@ node_modules/
 .idea/
 target/
 */target/
+logs/
+uploads/
+*.log
+*.iws
+*.ipr
+*.png
+*.jpg
+backup/
+.DS_Store
