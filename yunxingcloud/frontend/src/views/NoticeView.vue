@@ -8,7 +8,7 @@ import {
   darkTheme, lightTheme
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface Notice {
   id: number; noticeTitle: string; noticeType: string; noticeContent: string
@@ -23,6 +23,8 @@ const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<Notice | null>(null)
+const formRef = ref<FormInst>()
+const rules: FormRules = { noticeTitle: [{ required: true, message: t('validate.required'), trigger: 'blur' }] }
 const form = ref({ noticeTitle: '', noticeType: '1', noticeContent: '', status: '0', remark: '' })
 const searchKeyword = ref('')
 
@@ -90,6 +92,7 @@ function editNotice(notice: Notice) {
 }
 
 async function saveNotice() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editing.value) await request.put(`/api/notices/${editing.value.id}`, form.value)
@@ -129,8 +132,8 @@ onMounted(loadNotices)
           :row-key="(row: Notice) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" style="max-width:560px;width:95%">
-          <n-form label-placement="left" label-width="80">
+        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" preset="card" display-directive="show" style="max-width:560px;width:95%">
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('notice.title')">
               <n-input v-model:value="form.noticeTitle" />
             </n-form-item>

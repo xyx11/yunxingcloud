@@ -153,7 +153,7 @@ async function handleUpload({ file }: any) {
       </n-space>
     </n-card>
 
-    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" style="max-width:400px;width:95%">
+    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" preset="card" display-directive="show" style="max-width:400px;width:95%">
       <n-form label-placement="left" label-width="80">
         <n-form-item :label="t('pwd.old')">
           <n-input v-model:value="pwdForm.oldPassword" type="password" />

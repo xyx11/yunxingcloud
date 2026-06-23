@@ -8,7 +8,7 @@ import {
   darkTheme, lightTheme
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface Post {
   id: number; postCode: string; postName: string; sortOrder: number
@@ -23,6 +23,11 @@ const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<Post | null>(null)
+const formRef = ref<FormInst>()
+const rules: FormRules = {
+  postCode: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  postName: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const form = ref({ postCode: '', postName: '', sortOrder: 0, status: '0', remark: '' })
 const searchKeyword = ref('')
 
@@ -82,6 +87,7 @@ function editPost(post: Post) {
 }
 
 async function savePost() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editing.value) await request.put(`/api/posts/${editing.value.id}`, form.value)
@@ -121,8 +127,8 @@ onMounted(loadPosts)
           :row-key="(row: Post) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('post.edit') : t('post.add')" style="max-width:480px;width:95%">
-          <n-form label-placement="left" label-width="80">
+        <n-modal v-model:show="showModal" :title="editing ? t('post.edit') : t('post.add')" preset="card" display-directive="show" style="max-width:480px;width:95%">
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('post.code')">
               <n-input v-model:value="form.postCode" :disabled="!!editing" />
             </n-form-item>

@@ -216,7 +216,7 @@ onMounted(loadTypes)
         </n-grid-item>
       </n-grid>
 
-      <n-modal v-model:show="showTypeModal" :title="editingType ? t('dict.editType') : t('dict.addType')" style="max-width:480px;width:95%">
+      <n-modal v-model:show="showTypeModal" :title="editingType ? t('dict.editType') : t('dict.addType')" preset="card" display-directive="show" style="max-width:480px;width:95%">
         <n-form label-placement="left" label-width="80">
           <n-form-item :label="t('dict.dictName')">
             <n-input v-model:value="typeForm.dictName" />
@@ -239,7 +239,7 @@ onMounted(loadTypes)
         </template>
       </n-modal>
 
-      <n-modal v-model:show="showDataModal" :title="editingData ? t('dict.editData') : t('dict.addData')" style="max-width:480px;width:95%">
+      <n-modal v-model:show="showDataModal" :title="editingData ? t('dict.editData') : t('dict.addData')" preset="card" display-directive="show" style="max-width:480px;width:95%">
         <n-form label-placement="left" label-width="80">
           <n-form-item :label="t('dict.dictType')">
             <n-input :value="dataForm.dictType" disabled />

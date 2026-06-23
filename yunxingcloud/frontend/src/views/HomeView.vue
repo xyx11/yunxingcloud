@@ -486,6 +486,7 @@ useKeyboard({
         </n-layout-content>
         <n-layout-footer class="footer">
           yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
+          <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" style="color:#999;text-decoration:none">湘ICP备2026022380号-1</a></div>
         </n-layout-footer>
       </n-layout>
     </n-layout>

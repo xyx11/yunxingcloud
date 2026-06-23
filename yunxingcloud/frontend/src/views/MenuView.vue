@@ -162,7 +162,7 @@ onMounted(loadMenus)
           default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" style="max-width:600px;width:95%">
+        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" preset="card" display-directive="show" style="max-width:600px;width:95%">
           <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('menu.name')">
               <n-input v-model:value="form.name" />
