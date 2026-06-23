@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-const { t } = useI18n()
+const { t, locale } = useI18n()
 import request from '@/api/request'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -19,7 +19,8 @@ const lineOption = ref<any>({})
 let timer: ReturnType<typeof setInterval>
 
 function updateTime() {
-  time.value = new Date().toLocaleString('zh-CN', { hour12: false })
+  const loc = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  time.value = new Date().toLocaleString(loc, { hour12: false })
 }
 
 async function fetchData() {

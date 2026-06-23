@@ -4,7 +4,7 @@ import { ref, onMounted, h, onBeforeUnmount } from 'vue'
 import request from '@/api/request'
 import { NCard, NGrid, NGridItem, NTag, NButton, NSpace, NDataTable, NStatistic, NPopconfirm, NInput } from 'naive-ui'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 import { useNotify } from '@/composables/useNotify'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -96,7 +96,8 @@ onMounted(() => {
   sseSource.addEventListener('stats', (e) => {
     const sse = JSON.parse(e.data)
     if (sse.heapUsed && sse.activeSessions !== undefined) {
-      const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      const loc = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+      const time = new Date().toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       const xData = chartOption.value.xAxis.data as string[]
       const memSeries = chartOption.value.series[0].data as number[]
       const sessSeries = chartOption.value.series[1].data as number[]

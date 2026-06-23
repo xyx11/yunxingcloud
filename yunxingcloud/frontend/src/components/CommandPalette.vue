@@ -17,13 +17,13 @@ const commands = computed(() => [
   { label: t('nav.menus'), path: '/menus', icon: '📋', tag: t('common.add') },
   { label: t('nav.operlog'), path: '/operlog', icon: '📄', tag: t('nav.monitor') },
   { label: t('nav.jobs'), path: '/job', icon: '⏰', tag: t('nav.monitor') },
-  { label: t('nav.config'), path: '/config', icon: '⚙️', tag: 'System' },
-  { label: t('nav.generator'), path: '/generator', icon: '🔧', tag: 'Tool' },
-  { label: t('nav.swagger'), path: '/swagger', icon: '📖', tag: 'Tool' },
+  { label: t('nav.config'), path: '/config', icon: '⚙️', tag: t('nav.tagSystem') },
+  { label: t('nav.generator'), path: '/generator', icon: '🔧', tag: t('nav.tagTool') },
+  { label: t('nav.swagger'), path: '/swagger', icon: '📖', tag: t('nav.tagTool') },
   { label: t('nav.monitor'), path: '/monitor', icon: '📈', tag: t('nav.monitor') },
-  { label: t('nav.maintenance'), path: '/maintenance', icon: '🧹', tag: 'System' },
-  { label: t('nav.profile'), path: '/profile', icon: '👤', tag: 'System' },
-  { label: t('nav.darkMode'), action: 'toggle-theme', icon: '🌓', tag: 'System' },
+  { label: t('nav.maintenance'), path: '/maintenance', icon: '🧹', tag: t('nav.tagSystem') },
+  { label: t('nav.profile'), path: '/profile', icon: '👤', tag: t('nav.tagSystem') },
+  { label: t('nav.darkMode'), action: 'toggle-theme', icon: '🌓', tag: t('nav.tagSystem') },
 ])
 
 const filtered = computed(() => {

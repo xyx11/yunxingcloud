@@ -15,6 +15,7 @@ export default {
     closeCurrent: 'Close Current', closeOthers: 'Close Others', closeAll: 'Close All',
     closeLeft: 'Close Left', closeRight: 'Close Right',
     darkMode: 'Dark Mode', searchPlaceholder: 'Search pages...', noMatchResults: 'No matches found',
+    tagSystem: 'System', tagTool: 'Tool',
   },
   common: {
     save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', add: 'Add',

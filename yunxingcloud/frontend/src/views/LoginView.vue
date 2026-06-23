@@ -65,7 +65,7 @@ async function handleLogin() {
   error.value = ''
   try {
     if (formRef.value) {
-      try { await formRef.value.validate() } catch {}
+      try { await formRef.value.validate() } catch { loading.value = false; return }
     }
     let password = model.value.password
     const publicKey = await getPublicKey()

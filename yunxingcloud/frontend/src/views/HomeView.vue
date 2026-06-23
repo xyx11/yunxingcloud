@@ -36,7 +36,8 @@ const appVersion = ref('')
 const unreadCount = ref(0)
 const watermarkText = computed(() => {
   const name = authStore.username || 'yunxingcloud'
-  const time = new Date().toLocaleDateString('zh-CN')
+  const loc = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  const time = new Date().toLocaleDateString(loc)
   return Array(12).fill(`${name} ${time}`).join('    ')
 })
 const ctxMenuTag = ref('')

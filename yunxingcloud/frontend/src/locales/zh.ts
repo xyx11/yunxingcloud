@@ -15,6 +15,7 @@ export default {
     closeCurrent: '关闭当前', closeOthers: '关闭其他', closeAll: '关闭全部',
     closeLeft: '关闭左侧', closeRight: '关闭右侧',
     darkMode: '暗色模式', searchPlaceholder: '搜索页面...', noMatchResults: '未找到匹配项',
+    tagSystem: '系统', tagTool: '工具',
   },
   common: {
     save: '保存', cancel: '取消', delete: '删除', edit: '编辑', add: '新增',

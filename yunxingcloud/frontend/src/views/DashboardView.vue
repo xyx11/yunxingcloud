@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLiveStatsStore } from '@/stores/liveStats'
 import { NCard, NGrid, NGridItem, NStatistic, NSpace, NTag, NSpin, NEmpty, NButton, NSelect } from 'naive-ui'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, PieChart } from 'echarts/charts'
@@ -73,7 +73,8 @@ const hasWeeklyData = computed(() => (stats.value.weeklyOps || []).length > 0)
 const hasBizData = computed(() => (stats.value.bizTypeDist || []).length > 0)
 
 function updateTimestamp() {
-  lastUpdated.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const loc = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  lastUpdated.value = new Date().toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 async function refreshDashboard() {
