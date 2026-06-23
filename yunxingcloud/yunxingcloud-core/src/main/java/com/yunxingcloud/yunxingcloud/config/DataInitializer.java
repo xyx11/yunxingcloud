@@ -42,32 +42,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initRoles() {
-        try {
-            jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS role (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(100) NOT NULL,
-                    code VARCHAR(50) NOT NULL UNIQUE,
-                    description VARCHAR(200),
-                    permissions VARCHAR(2000) DEFAULT '',
-                    enabled BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )""");
-            jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS user_roles (
-                    user_id BIGINT NOT NULL,
-                    role_id BIGINT NOT NULL,
-                    PRIMARY KEY (user_id, role_id)
-                )""");
-            jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS department (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(100) NOT NULL,
-                    parent_id BIGINT,
-                    sort_order INT DEFAULT 0,
-                    enabled BOOLEAN DEFAULT TRUE
-                )""");
-        } catch (Exception ignored) {}
+        // Tables role/user_roles/department are created by Flyway V2/V6
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM role", Integer.class);
         if (count != null && count == 0) {
