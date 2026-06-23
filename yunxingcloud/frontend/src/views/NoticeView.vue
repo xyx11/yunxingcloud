@@ -75,7 +75,7 @@ const columns: DataTableColumns<Notice> = [
 
 async function loadNotices() {
   loading.value = true
-  try { const res = await request.get('/api/notices'); notices.value = res.data } catch {}
+  try { const res = await request.get('/api/notices'); notices.value = res.data } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

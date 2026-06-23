@@ -70,7 +70,7 @@ const columns: DataTableColumns<Post> = [
 
 async function loadPosts() {
   loading.value = true
-  try { const res = await request.get('/api/posts'); posts.value = res.data } catch {}
+  try { const res = await request.get('/api/posts'); posts.value = res.data } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

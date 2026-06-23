@@ -49,7 +49,7 @@ async function loadMsgs() {
   try {
     const res = await request.get(tab.value === 'inbox' ? '/api/messages/inbox' : '/api/messages/sent')
     messages.value = res.data
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

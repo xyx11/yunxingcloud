@@ -59,7 +59,7 @@ async function loadDepts() {
   try {
     const res = await request.get('/api/departments')
     depts.value = res.data
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

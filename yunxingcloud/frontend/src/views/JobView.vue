@@ -92,7 +92,7 @@ async function loadJobs() {
   try {
     const res = await request.get('/api/job')
     jobs.value = res.data
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 
@@ -137,7 +137,7 @@ async function pauseJob(id: number) { await request.post(`/api/job/${id}/pause`)
 async function resumeJob(id: number) { await request.post(`/api/job/${id}/resume`); await loadJobs() }
 async function viewLogs(id: number, name: string) {
   logJobName.value = name
-  try { const res = await request.get(`/api/job/${id}/logs`); jobLogs.value = res.data } catch {}
+  try { const res = await request.get(`/api/job/${id}/logs`); jobLogs.value = res.data } catch { notify.error(t('common.error')); }
   showLogModal.value = true
 }
 

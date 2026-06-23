@@ -29,7 +29,7 @@ const columns: DataTableColumns<Client> = [
   { title: t('oauth2.actions'), key: 'actions', width: 80, render: (row) => h(NPopconfirm, { onPositiveClick: () => delClient(row.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') }) },
 ]
 
-async function loadClients() { loading.value = true; try { const r = await request.get('/api/oauth2/clients'); clients.value = r.data } catch {}; loading.value = false }
+async function loadClients() { loading.value = true; try { const r = await request.get('/api/oauth2/clients'); clients.value = r.data } catch { notify.error(t('common.error')); }; loading.value = false }
 async function delClient(id: string) { await request.delete(`/api/oauth2/clients/${id}`); loadClients() }
 async function saveClient() {
   saving.value = true

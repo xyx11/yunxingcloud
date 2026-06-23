@@ -70,7 +70,7 @@ async function loadAll() {
     const [r, m] = await Promise.all([request.get('/api/roles'), request.get('/api/menus/tree')])
     roles.value = r.data
     menuTree.value = buildPermTree(m.data)
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

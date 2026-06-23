@@ -32,7 +32,7 @@ const columns: DataTableColumns<IpItem> = [
   { title: t('common.actions'), key: 'actions', width: 80, render: (row) => h(NPopconfirm, { onPositiveClick: () => delItem(row.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('ipBlacklist.unblock') }), default: () => t('ipBlacklist.unblockConfirm') }) },
 ]
 
-async function loadItems() { loading.value = true; try { const r = await request.get('/api/ip-blacklist'); items.value = r.data } catch {}; loading.value = false }
+async function loadItems() { loading.value = true; try { const r = await request.get('/api/ip-blacklist'); items.value = r.data } catch { notify.error(t('common.error')); }; loading.value = false }
 async function delItem(id: number) { await request.delete(`/api/ip-blacklist/${id}`); await loadItems() }
 async function saveItem() {
   if (formRef.value) { try { await formRef.value.validate() } catch { return } }

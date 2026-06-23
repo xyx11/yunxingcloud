@@ -34,14 +34,14 @@ const stats = ref({ todaySuccess: 0, todayFail: 0, todayTotal: 0 })
 const hourOption = ref({ tooltip:{trigger:'axis'}, grid:{left:40,right:10,top:10,bottom:20}, xAxis:{type:'category',data:Array.from({length:24},(_,i)=>i + t('loginlog.hourSuffix'))}, yAxis:{type:'value'}, series:[{data:Array(24).fill(0),type:'bar',itemStyle:{color:'#667eea',borderRadius:[3,3,0,0]}}] })
 
 async function loadStats() {
-  try { const res = await request.get('/api/logininfor/stats'); stats.value = res.data } catch {}
+  try { const res = await request.get('/api/logininfor/stats'); stats.value = res.data } catch { notify.error(t('common.error')); }
   try {
     const res = await request.get('/api/logininfor?pageSize=200')
     const hours = new Array(24).fill(0)
     res.data.items?.forEach((l:any) => { if (l.loginTime) { const h = new Date(l.loginTime).getHours(); hours[h]++ } })
     hourOption.value.series[0].data = hours
     hourOption.value = { ...hourOption.value }
-  } catch {}
+  } catch { notify.error(t('common.error')); }
 }
 
 const statusOptions = [
@@ -82,7 +82,7 @@ async function loadItems() {
     const res = await request.get('/api/logininfor', { params })
     items.value = res.data.items
     total.value = res.data.total
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

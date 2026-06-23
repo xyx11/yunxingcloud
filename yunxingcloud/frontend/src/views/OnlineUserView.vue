@@ -43,7 +43,7 @@ async function loadSessions() {
   try {
     const res = await request.get('/api/system/sessions')
     sessions.value = res.data.sessions || []
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 
@@ -52,7 +52,7 @@ async function kickUser(username: string) {
     await request.post('/api/system/sessions/revoke', { username })
     notify.success(t('monitor.kickSuccess', { username }))
     await loadSessions()
-  } catch {}
+  } catch { notify.error(t('common.error')); }
 }
 
 onMounted(() => { loadSessions(); timer = setInterval(loadSessions, 30000) })

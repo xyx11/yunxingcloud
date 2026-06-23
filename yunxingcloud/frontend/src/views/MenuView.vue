@@ -103,7 +103,7 @@ async function loadMenus() {
     allMenus.value = flat.data
     parentOptions.value = [{ label: t('menu.noneParent'), value: null }]
     buildParentOptions(res.data)
-  } catch {}
+  } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 

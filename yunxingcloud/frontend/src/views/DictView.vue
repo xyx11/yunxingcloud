@@ -113,7 +113,7 @@ const dataColumns: DataTableColumns<DictData> = [
 
 async function loadTypes() {
   loading.value = true
-  try { const res = await request.get('/api/dict/types'); types.value = res.data } catch {}
+  try { const res = await request.get('/api/dict/types'); types.value = res.data } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 
@@ -122,7 +122,7 @@ async function selectType(type: DictType) {
   try {
     const res = await request.get(`/api/dict/data/${type.dictType}`)
     dataList.value = res.data
-  } catch {}
+  } catch { notify.error(t('common.error')); }
 }
 
 function addType() {
