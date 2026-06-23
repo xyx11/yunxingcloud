@@ -82,8 +82,8 @@ const columns: DataTableColumns<Menu> = [
     title: t('menu.actions'), key: 'actions', width: 180,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, -1) }, { default: () => '↑' }),
-        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, 1) }, { default: () => '↓' }),
+        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, -1) }, { title: t('menu.moveUpTitle'), default: () => '↑' }),
+        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, 1) }, { title: t('menu.moveDownTitle'), default: () => '↓' }),
         h(NButton, { size: 'tiny', onClick: () => editMenu(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delMenu(row.id) }, {
           trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),

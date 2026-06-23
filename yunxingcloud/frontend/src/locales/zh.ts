@@ -85,6 +85,7 @@ export default {
     name: '名称', type: '类型', path: '路由', component: '组件',
     icon: '图标', sort: '排序', visible: '可见', parent: '上级菜单',
     addRoot: '新增根菜单', addChild: '添加子菜单', moveUp: '上移', moveDown: '下移',
+    moveUpTitle: '上移一位', moveDownTitle: '下移一位',
     perms: '权限标识', actions: '操作', typeDir: '目录', typeMenu: '菜单', typeBtn: '按钮',
     noneParent: '无 (根目录)', createSuccess: '创建成功', updateSuccess: '更新成功',
     selectIcon: '选择图标',

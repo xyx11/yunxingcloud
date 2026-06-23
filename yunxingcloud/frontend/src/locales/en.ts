@@ -86,6 +86,7 @@ export default {
     name: 'Name', type: 'Type', path: 'Path', component: 'Component',
     icon: 'Icon', sort: 'Sort', visible: 'Visible', parent: 'Parent Menu',
     addRoot: 'Add Root Menu', addChild: 'Add Child Menu', moveUp: 'Move Up', moveDown: 'Move Down',
+    moveUpTitle: 'Move up', moveDownTitle: 'Move down',
     perms: 'Permissions', actions: 'Actions', typeDir: 'Directory', typeMenu: 'Menu', typeBtn: 'Button',
     noneParent: 'None (Root)', createSuccess: 'Created successfully', updateSuccess: 'Updated successfully',
     selectIcon: 'Select Icon',

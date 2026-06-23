@@ -42,8 +42,8 @@ const columns = computed<DataTableColumns<Dept>>(() => [
     title: t('user.actions'), key: 'actions', width: 200,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, -1) }, { default: () => '↑' }),
-        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, 1) }, { default: () => '↓' }),
+        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, -1) }, { title: t('menu.moveUpTitle'), default: () => '↑' }),
+        h(NButton, { size: 'tiny', onClick: () => moveDept(row.id, 1) }, { title: t('menu.moveDownTitle'), default: () => '↓' }),
         h(NButton, { size: 'tiny', onClick: () => editDept(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delDept(row.id) }, {
           trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
