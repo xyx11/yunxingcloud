@@ -38,23 +38,24 @@ const lastUpdated = ref('')
 const recentNotices = ref<any[]>([])
 const showQuickEdit = ref(false)
 const newQuick = ref('')
-const allQuickOptions = [
-  {label:'📄 API文档',value:'/swagger'},{label:'⚡ 代码生成',value:'/generator'},{label:'📖 字典管理',value:'/dict'},
-  {label:'🖥 系统监控',value:'/monitor'},{label:'🔧 数据维护',value:'/maintenance'},{label:'👥 用户管理',value:'/users'},
-  {label:'📋 菜单管理',value:'/menus'},{label:'📊 操作日志',value:'/operlog'},{label:'⏰ 定时任务',value:'/job'},
-  {label:'🔑 角色管理',value:'/roles'},{label:'🏢 部门管理',value:'/departments'},{label:'📢 通知公告',value:'/notices'},
-]
+const allQuickOptions = computed(() => [
+  {label:`📄 ${t('nav.swagger')}`,value:'/swagger'},{label:`⚡ ${t('nav.generator')}`,value:'/generator'},{label:`📖 ${t('nav.dict')}`,value:'/dict'},
+  {label:`🖥 ${t('nav.monitor')}`,value:'/monitor'},{label:`🔧 ${t('nav.maintenance')}`,value:'/maintenance'},{label:`👥 ${t('nav.users')}`,value:'/users'},
+  {label:`📋 ${t('nav.menus')}`,value:'/menus'},{label:`📊 ${t('nav.operlog')}`,value:'/operlog'},{label:`⏰ ${t('nav.jobs')}`,value:'/job'},
+  {label:`🔑 ${t('nav.roles')}`,value:'/roles'},{label:`🏢 ${t('nav.departments')}`,value:'/departments'},{label:`📢 ${t('nav.notice')}`,value:'/notices'},
+])
+const defaultQuickLinks = computed(() => [
+  {path:'/swagger',label:t('nav.swagger'),icon:'📄',type:'info'},{path:'/generator',label:t('nav.generator'),icon:'⚡',type:'success'},
+  {path:'/dict',label:t('nav.dict'),icon:'📖',type:'warning'},{path:'/monitor',label:t('nav.monitor'),icon:'🖥',type:'info'},
+  {path:'/maintenance',label:t('nav.maintenance'),icon:'🔧',type:'error'},
+])
 const quickLinks = ref<{path:string,label:string,icon:string,type:string}[]>(
-  JSON.parse(localStorage.getItem('quickLinks') || 'null') || [
-    {path:'/swagger',label:'API文档',icon:'📄',type:'info'},{path:'/generator',label:'代码生成',icon:'⚡',type:'success'},
-    {path:'/dict',label:'字典管理',icon:'📖',type:'warning'},{path:'/monitor',label:'系统监控',icon:'🖥',type:'info'},
-    {path:'/maintenance',label:'数据维护',icon:'🔧',type:'error'},
-  ]
+  JSON.parse(localStorage.getItem('quickLinks') || 'null') || defaultQuickLinks.value
 )
 
 function addQuick() {
   if (!newQuick.value) return
-  const opt = allQuickOptions.find(o => o.value === newQuick.value)
+  const opt = allQuickOptions.value.find(o => o.value === newQuick.value)
   if (opt && !quickLinks.value.find(q => q.path === newQuick.value)) {
     quickLinks.value.push({path:newQuick.value, label:opt.label.replace(/^[^\s]+\s/,''), icon:opt.label.substring(0,2), type:'info'})
     localStorage.setItem('quickLinks', JSON.stringify(quickLinks.value))

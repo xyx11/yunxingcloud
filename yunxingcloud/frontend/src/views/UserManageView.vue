@@ -192,10 +192,10 @@ onMounted(loadData)
               {{ showSearch ? t('common.collapseSearch') : t('common.expandSearch') }}
             </n-button>
             <template v-if="showSearch">
-              <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable style="width:160px" size="small" @keyup:enter="searchData" />
-              <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="width:120px" @update:value="searchData" />
-              <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="width:110px" @update:value="searchData" />
-              <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="width:100px" @update:value="searchData" />
+              <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable style="max-width:160px;width:95%" size="small" @keyup:enter="searchData" />
+              <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="max-width:120px;width:95%" @update:value="searchData" />
+              <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="max-width:110px;width:95%" @update:value="searchData" />
+              <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="max-width:100px;width:95%" @update:value="searchData" />
               <n-button type="primary" size="small" @click="searchData">{{ t('common.search') }}</n-button>
               <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; searchData()">{{ t('common.reset') }}</n-button>
             </template>
@@ -230,7 +230,7 @@ onMounted(loadData)
         />
 
         <!-- 新增用户 -->
-        <n-modal v-model:show="showAddModal" :title="t('user.addUser')" preset="card" display-directive="show" style="width:480px">
+        <n-modal v-model:show="showAddModal" :title="t('user.addUser')" preset="card" display-directive="show" style="max-width:480px;width:95%">
           <n-form ref="addFormRef" :model="addForm" :rules="addRules" label-placement="left" label-width="100">
             <n-form-item :label="t('user.username')" path="username">
               <n-input v-model:value="addForm.username" :placeholder="t('validate.usernameLen')" />
@@ -287,7 +287,7 @@ onMounted(loadData)
         </n-modal>
 
         <!-- 用户详情 -->
-        <n-modal v-model:show="showDetailModal" :title="t('user.userDetail')" preset="card" display-directive="show" style="width:560px">
+        <n-modal v-model:show="showDetailModal" :title="t('user.userDetail')" preset="card" display-directive="show" style="max-width:560px;width:95%">
           <div v-if="detailUser" style="line-height:2">
             <p><strong>{{ t('user.username') }}：</strong>{{ detailUser.username }}</p>
             <p><strong>{{ t('user.nickname') }}：</strong>{{ detailUser.nickname || '-' }}</p>

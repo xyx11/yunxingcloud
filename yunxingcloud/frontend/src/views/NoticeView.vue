@@ -129,7 +129,7 @@ onMounted(loadNotices)
           :row-key="(row: Notice) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" style="width:560px">
+        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" style="max-width:560px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('notice.title')">
               <n-input v-model:value="form.noticeTitle" />

@@ -143,17 +143,17 @@ async function handleUpload({ file }: any) {
     <n-card :title="t('profile.settings')" style="margin-top:16px">
       <n-space vertical>
         <n-space align="center">
-          <span style="width:80px">{{ t('profile.themeColor') }}</span>
+          <span style="max-width:80px;width:95%">{{ t('profile.themeColor') }}</span>
           <n-button v-for="c in themeColors" :key="c" size="tiny" :style="{background:c,width:'28px',height:'28px',borderRadius:'50%',border:currentColor===c?'3px solid #fff':''}" @click="setThemeColor(c)" />
         </n-space>
         <n-space align="center">
-          <span style="width:80px">{{ t('profile.pageSize') }}</span>
-          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+t('common.items'),value:n}))" size="small" style="width:100px" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
+          <span style="max-width:80px;width:95%">{{ t('profile.pageSize') }}</span>
+          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+t('common.items'),value:n}))" size="small" style="max-width:100px;width:95%" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
         </n-space>
       </n-space>
     </n-card>
 
-    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" style="width:400px">
+    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" style="max-width:400px;width:95%">
       <n-form label-placement="left" label-width="80">
         <n-form-item :label="t('pwd.old')">
           <n-input v-model:value="pwdForm.oldPassword" type="password" />

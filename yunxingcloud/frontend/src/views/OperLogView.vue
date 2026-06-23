@@ -219,7 +219,7 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
           :checked-row-keys="checkedKeys" @update:checked-row-keys="handleCheck"
         />
 
-        <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" style="width:640px">
+        <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" style="max-width:640px;width:95%">
           <div v-if="detailLog" style="max-height:500px; overflow-y:auto">
             <p><strong>{{ t('operlog.title') }}：</strong>{{ detailLog.title }}</p>
             <p><strong>{{ t('operlog.bizType') }}：</strong>{{ businessTypeMap[detailLog.businessType] || detailLog.businessType }}</p>

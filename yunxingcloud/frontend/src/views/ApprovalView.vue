@@ -56,7 +56,7 @@ onMounted(loadItems)
         </template>
         <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{pageSize:10}" :row-key="(r:Approval)=>r.id" />
 
-        <n-modal v-model:show="showModal" :title="t('approval.create')" preset="card" display-directive="show" style="width:480px">
+        <n-modal v-model:show="showModal" :title="t('approval.create')" preset="card" display-directive="show" style="max-width:480px;width:95%">
           <n-form label-placement="left" label-width="60">
             <n-form-item :label="t('approval.approver')"><n-input v-model:value="form.approver" /></n-form-item>
             <n-form-item :label="t('approval.type')"><n-select v-model:value="form.type" :options="[{label:t('approval.typeLeave'),value:t('approval.typeLeave')},{label:t('approval.typeExpense'),value:t('approval.typeExpense')},{label:t('approval.typeTravel'),value:t('approval.typeTravel')}]" /></n-form-item>

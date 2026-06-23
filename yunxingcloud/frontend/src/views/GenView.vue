@@ -119,7 +119,7 @@ onMounted(loadTables)
         />
 
         <!-- 字段查看弹窗 -->
-        <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="width:700px">
+        <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="max-width:700px;width:95%">
           <n-data-table
             :columns="colsColumns" :data="columns"
             :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
@@ -127,7 +127,7 @@ onMounted(loadTables)
         </n-modal>
 
         <!-- 代码预览弹窗 -->
-        <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="width:800px">
+        <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="max-width:800px;width:95%">
           <n-space vertical style="margin-bottom:12px">
             <n-space justify="space-between">
               <n-space>

@@ -48,7 +48,7 @@ onMounted(loadItems)
         </template>
         <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: IpItem) => row.id" />
 
-        <n-modal v-model:show="showModal" :title="t('ipBlacklist.blockIp')" preset="card" display-directive="show" style="width:400px">
+        <n-modal v-model:show="showModal" :title="t('ipBlacklist.blockIp')" preset="card" display-directive="show" style="max-width:400px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('ipBlacklist.ip')"><n-input v-model:value="form.ip" placeholder="192.168.1.100" /></n-form-item>
             <n-form-item :label="t('ipBlacklist.reason')"><n-input v-model:value="form.reason" :placeholder="t('ipBlacklist.reason')" /></n-form-item>

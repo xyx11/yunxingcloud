@@ -56,7 +56,7 @@ onMounted(loadClients)
         </template>
         <n-dataTable :columns="columns" :data="clients" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(r: Client) => r.id" />
 
-        <n-modal v-model:show="showModal" :title="t('oauth2.createClient')" preset="card" display-directive="show" style="width:520px">
+        <n-modal v-model:show="showModal" :title="t('oauth2.createClient')" preset="card" display-directive="show" style="max-width:520px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('oauth2.clientId')"><n-input v-model:value="form.clientId" placeholder="my-app" /></n-form-item>
             <n-form-item :label="t('oauth2.name')"><n-input v-model:value="form.clientName" :placeholder="t('oauth2.namePlaceholder')" /></n-form-item>

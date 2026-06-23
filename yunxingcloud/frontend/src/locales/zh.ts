@@ -87,6 +87,14 @@ export default {
     perms: '权限标识', actions: '操作', typeDir: '目录', typeMenu: '菜单', typeBtn: '按钮',
     noneParent: '无 (根目录)', createSuccess: '创建成功', updateSuccess: '更新成功',
     selectIcon: '选择图标',
+    icons: {
+      home: '首页', person: '用户', people: '用户组', settings: '设置',
+      folder: '文件夹', document: '文档', chart: '图表', monitor: '监控',
+      tool: '工具', lock: '锁', key: '钥匙', shield: '盾牌',
+      list: '列表', edit: '编辑', search: '搜索', message: '消息',
+      notice: '公告', book: '书本', star: '星标', heart: '收藏',
+      calendar: '日历', trend: '趋势', building: '建筑', globe: '网络',
+    },
   },
   department: {
     name: '名称', parent: '上级部门', sort: '排序', enabled: '状态',

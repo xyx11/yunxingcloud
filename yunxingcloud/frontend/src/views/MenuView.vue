@@ -8,7 +8,7 @@ import {
   NInput, NInputNumber, NSelect, NSpace, NPopconfirm, NTag, NSwitch,
   darkTheme, lightTheme
 } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface Menu {
   id: number; name: string; parentId: number | null; sortOrder: number
@@ -25,20 +25,25 @@ const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<Menu | null>(null)
+const formRef = ref<FormInst>()
+const rules: FormRules = {
+  name: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+  path: [{ required: true, message: t('validate.required'), trigger: 'blur' }],
+}
 const form = ref({
   name: '', parentId: null as number | null, sortOrder: 0,
   path: '', component: '', icon: '', menuType: 'M', perms: '', visible: true
 })
 
 const iconOptions = [
-  {label:'🏠 首页',value:'home'},{label:'👤 用户',value:'person'},{label:'👥 用户组',value:'people'},
-  {label:'⚙ 设置',value:'settings'},{label:'📁 文件夹',value:'folder'},{label:'📄 文档',value:'document'},
-  {label:'📊 图表',value:'chart'},{label:'🖥 监控',value:'monitor'},{label:'🔧 工具',value:'tool'},
-  {label:'🔒 锁',value:'lock'},{label:'🔑 钥匙',value:'key'},{label:'🛡 盾牌',value:'shield'},
-  {label:'📋 列表',value:'list'},{label:'📝 编辑',value:'edit'},{label:'🔍 搜索',value:'search'},
-  {label:'💬 消息',value:'message'},{label:'📢 公告',value:'notice'},{label:'📖 书本',value:'book'},
-  {label:'⭐ 星标',value:'star'},{label:'❤ 收藏',value:'heart'},{label:'📅 日历',value:'calendar'},
-  {label:'📈 趋势',value:'trend'},{label:'🏢 建筑',value:'building'},{label:'🌐 网络',value:'globe'},
+  {label:`🏠 ${t('menu.icons.home')}`,value:'home'},{label:`👤 ${t('menu.icons.person')}`,value:'person'},{label:`👥 ${t('menu.icons.people')}`,value:'people'},
+  {label:`⚙ ${t('menu.icons.settings')}`,value:'settings'},{label:`📁 ${t('menu.icons.folder')}`,value:'folder'},{label:`📄 ${t('menu.icons.document')}`,value:'document'},
+  {label:`📊 ${t('menu.icons.chart')}`,value:'chart'},{label:`🖥 ${t('menu.icons.monitor')}`,value:'monitor'},{label:`🔧 ${t('menu.icons.tool')}`,value:'tool'},
+  {label:`🔒 ${t('menu.icons.lock')}`,value:'lock'},{label:`🔑 ${t('menu.icons.key')}`,value:'key'},{label:`🛡 ${t('menu.icons.shield')}`,value:'shield'},
+  {label:`📋 ${t('menu.icons.list')}`,value:'list'},{label:`📝 ${t('menu.icons.edit')}`,value:'edit'},{label:`🔍 ${t('menu.icons.search')}`,value:'search'},
+  {label:`💬 ${t('menu.icons.message')}`,value:'message'},{label:`📢 ${t('menu.icons.notice')}`,value:'notice'},{label:`📖 ${t('menu.icons.book')}`,value:'book'},
+  {label:`⭐ ${t('menu.icons.star')}`,value:'star'},{label:`❤ ${t('menu.icons.heart')}`,value:'heart'},{label:`📅 ${t('menu.icons.calendar')}`,value:'calendar'},
+  {label:`📈 ${t('menu.icons.trend')}`,value:'trend'},{label:`🏢 ${t('menu.icons.building')}`,value:'building'},{label:`🌐 ${t('menu.icons.globe')}`,value:'globe'},
 ]
 const typeOptions = [
   { label: `${t('menu.typeDir')} (M)`, value: 'M' },
@@ -119,6 +124,7 @@ function editMenu(menu: Menu) {
 }
 
 async function saveMenu() {
+  if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
     if (editing.value) await request.put(`/api/menus/${editing.value.id}`, form.value)
@@ -156,8 +162,8 @@ onMounted(loadMenus)
           default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" style="width:600px">
-          <n-form label-placement="left" label-width="80">
+        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" style="max-width:600px;width:95%">
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
             <n-form-item :label="t('menu.name')">
               <n-input v-model:value="form.name" />
             </n-form-item>

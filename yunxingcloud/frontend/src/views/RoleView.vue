@@ -164,7 +164,7 @@ onMounted(loadAll)
         </n-space>
         <n-data-table :columns="visibleColumns" :data="filteredRoles" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row:Role)=>row.id" />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:560px" preset="card" display-directive="show">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:560px;width:95%" preset="card" display-directive="show">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('role.name')"><n-input v-model:value="form.name" :placeholder="t('role.name')" /></n-form-item>
             <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>

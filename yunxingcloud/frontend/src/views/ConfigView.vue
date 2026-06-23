@@ -153,7 +153,7 @@ onMounted(loadConfigs)
           :row-key="(row: SysConfig) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:480px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('config.nameLabel')">
               <n-input v-model:value="form.name" />

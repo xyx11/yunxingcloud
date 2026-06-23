@@ -79,7 +79,7 @@ onMounted(loadMsgs)
         </template>
         <n-dataTable :columns="columns" :data="messages" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: Msg) => row.id" />
 
-        <n-modal v-model:show="showModal" :title="t('message.send')" preset="card" display-directive="show" style="width:480px">
+        <n-modal v-model:show="showModal" :title="t('message.send')" preset="card" display-directive="show" style="max-width:480px;width:95%">
           <n-form label-placement="left" label-width="60">
             <n-form-item :label="t('message.toUser')"><n-input v-model:value="form.toUser" /></n-form-item>
             <n-form-item :label="t('message.title')"><n-input v-model:value="form.title" /></n-form-item>

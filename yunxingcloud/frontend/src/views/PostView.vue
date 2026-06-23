@@ -121,7 +121,7 @@ onMounted(loadPosts)
           :row-key="(row: Post) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('post.edit') : t('post.add')" style="width:480px">
+        <n-modal v-model:show="showModal" :title="editing ? t('post.edit') : t('post.add')" style="max-width:480px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('post.code')">
               <n-input v-model:value="form.postCode" :disabled="!!editing" />

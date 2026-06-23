@@ -112,7 +112,7 @@ onMounted(loadDepts)
         </template>
         <n-space style="margin-bottom:12px" justify="space-between">
           <n-space>
-            <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="width:180px" />
+            <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
             <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
             <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
           </n-space>
@@ -125,7 +125,7 @@ onMounted(loadDepts)
           default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="width:480px" preset="card" display-directive="show">
+        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:480px;width:95%" preset="card" display-directive="show">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('department.name')">
               <n-input v-model:value="form.name" />

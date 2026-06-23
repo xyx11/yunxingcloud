@@ -88,6 +88,14 @@ export default {
     perms: 'Permissions', actions: 'Actions', typeDir: 'Directory', typeMenu: 'Menu', typeBtn: 'Button',
     noneParent: 'None (Root)', createSuccess: 'Created successfully', updateSuccess: 'Updated successfully',
     selectIcon: 'Select Icon',
+    icons: {
+      home: 'Home', person: 'Person', people: 'People', settings: 'Settings',
+      folder: 'Folder', document: 'Document', chart: 'Chart', monitor: 'Monitor',
+      tool: 'Tool', lock: 'Lock', key: 'Key', shield: 'Shield',
+      list: 'List', edit: 'Edit', search: 'Search', message: 'Message',
+      notice: 'Notice', book: 'Book', star: 'Star', heart: 'Heart',
+      calendar: 'Calendar', trend: 'Trend', building: 'Building', globe: 'Globe',
+    },
   },
   department: {
     name: 'Name', parent: 'Parent Dept', sort: 'Sort', enabled: 'Status',

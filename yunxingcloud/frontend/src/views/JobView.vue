@@ -155,7 +155,7 @@ onMounted(loadJobs)
           :row-key="(row: SysJob) => row.id"
         />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('job.edit') : t('job.add')" style="width:560px">
+        <n-modal v-model:show="showModal" :title="editing ? t('job.edit') : t('job.add')" style="max-width:560px;width:95%">
           <n-form label-placement="left" label-width="80">
             <n-form-item :label="t('job.name')">
               <n-input v-model:value="form.jobName" />
@@ -198,7 +198,7 @@ onMounted(loadJobs)
         </n-modal>
 
         <!-- 执行日志弹窗 -->
-        <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" style="width:700px">
+        <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" style="max-width:700px;width:95%">
           <n-dataTable
             v-if="jobLogs.length" :columns="[
               {title:t('job.startTime'),key:'startTime',width:150,render:(r:any)=>r.startTime?.substring(0,19)||'-'},
