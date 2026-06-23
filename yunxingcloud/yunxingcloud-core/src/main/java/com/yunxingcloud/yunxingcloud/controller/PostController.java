@@ -28,6 +28,7 @@ public class PostController {
         this.i18n = i18n;
     }
 
+    @PreAuthorize("hasAuthority('post:read')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
         List<Map<String, Object>> posts = jdbc.queryForList(
@@ -35,6 +36,7 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
+    @PreAuthorize("hasAuthority('post:read')")
     @GetMapping("/{id}")
     public ResponseEntity<SysPost> get(@PathVariable Long id) {
         return postRepository.findById(id)
@@ -76,6 +78,7 @@ public class PostController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('post:read')")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
         StringBuilder sb = new StringBuilder("岗位编码,岗位名称,排序,状态\n");

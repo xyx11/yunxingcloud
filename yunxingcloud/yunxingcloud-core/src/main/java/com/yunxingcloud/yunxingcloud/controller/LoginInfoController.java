@@ -33,6 +33,7 @@ public class LoginInfoController {
         this.i18n = i18n;
     }
 
+    @PreAuthorize("hasAuthority('logininfor:read')")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
         long todaySuccess = 0, todayFail = 0, total = loginInfoRepository.count();
@@ -44,6 +45,7 @@ public class LoginInfoController {
         return ResponseEntity.ok(Map.of("total", total, "todaySuccess", todaySuccess, "todayFail", todayFail));
     }
 
+    @PreAuthorize("hasAuthority('logininfor:read')")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) String userName,

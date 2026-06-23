@@ -62,6 +62,7 @@ public class UserController {
         return ids;
     }
 
+    @PreAuthorize("hasAuthority('user:read')")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(defaultValue = "1") int page,
@@ -175,6 +176,7 @@ public class UserController {
         return ResponseEntity.ok(Map.of("success", (Object) true, "message", i18n.msg("user.delete_batch", ids.size())));
     }
 
+    @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/import-template")
     public ResponseEntity<byte[]> downloadTemplate() {
         String csv = "用户名,密码,邮箱,昵称\nzhangsan,123456,zhangsan@example.com,张三\nlisi,123456,lisi@example.com,李四\n";
@@ -255,6 +257,7 @@ public class UserController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
         StringBuilder sb = new StringBuilder("用户名,昵称,邮箱,来源,状态\n");

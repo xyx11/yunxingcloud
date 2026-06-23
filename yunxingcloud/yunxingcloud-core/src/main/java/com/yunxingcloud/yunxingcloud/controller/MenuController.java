@@ -21,6 +21,7 @@ public class MenuController {
 
     public MenuController(SysMenuRepository menuRepository) { this.menuRepository = menuRepository; }
 
+    @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping("/tree")
     public ResponseEntity<List<SysMenu>> tree() {
         List<SysMenu> all = menuRepository.findByVisibleTrueOrderBySortOrder();
@@ -34,9 +35,11 @@ public class MenuController {
         return ResponseEntity.ok(roots);
     }
 
+    @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping
     public ResponseEntity<List<SysMenu>> list() { return ResponseEntity.ok(menuRepository.findAll()); }
 
+    @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping("/{id}")
     public ResponseEntity<SysMenu> getById(@PathVariable Long id) {
         return menuRepository.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
