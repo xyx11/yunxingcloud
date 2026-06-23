@@ -4,7 +4,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.PasswordValidator;
-import com.yunxingcloud.usercenter.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.service.UserService;
 import org.springframework.http.HttpStatus;

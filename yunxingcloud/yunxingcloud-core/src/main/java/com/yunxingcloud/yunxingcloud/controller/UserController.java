@@ -1,6 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;

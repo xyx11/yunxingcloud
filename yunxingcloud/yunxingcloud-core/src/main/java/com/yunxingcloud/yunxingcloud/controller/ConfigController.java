@@ -4,7 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysConfig;
 import com.yunxingcloud.yunxingcloud.repository.SysConfigRepository;
 import org.springframework.cache.annotation.CacheEvict;

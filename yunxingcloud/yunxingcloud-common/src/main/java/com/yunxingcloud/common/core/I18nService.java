@@ -1,4 +1,4 @@
-package com.yunxingcloud.yunxingcloud.config;
+package com.yunxingcloud.common.core;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;

@@ -2,7 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysJob;
 import com.yunxingcloud.yunxingcloud.entity.SysJobLog;
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;

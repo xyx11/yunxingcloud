@@ -1,6 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
 import org.springframework.data.domain.Page;

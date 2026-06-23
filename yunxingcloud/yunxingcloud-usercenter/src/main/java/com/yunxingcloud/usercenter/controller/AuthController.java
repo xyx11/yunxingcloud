@@ -1,6 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
-import com.yunxingcloud.usercenter.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;

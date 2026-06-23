@@ -1,6 +1,6 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

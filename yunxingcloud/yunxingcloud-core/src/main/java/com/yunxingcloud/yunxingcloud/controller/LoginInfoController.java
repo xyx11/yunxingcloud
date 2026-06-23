@@ -2,7 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysLoginInfo;
 import com.yunxingcloud.yunxingcloud.repository.SysLoginInfoRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;

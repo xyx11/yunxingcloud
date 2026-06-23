@@ -2,7 +2,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.IpBlacklist;
 import com.yunxingcloud.yunxingcloud.repository.IpBlacklistRepository;
 import org.springframework.http.ResponseEntity;

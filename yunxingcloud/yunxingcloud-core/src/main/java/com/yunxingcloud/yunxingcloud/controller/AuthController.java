@@ -3,7 +3,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
 import com.yunxingcloud.yunxingcloud.event.AuditEvent;
 import org.springframework.context.ApplicationEventPublisher;

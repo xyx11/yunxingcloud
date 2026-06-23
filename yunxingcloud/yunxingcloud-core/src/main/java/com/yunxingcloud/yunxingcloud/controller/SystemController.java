@@ -1,7 +1,7 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.config.FeatureFlags;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.config.TokenStore;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.cache.CacheManager;

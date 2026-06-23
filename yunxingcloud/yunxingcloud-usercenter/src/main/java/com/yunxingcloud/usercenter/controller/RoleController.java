@@ -1,6 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
-import com.yunxingcloud.usercenter.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.usercenter.entity.Role;
 import com.yunxingcloud.usercenter.repository.RoleRepository;
 import org.springframework.http.ResponseEntity;

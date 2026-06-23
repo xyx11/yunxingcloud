@@ -4,7 +4,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.PasswordValidator;
-import com.yunxingcloud.yunxingcloud.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.PasswordResetTokenRepository;

@@ -1,6 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
-import com.yunxingcloud.usercenter.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.usercenter.repository.SocialAccountRepository;
 import com.yunxingcloud.usercenter.service.UserService;
 import org.springframework.http.HttpStatus;

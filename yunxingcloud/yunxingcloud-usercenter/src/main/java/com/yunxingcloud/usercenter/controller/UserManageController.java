@@ -1,6 +1,6 @@
 package com.yunxingcloud.usercenter.controller;
 
-import com.yunxingcloud.usercenter.config.I18nService;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.UserRepository;
 import com.yunxingcloud.usercenter.service.DeptRoleService;
