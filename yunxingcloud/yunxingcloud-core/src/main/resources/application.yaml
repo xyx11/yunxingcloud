@@ -1,3 +1,10 @@
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  default-produces-media-type: application/json
+
 spring:
   application:
     name: yunxingcloud-core
