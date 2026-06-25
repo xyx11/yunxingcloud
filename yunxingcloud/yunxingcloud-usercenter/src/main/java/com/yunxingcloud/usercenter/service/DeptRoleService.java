@@ -49,9 +49,7 @@ public class DeptRoleService {
     }
 
     public List<User> getDepartmentUsers(Long deptId) {
-        return userRepository.findAll().stream()
-                .filter(u -> deptId.equals(u.getDepartmentId()))
-                .toList();
+        return userRepository.findByDepartmentId(deptId);
     }
 
     @Transactional

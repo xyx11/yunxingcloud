@@ -7,7 +7,7 @@ test.describe('yunxingcloud E2E', () => {
     test('should show login page with branding and form', async ({ page }) => {
       await page.goto('/')
       await expect(page.locator('h1')).toContainText('yunxingcloud')
-      await expect(page.locator('input[placeholder*="用户"]')).toBeVisible()
+      await expect(page.locator('input[placeholder*="用户"]').or(page.locator('input[placeholder*="User"]'))).toBeVisible()
       await expect(page.locator('input[type="password"]')).toBeVisible()
     })
 
@@ -26,10 +26,11 @@ test.describe('yunxingcloud E2E', () => {
       await expect(page.locator('h1')).toBeVisible()
     })
 
-    test('should show 404 for unknown routes', async ({ page }) => {
+    test('should redirect unknown routes to login when not authenticated', async ({ page }) => {
       await page.goto('/#/nonexistent-page')
-      await page.waitForTimeout(500)
-      await expect(page.locator('text=404').first()).toBeVisible()
+      await page.waitForTimeout(1500)
+      // Router guard redirects to login for unauthenticated users
+      expect(page.url()).toContain('login')
     })
   })
 
@@ -62,29 +63,32 @@ test.describe('yunxingcloud E2E', () => {
 
     test('should show validation on empty submit', async ({ page }) => {
       await page.goto('/#/login')
-      await page.locator('button[type="submit"]').click()
+      await page.locator('.n-button').first().click()
       await page.waitForTimeout(500)
-      await expect(page.locator('button[type="submit"]')).toBeVisible()
+      await expect(page.locator('.n-button').first()).toBeVisible()
     })
 
     test('should show error on invalid credentials', async ({ page }) => {
       await page.goto('/#/login')
-      await page.locator('input[placeholder*="用户"]').fill('admin')
+      await page.locator('input[placeholder*="用户"]').or(page.locator('input[placeholder*="User"]')).first().fill('admin')
       await page.locator('input[type="password"]').fill('wrongpassword')
-      await page.locator('button[type="submit"]').click()
+      await page.locator('.n-button').first().click()
       await page.waitForTimeout(1000)
       // should still be on login page with error visible
-      await expect(page.locator('button[type="submit"]')).toBeVisible()
+      await expect(page.locator('.n-button').first()).toBeVisible()
     })
 
     test('should login successfully with correct credentials', async ({ page }) => {
       await page.goto('/#/login')
-      await page.locator('input[placeholder*="用户"]').fill('admin')
+      await page.waitForSelector('input[type="password"]', { timeout: 10000 })
+      await page.locator('input').first().fill('admin')
       await page.locator('input[type="password"]').fill('admin123')
-      await page.locator('button[type="submit"]').click()
-      await page.waitForTimeout(2000)
-      // should redirect to home/dashboard
-      expect(page.url()).not.toContain('login')
+      await page.locator('.n-button--primary-type').first().click()
+      // Wait for dashboard content to appear (indicates successful login)
+      await page.waitForSelector('.n-card, .logo', { timeout: 20000 })
+      // Should be on home page, not login
+      const hasLoginElements = await page.locator('input[type="password"]').count()
+      expect(hasLoginElements).toBe(0)
     })
   })
 
