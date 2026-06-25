@@ -53,24 +53,46 @@ public class GenController {
 
     private String generateEntity(String tableName, String className, String pkg, String author) {
         List<Map<String, Object>> cols = jdbcTemplate.queryForList(
-            "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_COMMENT FROM information_schema.COLUMNS " +
+            "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_COMMENT, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS " +
             "WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION", tableName);
 
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(pkg).append(".entity;\n\n");
-        sb.append("import jakarta.persistence.*;\n\n");
+        sb.append("import jakarta.persistence.*;\n");
+        sb.append("import java.time.LocalDateTime;\n\n");
         sb.append("@Entity\n@Table(name = \"").append(tableName).append("\")\n");
         sb.append("public class ").append(className).append(" {\n\n");
 
+        boolean hasId = false;
         for (var col : cols) {
             String colName = (String) col.get("COLUMN_NAME");
             String type = (String) col.get("DATA_TYPE");
             String comment = (String) col.get("COLUMN_COMMENT");
-            sb.append("    @Column(name = \"").append(colName).append("\")\n");
-            if (comment != null && !comment.isEmpty()) sb.append("    // ").append(comment).append("\n");
+            String nullable = (String) col.get("IS_NULLABLE");
+            String key = (String) col.get("COLUMN_KEY");
+
+            if ("PRI".equals(key) && !hasId) {
+                sb.append("    @Id\n");
+                sb.append("    @GeneratedValue(strategy = GenerationType.IDENTITY)\n");
+                hasId = true;
+            }
+            sb.append("    @Column(name = \"").append(colName).append("\"");
+            if ("NO".equals(nullable)) sb.append(", nullable = false");
+            if ("varchar".equalsIgnoreCase(type)) sb.append(", length = 255");
+            sb.append(")\n");
+            if (comment != null && !comment.isEmpty()) sb.append("    /** ").append(comment).append(" */\n");
             sb.append("    private ").append(mapJavaType(type)).append(" ").append(toCamelCase(colName, false)).append(";\n\n");
         }
-        sb.append("    // getters and setters\n");
+        for (var col : cols) {
+            String colName = (String) col.get("COLUMN_NAME");
+            String javaType = mapJavaType((String) col.get("DATA_TYPE"));
+            String getterName = "get" + toCamelCase(colName, true);
+            String setterName = "set" + toCamelCase(colName, true);
+            sb.append("\n    public ").append(javaType).append(" ").append(getterName).append("() {\n");
+            sb.append("        return ").append(toCamelCase(colName, false)).append(";\n    }\n\n");
+            sb.append("    public void ").append(setterName).append("(").append(javaType).append(" ").append(toCamelCase(colName, false)).append(") {\n");
+            sb.append("        this.").append(toCamelCase(colName, false)).append(" = ").append(toCamelCase(colName, false)).append(";\n    }\n");
+        }
         sb.append("}");
         return sb.toString();
     }
@@ -121,7 +143,7 @@ public class GenController {
 
     private String generateMigration(String tableName, String className) {
         List<Map<String, Object>> cols = jdbcTemplate.queryForList(
-            "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_COMMENT, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS " +
+            "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_COMMENT, IS_NULLABLE, COLUMN_KEY, CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS " +
             "WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION", tableName);
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (\n");
@@ -132,7 +154,8 @@ public class GenController {
             String nullable = "YES".equals(col.get("IS_NULLABLE")) ? "" : " NOT NULL";
             String key = "PRI".equals(col.get("COLUMN_KEY")) ? " AUTO_INCREMENT PRIMARY KEY" : "";
             String comment = (String) col.get("COLUMN_COMMENT");
-            String sqlType = mapSqlType(type);
+            Object charLen = col.get("CHARACTER_MAXIMUM_LENGTH");
+            String sqlType = mapSqlType(type, charLen);
             sb.append("    ").append(colName).append(" ").append(sqlType).append(nullable).append(key);
             if (comment != null && !comment.isEmpty()) sb.append(" COMMENT '").append(comment).append("'");
             if (i < cols.size() - 1) sb.append(",");
@@ -152,9 +175,19 @@ public class GenController {
     }
 
     private String mapSqlType(String mysqlType) {
+        return mapSqlType(mysqlType, null);
+    }
+
+    private String mapSqlType(String mysqlType, Object charMaxLen) {
         return switch (mysqlType.toLowerCase()) {
-            case "varchar" -> "VARCHAR(100)";
-            case "char" -> "CHAR(1)";
+            case "varchar" -> {
+                long len = charMaxLen instanceof Number ? ((Number) charMaxLen).longValue() : 0;
+                yield len > 0 ? "VARCHAR(" + len + ")" : "VARCHAR(255)";
+            }
+            case "char" -> {
+                long len = charMaxLen instanceof Number ? ((Number) charMaxLen).longValue() : 0;
+                yield len > 0 ? "CHAR(" + len + ")" : "CHAR(1)";
+            }
             case "text", "longtext" -> "TEXT";
             case "int", "tinyint", "smallint" -> "INT";
             case "bigint" -> "BIGINT";
@@ -173,9 +206,36 @@ public class GenController {
     }
 
     private String generateService(String className, String pkg) {
+        String repo = className + "Repository";
+        String entity = className;
+        String var = toCamelCase(className, false);
         return "package " + pkg + ".service;\n\n" +
-               "import org.springframework.stereotype.Service;\n\n" +
-               "@Service\npublic class " + className + "Service {\n" +
+               "import " + pkg + ".entity." + entity + ";\n" +
+               "import " + pkg + ".repository." + repo + ";\n" +
+               "import org.springframework.stereotype.Service;\n" +
+               "import org.springframework.transaction.annotation.Transactional;\n\n" +
+               "import java.util.List;\n" +
+               "import java.util.Optional;\n\n" +
+               "@Service\n" +
+               "public class " + className + "Service {\n\n" +
+               "    private final " + repo + " repository;\n\n" +
+               "    public " + className + "Service(" + repo + " repository) {\n" +
+               "        this.repository = repository;\n" +
+               "    }\n\n" +
+               "    public List<" + entity + "> findAll() {\n" +
+               "        return repository.findAll();\n" +
+               "    }\n\n" +
+               "    public Optional<" + entity + "> findById(Long id) {\n" +
+               "        return repository.findById(id);\n" +
+               "    }\n\n" +
+               "    @Transactional\n" +
+               "    public " + entity + " save(" + entity + " entity) {\n" +
+               "        return repository.save(entity);\n" +
+               "    }\n\n" +
+               "    @Transactional\n" +
+               "    public void deleteById(Long id) {\n" +
+               "        repository.deleteById(id);\n" +
+               "    }\n" +
                "}";
     }
 
@@ -191,10 +251,20 @@ public class GenController {
 
     private String generateVueApi(String tableName, String className) {
         String varName = toCamelCase(tableName, false);
+        List<Map<String, Object>> cols = jdbcTemplate.queryForList(
+            "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS " +
+            "WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION", tableName);
+
+        StringBuilder fields = new StringBuilder();
+        for (var col : cols) {
+            String colName = (String) col.get("COLUMN_NAME");
+            String tsType = mapTsType((String) col.get("DATA_TYPE"));
+            fields.append("  ").append(colName).append(": ").append(tsType).append("\n");
+        }
+
         return "import request from '@/api/request'\n\n" +
                "export interface " + className + " {\n" +
-               "  id: number\n" +
-               "  // TODO: add fields\n" +
+               fields +
                "}\n\n" +
                "export function list" + className + "(params: any) {\n" +
                "  return request.get('/api/" + tableName + "', { params })\n" +
@@ -252,11 +322,10 @@ public class GenController {
                      .append("            </n-form-item>\n");
         }
 
-        String compName = className + "View";
-
         return "<script setup lang=\"ts\">\n" +
                "import { ref, onMounted, h, computed } from 'vue'\n" +
-               "import request from '@/api/request'\n" +
+               "import { list" + className + ", create" + className + ", update" + className + ", delete" + className + " } from '@/api/" + tableName + "'\n" +
+               "import type { " + className + " } from '@/api/" + tableName + "'\n" +
                "import { useNotify } from '@/composables/useNotify'\n" +
                "import {\n" +
                "  NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,\n" +
@@ -265,10 +334,6 @@ public class GenController {
                "} from 'naive-ui'\n" +
                "import { useI18n } from 'vue-i18n'\n" +
                "import type { DataTableColumns } from 'naive-ui'\n\n" +
-               "interface " + className + " {\n" +
-               "  id: number\n" +
-               "  // TODO: add fields\n" +
-               "}\n\n" +
                "const { t } = useI18n()\n" +
                "const notify = useNotify()\n" +
                "const currentTheme = computed(() => localStorage.getItem(\"theme\") === \"dark\" ? darkTheme : lightTheme)\n" +
@@ -289,13 +354,13 @@ public class GenController {
                "const columns: DataTableColumns<" + className + "> = [\n" +
                colDefs +
                "  {\n" +
-               "    title: '操作', key: 'actions', width: 120,\n" +
+               "    title: t('common.actions'), key: 'actions', width: 120,\n" +
                "    render: (row) => h(NSpace, null, {\n" +
                "      default: () => [\n" +
-               "        h(NButton, { size: 'tiny', onClick: () => editItem(row) }, { default: () => '编辑' }),\n" +
+               "        h(NButton, { size: 'tiny', onClick: () => editItem(row) }, { default: () => t('common.edit') }),\n" +
                "        h(NPopconfirm, { onPositiveClick: () => delItem(row.id) }, {\n" +
-               "          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }),\n" +
-               "          default: () => '确认删除?'\n" +
+               "          trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),\n" +
+               "          default: () => t('common.confirmDelete')\n" +
                "        })\n" +
                "      ]\n" +
                "    })\n" +
@@ -303,7 +368,7 @@ public class GenController {
                "]\n\n" +
                "async function loadItems() {\n" +
                "  loading.value = true\n" +
-               "  try { const res = await request.get('/api/" + tableName + "'); items.value = res.data } catch {}\n" +
+               "  try { const res = await list" + className + "(); items.value = res.data } catch {}\n" +
                "  loading.value = false\n" +
                "}\n\n" +
                "function addItem() {\n" +
@@ -319,15 +384,15 @@ public class GenController {
                "async function saveItem() {\n" +
                "  saving.value = true\n" +
                "  try {\n" +
-               "    if (editing.value) await request.put(`/api/" + tableName + "/${editing.value.id}`, form.value)\n" +
-               "    else await request.post('/api/" + tableName + "', form.value)\n" +
+               "    if (editing.value) await update" + className + "(editing.value.id, form.value)\n" +
+               "    else await create" + className + "(form.value)\n" +
                "    showModal.value = false\n" +
-               "    notify.success(editing.value ? '更新成功' : '创建成功')\n" +
+               "    notify.success(editing.value ? t('common.updateSuccess') : t('common.createSuccess'))\n" +
                "    await loadItems()\n" +
-               "  } catch (e: any) { notify.error(e.response?.data?.message || '保存失败') } finally { saving.value = false }\n" +
+               "  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }\n" +
                "}\n\n" +
                "async function delItem(id: number) {\n" +
-               "  await request.delete(`/api/" + tableName + "/${id}`)\n" +
+               "  await delete" + className + "(id)\n" +
                "  await loadItems()\n" +
                "}\n\n" +
                "onMounted(loadItems)\n" +
@@ -337,27 +402,27 @@ public class GenController {
                "    <div style=\"padding:20px\">\n" +
                "      <n-card title=\"" + cnName + "\">\n" +
                "        <template #header-extra>\n" +
-               "          <n-button type=\"primary\" size=\"small\" @click=\"addItem\"><template #icon>＋</template>新增</n-button>\n" +
+               "          <n-button type=\"primary\" size=\"small\" @click=\"addItem\"><template #icon>＋</template>{{ t('common.add') }}</n-button>\n" +
                "        </template>\n" +
                "        <n-space style=\"margin-bottom:12px\" justify=\"space-between\">\n" +
                "          <n-space>\n" +
-               "            <n-input v-model:value=\"searchKeyword\" placeholder=\"搜索\" size=\"small\" clearable style=\"width:180px\" />\n" +
-               "            <n-button type=\"primary\" size=\"small\" @click=\"() => {}\">搜索</n-button>\n" +
-               "            <n-button size=\"small\" @click=\"searchKeyword = ''\">重置</n-button>\n" +
+               "            <n-input v-model:value=\"searchKeyword\" :placeholder=\"t('common.search')\" size=\"small\" clearable style=\"width:180px\" />\n" +
+               "            <n-button type=\"primary\" size=\"small\" @click=\"() => {}\">{{ t('common.search') }}</n-button>\n" +
+               "            <n-button size=\"small\" @click=\"searchKeyword = ''\">{{ t('common.reset') }}</n-button>\n" +
                "          </n-space>\n" +
-               "          <n-space><n-button size=\"small\" @click=\"loadItems\" secondary>刷新</n-button></n-space>\n" +
+               "          <n-space><n-button size=\"small\" @click=\"loadItems\" secondary>{{ t('common.refresh') }}</n-button></n-space>\n" +
                "        </n-space>\n" +
                "        <n-dataTable :columns=\"columns\" :data=\"filteredItems\" :loading=\"loading\" size=\"small\"\n" +
                "          :bordered=\"false\" :pagination=\"{ pageSize: 10, pageSizes: [10,20,50,100] }\"\n" +
                "          :row-key=\"(row: " + className + ") => row.id\" />\n\n" +
-               "        <n-modal v-model:show=\"showModal\" :title=\"editing ? '编辑' : '新增'\" style=\"width:480px\">\n" +
+               "        <n-modal v-model:show=\"showModal\" :title=\"editing ? t('common.edit') : t('common.add')\" style=\"width:480px\">\n" +
                "          <n-form label-placement=\"left\" label-width=\"80\">\n" +
                formItems +
                "          </n-form>\n" +
                "          <template #footer>\n" +
                "            <n-space justify=\"end\">\n" +
-               "              <n-button @click=\"showModal = false\">取消</n-button>\n" +
-               "              <n-button type=\"primary\" :loading=\"saving\" @click=\"saveItem\">保存</n-button>\n" +
+               "              <n-button @click=\"showModal = false\">{{ t('common.cancel') }}</n-button>\n" +
+               "              <n-button type=\"primary\" :loading=\"saving\" @click=\"saveItem\">{{ t('common.save') }}</n-button>\n" +
                "            </n-space>\n" +
                "          </template>\n" +
                "        </n-modal>\n" +
@@ -376,6 +441,14 @@ public class GenController {
             case "decimal", "double", "float" -> "java.math.BigDecimal";
             case "boolean", "bit" -> "Boolean";
             default -> "String";
+        };
+    }
+
+    private String mapTsType(String sqlType) {
+        return switch (sqlType.toLowerCase()) {
+            case "int", "tinyint", "smallint", "bigint", "decimal", "double", "float" -> "number";
+            case "boolean", "bit" -> "boolean";
+            default -> "string";
         };
     }
 }

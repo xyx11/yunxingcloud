@@ -51,7 +51,7 @@ public class RegisterController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", e.getMessage()
+                    "message", i18n.msg(e.getMessage())
             ));
         }
     }

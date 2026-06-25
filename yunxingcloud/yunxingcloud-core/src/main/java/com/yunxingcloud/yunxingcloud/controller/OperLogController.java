@@ -99,7 +99,7 @@ public class OperLogController {
             logs = logs.stream().filter(l -> l.getOperTime() != null && !l.getOperTime().isBefore(s) && (e == null || !l.getOperTime().isAfter(e))).collect(Collectors.toList());
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("ID,标题,业务类型,操作人,IP,URL,状态,耗时(ms),操作时间\n");
+        sb.append("ID,Title,BizType,Operator,IP,URL,Status,Cost(ms),OperTime\n");
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         for (SysOperLog log : logs) {
             sb.append(String.join(",",
@@ -109,7 +109,7 @@ public class OperLogController {
                 csvEscape(log.getOperName()),
                 csvEscape(log.getOperIp()),
                 csvEscape(log.getOperUrl()),
-                log.getStatus() != null && log.getStatus() == 0 ? "成功" : "失败",
+                log.getStatus() != null && log.getStatus() == 0 ? "Success" : "Failure",
                 String.valueOf(log.getCostTime() != null ? log.getCostTime() : 0),
                 log.getOperTime() != null ? log.getOperTime().format(fmt) : ""
             )).append("\n");

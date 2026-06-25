@@ -34,11 +34,6 @@ public class ConsentController {
     }
 
     private String scopeDescription(String scope) {
-        return switch (scope) {
-            case "openid" -> "使用您的身份进行登录";
-            case "profile" -> "读取您的基本资料";
-            case "email" -> "读取您的邮箱地址";
-            default -> scope;
-        };
+        return scope; // i18n handled by frontend ConsentView
     }
 }

@@ -24,9 +24,9 @@ public class EmailController {
     @GetMapping("/templates")
     public ResponseEntity<Map<String, Object>> templates() {
         return ResponseEntity.ok(Map.of("templates", java.util.List.of(
-            Map.of("name","欢迎邮件","subject","欢迎加入 yunxingcloud","content","您好 {username}，\n\n欢迎使用 yunxingcloud 分布式微服务平台。\n\n您的账号已创建成功，请妥善保管。"),
-            Map.of("name","密码重置","subject","密码重置通知","content","您好 {username}，\n\n您的密码已重置为 {password}，请登录后及时修改。"),
-            Map.of("name","系统通知","subject","系统通知","content","您好 {username}，\n\n{message}\n\n此邮件由系统自动发送，请勿回复。")
+            Map.of("key","welcome","name", i18n.msg("email.template_welcome"), "subject","Welcome to yunxingcloud","content","Hello {username},\n\nWelcome to yunxingcloud. Your account has been created."),
+            Map.of("key","password_reset","name", i18n.msg("email.template_password_reset"), "subject","Password Reset Notification","content","Hello {username},\n\nYour password has been reset to {password}. Please change it after login."),
+            Map.of("key","system_notice","name", i18n.msg("email.template_system_notice"), "subject","System Notification","content","Hello {username},\n\n{message}\n\nThis is an auto-generated email, please do not reply.")
         )));
     }
 

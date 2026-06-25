@@ -20,10 +20,10 @@ public class UserService {
 
     public User register(String username, String password, String email) {
         if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("用户名已存在");
+            throw new IllegalArgumentException("register.duplicate_username");
         }
         if (email != null && !email.isBlank() && userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("邮箱已被注册");
+            throw new IllegalArgumentException("register.duplicate_email");
         }
         User user = new User();
         user.setUsername(username);
