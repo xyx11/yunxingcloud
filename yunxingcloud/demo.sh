@@ -12,15 +12,15 @@ GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 
 info "构建项目..."
-./mvnw compile -pl yunxingcloud-core -q 2>/dev/null
-cd frontend && npx vite build --silent 2>/dev/null && cd ..
+./mvnw compile -pl yunxingcloud-core -q 2>/dev/null || true
+cd frontend && npx vite build 2>/dev/null || true && cd ..
 
 info "启动 yunxingcloud-core (端口 8080)..."
 ./mvnw spring-boot:run -pl yunxingcloud-core -Dspring-boot.run.profiles=dev > /tmp/yunxingcloud-demo.log 2>&1 &
 PID=$!
 
 info "等待服务就绪..."
-for i in $(seq 1 30); do
+for i in $(seq 1 60); do
   code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "000")
   [ "$code" = "200" ] && break
   sleep 1
