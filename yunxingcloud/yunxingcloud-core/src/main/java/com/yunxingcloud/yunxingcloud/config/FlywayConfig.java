@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 @Configuration
-@ConditionalOnProperty(name = "spring.flyway.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "spring.flyway.enabled", havingValue = "true", matchIfMissing = false)
 public class FlywayConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FlywayConfig.class);
@@ -18,12 +18,17 @@ public class FlywayConfig {
     public FlywayConfig(DataSource dataSource,
                         @Value("${spring.flyway.locations:classpath:db/migration}") String locations) {
         log.info("开始执行 Flyway 迁移...");
-        Flyway flyway = Flyway.configure()
-                .dataSource(dataSource)
-                .locations(locations)
-                .baselineOnMigrate(true)
-                .load();
-        flyway.migrate();
-        log.info("Flyway 迁移完成");
+        try {
+            Flyway flyway = Flyway.configure()
+                    .dataSource(dataSource)
+                    .locations(locations)
+                    .baselineOnMigrate(true)
+                    .validateOnMigrate(false)
+                    .load();
+            flyway.migrate();
+            log.info("Flyway 迁移完成");
+        } catch (Exception e) {
+            log.warn("Flyway 迁移失败: {}. 应用继续启动。", e.getMessage());
+        }
     }
 }

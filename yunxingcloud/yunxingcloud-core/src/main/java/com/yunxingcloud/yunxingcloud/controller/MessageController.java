@@ -47,9 +47,9 @@ public class MessageController {
     public ResponseEntity<Map<String, Object>> markRead(@PathVariable Long id) {
         String user = SecurityContextHolder.getContext().getAuthentication().getName();
         return msgRepo.findById(id).map(m -> {
-            if (!m.getToUser().equals(user)) return ResponseEntity.status(403).body(Map.of("success", false));
+            if (!m.getToUser().equals(user)) return ResponseEntity.status(403).body(Map.<String, Object>of("success", false));
             m.setIsRead(true); msgRepo.save(m);
-            return ResponseEntity.ok(Map.of("success", true));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -58,9 +58,9 @@ public class MessageController {
         String user = SecurityContextHolder.getContext().getAuthentication().getName();
         return msgRepo.findById(id).map(m -> {
             if (!m.getToUser().equals(user) && !m.getFromUser().equals(user))
-                return ResponseEntity.status(403).body(Map.of("success", false));
+                return ResponseEntity.status(403).body(Map.<String, Object>of("success", false));
             msgRepo.deleteById(id);
-            return ResponseEntity.ok(Map.of("success", true));
+            return ResponseEntity.ok(Map.<String, Object>of("success", true));
         }).orElse(ResponseEntity.notFound().build());
     }
 }
