@@ -15,7 +15,7 @@ export default tseslint.config(
   },
   {
     languageOptions: {
-      globals: { localStorage: 'readonly', sessionStorage: 'readonly', window: 'readonly', document: 'readonly', navigator: 'readonly', console: 'readonly', fetch: 'readonly', EventSource: 'readonly', CustomEvent: 'readonly', EventListener: 'readonly', setInterval: 'readonly', clearInterval: 'readonly', setTimeout: 'readonly', KeyboardEvent: 'readonly', HTMLElement: 'readonly', HTMLFormElement: 'readonly', URLSearchParams: 'readonly', URL: 'readonly', FormData: 'readonly', Blob: 'readonly', Notification: 'readonly' }
+      globals: { localStorage: 'readonly', sessionStorage: 'readonly', window: 'readonly', document: 'readonly', navigator: 'readonly', console: 'readonly', fetch: 'readonly', EventSource: 'readonly', CustomEvent: 'readonly', EventListener: 'readonly', Event: 'readonly', setInterval: 'readonly', clearInterval: 'readonly', setTimeout: 'readonly', KeyboardEvent: 'readonly', HTMLElement: 'readonly', HTMLFormElement: 'readonly', URLSearchParams: 'readonly', URL: 'readonly', FormData: 'readonly', Blob: 'readonly', Notification: 'readonly' }
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -23,8 +23,8 @@ export default tseslint.config(
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
       'vue/attributes-order': 'off',
-      'no-unused-vars': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'error',
       'no-empty': 'warn'
     }

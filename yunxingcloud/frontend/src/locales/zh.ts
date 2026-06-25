@@ -33,6 +33,7 @@ export default {
     saveFailed: '保存失败', done: '完成', hide: '隐藏', ok: '确定',
     gotIt: '我知道了', all: '全部', remark: '备注', createdAt: '创建时间',
     viewAll: '查看全部', noDetail: '暂无详细内容', items: '{0}条',
+    actions: '操作', createSuccess: '创建成功', updateSuccess: '更新成功',
   },
   login: {
     title: '登录', username: '用户名', password: '密码',

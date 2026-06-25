@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NModal, NInput, NTag } from 'naive-ui'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const visible = ref(false)
 const query = ref('')

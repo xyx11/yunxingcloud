@@ -33,6 +33,7 @@ export default {
     saveFailed: 'Save failed', done: 'Done', hide: 'Hide', ok: 'OK',
     gotIt: 'Got it', all: 'All', remark: 'Remark', createdAt: 'Created',
     viewAll: 'View All', noDetail: 'No details', items: '{0} items',
+    actions: 'Actions', createSuccess: 'Created successfully', updateSuccess: 'Updated successfully',
   },
   login: {
     title: 'Login', username: 'Username', password: 'Password',
@@ -48,6 +49,7 @@ export default {
     confirmPassword: 'Confirm Password', email: 'Email (optional)',
     submit: 'Create Account', hasAccount: 'Already have an account?',
     success: 'Registration successful! Redirecting...',
+    pendingApproval: 'Registration successful! Your account requires admin approval before login.',
   },
   user: {
     username: 'Username', nickname: 'Nickname', email: 'Email', source: 'Source',
