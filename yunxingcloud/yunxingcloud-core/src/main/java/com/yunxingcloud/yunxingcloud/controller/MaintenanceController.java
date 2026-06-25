@@ -24,9 +24,29 @@ public class MaintenanceController {
     private final JdbcTemplate jdbcTemplate;
     private final I18nService i18n;
 
+    @Value("${spring.datasource.username:root}")
+    private String dbUser;
+
+    @Value("${spring.datasource.password:}")
+    private String dbPassword;
+
+    @Value("${spring.datasource.url:jdbc:mysql://localhost:3306/yunxingcloud_core}")
+    private String dbUrl;
+
     public MaintenanceController(JdbcTemplate jdbcTemplate, I18nService i18n) {
         this.jdbcTemplate = jdbcTemplate;
         this.i18n = i18n;
+    }
+
+    private String getDbName() {
+        String url = dbUrl;
+        int idx = url.lastIndexOf('/');
+        if (idx >= 0) {
+            String db = url.substring(idx + 1);
+            int q = db.indexOf('?');
+            return q >= 0 ? db.substring(0, q) : db;
+        }
+        return "yunxingcloud_core";
     }
 
     @PostMapping("/clean-logs")
@@ -83,7 +103,7 @@ public class MaintenanceController {
             String filename = "backup_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".sql";
             Path file = backupDir.resolve(filename);
             ProcessBuilder pb = new ProcessBuilder(
-                "mysqldump", "-uroot", "-pyunxingcloud123", "--databases", "sso_yunxingcloud",
+                "mysqldump", "-u" + dbUser, "-p" + dbPassword, "--databases", getDbName(),
                 "--result-file=" + file.toAbsolutePath());
             Process p = pb.start();
             int exit = p.waitFor();
@@ -116,10 +136,13 @@ public class MaintenanceController {
 
     @PostMapping("/restore/{filename}")
     public ResponseEntity<Map<String, Object>> restore(@PathVariable String filename) {
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
+        }
         try {
             Path file = Paths.get("uploads/backup/" + filename);
             if (!Files.exists(file)) return ResponseEntity.ok(Map.of("success", false, "message", i18n.msg("common.not_found")));
-            ProcessBuilder pb = new ProcessBuilder("mysql", "-uroot", "-pyunxingcloud123", "sso_yunxingcloud");
+            ProcessBuilder pb = new ProcessBuilder("mysql", "-u" + dbUser, "-p" + dbPassword, getDbName());
             pb.redirectInput(file.toFile());
             Process p = pb.start();
             int exit = p.waitFor();

@@ -104,9 +104,8 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), password);
             Authentication auth = authenticationManager.authenticate(token);
 
-            // reset failed attempts on success
-            userOpt.ifPresent(u -> { u.onLoginSuccess(); userRepository.save(u); });
-            userOpt.ifPresent(u -> { u.setLastLoginTime(java.time.LocalDateTime.now()); userRepository.save(u); });
+            // reset failed attempts & update last login time on success
+            userOpt.ifPresent(u -> { u.onLoginSuccess(); u.setLastLoginTime(java.time.LocalDateTime.now()); userRepository.save(u); });
 
             String accessToken = jwtTokenService.createAccessToken(auth.getName(),
                     auth.getAuthorities().stream().map(Object::toString).toList());

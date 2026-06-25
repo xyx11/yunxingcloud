@@ -1,9 +1,28 @@
+jwt:
+  secret: yunxingcloud-jwt-dev-secret-key-2024-very-long-secret-min-256-bits
+
 spring:
+  datasource:
+    url: jdbc:h2:mem:yunxingcloud;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
   cloud:
     nacos:
+      discovery:
+        enabled: false
       config:
+        enabled: false
         import-check:
           enabled: false
+    sentinel:
+      enabled: false
 
 logging:
   pattern:

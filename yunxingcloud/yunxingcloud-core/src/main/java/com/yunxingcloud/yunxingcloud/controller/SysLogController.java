@@ -28,6 +28,9 @@ public class SysLogController {
     @GetMapping("/view/{filename}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable String filename,
                                                       @RequestParam(defaultValue = "100") int lines) {
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid filename"));
+        }
         try {
             Path file = Paths.get(LOG_DIR, filename);
             List<String> allLines = Files.readAllLines(file);

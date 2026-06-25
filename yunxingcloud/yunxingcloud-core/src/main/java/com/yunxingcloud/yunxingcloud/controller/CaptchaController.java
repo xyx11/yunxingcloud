@@ -12,21 +12,21 @@ import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
-import java.util.Random;
 
 @RestController
 public class CaptchaController {
 
     private static final String SESSION_KEY = "CAPTCHA_CODE";
-    private static final Random RANDOM = new Random();
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static KeyPair rsaKeyPair;
 
     static {
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-            gen.initialize(1024);
+            gen.initialize(2048);
             rsaKeyPair = gen.generateKeyPair();
         } catch (Exception e) {
             throw new RuntimeException(e);

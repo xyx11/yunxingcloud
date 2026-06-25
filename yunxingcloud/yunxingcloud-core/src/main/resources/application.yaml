@@ -84,7 +84,7 @@ spring:
     timeout-per-shutdown-phase: 30s
 
 jwt:
-  secret: ${JWT_SECRET:yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
+  secret: ${JWT_SECRET}
 
 oauth2:
   client:

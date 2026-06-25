@@ -7,6 +7,7 @@ import com.yunxingcloud.usercenter.repository.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public CustomOAuth2UserService(UserRepository userRepository,
-                                    SocialAccountRepository socialAccountRepository) {
+                                    SocialAccountRepository socialAccountRepository,
+                                    PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.socialAccountRepository = socialAccountRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -56,7 +60,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         } else {
             user = new User();
             user.setUsername(generateUsername(provider, providerUserId, nickname));
-            user.setPassword(UUID.randomUUID().toString());
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             user.setNickname(nickname);
             user.setAvatarUrl(avatarUrl);
             user.setRegisterSource(provider);

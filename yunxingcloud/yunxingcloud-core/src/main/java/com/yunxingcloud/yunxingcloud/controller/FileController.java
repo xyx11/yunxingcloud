@@ -81,6 +81,9 @@ public class FileController {
     @PreAuthorize("hasAuthority('file:write')")
     @DeleteMapping("/{filename}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable String filename) {
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
+        }
         try {
             Files.deleteIfExists(uploadDir.resolve(filename));
             return ResponseEntity.ok(Map.of("success", true));
@@ -91,6 +94,11 @@ public class FileController {
 
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return ".png";
-        return filename.substring(filename.lastIndexOf("."));
+        String ext = filename.substring(filename.lastIndexOf("."));
+        // Only allow safe image extensions
+        return switch (ext.toLowerCase()) {
+            case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" -> ext;
+            default -> ".png";
+        };
     }
 }

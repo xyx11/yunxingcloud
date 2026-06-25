@@ -74,11 +74,13 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return socialAccountRepository.findById(id)
-                .map(sa -> {
-                    socialAccountRepository.delete(sa);
-                    return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.unbind_success")));
-                })
+        return userService.findByUsername(auth.getName())
+                .flatMap(user -> socialAccountRepository.findById(id)
+                        .filter(sa -> sa.getUserId().equals(user.getId()))
+                        .map(sa -> {
+                            socialAccountRepository.delete(sa);
+                            return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.unbind_success")));
+                        }))
                 .orElse(ResponseEntity.notFound().build());
     }
 }

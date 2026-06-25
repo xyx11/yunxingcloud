@@ -45,13 +45,22 @@ public class MessageController {
 
     @PutMapping("/{id}/read")
     public ResponseEntity<Map<String, Object>> markRead(@PathVariable Long id) {
-        msgRepo.findById(id).ifPresent(m -> { m.setIsRead(true); msgRepo.save(m); });
-        return ResponseEntity.ok(Map.of("success", true));
+        String user = SecurityContextHolder.getContext().getAuthentication().getName();
+        return msgRepo.findById(id).map(m -> {
+            if (!m.getToUser().equals(user)) return ResponseEntity.status(403).body(Map.of("success", false));
+            m.setIsRead(true); msgRepo.save(m);
+            return ResponseEntity.ok(Map.of("success", true));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        msgRepo.deleteById(id);
-        return ResponseEntity.ok(Map.of("success", true));
+        String user = SecurityContextHolder.getContext().getAuthentication().getName();
+        return msgRepo.findById(id).map(m -> {
+            if (!m.getToUser().equals(user) && !m.getFromUser().equals(user))
+                return ResponseEntity.status(403).body(Map.of("success", false));
+            msgRepo.deleteById(id);
+            return ResponseEntity.ok(Map.of("success", true));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

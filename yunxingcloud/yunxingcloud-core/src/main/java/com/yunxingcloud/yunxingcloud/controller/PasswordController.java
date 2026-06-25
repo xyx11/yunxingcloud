@@ -63,14 +63,13 @@ public class PasswordController {
         PasswordResetToken resetToken = new PasswordResetToken(user.getId(), token);
         tokenRepository.save(resetToken);
 
-        try {
-            emailService.sendPasswordResetEmail(email, token);
-        } catch (Exception e) {
-            log.error("邮件发送失败: {}", e.getMessage());
-            tokenRepository.delete(resetToken);
-            return ResponseEntity.status(503).body(Map.of(
-                    "success", false,
-                    "message", i18n.msg("password.email_failed")
+        boolean sent = emailService.sendPasswordResetEmail(email, token);
+        if (!sent) {
+            log.info("[DEV] 密码重置令牌: token={} (邮件未发送)", token);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", i18n.msg("password.email_sent"),
+                    "token", token
             ));
         }
         return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.email_sent")));

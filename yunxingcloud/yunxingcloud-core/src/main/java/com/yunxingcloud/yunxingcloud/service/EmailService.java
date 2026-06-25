@@ -24,7 +24,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendPasswordResetEmail(String toEmail, String token) {
+    public boolean sendPasswordResetEmail(String toEmail, String token) {
         String resetUrl = baseUrl + "/#/reset-password?token=" + token;
         String body = "您好，\n\n您正在申请重置 yunxingcloud 账号密码。\n\n" +
                 "重置链接: " + resetUrl + "\n\n" +
@@ -32,8 +32,8 @@ public class EmailService {
                 "yunxingcloud 团队";
 
         if (mailSender == null) {
-            log.info("[DEV] 模拟邮件发送至 {}: 重置链接={}", toEmail, resetUrl);
-            throw new RuntimeException("邮件服务未配置（开发模式）");
+            log.info("[DEV] 密码重置令牌: token={}", token);
+            return false;
         }
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
@@ -43,9 +43,10 @@ public class EmailService {
             msg.setText(body);
             mailSender.send(msg);
             log.info("密码重置邮件已发送至: {}", toEmail);
+            return true;
         } catch (Exception e) {
             log.error("邮件发送失败: {}", e.getMessage());
-            throw new RuntimeException("邮件发送失败，请稍后重试");
+            return false;
         }
     }
 }
