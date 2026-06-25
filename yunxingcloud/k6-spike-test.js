@@ -1,4 +1,4 @@
-// 突增压力测试 —— 验证系统在突发流量下的表现
+// 突增压力测试 (k6 v2.0)
 // k6 run k6-spike-test.js
 
 import http from 'k6/http'
@@ -12,33 +12,29 @@ const loginTime = new Trend('login_time')
 export const options = {
   stages: [
     { duration: '10s', target: 5 },
-    { duration: '10s', target: 200 },  // 瞬间突增到 200 VUs
-    { duration: '30s', target: 200 },  // 保持 30s
+    { duration: '10s', target: 200 },
+    { duration: '30s', target: 200 },
     { duration: '10s', target: 0 },
   ],
   thresholds: {
-    'error_rate': ['rate<0.10'],       // 允许 10% 错误率
+    'error_rate': ['rate<0.10'],
     'http_req_duration': ['p(95)<5000'],
   },
 }
 
 export default function () {
-  const headers = { 'Content-Type': 'application/json' }
-
+  const h = { 'Content-Type': 'application/json' }
   const r = http.post(`${BASE_URL}/api/login`, JSON.stringify({
     username: 'admin', password: 'admin123',
-  }), { headers })
-
+  }), { headers: h })
   loginTime.add(r.timings.duration)
   errorRate.add(r.status !== 200)
 
   if (r.status === 200 && r.json('accessToken')) {
     const token = r.json('accessToken')
-    const auth = { ...headers, Authorization: `Bearer ${token}` }
-
-    http.get(`${BASE_URL}/api/stats/dashboard`, { headers: auth })
-    http.get(`${BASE_URL}/api/user`, { headers: auth })
+    const ah = { ...h, Authorization: `Bearer ${token}` }
+    http.get(`${BASE_URL}/api/stats/dashboard`, { headers: ah })
+    http.get(`${BASE_URL}/api/user`, { headers: ah })
   }
-
   sleep(1)
 }
