@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, onBeforeUnmount } from 'vue'
-import request from '@/api/request'
+import { fetchSystemInfo, fetchSessions, fetchCacheInfo, fetchDbHealth, fetchDiskHealth, fetchBenchmark, fetchFlags, clearCache, revokeSession, saveAnnouncement as saveAnnouncementApi } from '@/api/system'
 import { NCard, NGrid, NGridItem, NTag, NButton, NSpace, NDataTable, NStatistic, NPopconfirm, NInput } from 'naive-ui'
 
 const { t, locale } = useI18n()
@@ -39,7 +39,7 @@ let historyTimer: ReturnType<typeof setInterval>
 
 async function saveAnnouncement() {
   try {
-    await request.post('/api/system/flags', { announcement: announcementText.value })
+    await saveAnnouncementApi(announcementText.value)
     notify.success(t('monitor.announcementUpdated'))
     editingAnnouncement.value = false
     await loadAll()
@@ -48,13 +48,13 @@ async function saveAnnouncement() {
 
 async function loadAll() {
   const [info, sess, cache, db, disk, bench, flg] = await Promise.all([
-    request.get('/api/system/info').catch(() => ({ data: {} })),
-    request.get('/api/system/sessions').catch(() => ({ data: { sessions: [], count: 0 } })),
-    request.get('/api/system/cache').catch(() => ({ data: {} })),
-    request.get('/api/health/db').catch(() => ({ data: {} })),
-    request.get('/api/health/disk').catch(() => ({ data: {} })),
-    request.get('/api/system/benchmark').catch(() => ({ data: {} })),
-    request.get('/api/system/flags').catch(() => ({ data: {} })),
+    fetchSystemInfo().catch(() => ({ data: {} })),
+    fetchSessions().catch(() => ({ data: { sessions: [], count: 0 } })),
+    fetchCacheInfo().catch(() => ({ data: {} })),
+    fetchDbHealth().catch(() => ({ data: {} })),
+    fetchDiskHealth().catch(() => ({ data: {} })),
+    fetchBenchmark().catch(() => ({ data: {} })),
+    fetchFlags().catch(() => ({ data: {} })),
   ])
   sysInfo.value = info.data
   sessions.value = sess.data.sessions || []
@@ -64,16 +64,16 @@ async function loadAll() {
   flags.value = flg.data
 }
 
-async function clearCache() {
-  await request.post('/api/system/cache/clear')
+async function clearSystemCache() {
+  await clearCache()
   await loadAll()
 }
 
 const notify = useNotify()
 
-async function revokeSession(username: string) {
+async function revokeUserSession(username: string) {
   try {
-    await request.post('/api/system/sessions/revoke', { username })
+    await revokeSession(username)
     notify.success(t('monitor.revokeSuccess', { username }))
     await loadAll()
   } catch { notify.error(t('monitor.operFailed')) }
@@ -84,7 +84,7 @@ const sessionColumns = [
   { title: t('monitor.sessionId'), key: 'token', width: 180, ellipsis: { tooltip: true } },
   { title: t('monitor.loginTime'), key: 'createdAt', width: 150, render: (row: any) => row.createdAt ? row.createdAt.substring(0,19).replace('T',' ') : '-' },
   { title: t('monitor.lastActive'), key: 'lastAccessTime', width: 150, render: (row: any) => row.lastAccessTime ? row.lastAccessTime.substring(0,19).replace('T',' ') : '-' },
-  { title: t('monitor.actions'), key: 'actions', width: 90, render: (row: any) => h(NPopconfirm, { onPositiveClick: () => revokeSession(row.username) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error', secondary: true }, { default: () => t('monitor.revoke') }), default: () => t('monitor.revokeConfirm', { username: row.username }) }) },
+  { title: t('monitor.actions'), key: 'actions', width: 90, render: (row: any) => h(NPopconfirm, { onPositiveClick: () => revokeUserSession(row.username) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error', secondary: true }, { default: () => t('monitor.revoke') }), default: () => t('monitor.revokeConfirm', { username: row.username }) }) },
 ]
 
 const hasSysInfo = () => Object.keys(sysInfo.value).length > 0
@@ -107,7 +107,7 @@ onMounted(() => {
       if (xData.length > 30) { xData.shift(); memSeries.shift(); sessSeries.shift() }
     }
   })
-  historyTimer = setInterval(() => { request.get('/api/system/history').then(r => {}).catch(() => {}) }, 15000)
+  historyTimer = setInterval(() => { fetchSystemInfo().then(() => {}).catch(() => {}) }, 15000)
 })
 onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
 </script>
@@ -167,7 +167,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
             </n-space>
             <n-space>
               <n-tag type="info" size="small">{{ t('monitor.cache') }}</n-tag>
-              <n-button size="tiny" @click="clearCache">{{ t('monitor.clearCache') }}</n-button>
+              <n-button size="tiny" @click="clearSystemCache">{{ t('monitor.clearCache') }}</n-button>
               <span v-if="cacheInfo.cacheNames" style="font-size:12px;color:#999">{{ cacheInfo.cacheNames }}</span>
             </n-space>
             <n-space>

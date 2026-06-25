@@ -2,11 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import request from '@/api/request'
+import { register } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 import type { FormInst, FormRules } from 'naive-ui'
-import { NConfigProvider, NCard, NForm, NFormItem, NInput, NButton, NAlert, NDivider } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const router = useRouter()
 
 const formRef = ref<FormInst | null>(null)
@@ -64,14 +66,14 @@ const rules: FormRules = {
   ],
 }
 
-onMounted(() => {})
+onMounted(() => { if (authStore.isAuthenticated) router.replace('/') })
 
 async function handleRegister() {
   loading.value = true
   error.value = ''
   success.value = ''
   try {
-    const res = await request.post('/api/register', {
+    const res = await register({
       username: model.value.username,
       password: model.value.password,
       email: model.value.email,
@@ -95,46 +97,44 @@ async function handleRegister() {
 </script>
 
 <template>
-  <n-config-provider>
-    <div class="register-page">
-      <n-card class="register-card">
-        <h1 class="title">{{ t('register.title') }}</h1>
-        <p class="subtitle">{{ t('app.subtitle') }}</p>
+  <div class="register-page">
+    <n-card class="register-card">
+      <h1 class="title">{{ t('register.title') }}</h1>
+      <p class="subtitle">{{ t('app.subtitle') }}</p>
 
-        <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-        <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
+      <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
 
-        <n-form ref="formRef" :model="model" :rules="rules" @submit.prevent="handleRegister">
-          <n-form-item :label="t('register.username')" path="username">
-            <n-input v-model:value="model.username" placeholder="3-50" size="large" />
-          </n-form-item>
-          <n-form-item :label="t('register.email')" path="email">
-            <n-input v-model:value="model.email" :placeholder="t('register.email')" size="large" />
-          </n-form-item>
-          <n-form-item :label="t('register.password')" path="password">
-            <n-input v-model:value="model.password" type="password" placeholder="8+ chars" size="large" show-password-on="click" />
-            <div v-if="model.password" style="margin-top:4px">
-              <div style="height:4px;border-radius:2px;background:var(--n-action-color,#eee);overflow:hidden">
-                <div :style="{width:passwordStrength.pct+'%',height:'100%',background:passwordStrength.color,transition:'all .3s'}" />
-              </div>
-              <span :style="{fontSize:'11px',color:passwordStrength.color,float:'right'}">{{ passwordStrength.label }}</span>
+      <n-form ref="formRef" :model="model" :rules="rules" @submit.prevent="handleRegister">
+        <n-form-item :label="t('register.username')" path="username">
+          <n-input v-model:value="model.username" placeholder="3-50" size="large" />
+        </n-form-item>
+        <n-form-item :label="t('register.email')" path="email">
+          <n-input v-model:value="model.email" :placeholder="t('register.email')" size="large" />
+        </n-form-item>
+        <n-form-item :label="t('register.password')" path="password">
+          <n-input v-model:value="model.password" type="password" placeholder="8+ chars" size="large" show-password-on="click" />
+          <div v-if="model.password" style="margin-top:4px">
+            <div style="height:4px;border-radius:2px;background:var(--n-action-color,#eee);overflow:hidden">
+              <div :style="{width:passwordStrength.pct+'%',height:'100%',background:passwordStrength.color,transition:'all .3s'}" />
             </div>
-          </n-form-item>
-          <n-form-item :label="t('register.confirmPassword')" path="confirmPassword">
-            <n-input v-model:value="model.confirmPassword" type="password" placeholder="8+ chars" size="large" show-password-on="click" />
-          </n-form-item>
-          <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
-            {{ t('register.submit') }}
-          </n-button>
-        </n-form>
+            <span :style="{fontSize:'11px',color:passwordStrength.color,float:'right'}">{{ passwordStrength.label }}</span>
+          </div>
+        </n-form-item>
+        <n-form-item :label="t('register.confirmPassword')" path="confirmPassword">
+          <n-input v-model:value="model.confirmPassword" type="password" placeholder="8+ chars" size="large" show-password-on="click" />
+        </n-form-item>
+        <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
+          {{ t('register.submit') }}
+        </n-button>
+      </n-form>
 
-        <div class="login-link">
-          {{ t('register.hasAccount') }}
-          <router-link to="/login" class="link">{{ t('login.title') }}</router-link>
-        </div>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <div class="login-link">
+        {{ t('register.hasAccount') }}
+        <router-link to="/login" class="link">{{ t('login.title') }}</router-link>
+      </div>
+    </n-card>
+  </div>
 </template>
 
 <style scoped>

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted } from 'vue'
+import { forgotPassword } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const router = useRouter()
 const email = ref('')
+
+onMounted(() => { if (authStore.isAuthenticated) router.replace('/') })
 const loading = ref(false)
 const message = ref('')
 const error = ref('')
@@ -18,7 +22,7 @@ async function handleSubmit() {
   error.value = ''
   message.value = ''
   try {
-    const res = await request.post('/api/password/forgot', { email: email.value })
+    const res = await forgotPassword(email.value)
     if (res.data.success) {
       message.value = res.data.message
       if (res.data.token) {
@@ -34,41 +38,39 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <n-config-provider>
-    <div class="page">
-      <n-card class="card">
-        <h1 class="title">{{ t('login.forgot') }}</h1>
-        <p class="subtitle">{{ t('pwd.forgotInstruction') }}</p>
+  <div class="page">
+    <n-card class="card">
+      <h1 class="title">{{ t('login.forgot') }}</h1>
+      <p class="subtitle">{{ t('pwd.forgotInstruction') }}</p>
 
-        <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-        <n-alert v-if="message" type="success" style="margin-bottom: 20px">
-          <div>{{ message }}</div>
-          <div v-if="token" style="margin-top: 12px; word-break: break-all; font-size: 12px; color: #666;">
-            {{ t('pwd.tokenLabel') }}: {{ token }}
-          </div>
-        </n-alert>
-
-        <n-form v-if="!token" @submit.prevent="handleSubmit">
-          <n-form-item :label="t('register.email')">
-            <n-input v-model:value="email" :placeholder="t('register.email')" size="large" />
-          </n-form-item>
-          <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
-            {{ t('pwd.sendEmail') }}
-          </n-button>
-        </n-form>
-
-        <div v-if="token" style="margin-top: 20px; text-align: center;">
-          <n-button type="primary" @click="router.push({ path: '/reset-password', query: { token } })">
-            {{ t('pwd.goReset') }}
-          </n-button>
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
+      <n-alert v-if="message" type="success" style="margin-bottom: 20px">
+        <div>{{ message }}</div>
+        <div v-if="token" style="margin-top: 12px; word-break: break-all; font-size: 12px; color: #666;">
+          {{ t('pwd.tokenLabel') }}: {{ token }}
         </div>
+      </n-alert>
 
-        <div class="back-link">
-          <router-link to="/login">{{ t('common.back') }}</router-link>
-        </div>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <n-form v-if="!token" @submit.prevent="handleSubmit">
+        <n-form-item :label="t('register.email')">
+          <n-input v-model:value="email" :placeholder="t('register.email')" size="large" />
+        </n-form-item>
+        <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
+          {{ t('pwd.sendEmail') }}
+        </n-button>
+      </n-form>
+
+      <div v-if="token" style="margin-top: 20px; text-align: center;">
+        <n-button type="primary" @click="router.push({ path: '/reset-password', query: { token } })">
+          {{ t('pwd.goReset') }}
+        </n-button>
+      </div>
+
+      <div class="back-link">
+        <router-link to="/login">{{ t('common.back') }}</router-link>
+      </div>
+    </n-card>
+  </div>
 </template>
 
 <style scoped>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, onBeforeUnmount, h, computed } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted, onBeforeUnmount, h } from 'vue'
+import { fetchOperLogs, deleteOperLog, batchDeleteOperLogs, cleanOperLogs, exportOperLogs } from '@/api/operlog'
+import { fetchDashboard } from '@/api/stats'
 import { useNotify } from '@/composables/useNotify'
+
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NTag, NPopconfirm, NSpace, NInput, NSelect, NDatePicker,
-  darkTheme, lightTheme
+  NCard, NDataTable, NButton, NTag, NPopconfirm, NSpace, NInput, NSelect, NDatePicker,
+  
 } from 'naive-ui'
 
 const { t } = useI18n()
@@ -25,7 +27,7 @@ interface OperLog {
 }
 
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const logs = ref<OperLog[]>([])
 const loading = ref(false)
 const checkedKeys = ref<(string | number)[]>([])
@@ -104,19 +106,19 @@ async function loadLogs() {
       params.startTime = new Date(dateRange.value[0]).toISOString().substring(0,19)
       params.endTime = new Date(dateRange.value[1]).toISOString().substring(0,19)
     }
-    const res = await request.get('/api/operlog', { params })
+    const res = await fetchOperLogs(params)
     logs.value = res.data.items
     // 加载图表数据
     try {
-      const statsRes = await request.get('/api/stats/dashboard')
+      const statsRes = await fetchDashboard()
       if (statsRes.data.bizTypeDist?.length) {
         chartOption.value.xAxis.data = statsRes.data.bizTypeDist.map((d:any)=>d.name)
         chartOption.value.series[0].data = statsRes.data.bizTypeDist.map((d:any)=>d.value)
         showChart.value = true
       }
-    } catch {}
+    } catch {/* ignore */}
     total.value = res.data.total || 0
-  } catch {}
+  } catch {/* ignore */}
   loading.value = false
 }
 
@@ -143,19 +145,19 @@ function toggleAutoRefresh() {
 }
 
 async function delLog(id: number) {
-  await request.delete(`/api/operlog/${id}`)
+  await deleteOperLog(id)
   await loadLogs()
 }
 
 async function cleanLogs() {
-  await request.delete('/api/operlog/clean')
+  await cleanOperLogs()
   checkedKeys.value = []
   await loadLogs()
 }
 
 async function batchDelete() {
   if (checkedKeys.value.length === 0) { notify.warning(t('operlog.selectBeforeDelete')); return }
-  await request.delete('/api/operlog/batch', { data: { ids: checkedKeys.value } })
+  await batchDeleteOperLogs(checkedKeys.value.map(Number))
   checkedKeys.value = []
   await loadLogs()
   notify.success(t('operlog.deleteBatchSuccess'))
@@ -170,7 +172,7 @@ async function exportLogs() {
     if (filterUser.value) params.set('user', filterUser.value)
     if (filterMethod.value) params.set('method', filterMethod.value)
     if (dateRange.value) { params.set('startTime', new Date(dateRange.value[0]).toISOString().substring(0,19)); params.set('endTime', new Date(dateRange.value[1]).toISOString().substring(0,19)) }
-    const res = await request.get(`/api/operlog/export?${params.toString()}`, { responseType: 'blob' })
+    const res = await exportOperLogs(Object.fromEntries(params))
     const url = URL.createObjectURL(res.data)
     const a = document.createElement('a'); a.href = url; a.download = `${t('nav.operlog')}.csv`; a.click()
     URL.revokeObjectURL(url)
@@ -188,60 +190,58 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.operlog')">
-        <template #header-extra>
-          <n-select v-model:value="filterType" :options="typeOptions" size="small" style="width:120px;margin-right:8px" @update:value="searchLogs" />
-          <n-input v-model:value="filterUser" :placeholder="t('operlog.operator')" size="small" style="width:100px;margin-right:4px" clearable @keyup:enter="searchLogs" @clear="searchLogs" />
-          <n-select v-model:value="filterMethod" :options="[{label:t('operlog.methodLabel'),value:''},{label:'GET',value:'GET'},{label:'POST',value:'POST'},{label:'PUT',value:'PUT'},{label:'DELETE',value:'DELETE'}]" size="small" style="width:80px;margin-right:4px" @update:value="searchLogs" />
-          <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" style="width:240px;margin-right:4px" clearable @update:value="searchLogs" />
-          <n-button size="small" @click="searchLogs" style="margin-right:8px">{{ t('common.search') }}</n-button>
-          <n-button size="small" @click="toggleAutoRefresh" :type="autoRefresh ? 'success' : 'default'" style="margin-right:8px">{{ autoRefresh ? t('operlog.autoRefreshing') : t('operlog.autoRefresh') }}</n-button>
-          <n-button size="small" :loading="exporting" @click="exportLogs" style="margin-right:8px">{{ t('operlog.exportCsv') }}</n-button>
-          <n-popconfirm @positive-click="batchDelete" v-if="checkedKeys.length > 0">
-            <template #trigger><n-button type="warning" size="small" style="margin-right:8px">{{ t('operlog.batchDelete') }}({{ checkedKeys.length }})</n-button></template>
-            {{ t('operlog.confirmDeleteSelected', { n: checkedKeys.length }) }}
-          </n-popconfirm>
-          <n-popconfirm @positive-click="cleanLogs">
-            <template #trigger><n-button type="error" size="small" secondary>{{ t('operlog.clean') }}</n-button></template>
-            {{ t('operlog.confirmCleanAll') }}
-          </n-popconfirm>
-        </template>
-        <v-chart v-if="showChart" :option="chartOption" style="height:180px;margin-bottom:12px" autoresize />
-        <n-data-table
-          :columns="columns" :data="logs" :loading="loading" size="small" :bordered="false"
-          :pagination="{ page: page, pageSize: pageSize, itemCount: total, pageSizes: [10,20,50,100], prefix: ({ itemCount }) => t('operlog.totalItems', { n: itemCount }) }"
-          @update:page="handlePageChange"
-          @update:page-size="handlePageSizeChange"
-          remote
-          :row-key="(row: OperLog) => row.id" :max-height="600"
-          :checked-row-keys="checkedKeys" @update:checked-row-keys="handleCheck"
-        />
+  <div style="padding:20px">
+    <n-card :title="t('nav.operlog')">
+      <template #header-extra>
+        <n-select v-model:value="filterType" :options="typeOptions" size="small" style="width:120px;margin-right:8px" @update:value="searchLogs" />
+        <n-input v-model:value="filterUser" :placeholder="t('operlog.operator')" size="small" style="width:100px;margin-right:4px" clearable @keyup:enter="searchLogs" @clear="searchLogs" />
+        <n-select v-model:value="filterMethod" :options="[{label:t('operlog.methodLabel'),value:''},{label:'GET',value:'GET'},{label:'POST',value:'POST'},{label:'PUT',value:'PUT'},{label:'DELETE',value:'DELETE'}]" size="small" style="width:80px;margin-right:4px" @update:value="searchLogs" />
+        <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" style="width:240px;margin-right:4px" clearable @update:value="searchLogs" />
+        <n-button size="small" @click="searchLogs" style="margin-right:8px">{{ t('common.search') }}</n-button>
+        <n-button size="small" @click="toggleAutoRefresh" :type="autoRefresh ? 'success' : 'default'" style="margin-right:8px">{{ autoRefresh ? t('operlog.autoRefreshing') : t('operlog.autoRefresh') }}</n-button>
+        <n-button size="small" :loading="exporting" @click="exportLogs" style="margin-right:8px">{{ t('operlog.exportCsv') }}</n-button>
+        <n-popconfirm @positive-click="batchDelete" v-if="checkedKeys.length > 0">
+          <template #trigger><n-button type="warning" size="small" style="margin-right:8px">{{ t('operlog.batchDelete') }}({{ checkedKeys.length }})</n-button></template>
+          {{ t('operlog.confirmDeleteSelected', { n: checkedKeys.length }) }}
+        </n-popconfirm>
+        <n-popconfirm @positive-click="cleanLogs">
+          <template #trigger><n-button type="error" size="small" secondary>{{ t('operlog.clean') }}</n-button></template>
+          {{ t('operlog.confirmCleanAll') }}
+        </n-popconfirm>
+      </template>
+      <v-chart v-if="showChart" :option="chartOption" style="height:180px;margin-bottom:12px" autoresize />
+      <n-data-table
+        :columns="columns" :data="logs" :loading="loading" size="small" :bordered="false"
+        :pagination="{ page: page, pageSize: pageSize, itemCount: total, pageSizes: [10,20,50,100], prefix: ({ itemCount }) => t('operlog.totalItems', { n: itemCount }) }"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
+        remote
+        :row-key="(row: OperLog) => row.id" :max-height="600"
+        :checked-row-keys="checkedKeys" @update:checked-row-keys="handleCheck"
+      />
 
-        <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" style="max-width:640px;width:95%">
-          <div v-if="detailLog" style="max-height:500px; overflow-y:auto">
-            <p><strong>{{ t('operlog.title') }}：</strong>{{ detailLog.title }}</p>
-            <p><strong>{{ t('operlog.bizType') }}：</strong>{{ businessTypeMap[detailLog.businessType] || detailLog.businessType }}</p>
-            <p><strong>{{ t('operlog.method') }}：</strong>{{ detailLog.method }}</p>
-            <p><strong>{{ t('operlog.operator') }}：</strong>{{ detailLog.operName }}</p>
-            <p><strong>{{ t('operlog.ip') }}：</strong>{{ detailLog.operIp }}</p>
-            <p><strong>{{ t('operlog.url') }}：</strong>{{ detailLog.operUrl }}</p>
-            <p><strong>{{ t('operlog.status') }}：</strong>{{ detailLog.status === 0 ? t('operlog.success') : t('operlog.fail') }}</p>
-            <p><strong>{{ t('operlog.cost') }}：</strong>{{ detailLog.costTime }}ms</p>
-            <p><strong>{{ t('operlog.time') }}：</strong>{{ detailLog.operTime }}</p>
-            <p v-if="detailLog.errorMsg"><strong>{{ t('operlog.errorMsg') }}：</strong>{{ detailLog.errorMsg }}</p>
-            <details>
-              <summary><strong>{{ t('operlog.requestParam') }}</strong></summary>
-              <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.operParam }}</pre>
-            </details>
-            <details style="margin-top:8px">
-              <summary><strong>{{ t('operlog.responseResult') }}</strong></summary>
-              <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.jsonResult }}</pre>
-            </details>
-          </div>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" style="max-width:640px;width:95%">
+        <div v-if="detailLog" style="max-height:500px; overflow-y:auto">
+          <p><strong>{{ t('operlog.title') }}：</strong>{{ detailLog.title }}</p>
+          <p><strong>{{ t('operlog.bizType') }}：</strong>{{ businessTypeMap[detailLog.businessType] || detailLog.businessType }}</p>
+          <p><strong>{{ t('operlog.method') }}：</strong>{{ detailLog.method }}</p>
+          <p><strong>{{ t('operlog.operator') }}：</strong>{{ detailLog.operName }}</p>
+          <p><strong>{{ t('operlog.ip') }}：</strong>{{ detailLog.operIp }}</p>
+          <p><strong>{{ t('operlog.url') }}：</strong>{{ detailLog.operUrl }}</p>
+          <p><strong>{{ t('operlog.status') }}：</strong>{{ detailLog.status === 0 ? t('operlog.success') : t('operlog.fail') }}</p>
+          <p><strong>{{ t('operlog.cost') }}：</strong>{{ detailLog.costTime }}ms</p>
+          <p><strong>{{ t('operlog.time') }}：</strong>{{ detailLog.operTime }}</p>
+          <p v-if="detailLog.errorMsg"><strong>{{ t('operlog.errorMsg') }}：</strong>{{ detailLog.errorMsg }}</p>
+          <details>
+            <summary><strong>{{ t('operlog.requestParam') }}</strong></summary>
+            <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.operParam }}</pre>
+          </details>
+          <details style="margin-top:8px">
+            <summary><strong>{{ t('operlog.responseResult') }}</strong></summary>
+            <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.jsonResult }}</pre>
+          </details>
+        </div>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

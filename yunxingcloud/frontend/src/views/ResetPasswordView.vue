@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import request from '@/api/request'
+import { resetPassword } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -17,6 +19,7 @@ const error = ref('')
 const success = ref('')
 
 onMounted(() => {
+  if (authStore.isAuthenticated) { router.replace('/'); return }
   const t = route.query.token as string
   if (t) {
     token.value = t
@@ -39,10 +42,7 @@ async function handleSubmit() {
   loading.value = true
   error.value = ''
   try {
-    const res = await request.post('/api/password/reset', {
-      token: token.value,
-      newPassword: newPassword.value,
-    })
+    const res = await resetPassword(token.value, newPassword.value)
     if (res.data.success) {
       success.value = res.data.message
       setTimeout(() => router.push('/login'), 2000)
@@ -56,36 +56,34 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <n-config-provider>
-    <div class="page">
-      <n-card class="card">
-        <h1 class="title">{{ t('pwd.reset') }}</h1>
-        <p class="subtitle">{{ t('pwd.change') }}</p>
+  <div class="page">
+    <n-card class="card">
+      <h1 class="title">{{ t('pwd.reset') }}</h1>
+      <p class="subtitle">{{ t('pwd.change') }}</p>
 
-        <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-        <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
+      <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
 
-        <n-form v-if="!success" @submit.prevent="handleSubmit">
-          <n-form-item :label="t('pwd.token')">
-            <n-input v-model:value="token" :placeholder="t('pwd.tokenPlaceholder')" size="large" />
-          </n-form-item>
-          <n-form-item :label="t('pwd.new')">
-            <n-input v-model:value="newPassword" type="password" :placeholder="t('pwd.newPasswordPlaceholder')" size="large" show-password-on="click" />
-          </n-form-item>
-          <n-form-item :label="t('pwd.confirm')">
-            <n-input v-model:value="confirmPassword" type="password" :placeholder="t('pwd.confirmPlaceholder')" size="large" show-password-on="click" />
-          </n-form-item>
-          <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
-            {{ t('pwd.reset') }}
-          </n-button>
-        </n-form>
+      <n-form v-if="!success" @submit.prevent="handleSubmit">
+        <n-form-item :label="t('pwd.token')">
+          <n-input v-model:value="token" :placeholder="t('pwd.tokenPlaceholder')" size="large" />
+        </n-form-item>
+        <n-form-item :label="t('pwd.new')">
+          <n-input v-model:value="newPassword" type="password" :placeholder="t('pwd.newPasswordPlaceholder')" size="large" show-password-on="click" />
+        </n-form-item>
+        <n-form-item :label="t('pwd.confirm')">
+          <n-input v-model:value="confirmPassword" type="password" :placeholder="t('pwd.confirmPlaceholder')" size="large" show-password-on="click" />
+        </n-form-item>
+        <n-button type="primary" block size="large" :loading="loading" attr-type="submit">
+          {{ t('pwd.reset') }}
+        </n-button>
+      </n-form>
 
-        <div class="back-link">
-          <router-link to="/login">{{ t('login.backToLogin') }}</router-link>
-        </div>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <div class="back-link">
+        <router-link to="/login">{{ t('login.backToLogin') }}</router-link>
+      </div>
+    </n-card>
+  </div>
 </template>
 
 <style scoped>

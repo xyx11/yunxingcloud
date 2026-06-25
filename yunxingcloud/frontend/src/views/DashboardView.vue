@@ -6,7 +6,9 @@ let _es: EventSource | null = null
 let _timer: ReturnType<typeof setInterval> | null = null
 onBeforeUnmount(() => { _es?.close(); if (_timer) clearInterval(_timer) })
 import { useRouter } from 'vue-router'
-import request from '@/api/request'
+import { fetchDashboard, fetchRecentNotices, fetchRecentLogs } from '@/api/stats'
+import { fetchSystemInfo } from '@/api/system'
+import { fetchDepartments, fetchRoles } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { useLiveStatsStore } from '@/stores/liveStats'
 import { NCard, NGrid, NGridItem, NStatistic, NSpace, NTag, NSpin, NEmpty, NButton, NSelect } from 'naive-ui'
@@ -80,10 +82,10 @@ function updateTimestamp() {
 async function refreshDashboard() {
   try {
     const [res, sysRes, logRes, noticeRes] = await Promise.all([
-      request.get('/api/stats/dashboard'),
-      request.get('/api/system/info').catch(() => ({ data: null })),
-      request.get('/api/operlog', { params: { page: 1, pageSize: 5 } }).catch(() => ({ data: { items: [] } })),
-      request.get('/api/stats/recent-notices').catch(() => ({ data: [] })),
+      fetchDashboard(),
+      fetchSystemInfo().catch(() => ({ data: null })),
+      fetchRecentLogs({ page: 1, pageSize: 5 }).catch(() => ({ data: { items: [] } })),
+      fetchRecentNotices().catch(() => ({ data: [] })),
     ])
     stats.value = res.data
     barOption.value.xAxis.data = res.data.weeklyOps.map((d: any) => d.date)
@@ -93,17 +95,17 @@ async function refreshDashboard() {
     recentLogs.value = logRes.data.items || []
     recentNotices.value = noticeRes.data || []
     try {
-      const [d, r] = await Promise.all([request.get('/api/departments').catch(()=>({data:[]})), request.get('/api/roles').catch(()=>({data:[]}))])
+      const [d, r] = await Promise.all([fetchDepartments().catch(()=>({data:[]})), fetchRoles().catch(()=>({data:[]}))])
       stats.value.deptCount = Array.isArray(d.data) ? d.data.length : 0
       stats.value.roleCount = Array.isArray(r.data) ? r.data.length : 0
-    } catch {}
+    } catch { /* ignore */ }
     updateTimestamp()
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 onMounted(async () => {
   try {
-    const res = await request.get('/api/stats/dashboard')
+    const res = await fetchDashboard()
     stats.value = res.data
     barOption.value = {
       tooltip: { trigger: 'axis' },
@@ -123,9 +125,9 @@ onMounted(async () => {
       }]
     }
     const [sysRes, logRes, noticeRes] = await Promise.all([
-      request.get('/api/system/info').catch(() => ({ data: null })),
-      request.get('/api/operlog', { params: { page: 1, pageSize: 5 } }).catch(() => ({ data: { items: [] } })),
-      request.get('/api/stats/recent-notices').catch(() => ({ data: [] })),
+      fetchSystemInfo().catch(() => ({ data: null })),
+      fetchRecentLogs({ page: 1, pageSize: 5 }).catch(() => ({ data: { items: [] } })),
+      fetchRecentNotices().catch(() => ({ data: [] })),
     ])
     sysInfo.value = sysRes.data
     recentLogs.value = logRes.data.items || []
@@ -144,7 +146,7 @@ onMounted(async () => {
       if (sseData.activeSessions) liveStatsStore.setSessions(Number(sseData.activeSessions) || 0)
     })
     _timer = setInterval(refreshDashboard, 60000)
-  } catch {} finally { loading.value = false }
+  } catch { /* ignore */ } finally { loading.value = false }
 })
 </script>
 

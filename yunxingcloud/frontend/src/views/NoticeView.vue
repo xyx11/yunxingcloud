@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+import { fetchNotices, createNotice, updateNotice, deleteNotice } from '@/api/notice'
 import { useNotify } from '@/composables/useNotify'
+
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
+  NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag,
-  darkTheme, lightTheme
+  
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
@@ -17,7 +18,7 @@ interface Notice {
 
 const { t } = useI18n()
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const notices = ref<Notice[]>([])
 const loading = ref(false)
 const saving = ref(false)
@@ -75,7 +76,7 @@ const columns: DataTableColumns<Notice> = [
 
 async function loadNotices() {
   loading.value = true
-  try { const res = await request.get('/api/notices'); notices.value = res.data } catch { notify.error(t('common.error')); }
+  try { const res = await fetchNotices(); notices.value = res.data } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 
@@ -95,8 +96,8 @@ async function saveNotice() {
   if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
-    if (editing.value) await request.put(`/api/notices/${editing.value.id}`, form.value)
-    else await request.post('/api/notices', form.value)
+    if (editing.value) await updateNotice(editing.value.id, form.value)
+    else await createNotice(form.value)
     showModal.value = false
     notify.success(editing.value ? t('notice.updateSuccess') : t('notice.createSuccess'))
     await loadNotices()
@@ -104,7 +105,7 @@ async function saveNotice() {
 }
 
 async function delNotice(id: number) {
-  await request.delete(`/api/notices/${id}`)
+  await deleteNotice(id)
   await loadNotices()
 }
 
@@ -112,52 +113,50 @@ onMounted(loadNotices)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.notice')">
-        <template #header-extra>
-          <n-button type="primary" size="small" @click="addNotice"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-        </template>
-        <n-space style="margin-bottom:12px" justify="space-between">
-          <n-space>
-            <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable style="width:180px" />
-            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
-            <n-button size="small" @click="searchKeyword = ''">{{ t('common.reset') }}</n-button>
-          </n-space>
-          <n-space><n-button size="small" @click="loadNotices" secondary>{{ t('common.refresh') }}</n-button></n-space>
+  <div style="padding:20px">
+    <n-card :title="t('nav.notice')">
+      <template #header-extra>
+        <n-button type="primary" size="small" @click="addNotice"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+      </template>
+      <n-space style="margin-bottom:12px" justify="space-between">
+        <n-space>
+          <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable style="width:180px" />
+          <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+          <n-button size="small" @click="searchKeyword = ''">{{ t('common.reset') }}</n-button>
         </n-space>
-        <n-dataTable
-          :columns="columns" :data="filteredNotices" :loading="loading" size="small"
-          :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
-          :row-key="(row: Notice) => row.id"
-        />
+        <n-space><n-button size="small" @click="loadNotices" secondary>{{ t('common.refresh') }}</n-button></n-space>
+      </n-space>
+      <n-dataTable
+        :columns="columns" :data="filteredNotices" :loading="loading" size="small"
+        :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+        :row-key="(row: Notice) => row.id"
+      />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" preset="card" display-directive="show" style="max-width:560px;width:95%">
-          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
-            <n-form-item :label="t('notice.title')">
-              <n-input v-model:value="form.noticeTitle" />
-            </n-form-item>
-            <n-form-item :label="t('notice.type')">
-              <n-select v-model:value="form.noticeType" :options="typeOptions" />
-            </n-form-item>
-            <n-form-item :label="t('notice.content')">
-              <n-input v-model:value="form.noticeContent" type="textarea" :rows="5" :placeholder="t('notice.contentPlaceholder')" />
-            </n-form-item>
-            <n-form-item :label="t('notice.status')">
-              <n-select v-model:value="form.status" :options="statusOptions" />
-            </n-form-item>
-            <n-form-item :label="t('common.remark')">
-              <n-input v-model:value="form.remark" />
-            </n-form-item>
-          </n-form>
-          <template #footer>
-            <n-space justify="end">
-              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-              <n-button type="primary" :loading="saving" @click="saveNotice">{{ t('common.save') }}</n-button>
-            </n-space>
-          </template>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <n-modal v-model:show="showModal" :title="editing ? t('notice.edit') : t('notice.add')" preset="card" display-directive="show" style="max-width:560px;width:95%">
+        <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
+          <n-form-item :label="t('notice.title')">
+            <n-input v-model:value="form.noticeTitle" />
+          </n-form-item>
+          <n-form-item :label="t('notice.type')">
+            <n-select v-model:value="form.noticeType" :options="typeOptions" />
+          </n-form-item>
+          <n-form-item :label="t('notice.content')">
+            <n-input v-model:value="form.noticeContent" type="textarea" :rows="5" :placeholder="t('notice.contentPlaceholder')" />
+          </n-form-item>
+          <n-form-item :label="t('notice.status')">
+            <n-select v-model:value="form.status" :options="statusOptions" />
+          </n-form-item>
+          <n-form-item :label="t('common.remark')">
+            <n-input v-model:value="form.remark" />
+          </n-form-item>
+        </n-form>
+        <template #footer>
+          <n-space justify="end">
+            <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+            <n-button type="primary" :loading="saving" @click="saveNotice">{{ t('common.save') }}</n-button>
+          </n-space>
+        </template>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

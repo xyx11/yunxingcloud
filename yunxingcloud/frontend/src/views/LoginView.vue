@@ -2,20 +2,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import request from '@/api/request'
+import { fetchCaptcha, fetchPublicKey } from '@/api/auth'
 import JSEncrypt from 'jsencrypt'
 import Cookies from 'js-cookie'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage } from 'element-plus'
-import { User, Lock, Key } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import {
+  NForm, NFormItem, NInput, NButton,
+  NCheckbox, NDivider, NAlert,
+} from 'naive-ui'
+import type { FormInst, FormRules } from 'naive-ui'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInst>()
 const model = ref({ username: '', password: '', code: '', rememberMe: false })
 const error = ref('')
 const loading = ref(false)
@@ -23,10 +25,10 @@ const codeUrl = ref('')
 const captchaEnabled = ref(true)
 const appVersion = ref('')
 
-const rules = computed<FormRules>(() => ({
-  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
-  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
-}))
+const rules: FormRules = {
+  username: [{ required: true, message: () => t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('login.passwordRequired'), trigger: 'blur' }],
+}
 
 const socialProviders = computed(() => [
   { name: t('login.wechat'), icon: '💬', provider: 'wechat' },
@@ -35,6 +37,7 @@ const socialProviders = computed(() => [
 ])
 
 onMounted(async () => {
+  if (authStore.isAuthenticated) { router.replace('/'); return }
   const savedUser = Cookies.get('username')
   const savedRemember = Cookies.get('rememberMe')
   if (savedUser) model.value.username = savedUser
@@ -50,14 +53,14 @@ onMounted(async () => {
 
 async function getCaptcha() {
   try {
-    const res = await request.get('/api/captcha')
+    const res = await fetchCaptcha()
     captchaEnabled.value = res.data.captchaEnabled !== false
     if (captchaEnabled.value) codeUrl.value = 'data:image/png;base64,' + res.data.img
   } catch { /* captcha unavailable */ }
 }
 
 async function getPublicKey(): Promise<string> {
-  try { const res = await request.get('/api/publicKey'); return res.data.publicKey } catch { return '' }
+  try { const res = await fetchPublicKey(); return res.data.publicKey } catch { return '' }
 }
 
 async function handleLogin() {
@@ -105,39 +108,47 @@ function handleSocialLogin(provider: string) {
       </div>
       <p class="subtitle">{{ t('app.subtitle') }}</p>
 
-      <el-alert v-if="error" :title="error" type="error" show-icon closable @close="error = ''" style="margin-bottom:20px" />
+      <n-alert v-if="error" type="error" closable @close="error = ''" style="margin-bottom:20px">
+        {{ error }}
+      </n-alert>
 
-      <el-form ref="formRef" :model="model" :rules="rules" @submit.prevent="handleLogin" label-position="top">
-        <el-form-item prop="username">
-          <el-input v-model="model.username" :placeholder="t('login.username')" size="large" :prefix-icon="User" />
-        </el-form-item>
+      <n-form ref="formRef" :model="model" :rules="rules" label-placement="top">
+        <n-form-item path="username">
+          <n-input v-model:value="model.username" :placeholder="t('login.username')" size="large">
+            <template #prefix>👤</template>
+          </n-input>
+        </n-form-item>
 
-        <el-form-item prop="password">
-          <el-input v-model="model.password" type="password" :placeholder="t('login.password')" size="large" show-password :prefix-icon="Lock" />
-        </el-form-item>
+        <n-form-item path="password">
+          <n-input v-model:value="model.password" type="password" :placeholder="t('login.password')" size="large" show-password-on="click">
+            <template #prefix>🔒</template>
+          </n-input>
+        </n-form-item>
 
-        <el-form-item v-if="captchaEnabled" prop="code">
+        <n-form-item v-if="captchaEnabled" path="code">
           <div style="display:flex; gap:12px; width:100%;">
-            <el-input v-model="model.code" :placeholder="t('login.captcha')" size="large" style="flex:1;" :prefix-icon="Key" />
+            <n-input v-model:value="model.code" :placeholder="t('login.captcha')" size="large" style="flex:1;">
+              <template #prefix>🔑</template>
+            </n-input>
             <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" :alt="t('login.captcha')" :title="t('login.refreshCaptcha')" style="height:40px;width:120px;cursor:pointer;border-radius:4px;">
           </div>
-        </el-form-item>
+        </n-form-item>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-          <el-checkbox v-model="model.rememberMe">{{ t('login.remember') }}</el-checkbox>
+          <n-checkbox v-model:checked="model.rememberMe">{{ t('login.remember') }}</n-checkbox>
           <router-link to="/forgot-password" class="link">{{ t('login.forgot') }}</router-link>
         </div>
 
-        <el-button type="primary" size="large" :loading="loading" @click="handleLogin" style="width:100%">
+        <n-button type="primary" size="large" :loading="loading" block @click="handleLogin">
           {{ t('login.title') }}
-        </el-button>
-      </el-form>
+        </n-button>
+      </n-form>
 
       <div class="register-link">
         {{ t('login.noAccount') }}<router-link to="/register" class="link">{{ t('login.register') }}</router-link>
       </div>
 
-      <el-divider>{{ t('login.thirdParty') }}</el-divider>
+      <n-divider>{{ t('login.thirdParty') }}</n-divider>
 
       <div style="display:flex;justify-content:center;gap:24px;">
         <div v-for="sp in socialProviders" :key="sp.provider" class="social-btn" @click="handleSocialLogin(sp.provider)">
@@ -184,7 +195,4 @@ function handleSocialLogin(provider: string) {
 .social-name { font-size: 12px; color: #666; }
 .brand { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
 .version-badge { font-size: 13px; color: #667eea; font-weight: 500; background: rgba(102,126,234,0.1); padding: 2px 10px; border-radius: 10px; }
-:deep(.el-input__wrapper) { box-shadow: none; }
-:deep(.el-input.is-focus .el-input__wrapper) { box-shadow: 0 0 0 1px #667eea inset; }
-:deep(.el-input:hover .el-input__wrapper) { box-shadow: 0 0 0 1px #dcdfe6 inset; }
 </style>

@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+
+import { fetchDepartmentTree, createDepartment, updateDepartment, deleteDepartment, moveDepartment } from '@/api/department'
 import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag, NSelect, darkTheme, lightTheme } from 'naive-ui'
+import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NPopconfirm, NTag, NSelect } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 
 interface Dept { id: number; name: string; parentId: number | null; sortOrder: number; enabled: boolean; children: Dept[] }
 
 const { t } = useI18n()
-const currentTheme = computed(() => localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme)
+
 const depts = ref<Dept[]>([])
 const notify = useNotify()
 const loading = ref(false)
@@ -57,7 +58,7 @@ const columns = computed<DataTableColumns<Dept>>(() => [
 async function loadDepts() {
   loading.value = true
   try {
-    const res = await request.get('/api/departments')
+    const res = await fetchDepartmentTree()
     depts.value = res.data
   } catch { notify.error(t('common.error')); }
   loading.value = false
@@ -79,9 +80,9 @@ async function saveDept() {
   saving.value = true
   try {
     if (editing.value) {
-      await request.put(`/api/departments/${editing.value.id}`, form.value)
+      await updateDepartment(editing.value.id, form.value)
     } else {
-      await request.post('/api/departments', form.value)
+      await createDepartment(form.value)
     }
     showModal.value = false
     notify.success(editing.value ? t('department.updateSuccess') : t('department.createSuccess'))
@@ -90,12 +91,12 @@ async function saveDept() {
 }
 
 async function moveDept(id: number, direction: number) {
-  await request.put(`/api/departments/${id}/move`, { direction })
+  await moveDepartment(id, direction)
   await loadDepts()
 }
 
 async function delDept(id: number) {
-  await request.delete(`/api/departments/${id}`)
+  await deleteDepartment(id)
   notify.success(t('department.deleteSuccess'))
   await loadDepts()
 }
@@ -104,47 +105,45 @@ onMounted(loadDepts)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.departments')">
-        <template #header-extra>
-          <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-        </template>
-        <n-space style="margin-bottom:12px" justify="space-between">
-          <n-space>
-            <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
-            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
-            <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
-          </n-space>
-          <n-space>
-            <n-button size="small" @click="loadDepts" secondary>{{ t('common.refresh') }}</n-button>
-          </n-space>
+  <div style="padding:20px">
+    <n-card :title="t('nav.departments')">
+      <template #header-extra>
+        <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+      </template>
+      <n-space style="margin-bottom:12px" justify="space-between">
+        <n-space>
+          <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
+          <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+          <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
-        <n-data-table
-          :columns="columns" :data="filteredDepts" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
-          default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'"
-        />
+        <n-space>
+          <n-button size="small" @click="loadDepts" secondary>{{ t('common.refresh') }}</n-button>
+        </n-space>
+      </n-space>
+      <n-data-table
+        :columns="columns" :data="filteredDepts" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+        default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'"
+      />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:480px;width:95%" preset="card" display-directive="show">
-          <n-form label-placement="left" label-width="80">
-            <n-form-item :label="t('department.name')">
-              <n-input v-model:value="form.name" />
-            </n-form-item>
-            <n-form-item :label="t('department.parent')">
-              <n-select v-model:value="form.parentId" :options="flatDepts" clearable placeholder="-" />
-            </n-form-item>
-            <n-form-item :label="t('department.sort')">
-              <n-input-number v-model:value="form.sortOrder" :min="0" />
-            </n-form-item>
-          </n-form>
-          <template #footer>
-            <n-space justify="end">
-              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-              <n-button type="primary" :loading="saving" @click="saveDept">{{ t('common.save') }}</n-button>
-            </n-space>
-          </template>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:480px;width:95%" preset="card" display-directive="show">
+        <n-form label-placement="left" label-width="80">
+          <n-form-item :label="t('department.name')">
+            <n-input v-model:value="form.name" />
+          </n-form-item>
+          <n-form-item :label="t('department.parent')">
+            <n-select v-model:value="form.parentId" :options="flatDepts" clearable placeholder="-" />
+          </n-form-item>
+          <n-form-item :label="t('department.sort')">
+            <n-input-number v-model:value="form.sortOrder" :min="0" />
+          </n-form-item>
+        </n-form>
+        <template #footer>
+          <n-space justify="end">
+            <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+            <n-button type="primary" :loading="saving" @click="saveDept">{{ t('common.save') }}</n-button>
+          </n-space>
+        </template>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

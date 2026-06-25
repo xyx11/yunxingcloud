@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted, h } from 'vue'
+
+import { fetchPendingApprovals, approveUser, rejectUser } from '@/api/user'
 import { useNotify } from '@/composables/useNotify'
-import { NConfigProvider, NCard, NDataTable, NButton, NSpace, NTag, NPopconfirm, darkTheme, lightTheme } from 'naive-ui'
+import { NCard, NDataTable, NButton, NSpace, NPopconfirm } from 'naive-ui'
 
 const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
@@ -12,7 +13,7 @@ import type { DataTableColumns } from 'naive-ui'
 interface PendingUser { id: number; username: string; email: string; registerSource: string }
 
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme)
+
 const items = ref<PendingUser[]>([])
 const loading = ref(false)
 
@@ -39,20 +40,20 @@ const columns: DataTableColumns<PendingUser> = [
 async function loadPending() {
   loading.value = true
   try {
-    const res = await request.get('/api/users/pending-approval')
+    const res = await fetchPendingApprovals()
     items.value = res.data
-  } catch {}
+  } catch { /* ignore */ }
   loading.value = false
 }
 
 async function approve(id: number) {
-  await request.put(`/api/users/${id}/approve`)
+  await approveUser(id)
   notify.success(t('user.approveSuccess'))
   await loadPending()
 }
 
 async function reject(id: number) {
-  await request.delete(`/api/users/${id}/reject`)
+  await rejectUser(id)
   notify.success(t('user.rejectSuccess'))
   await loadPending()
 }
@@ -61,20 +62,18 @@ onMounted(loadPending)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:24px">
-      <n-card :title="t('nav.registerApproval')">
-        <template #header-extra>
-          <n-button size="small" @click="loadPending" secondary>{{ t('common.refresh') }}</n-button>
-        </template>
-        <n-data-table
-          :columns="columns" :data="items" :loading="loading" size="small" :bordered="false"
-          :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row: PendingUser) => row.id"
-        />
-        <n-space v-if="!loading && items.length === 0" justify="center" style="padding:40px">
-          <span style="color:var(--n-text-color-3)">{{ t('common.noData') }}</span>
-        </n-space>
-      </n-card>
-    </div>
-  </n-config-provider>
+  <div style="padding:24px">
+    <n-card :title="t('nav.registerApproval')">
+      <template #header-extra>
+        <n-button size="small" @click="loadPending" secondary>{{ t('common.refresh') }}</n-button>
+      </template>
+      <n-data-table
+        :columns="columns" :data="items" :loading="loading" size="small" :bordered="false"
+        :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row: PendingUser) => row.id"
+      />
+      <n-space v-if="!loading && items.length === 0" justify="center" style="padding:40px">
+        <span style="color:var(--n-text-color-3)">{{ t('common.noData') }}</span>
+      </n-space>
+    </n-card>
+  </div>
 </template>

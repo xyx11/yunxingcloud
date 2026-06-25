@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted, h } from 'vue'
+import { fetchGeneratorTables, fetchGeneratorTableColumns, generateCode as genCodeApi } from '@/api/generator'
 import { useNotify } from '@/composables/useNotify'
+
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode, NSpin,
-  darkTheme, lightTheme
+  NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode, NSpin,
+  
 } from 'naive-ui'
 
 const { t } = useI18n()
@@ -65,7 +66,7 @@ const codeTabs = [
   { label: 'VueView', key: 'vueView' },
 ]
 
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const activeCodeTab = ref('entity')
 const generatingTable = ref('')
 
@@ -77,7 +78,7 @@ function copyCode() {
 async function loadTables() {
   loading.value = true
   try {
-    const res = await request.get('/api/generator/tables')
+    const res = await fetchGeneratorTables()
     tables.value = res.data
   } catch { notify.error(t('generator.fetchFailed')); }
   loading.value = false
@@ -85,7 +86,7 @@ async function loadTables() {
 
 async function viewColumns(tableName: string) {
   selectedTable.value = tableName
-  const res = await request.get(`/api/generator/table/${tableName}`)
+  const res = await fetchGeneratorTableColumns(tableName)
   columns.value = res.data.columns
   showColumnsModal.value = true
 }
@@ -94,7 +95,7 @@ async function genCode(tableName: string) {
   selectedTable.value = tableName
   generatingTable.value = tableName
   try {
-    const res = await request.post(`/api/generator/generate/${tableName}`, { packageName: packageName.value })
+    const res = await genCodeApi(tableName, packageName.value)
     generatedCode.value = res.data
     activeCodeTab.value = 'entity'
     showCodeModal.value = true
@@ -106,51 +107,49 @@ onMounted(loadTables)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.generator')">
-        <template #header-extra>
-          <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>{{ t('common.refresh') }}</n-button>
-          <n-input v-model:value="packageName" :placeholder="t('generator.packageName')" style="width:200px;margin-right:8px" />
-        </template>
+  <div style="padding:20px">
+    <n-card :title="t('nav.generator')">
+      <template #header-extra>
+        <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>{{ t('common.refresh') }}</n-button>
+        <n-input v-model:value="packageName" :placeholder="t('generator.packageName')" style="width:200px;margin-right:8px" />
+      </template>
+      <n-data-table
+        :columns="tableColumns" :data="tables" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+        :row-key="(row: TableInfo) => row.TABLE_NAME"
+      />
+
+      <!-- 字段查看弹窗 -->
+      <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="max-width:700px;width:95%">
         <n-data-table
-          :columns="tableColumns" :data="tables" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
-          :row-key="(row: TableInfo) => row.TABLE_NAME"
+          :columns="colsColumns" :data="columns"
+          :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
         />
+      </n-modal>
 
-        <!-- 字段查看弹窗 -->
-        <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="max-width:700px;width:95%">
-          <n-data-table
-            :columns="colsColumns" :data="columns"
-            :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
-          />
-        </n-modal>
-
-        <!-- 代码预览弹窗 -->
-        <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="max-width:800px;width:95%">
-          <n-space vertical style="margin-bottom:12px">
-            <n-space justify="space-between">
-              <n-space>
-                <n-button
-                  v-for="tab in codeTabs" :key="tab.key"
-                  :type="activeCodeTab === tab.key ? 'primary' : 'default'"
-                  size="small" @click="activeCodeTab = tab.key"
-                >
-                  {{ tab.label }}
-                </n-button>
-              </n-space>
-              <n-button size="small" @click="copyCode">{{ t('generator.copyCode') }}</n-button>
+      <!-- 代码预览弹窗 -->
+      <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="max-width:800px;width:95%">
+        <n-space vertical style="margin-bottom:12px">
+          <n-space justify="space-between">
+            <n-space>
+              <n-button
+                v-for="tab in codeTabs" :key="tab.key"
+                :type="activeCodeTab === tab.key ? 'primary' : 'default'"
+                size="small" @click="activeCodeTab = tab.key"
+              >
+                {{ tab.label }}
+              </n-button>
             </n-space>
+            <n-button size="small" @click="copyCode">{{ t('generator.copyCode') }}</n-button>
           </n-space>
-          <n-spin :show="!!generatingTable">
-            <n-code
-              :code="generatedCode[activeCodeTab] || ''"
-              :language="activeCodeTab.startsWith('vue') ? 'html' : 'java'"
-              style="max-height:500px; overflow:auto"
-            />
-          </n-spin>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+        </n-space>
+        <n-spin :show="!!generatingTable">
+          <n-code
+            :code="generatedCode[activeCodeTab] || ''"
+            :language="activeCodeTab.startsWith('vue') ? 'html' : 'java'"
+            style="max-height:500px; overflow:auto"
+          />
+        </n-spin>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

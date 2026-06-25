@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, h, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import request from '@/api/request'
+import { fetchSystemInfo, fetchSessions } from '@/api/system'
+import { fetchMenuTree } from '@/api/menu'
+import { fetchUnreadCount } from '@/api/message'
+import { fetchConfigByKey } from '@/api/config'
+import { globalSearch as searchApi } from '@/api/search'
+import { logout } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useLiveStatsStore } from '@/stores/liveStats'
 import { useTagsViewStore } from '@/stores/tagsView'
 import {
-  NConfigProvider, NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NLayoutFooter,
-  NMenu, NButton, NBreadcrumb, NBreadcrumbItem, NDropdown, NAvatar, NTag, NBadge,
-  darkTheme, lightTheme, NIcon, NPopover, NInput, NMessageProvider,
-  zhCN, dateZhCN,
+  NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NLayoutFooter,
+  NButton, NBreadcrumb, NBreadcrumbItem, NDropdown, NAvatar, NBadge,
+  NIcon, NPopover, NInput,
 } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 
@@ -74,7 +78,7 @@ function globalSearch() {
   const q = searchQuery.value.trim()
   if (!q) { showSearchResults.value = false; return }
   addSearchHistory(q)
-  request.get('/api/search', { params: { q } }).then(res => {
+  searchApi(q).then(res => {
     searchResults.value = res.data
     showSearchResults.value = true
   }).catch(() => {
@@ -83,7 +87,7 @@ function globalSearch() {
   })
 }
 
-function navigateFromSearch(type: string, item: any) {
+function navigateFromSearch(type: string, _item: any) {
   showSearchResults.value = false
   searchQuery.value = ''
   if (type === 'users') router.push('/users')
@@ -119,11 +123,18 @@ function onScroll() {
   showBackTop.value = window.scrollY > 300
 }
 
+let _statsTimer: ReturnType<typeof setInterval>
+let _unreadTimer: ReturnType<typeof setInterval>
+function _onThemeChange(e: Event) { isDark.value = (e as CustomEvent).detail === 'dark' }
+
 window.addEventListener('resize', onResize)
 window.addEventListener('scroll', onScroll)
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('theme-change', _onThemeChange)
+  if (_statsTimer) clearInterval(_statsTimer)
+  if (_unreadTimer) clearInterval(_unreadTimer)
 })
 
 function scrollToTop() {
@@ -214,25 +225,25 @@ watch(() => route.path, (path) => {
 async function fetchStats() {
   try {
     const [info, sessions, cfg] = await Promise.all([
-      request.get('/api/system/info'),
-      request.get('/api/system/sessions'),
-      request.get('/api/config/key/sys.version').catch(() => ({ data: { configValue: '' } })),
+      fetchSystemInfo(),
+      fetchSessions(),
+      fetchConfigByKey('sys.version').catch(() => ({ data: { configValue: '' } })),
     ])
     liveStats.value = { uptime: info.data.uptime, sessions: sessions.data.count }
     appVersion.value = cfg.data.configValue || ''
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 onMounted(async () => {
   document.documentElement.setAttribute('theme', isDark.value ? 'dark' : 'light')
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission()
-  window.addEventListener('theme-change', ((e: CustomEvent) => { isDark.value = e.detail === 'dark' }) as EventListener)
+  window.addEventListener('theme-change', _onThemeChange)
   fetchStats()
-  request.get('/api/messages/unread-count').then(r => { unreadCount.value = r.data.count; if (r.data.count > 0 && Notification.permission === 'granted') new Notification('yunxingcloud', { body: t('message.unreadNotification', { count: r.data.count }), icon: '/favicon.svg' }) }).catch(() => {})
-  setInterval(fetchStats, 30000)
-  setInterval(() => request.get('/api/messages/unread-count').then(r => unreadCount.value = r.data.count).catch(() => {}), 30000)
+  fetchUnreadCount().then(r => { unreadCount.value = r.data.count; if (r.data.count > 0 && Notification.permission === 'granted') new Notification('yunxingcloud', { body: t('message.unreadNotification', { count: r.data.count }), icon: '/favicon.svg' }) }).catch(() => {})
+  _statsTimer = setInterval(fetchStats, 30000)
+  _unreadTimer = setInterval(() => fetchUnreadCount().then(r => unreadCount.value = r.data.count).catch(() => {}), 30000)
   try {
-    const res = await request.get('/api/menus/tree')
+    const res = await fetchMenuTree()
     menuOptions.value = convertMenus(res.data)
   } catch {
     menuOptions.value = [
@@ -280,13 +291,6 @@ function convertMenus(menus: any[]): MenuOption[] {
   return [...result, ...walk(menus)]
 }
 
-function handleMenuUpdate(key: string) {
-  if (key.startsWith('menu-')) return
-  if (window.innerWidth < 768) collapsed.value = true
-  const target = key === 'home' ? '/' : '/' + key
-  router.push(target).catch(() => {})
-}
-
 watch(currentKey, (key) => {
   if (key.startsWith('menu-')) return
   if (window.innerWidth < 768) collapsed.value = true
@@ -296,7 +300,7 @@ watch(currentKey, (key) => {
 
 
 async function handleLogout() {
-  try { await request.post('/api/logout') } catch {}
+  try { await logout() } catch { /* ignore */ }
   authStore.clear()
   router.push('/login')
 }
@@ -334,169 +338,165 @@ useKeyboard({
 </script>
 
 <template>
-  <n-config-provider :theme="isDark ? darkTheme : lightTheme" :locale="zhCN" :date-locale="dateZhCN">
-    <AnnouncementBanner />
-    <div v-if="isMobile && mobileOverlay" class="mobile-backdrop" @click="mobileOverlay = false" />
-    <n-layout style="min-height: 100vh" :has-sider="true">
-      <n-layout-sider
-        bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
-        :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
-      >
-        <div class="logo">
-          <span v-if="!collapsed">yunxingcloud</span>
-          <span v-else style="font-size:16px;">YC</span>
-        </div>
-        <div class="custom-menu" :class="{ collapsed }">
-          <template v-for="item in menuOptions" :key="item.key">
-            <template v-if="item.children">
-              <div v-show="!collapsed" class="menu-group-title">{{ item.label }}</div>
-              <div
-                v-for="child in item.children"
-                :key="child.key"
-                :class="['menu-item', { active: currentKey === child.key }]"
-                @click="currentKey = String(child.key); router.push(child.key === 'home' ? '/' : '/' + String(child.key)).catch(()=>{})"
-              >
-                <span v-if="child.icon" class="menu-icon"><component :is="child.icon" /></span>
-                <span v-show="!collapsed" class="menu-label">{{ child.label }}</span>
-              </div>
-            </template>
+  <AnnouncementBanner />
+  <div v-if="isMobile && mobileOverlay" class="mobile-backdrop" @click="mobileOverlay = false" />
+  <n-layout style="min-height: 100vh" :has-sider="true">
+    <n-layout-sider
+      bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
+      :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
+    >
+      <div class="logo">
+        <span v-if="!collapsed">yunxingcloud</span>
+        <span v-else style="font-size:16px;">YC</span>
+      </div>
+      <div class="custom-menu" :class="{ collapsed }">
+        <template v-for="item in menuOptions" :key="item.key">
+          <template v-if="item.children">
+            <div v-show="!collapsed" class="menu-group-title">{{ item.label }}</div>
+            <div
+              v-for="child in item.children"
+              :key="child.key"
+              :class="['menu-item', { active: currentKey === child.key }]"
+              @click="currentKey = String(child.key); router.push(child.key === 'home' ? '/' : '/' + String(child.key)).catch(()=>{})"
+            >
+              <span v-if="child.icon" class="menu-icon"><component :is="child.icon" /></span>
+              <span v-show="!collapsed" class="menu-label">{{ child.label }}</span>
+            </div>
           </template>
+        </template>
+      </div>
+    </n-layout-sider>
+    <n-layout>
+      <n-layout-header class="header">
+        <div class="header-left">
+          <n-button text @click="toggleSidebar" style="font-size:18px;">
+            {{ collapsed ? '▶' : '◀' }}
+          </n-button>
+          <span v-if="collapsed" class="mobile-title">{{ pageTitle }}</span>
+          <n-popover trigger="manual" :show="showSearchResults" placement="bottom-start" :width="320" @clickoutside="showSearchResults = false">
+            <template #trigger>
+              <n-input
+                v-model:value="searchQuery" :placeholder="t('nav.searchPlaceholder')" size="small" clearable style="width:160px"
+                @keyup:enter="globalSearch" @clear="showSearchResults = false" @focus="searchQuery && globalSearch()"
+              >
+                <template #prefix>🔍</template>
+              </n-input>
+            </template>
+            <div v-if="!searchQuery && searchHistory.length && !showSearchResults" style="max-height:200px;overflow-y:auto">
+              <div style="font-size:11px;color:#999;padding:2px 8px">{{ t('nav.recentSearches') }}</div>
+              <div v-for="item in searchHistory" :key="item" class="search-item" @click="searchQuery = item; globalSearch()" style="justify-content:flex-start">{{ item }}</div>
+            </div>
+            <div v-if="hasSearchResults" style="max-height:360px;overflow-y:auto">
+              <div v-if="searchResults.users?.length" style="margin-bottom:8px">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.users') }}</div>
+                <div v-for="u in searchResults.users" :key="u.id" class="search-item" @click="navigateFromSearch('users', u)">
+                  <span>{{ u.username }}</span><span style="color:#999;font-size:12px">{{ u.nickname }} {{ u.email }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.roles?.length" style="margin-bottom:8px">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.roles') }}</div>
+                <div v-for="r in searchResults.roles" :key="r.id" class="search-item" @click="navigateFromSearch('roles', r)">
+                  <span>{{ r.name }}</span><span style="color:#999;font-size:12px">{{ r.code }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.menus?.length" style="margin-bottom:8px">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.menus') }}</div>
+                <div v-for="m in searchResults.menus" :key="m.id" class="search-item" @click="navigateFromSearch('menus', m)">
+                  <span>{{ m.name }}</span><span style="color:#999;font-size:12px">{{ m.path }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.configs?.length">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.config') }}</div>
+                <div v-for="c in searchResults.configs" :key="c.id" class="search-item" @click="navigateFromSearch('configs', c)">
+                  <span>{{ c.name }}</span><span style="color:#999;font-size:12px">{{ c.config_key }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.dict?.length">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.dict') }}</div>
+                <div v-for="d in searchResults.dict" :key="d.id" class="search-item" @click="navigateFromSearch('dict', d)">
+                  <span>{{ d.dict_name }}</span><span style="color:#999;font-size:12px">{{ d.dict_type }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.notices?.length">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.notice') }}</div>
+                <div v-for="n in searchResults.notices" :key="n.id" class="search-item" @click="navigateFromSearch('notices', n)">
+                  <span>{{ n.notice_title }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.posts?.length">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.posts') }}</div>
+                <div v-for="p in searchResults.posts" :key="p.id" class="search-item" @click="navigateFromSearch('posts', p)">
+                  <span>{{ p.post_name }}</span><span style="color:#999;font-size:12px">{{ p.post_code }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.departments?.length">
+                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.departments') }}</div>
+                <div v-for="d in searchResults.departments" :key="d.id" class="search-item" @click="navigateFromSearch('departments', d)">
+                  <span>{{ d.name }}</span>
+                </div>
+              </div>
+              <div v-if="searchResults.total" style="font-size:11px;color:#999;text-align:center;padding:4px 0;border-top:1px solid var(--n-border-color,#eee)">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
+            </div>
+            <div v-else style="color:#999;padding:8px;text-align:center">{{ t('nav.noResults') }}</div>
+          </n-popover>
+          <n-breadcrumb>
+            <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
+              {{ b.label }}
+            </n-breadcrumb-item>
+          </n-breadcrumb>
         </div>
-      </n-layout-sider>
-      <n-layout>
-        <n-layout-header class="header">
-          <div class="header-left">
-            <n-button text @click="toggleSidebar" style="font-size:18px;">
-              {{ collapsed ? '▶' : '◀' }}
-            </n-button>
-            <span v-if="collapsed" class="mobile-title">{{ pageTitle }}</span>
-            <n-popover trigger="manual" :show="showSearchResults" placement="bottom-start" :width="320" @clickoutside="showSearchResults = false">
-              <template #trigger>
-                <n-input
-                  v-model:value="searchQuery" :placeholder="t('nav.searchPlaceholder')" size="small" clearable style="width:160px"
-                  @keyup:enter="globalSearch" @clear="showSearchResults = false" @focus="searchQuery && globalSearch()"
-                >
-                  <template #prefix>🔍</template>
-                </n-input>
-              </template>
-              <div v-if="!searchQuery && searchHistory.length && !showSearchResults" style="max-height:200px;overflow-y:auto">
-                <div style="font-size:11px;color:#999;padding:2px 8px">{{ t('nav.recentSearches') }}</div>
-                <div v-for="h in searchHistory" :key="h" class="search-item" @click="searchQuery = h; globalSearch()" style="justify-content:flex-start">{{ h }}</div>
-              </div>
-              <div v-if="hasSearchResults" style="max-height:360px;overflow-y:auto">
-                <div v-if="searchResults.users?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.users') }}</div>
-                  <div v-for="u in searchResults.users" :key="u.id" class="search-item" @click="navigateFromSearch('users', u)">
-                    <span>{{ u.username }}</span><span style="color:#999;font-size:12px">{{ u.nickname }} {{ u.email }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.roles?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.roles') }}</div>
-                  <div v-for="r in searchResults.roles" :key="r.id" class="search-item" @click="navigateFromSearch('roles', r)">
-                    <span>{{ r.name }}</span><span style="color:#999;font-size:12px">{{ r.code }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.menus?.length" style="margin-bottom:8px">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.menus') }}</div>
-                  <div v-for="m in searchResults.menus" :key="m.id" class="search-item" @click="navigateFromSearch('menus', m)">
-                    <span>{{ m.name }}</span><span style="color:#999;font-size:12px">{{ m.path }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.configs?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.config') }}</div>
-                  <div v-for="c in searchResults.configs" :key="c.id" class="search-item" @click="navigateFromSearch('configs', c)">
-                    <span>{{ c.name }}</span><span style="color:#999;font-size:12px">{{ c.config_key }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.dict?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.dict') }}</div>
-                  <div v-for="d in searchResults.dict" :key="d.id" class="search-item" @click="navigateFromSearch('dict', d)">
-                    <span>{{ d.dict_name }}</span><span style="color:#999;font-size:12px">{{ d.dict_type }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.notices?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.notice') }}</div>
-                  <div v-for="n in searchResults.notices" :key="n.id" class="search-item" @click="navigateFromSearch('notices', n)">
-                    <span>{{ n.notice_title }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.posts?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.posts') }}</div>
-                  <div v-for="p in searchResults.posts" :key="p.id" class="search-item" @click="navigateFromSearch('posts', p)">
-                    <span>{{ p.post_name }}</span><span style="color:#999;font-size:12px">{{ p.post_code }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.departments?.length">
-                  <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.departments') }}</div>
-                  <div v-for="d in searchResults.departments" :key="d.id" class="search-item" @click="navigateFromSearch('departments', d)">
-                    <span>{{ d.name }}</span>
-                  </div>
-                </div>
-                <div v-if="searchResults.total" style="font-size:11px;color:#999;text-align:center;padding:4px 0;border-top:1px solid var(--n-border-color,#eee)">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
-              </div>
-              <div v-else style="color:#999;padding:8px;text-align:center">{{ t('nav.noResults') }}</div>
-            </n-popover>
-            <n-breadcrumb>
-              <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
-                {{ b.label }}
-              </n-breadcrumb-item>
-            </n-breadcrumb>
-          </div>
-          <div class="header-right">
-            <n-button text @click="toggleFullscreen" style="font-size:16px;margin-right:8px;" :title="t('nav.fullscreen')">⛶</n-button>
-            <n-button text size="small" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')" style="margin-right:4px;font-size:12px;">
-              {{ locale === 'zh' ? 'EN' : '中' }}
-            </n-button>
-            <n-button text @click="toggleTheme" style="font-size:18px;margin-right:4px;">
-              {{ isDark ? '☀️' : '🌙' }}
-            </n-button>
-            <n-badge :value="unreadCount" :max="99" style="margin-right:12px;">
-              <n-button text @click="router.push('/messages')" style="font-size:18px;" :title="t('nav.openMessages')">📬</n-button>
-            </n-badge>
-            <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
-              <div class="user-area">
-                <n-avatar size="small" round style="background:#667eea;">{{ authStore.username?.charAt(0)?.toUpperCase() }}</n-avatar>
-                <span>{{ authStore.username }}</span>
-              </div>
-            </n-dropdown>
-          </div>
-        </n-layout-header>
-        <div class="tags-view" v-if="tagsViewStore.tags.length">
-          <span
-            v-for="tag in tagsViewStore.tags" :key="tag.path"
-            :class="['tag-item', { active: tagsViewStore.activePath === tag.path }]"
-            @click="router.push(tag.path)"
-            @contextmenu.prevent="ctxMenuTag = tag.path; ctxMenuX = $event.clientX; ctxMenuY = $event.clientY"
-          >
-            {{ tag.title }}
-            <span v-if="tag.path !== '/'" class="tag-close" @click.stop="tagsViewStore.removeTag(tag.path)">×</span>
-          </span>
-          <n-dropdown trigger="click" :options="contextMenuOptions" @select="(k:string) => { if(k==='close') tagsViewStore.removeTag(tagsViewStore.activePath); if(k==='other') tagsViewStore.closeOther(tagsViewStore.activePath); if(k==='all') tagsViewStore.closeAll(); router.push(tagsViewStore.activePath) }">
-            <span class="tag-close-all">▼</span>
+        <div class="header-right">
+          <n-button text @click="toggleFullscreen" style="font-size:16px;margin-right:8px;" :title="t('nav.fullscreen')">⛶</n-button>
+          <n-button text size="small" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')" style="margin-right:4px;font-size:12px;">
+            {{ locale === 'zh' ? 'EN' : '中' }}
+          </n-button>
+          <n-button text @click="toggleTheme" style="font-size:18px;margin-right:4px;">
+            {{ isDark ? '☀️' : '🌙' }}
+          </n-button>
+          <n-badge :value="unreadCount" :max="99" style="margin-right:12px;">
+            <n-button text @click="router.push('/messages')" style="font-size:18px;" :title="t('nav.openMessages')">📬</n-button>
+          </n-badge>
+          <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
+            <div class="user-area">
+              <n-avatar size="small" round style="background:#667eea;">{{ authStore.username?.charAt(0)?.toUpperCase() }}</n-avatar>
+              <span>{{ authStore.username }}</span>
+            </div>
           </n-dropdown>
-          <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="ctxMenuDropdownOptions" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
         </div>
-        <n-layout-content :style="{ padding:'20px', background: isDark ? '#101014' : '#f0f2f5', minHeight:'calc(100vh - 96px)' }" class="content-area">
-          <n-message-provider>
-            <router-view v-slot="{ Component, route: currentRoute }">
-              <transition name="page" mode="out-in">
-                <component :is="Component" :key="currentRoute.fullPath" />
-              </transition>
-            </router-view>
-          </n-message-provider>
-        </n-layout-content>
-        <n-layout-footer class="footer">
-          yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
-          <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" style="color:#999;text-decoration:none">湘ICP备2026022380号-1</a></div>
-        </n-layout-footer>
-      </n-layout>
+      </n-layout-header>
+      <div class="tags-view" v-if="tagsViewStore.tags.length">
+        <span
+          v-for="tag in tagsViewStore.tags" :key="tag.path"
+          :class="['tag-item', { active: tagsViewStore.activePath === tag.path }]"
+          @click="router.push(tag.path)"
+          @contextmenu.prevent="ctxMenuTag = tag.path; ctxMenuX = $event.clientX; ctxMenuY = $event.clientY"
+        >
+          {{ tag.title }}
+          <span v-if="tag.path !== '/'" class="tag-close" @click.stop="tagsViewStore.removeTag(tag.path)">×</span>
+        </span>
+        <n-dropdown trigger="click" :options="contextMenuOptions" @select="(k:string) => { if(k==='close') tagsViewStore.removeTag(tagsViewStore.activePath); if(k==='other') tagsViewStore.closeOther(tagsViewStore.activePath); if(k==='all') tagsViewStore.closeAll(); router.push(tagsViewStore.activePath) }">
+          <span class="tag-close-all">▼</span>
+        </n-dropdown>
+        <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="ctxMenuDropdownOptions" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
+      </div>
+      <n-layout-content :style="{ padding:'20px', background: isDark ? '#101014' : '#f0f2f5', minHeight:'calc(100vh - 96px)' }" class="content-area">
+        <router-view v-slot="{ Component, route: currentRoute }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" :key="currentRoute.fullPath" />
+          </transition>
+        </router-view>
+      </n-layout-content>
+      <n-layout-footer class="footer">
+        yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
+        <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" style="color:#999;text-decoration:none">湘ICP备2026022380号-1</a></div>
+      </n-layout-footer>
     </n-layout>
-    <CommandPalette />
-    <transition name="fade">
-      <div v-if="showBackTop" class="back-top" @click="scrollToTop">▲</div>
-    </transition>
-    <div class="watermark" v-if="authStore.username">{{ watermarkText }}</div>
-  </n-config-provider>
+  </n-layout>
+  <CommandPalette />
+  <transition name="fade">
+    <div v-if="showBackTop" class="back-top" @click="scrollToTop">▲</div>
+  </transition>
+  <div class="watermark" v-if="authStore.username">{{ watermarkText }}</div>
 </template>
 
 <style scoped>

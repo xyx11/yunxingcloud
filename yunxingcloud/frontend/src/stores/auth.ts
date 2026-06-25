@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import request from '@/api/request'
+import { login as loginApi, fetchUserInfo } from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const username = ref<string | null>(null)
@@ -11,15 +11,15 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchUser() {
     loading.value = true
     try {
-      const res = await request.get('/api/user')
-      username.value = res.data.username
+      const res = await fetchUserInfo()
+      username.value = res.username
     } finally {
       loading.value = false
     }
   }
 
   async function login(user: string, password: string, code?: string): Promise<string> {
-    const res = await request.post('/api/login', { username: user, password, code })
+    const res = await loginApi(user, password, code)
     if (res.data.success) {
       username.value = res.data.username
       localStorage.setItem('accessToken', res.data.accessToken)

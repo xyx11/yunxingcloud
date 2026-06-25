@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
-import request from '@/api/request'
+import { fetchMaintenanceStats, cleanOldLogs, cleanExpiredTokens, vacuumDatabase } from '@/api/maintenance'
 import { useNotify } from '@/composables/useNotify'
 import { NCard, NGrid, NGridItem, NStatistic, NButton, NSpace, NPopconfirm, NInputNumber } from 'naive-ui'
 
@@ -13,14 +13,14 @@ const cleanDays = ref(90)
 
 async function loadStats() {
   try {
-    const res = await request.get('/api/maintenance/stats')
+    const res = await fetchMaintenanceStats()
     stats.value = res.data
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 async function cleanLogs() {
   try {
-    await request.post(`/api/maintenance/clean-logs?days=${cleanDays.value}`)
+    await cleanOldLogs(cleanDays.value)
     notify.success(t('maintenance.logCleanupSuccess', { days: cleanDays.value }))
     await loadStats()
   } catch { notify.error(t('maintenance.cleanFailed')) }
@@ -28,7 +28,7 @@ async function cleanLogs() {
 
 async function cleanTokens() {
   try {
-    await request.post('/api/maintenance/clean-tokens')
+    await cleanExpiredTokens()
     notify.success(t('maintenance.tokenCleanupSuccess'))
     await loadStats()
   } catch { notify.error(t('maintenance.cleanFailed')) }
@@ -36,7 +36,7 @@ async function cleanTokens() {
 
 async function vacuum() {
   try {
-    await request.post('/api/maintenance/vacuum')
+    await vacuumDatabase()
     notify.success(t('maintenance.vacuumSuccess'))
     await loadStats()
   } catch { notify.error(t('maintenance.cleanFailed')) }

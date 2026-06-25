@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+import { listDictTypes, createDictType, updateDictType, deleteDictType, listDictData, createDictData, updateDictData, deleteDictData, type DictType, type DictData } from '@/api/dict'
 import { useNotify } from '@/composables/useNotify'
+
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
+  NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag, NGrid, NGridItem,
   NInputNumber, NEmpty,
-  darkTheme, lightTheme
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
-interface DictType { id: number; dictName: string; dictType: string; status: string; remark: string; createdAt: string }
-interface DictData { id: number; dictType: string; dictLabel: string; dictValue: string; cssClass: string; listClass: string; isDefault: string; sortOrder: number; status: string; remark: string; createdAt: string }
-
 const { t } = useI18n()
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const types = ref<DictType[]>([])
 const dataList = ref<DictData[]>([])
 const loading = ref(false)
@@ -113,14 +110,14 @@ const dataColumns: DataTableColumns<DictData> = [
 
 async function loadTypes() {
   loading.value = true
-  try { const res = await request.get('/api/dict/types'); types.value = res.data } catch { notify.error(t('common.error')); }
+  try { const res = await listDictTypes(); types.value = res.data } catch { notify.error(t('common.error')); }
   loading.value = false
 }
 
 async function selectType(type: DictType) {
   selectedType.value = type
   try {
-    const res = await request.get(`/api/dict/data/${type.dictType}`)
+    const res = await listDictData(type.dictType)
     dataList.value = res.data
   } catch { notify.error(t('common.error')); }
 }
@@ -141,8 +138,8 @@ async function saveType() {
   if (typeFormRef.value) { try { await typeFormRef.value.validate() } catch { return } }
   saving.value = true
   try {
-    if (editingType.value) await request.put(`/api/dict/types/${editingType.value.id}`, typeForm.value)
-    else await request.post('/api/dict/types', typeForm.value)
+    if (editingType.value) await updateDictType(editingType.value.id, typeForm.value)
+    else await createDictType(typeForm.value)
     showTypeModal.value = false
     notify.success(editingType.value ? t('dict.updateSuccess') : t('dict.createSuccess'))
     await loadTypes()
@@ -150,7 +147,7 @@ async function saveType() {
 }
 
 async function delType(id: number) {
-  await request.delete(`/api/dict/types/${id}`)
+  await deleteDictType(id)
   if (selectedType.value?.id === id) { selectedType.value = null; dataList.value = [] }
   await loadTypes()
 }
@@ -172,8 +169,8 @@ async function saveData() {
   if (dataFormRef.value) { try { await dataFormRef.value.validate() } catch { return } }
   saving.value = true
   try {
-    if (editingData.value) await request.put(`/api/dict/data/${editingData.value.id}`, dataForm.value)
-    else await request.post('/api/dict/data', dataForm.value)
+    if (editingData.value) await updateDictData(editingData.value.id, dataForm.value)
+    else await createDictData(dataForm.value)
     showDataModal.value = false
     notify.success(editingData.value ? t('dict.updateSuccess') : t('dict.createSuccess'))
     if (selectedType.value) await selectType(selectedType.value)
@@ -181,7 +178,7 @@ async function saveData() {
 }
 
 async function delData(id: number) {
-  await request.delete(`/api/dict/data/${id}`)
+  await deleteDictData(id)
   if (selectedType.value) await selectType(selectedType.value)
 }
 
@@ -189,96 +186,94 @@ onMounted(loadTypes)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-grid :cols="2" :x-gap="12">
-        <n-grid-item>
-          <n-card :title="t('dict.type')" size="small">
-            <template #header-extra>
-              <n-button type="primary" size="small" @click="addType"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-            </template>
-            <n-space style="margin-bottom:8px">
-              <n-input v-model:value="typeSearch" :placeholder="t('dict.searchType')" size="small" clearable style="max-width:140px;width:95%" />
-              <n-button size="small" @click="loadTypes" secondary>{{ t('common.refresh') }}</n-button>
-            </n-space>
-            <n-dataTable
-              :columns="typeColumns" :data="filteredTypes" :loading="loading" size="small"
-              :bordered="false" :pagination="{ pageSize: 10 }"
-              :row-key="(row: DictType) => row.id"
-              :row-props="(row: DictType) => ({ style: selectedType?.id === row.id ? 'background:var(--primary-color-suppl, #e8f0fe)' : '' })"
-            />
-          </n-card>
-        </n-grid-item>
-        <n-grid-item>
-          <n-card :title="selectedType ? `${t('dict.data')} - ${selectedType.dictName}` : t('dict.data')" size="small">
-            <template #header-extra>
-              <n-button type="primary" size="small" @click="addData"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-            </template>
-            <n-space style="margin-bottom:8px">
-              <n-input v-model:value="dataSearch" :placeholder="t('dict.searchData')" size="small" clearable style="max-width:140px;width:95%" />
-              <n-button size="small" @click="selectedType && selectType(selectedType)" secondary>{{ t('common.refresh') }}</n-button>
-            </n-space>
-            <n-dataTable
-              :columns="dataColumns" :data="filteredData" size="small"
-              :bordered="false" :pagination="{ pageSize: 10 }"
-              :row-key="(row: DictData) => row.id"
-            />
-            <n-empty v-if="!selectedType" :description="t('dict.selectTypeHint')" style="margin-top:40px" />
-          </n-card>
-        </n-grid-item>
-      </n-grid>
-
-      <n-modal v-model:show="showTypeModal" :title="editingType ? t('dict.editType') : t('dict.addType')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-placement="left" label-width="80">
-          <n-form-item path="dictName" :label="t('dict.dictName')">
-            <n-input v-model:value="typeForm.dictName" />
-          </n-form-item>
-          <n-form-item path="dictType" :label="t('dict.dictType')">
-            <n-input v-model:value="typeForm.dictType" :disabled="!!editingType" :placeholder="t('dict.typePlaceholder')" />
-          </n-form-item>
-          <n-form-item :label="t('dict.status')">
-            <n-select v-model:value="typeForm.status" :options="statusOptions" />
-          </n-form-item>
-          <n-form-item :label="t('common.remark')">
-            <n-input v-model:value="typeForm.remark" />
-          </n-form-item>
-        </n-form>
-        <template #footer>
-          <n-space justify="end">
-            <n-button @click="showTypeModal = false">{{ t('common.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="saveType">{{ t('common.save') }}</n-button>
+  <div style="padding:20px">
+    <n-grid :cols="2" :x-gap="12">
+      <n-grid-item>
+        <n-card :title="t('dict.type')" size="small">
+          <template #header-extra>
+            <n-button type="primary" size="small" @click="addType"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+          </template>
+          <n-space style="margin-bottom:8px">
+            <n-input v-model:value="typeSearch" :placeholder="t('dict.searchType')" size="small" clearable style="max-width:140px;width:95%" />
+            <n-button size="small" @click="loadTypes" secondary>{{ t('common.refresh') }}</n-button>
           </n-space>
-        </template>
-      </n-modal>
-
-      <n-modal v-model:show="showDataModal" :title="editingData ? t('dict.editData') : t('dict.addData')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-placement="left" label-width="80">
-          <n-form-item :label="t('dict.dictType')">
-            <n-input :value="dataForm.dictType" disabled />
-          </n-form-item>
-          <n-form-item path="dictLabel" :label="t('dict.dictLabel')">
-            <n-input v-model:value="dataForm.dictLabel" :placeholder="t('dict.labelPlaceholder')" />
-          </n-form-item>
-          <n-form-item path="dictValue" :label="t('dict.dictValue')">
-            <n-input v-model:value="dataForm.dictValue" :placeholder="t('dict.valuePlaceholder')" />
-          </n-form-item>
-          <n-form-item :label="t('dict.sortOrder')">
-            <n-input-number v-model:value="dataForm.sortOrder" :min="0" style="width:100%" />
-          </n-form-item>
-          <n-form-item :label="t('dict.isDefaultLabel')">
-            <n-select v-model:value="dataForm.isDefault" :options="[{label:t('common.yes'),value:'Y'},{label:t('common.no'),value:'N'}]" />
-          </n-form-item>
-          <n-form-item :label="t('dict.status')">
-            <n-select v-model:value="dataForm.status" :options="statusOptions" />
-          </n-form-item>
-        </n-form>
-        <template #footer>
-          <n-space justify="end">
-            <n-button @click="showDataModal = false">{{ t('common.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="saveData">{{ t('common.save') }}</n-button>
+          <n-dataTable
+            :columns="typeColumns" :data="filteredTypes" :loading="loading" size="small"
+            :bordered="false" :pagination="{ pageSize: 10 }"
+            :row-key="(row: DictType) => row.id"
+            :row-props="(row: DictType) => ({ style: selectedType?.id === row.id ? 'background:var(--primary-color-suppl, #e8f0fe)' : '' })"
+          />
+        </n-card>
+      </n-grid-item>
+      <n-grid-item>
+        <n-card :title="selectedType ? `${t('dict.data')} - ${selectedType.dictName}` : t('dict.data')" size="small">
+          <template #header-extra>
+            <n-button type="primary" size="small" @click="addData"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+          </template>
+          <n-space style="margin-bottom:8px">
+            <n-input v-model:value="dataSearch" :placeholder="t('dict.searchData')" size="small" clearable style="max-width:140px;width:95%" />
+            <n-button size="small" @click="selectedType && selectType(selectedType)" secondary>{{ t('common.refresh') }}</n-button>
           </n-space>
-        </template>
-      </n-modal>
-    </div>
-  </n-config-provider>
+          <n-dataTable
+            :columns="dataColumns" :data="filteredData" size="small"
+            :bordered="false" :pagination="{ pageSize: 10 }"
+            :row-key="(row: DictData) => row.id"
+          />
+          <n-empty v-if="!selectedType" :description="t('dict.selectTypeHint')" style="margin-top:40px" />
+        </n-card>
+      </n-grid-item>
+    </n-grid>
+
+    <n-modal v-model:show="showTypeModal" :title="editingType ? t('dict.editType') : t('dict.addType')" preset="card" display-directive="show" style="max-width:480px;width:95%">
+      <n-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-placement="left" label-width="80">
+        <n-form-item path="dictName" :label="t('dict.dictName')">
+          <n-input v-model:value="typeForm.dictName" />
+        </n-form-item>
+        <n-form-item path="dictType" :label="t('dict.dictType')">
+          <n-input v-model:value="typeForm.dictType" :disabled="!!editingType" :placeholder="t('dict.typePlaceholder')" />
+        </n-form-item>
+        <n-form-item :label="t('dict.status')">
+          <n-select v-model:value="typeForm.status" :options="statusOptions" />
+        </n-form-item>
+        <n-form-item :label="t('common.remark')">
+          <n-input v-model:value="typeForm.remark" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showTypeModal = false">{{ t('common.cancel') }}</n-button>
+          <n-button type="primary" :loading="saving" @click="saveType">{{ t('common.save') }}</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+
+    <n-modal v-model:show="showDataModal" :title="editingData ? t('dict.editData') : t('dict.addData')" preset="card" display-directive="show" style="max-width:480px;width:95%">
+      <n-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-placement="left" label-width="80">
+        <n-form-item :label="t('dict.dictType')">
+          <n-input :value="dataForm.dictType" disabled />
+        </n-form-item>
+        <n-form-item path="dictLabel" :label="t('dict.dictLabel')">
+          <n-input v-model:value="dataForm.dictLabel" :placeholder="t('dict.labelPlaceholder')" />
+        </n-form-item>
+        <n-form-item path="dictValue" :label="t('dict.dictValue')">
+          <n-input v-model:value="dataForm.dictValue" :placeholder="t('dict.valuePlaceholder')" />
+        </n-form-item>
+        <n-form-item :label="t('dict.sortOrder')">
+          <n-input-number v-model:value="dataForm.sortOrder" :min="0" style="width:100%" />
+        </n-form-item>
+        <n-form-item :label="t('dict.isDefaultLabel')">
+          <n-select v-model:value="dataForm.isDefault" :options="[{label:t('common.yes'),value:'Y'},{label:t('common.no'),value:'N'}]" />
+        </n-form-item>
+        <n-form-item :label="t('dict.status')">
+          <n-select v-model:value="dataForm.status" :options="statusOptions" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showDataModal = false">{{ t('common.cancel') }}</n-button>
+          <n-button type="primary" :loading="saving" @click="saveData">{{ t('common.save') }}</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+  </div>
 </template>

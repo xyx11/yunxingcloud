@@ -1,10 +1,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+
+import { fetchSysRoles, createRole, updateRole, deleteRole } from '@/api/role'
+import { fetchMenuTree } from '@/api/menu'
 import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTree, NSwitch, NPopover, NCheckbox, darkTheme, lightTheme } from 'naive-ui'
+import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTree, NSwitch, NPopover, NCheckbox } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
 import type { DataTableColumns, TreeOption } from 'naive-ui'
 
@@ -12,7 +14,7 @@ interface Role { id: number; name: string; code: string; description: string; pe
 
 const { t } = useI18n()
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme)
+
 const roles = ref<Role[]>([])
 const loading = ref(false)
 const saving = ref(false)
@@ -67,7 +69,7 @@ const columnOptions = computed(() => (columns.value as any[])
 async function loadAll() {
   loading.value = true
   try {
-    const [r, m] = await Promise.all([request.get('/api/roles'), request.get('/api/menus/tree')])
+    const [r, m] = await Promise.all([fetchSysRoles(), fetchMenuTree()])
     roles.value = r.data
     menuTree.value = buildPermTree(m.data)
   } catch { notify.error(t('common.error')); }
@@ -104,25 +106,16 @@ async function saveRole() {
   const body = { ...form.value, permissions: perms }
   try {
     saving.value = true
-    if (editing.value) await request.put(`/api/roles/${editing.value.id}`, body)
-    else await request.post('/api/roles', body)
+    if (editing.value) await updateRole(editing.value.id, body)
+    else await createRole(body)
     showModal.value = false; notify.success(editing.value ? t('role.updateSuccess') : t('role.createSuccess')); await loadAll()
   } catch (e: any) { notify.error(e.response?.data?.message || t('common.error')) } finally { saving.value = false }
 }
 
-async function delRole(id: number) { await request.delete(`/api/roles/${id}`); notify.success(t('role.deleteSuccess')); await loadAll() }
-
-function exportCSV() {
-  const headers = t('role.csvHeaders') as unknown as string[]
-  const rows = filteredRoles.value.map(r => [r.id, r.name, r.code, r.description, r.permissions, r.enabled ? t('user.enabledLabel') : t('user.disabledLabel'), r.createdAt || '-'])
-  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${t('nav.roles')}.csv`; a.click(); URL.revokeObjectURL(url)
-  notify.success(t('role.exportSuccess'))
-}
+async function delRole(id: number) { await deleteRole(id); notify.success(t('role.deleteSuccess')); await loadAll() }
 
 async function toggleRole(role: Role) {
-  await request.put(`/api/roles/${role.id}`, { name: role.name, code: role.code, description: role.description, permissions: role.permissions, enabled: !role.enabled })
+  await updateRole(role.id, { name: role.name, code: role.code, description: role.description, permissions: role.permissions, enabled: !role.enabled })
   notify.success(role.enabled ? t('role.toggleDisabled') : t('role.toggleEnabled'))
   await loadAll()
 }
@@ -131,57 +124,55 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.roles')">
-        <template #header-extra>
-          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-        </template>
-        <n-space style="margin-bottom:12px" justify="space-between">
-          <n-space>
-            <n-input v-model:value="roleSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
-            <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
-            <n-button size="small" @click="roleSearch = ''">{{ t('common.reset') }}</n-button>
-          </n-space>
-          <n-space>
-            <n-button size="small" @click="loadAll" secondary>{{ t('common.refresh') }}</n-button>
-            <n-popover trigger="click" placement="bottom-end" :width="180">
-              <template #trigger>
-                <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
-              </template>
-              <div style="max-height:300px;overflow-y:auto">
-                <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
-                  <n-checkbox
-                    :checked="!hiddenKeys.has(opt.key)"
-                    @update:checked="toggleColumn(opt.key)"
-                  >
-                    {{ opt.title }}
-                  </n-checkbox>
-                </div>
-              </div>
-            </n-popover>
-          </n-space>
+  <div style="padding:20px">
+    <n-card :title="t('nav.roles')">
+      <template #header-extra>
+        <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+      </template>
+      <n-space style="margin-bottom:12px" justify="space-between">
+        <n-space>
+          <n-input v-model:value="roleSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
+          <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+          <n-button size="small" @click="roleSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
-        <n-data-table :columns="visibleColumns" :data="filteredRoles" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row:Role)=>row.id" />
-
-        <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:560px;width:95%" preset="card" display-directive="show">
-          <n-form label-placement="left" label-width="80">
-            <n-form-item :label="t('role.name')"><n-input v-model:value="form.name" :placeholder="t('role.name')" /></n-form-item>
-            <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>
-            <n-form-item :label="t('role.desc')"><n-input v-model:value="form.description" :placeholder="t('role.desc')" /></n-form-item>
-            <n-form-item :label="t('role.perms')">
-              <n-space style="margin-bottom:4px">
-                <n-button size="tiny" @click="selectAllPerms">{{ t('common.selectAll') }}</n-button>
-                <n-button size="tiny" @click="deselectAllPerms">{{ t('common.deselectAll') }}</n-button>
-              </n-space>
-              <div style="max-height:280px;overflow-y:auto;border:1px solid var(--n-border-color, #e8e8e8);border-radius:4px;padding:8px">
-                <n-tree :data="permNodes" checkable :checked-keys="checkedPerms" @update:checked-keys="(ks:string[])=>checkedPerms=ks" default-expand-all block-line />
+        <n-space>
+          <n-button size="small" @click="loadAll" secondary>{{ t('common.refresh') }}</n-button>
+          <n-popover trigger="click" placement="bottom-end" :width="180">
+            <template #trigger>
+              <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
+            </template>
+            <div style="max-height:300px;overflow-y:auto">
+              <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
+                <n-checkbox
+                  :checked="!hiddenKeys.has(opt.key)"
+                  @update:checked="toggleColumn(opt.key)"
+                >
+                  {{ opt.title }}
+                </n-checkbox>
               </div>
-            </n-form-item>
-          </n-form>
-          <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveRole">{{ t('common.save') }}</n-button></n-space></template>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+            </div>
+          </n-popover>
+        </n-space>
+      </n-space>
+      <n-data-table :columns="visibleColumns" :data="filteredRoles" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row:Role)=>row.id" />
+
+      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:560px;width:95%" preset="card" display-directive="show">
+        <n-form label-placement="left" label-width="80">
+          <n-form-item :label="t('role.name')"><n-input v-model:value="form.name" :placeholder="t('role.name')" /></n-form-item>
+          <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>
+          <n-form-item :label="t('role.desc')"><n-input v-model:value="form.description" :placeholder="t('role.desc')" /></n-form-item>
+          <n-form-item :label="t('role.perms')">
+            <n-space style="margin-bottom:4px">
+              <n-button size="tiny" @click="selectAllPerms">{{ t('common.selectAll') }}</n-button>
+              <n-button size="tiny" @click="deselectAllPerms">{{ t('common.deselectAll') }}</n-button>
+            </n-space>
+            <div style="max-height:280px;overflow-y:auto;border:1px solid var(--n-border-color, #e8e8e8);border-radius:4px;padding:8px">
+              <n-tree :data="permNodes" checkable :checked-keys="checkedPerms" @update:checked-keys="(ks:string[])=>checkedPerms=ks" default-expand-all block-line />
+            </div>
+          </n-form-item>
+        </n-form>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveRole">{{ t('common.save') }}</n-button></n-space></template>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

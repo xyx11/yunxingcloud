@@ -2,7 +2,8 @@
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 const { t, locale } = useI18n()
-import request from '@/api/request'
+import { fetchDashboard } from '@/api/stats'
+import { fetchSystemInfo, fetchSessions } from '@/api/system'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
@@ -26,9 +27,9 @@ function updateTime() {
 async function fetchData() {
   try {
     const [dash, info, sess] = await Promise.all([
-      request.get('/api/stats/dashboard'),
-      request.get('/api/system/info').catch(()=>({data:{}})),
-      request.get('/api/system/sessions').catch(()=>({data:{count:0}})),
+      fetchDashboard(),
+      fetchSystemInfo().catch(()=>({data:{}})),
+      fetchSessions().catch(()=>({data:{count:0}})),
     ])
     stats.value = { ...dash.data, sessions: sess.data.count, ...info.data }
     barOption.value = {
@@ -53,7 +54,7 @@ async function fetchData() {
         series: [{ data: dash.data.loginTrend.map((d:any)=>d.count), type: 'line', smooth: true, itemStyle: { color: '#43e97b' }, areaStyle: { color: 'rgba(67,233,123,0.15)' } }]
       }
     }
-  } catch {}
+  } catch {/* ignore */}
   updateTime()
 }
 

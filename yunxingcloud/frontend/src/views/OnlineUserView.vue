@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, onBeforeUnmount, h, computed } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted, onBeforeUnmount, h } from 'vue'
+import { fetchSessions, revokeSession } from '@/api/system'
 import { useNotify } from '@/composables/useNotify'
-import { NConfigProvider, NCard, NDataTable, NButton, NSpace, NTag, NPopconfirm, darkTheme, lightTheme } from 'naive-ui'
+
+import { NCard, NDataTable, NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 
 const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
@@ -14,7 +15,7 @@ interface OnlineSession {
 }
 
 const notify = useNotify()
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const sessions = ref<OnlineSession[]>([])
 const loading = ref(false)
 let timer: ReturnType<typeof setInterval>
@@ -41,7 +42,7 @@ const columns: DataTableColumns<OnlineSession> = [
 async function loadSessions() {
   loading.value = true
   try {
-    const res = await request.get('/api/system/sessions')
+    const res = await fetchSessions()
     sessions.value = res.data.sessions || []
   } catch { notify.error(t('common.error')); }
   loading.value = false
@@ -49,7 +50,7 @@ async function loadSessions() {
 
 async function kickUser(username: string) {
   try {
-    await request.post('/api/system/sessions/revoke', { username })
+    await revokeSession(username)
     notify.success(t('monitor.kickSuccess', { username }))
     await loadSessions()
   } catch { notify.error(t('common.error')); }
@@ -60,21 +61,19 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('monitor.onlineTitle')">
-        <template #header-extra>
-          <n-space>
-            <n-tag type="info" size="small">{{ t('monitor.onlineCount', { n: sessions.length }) }}</n-tag>
-            <n-button size="small" @click="loadSessions" secondary>{{ t('monitor.refresh') }}</n-button>
-          </n-space>
-        </template>
-        <n-dataTable
-          :columns="columns" :data="sessions" :loading="loading" size="small"
-          :bordered="false" :pagination="{ pageSize: 10 }"
-          :row-key="(row: OnlineSession) => row.token"
-        />
-      </n-card>
-    </div>
-  </n-config-provider>
+  <div style="padding:20px">
+    <n-card :title="t('monitor.onlineTitle')">
+      <template #header-extra>
+        <n-space>
+          <n-tag type="info" size="small">{{ t('monitor.onlineCount', { n: sessions.length }) }}</n-tag>
+          <n-button size="small" @click="loadSessions" secondary>{{ t('monitor.refresh') }}</n-button>
+        </n-space>
+      </template>
+      <n-dataTable
+        :columns="columns" :data="sessions" :loading="loading" size="small"
+        :bordered="false" :pagination="{ pageSize: 10 }"
+        :row-key="(row: OnlineSession) => row.token"
+      />
+    </n-card>
+  </div>
 </template>

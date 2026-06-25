@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, h, computed } from 'vue'
-import request from '@/api/request'
+import { ref, onMounted, h } from 'vue'
+import { fetchMenuTree, fetchAllMenus, createMenu, updateMenu, deleteMenu, moveMenu } from '@/api/menu'
 import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
+
 import {
-  NConfigProvider, NCard, NDataTable, NButton, NModal, NForm, NFormItem,
+  NCard, NDataTable, NButton, NModal, NForm, NFormItem,
   NInput, NInputNumber, NSelect, NSpace, NPopconfirm, NTag, NSwitch,
-  darkTheme, lightTheme
 } from 'naive-ui'
 import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
@@ -17,7 +17,7 @@ interface Menu {
 }
 
 const { t } = useI18n()
-const currentTheme = computed(() => localStorage.getItem("theme") === "dark" ? darkTheme : lightTheme)
+
 const menus = ref<Menu[]>([])
 const notify = useNotify()
 const allMenus = ref<Menu[]>([])
@@ -82,8 +82,8 @@ const columns: DataTableColumns<Menu> = [
     title: t('menu.actions'), key: 'actions', width: 180,
     render: (row) => h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, -1) }, { title: t('menu.moveUpTitle'), default: () => '↑' }),
-        h(NButton, { size: 'tiny', onClick: () => moveMenu(row.id, 1) }, { title: t('menu.moveDownTitle'), default: () => '↓' }),
+        h(NButton, { size: 'tiny', onClick: () => moveMenuById(row.id, -1) }, { title: t('menu.moveUpTitle'), default: () => '↑' }),
+        h(NButton, { size: 'tiny', onClick: () => moveMenuById(row.id, 1) }, { title: t('menu.moveDownTitle'), default: () => '↓' }),
         h(NButton, { size: 'tiny', onClick: () => editMenu(row) }, { default: () => t('common.edit') }),
         h(NPopconfirm, { onPositiveClick: () => delMenu(row.id) }, {
           trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }),
@@ -97,9 +97,9 @@ const columns: DataTableColumns<Menu> = [
 async function loadMenus() {
   loading.value = true
   try {
-    const res = await request.get('/api/menus/tree')
+    const res = await fetchMenuTree()
     menus.value = res.data
-    const flat = await request.get('/api/menus')
+    const flat = await fetchAllMenus()
     allMenus.value = flat.data
     parentOptions.value = [{ label: t('menu.noneParent'), value: null }]
     buildParentOptions(res.data)
@@ -127,21 +127,21 @@ async function saveMenu() {
   if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try {
-    if (editing.value) await request.put(`/api/menus/${editing.value.id}`, form.value)
-    else await request.post('/api/menus', form.value)
+    if (editing.value) await updateMenu(editing.value.id, form.value)
+    else await createMenu(form.value)
     showModal.value = false
     notify.success(editing.value ? t('menu.updateSuccess') : t('menu.createSuccess'))
     await loadMenus()
   } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
-async function moveMenu(id: number, direction: number) {
-  await request.put(`/api/menus/${id}/move`, { direction })
+async function moveMenuById(id: number, direction: number) {
+  await moveMenu(id, direction)
   await loadMenus()
 }
 
 async function delMenu(id: number) {
-  await request.delete(`/api/menus/${id}`)
+  await deleteMenu(id)
   notify.success(t('common.success'))
   await loadMenus()
 }
@@ -150,56 +150,54 @@ onMounted(loadMenus)
 </script>
 
 <template>
-  <n-config-provider :theme="currentTheme">
-    <div style="padding:20px">
-      <n-card :title="t('nav.menus')">
-        <template #header-extra>
-          <n-button type="primary" size="small" @click="addMenu"><template #icon>＋</template>{{ t('common.add') }}</n-button>
-        </template>
-        <n-space style="margin-bottom:12px"><n-button size="small" @click="loadMenus" secondary>{{ t('common.refresh') }}</n-button></n-space>
-        <n-data-table
-          :columns="columns" :data="menus" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
-          default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"
-        />
+  <div style="padding:20px">
+    <n-card :title="t('nav.menus')">
+      <template #header-extra>
+        <n-button type="primary" size="small" @click="addMenu"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+      </template>
+      <n-space style="margin-bottom:12px"><n-button size="small" @click="loadMenus" secondary>{{ t('common.refresh') }}</n-button></n-space>
+      <n-data-table
+        :columns="columns" :data="menus" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
+        default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"
+      />
 
-        <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" preset="card" display-directive="show" style="max-width:600px;width:95%">
-          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
-            <n-form-item :label="t('menu.name')">
-              <n-input v-model:value="form.name" />
-            </n-form-item>
-            <n-form-item :label="t('menu.type')">
-              <n-select v-model:value="form.menuType" :options="typeOptions" />
-            </n-form-item>
-            <n-form-item :label="t('menu.parent')">
-              <n-select v-model:value="form.parentId" :options="parentOptions as any" />
-            </n-form-item>
-            <n-form-item :label="t('menu.path')">
-              <n-input v-model:value="form.path" placeholder="/example" />
-            </n-form-item>
-            <n-form-item :label="t('menu.component')">
-              <n-input v-model:value="form.component" placeholder="ExampleView" />
-            </n-form-item>
-            <n-form-item :label="t('menu.icon')">
-              <n-select v-model:value="form.icon" :options="iconOptions" :placeholder="t('menu.selectIcon')" clearable filterable />
-            </n-form-item>
-            <n-form-item :label="t('menu.perms')">
-              <n-input v-model:value="form.perms" placeholder="system:example:list" />
-            </n-form-item>
-            <n-form-item :label="t('menu.sort')">
-              <n-input-number v-model:value="form.sortOrder" :min="0" />
-            </n-form-item>
-            <n-form-item :label="t('menu.visible')">
-              <n-switch v-model:value="form.visible" />
-            </n-form-item>
-          </n-form>
-          <template #footer>
-            <n-space justify="end">
-              <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-              <n-button type="primary" :loading="saving" @click="saveMenu">{{ t('common.save') }}</n-button>
-            </n-space>
-          </template>
-        </n-modal>
-      </n-card>
-    </div>
-  </n-config-provider>
+      <n-modal v-model:show="showModal" :title="editing ? t('menu.edit') : t('menu.addRoot')" preset="card" display-directive="show" style="max-width:600px;width:95%">
+        <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
+          <n-form-item :label="t('menu.name')">
+            <n-input v-model:value="form.name" />
+          </n-form-item>
+          <n-form-item :label="t('menu.type')">
+            <n-select v-model:value="form.menuType" :options="typeOptions" />
+          </n-form-item>
+          <n-form-item :label="t('menu.parent')">
+            <n-select v-model:value="form.parentId" :options="parentOptions as any" />
+          </n-form-item>
+          <n-form-item :label="t('menu.path')">
+            <n-input v-model:value="form.path" placeholder="/example" />
+          </n-form-item>
+          <n-form-item :label="t('menu.component')">
+            <n-input v-model:value="form.component" placeholder="ExampleView" />
+          </n-form-item>
+          <n-form-item :label="t('menu.icon')">
+            <n-select v-model:value="form.icon" :options="iconOptions" :placeholder="t('menu.selectIcon')" clearable filterable />
+          </n-form-item>
+          <n-form-item :label="t('menu.perms')">
+            <n-input v-model:value="form.perms" placeholder="system:example:list" />
+          </n-form-item>
+          <n-form-item :label="t('menu.sort')">
+            <n-input-number v-model:value="form.sortOrder" :min="0" />
+          </n-form-item>
+          <n-form-item :label="t('menu.visible')">
+            <n-switch v-model:value="form.visible" />
+          </n-form-item>
+        </n-form>
+        <template #footer>
+          <n-space justify="end">
+            <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
+            <n-button type="primary" :loading="saving" @click="saveMenu">{{ t('common.save') }}</n-button>
+          </n-space>
+        </template>
+      </n-modal>
+    </n-card>
+  </div>
 </template>

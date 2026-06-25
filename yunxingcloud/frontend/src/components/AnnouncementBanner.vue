@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import request from '@/api/request'
+import { fetchLatestNotices } from '@/api/notice'
+import { fetchFlags } from '@/api/system'
 import { NModal, NButton, NSpace } from 'naive-ui'
 
 const { t } = useI18n()
@@ -15,7 +16,7 @@ const popupDismissed = ref(sessionStorage.getItem('popup-dismissed'))
 
 async function fetchAnnouncement() {
   try {
-    const noticeRes = await request.get('/api/notices/latest').catch(() => ({ data: [] }))
+    const noticeRes = await fetchLatestNotices().catch(() => ({ data: [] }))
     if (noticeRes.data && noticeRes.data.length > 0) {
       const notice = noticeRes.data[0]
       announcement.value = notice.noticeTitle
@@ -24,7 +25,7 @@ async function fetchAnnouncement() {
       if (!popupDismissed.value) showPopup.value = true
       return
     }
-    const res = await request.get('/api/system/flags').catch(() => ({ data: {} }))
+    const res = await fetchFlags().catch(() => ({ data: {} }))
     const text = res.data.announcement || ''
     if (text) {
       if (text.startsWith('[WARN]')) { bannerType.value = 'warning'; announcement.value = text.replace('[WARN]', '').trim() }
@@ -47,6 +48,7 @@ onBeforeUnmount(() => clearInterval(timer))
     <button @click="dismiss" class="close-btn">✕</button>
   </div>
   <n-modal v-model:show="showPopup" preset="card" :title="announcement" style="width:500px">
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div style="line-height:1.8" v-html="noticeContent || t('common.noDetail')" />
     <template #footer>
       <n-space justify="end">

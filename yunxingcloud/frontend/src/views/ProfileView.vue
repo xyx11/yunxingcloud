@@ -2,7 +2,8 @@
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import request from '@/api/request'
+import { fetchUserInfo, changePassword as changePasswordApi } from '@/api/auth'
+import { uploadFile } from '@/api/file'
 import { useNotify } from '@/composables/useNotify'
 import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode, NUpload, NModal, NForm, NFormItem, NInput } from 'naive-ui'
 
@@ -40,7 +41,7 @@ async function changePassword() {
   }
   pwdLoading.value = true
   try {
-    await request.post('/api/password/change', { oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword })
+    await changePasswordApi(pwdForm.value.oldPassword, pwdForm.value.newPassword)
     notify.success(t('pwd.success'))
     showPwdModal.value = false
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
@@ -51,9 +52,9 @@ async function changePassword() {
 }
 
 onMounted(async () => {
-  const userRes = await request.get('/api/user')
-  user.value = userRes.data
-  avatarUrl.value = userRes.data.avatarUrl || ''
+  const userRes = await fetchUserInfo()
+  user.value = userRes as any
+  avatarUrl.value = (userRes as any).avatarUrl || ''
   const tok = localStorage.getItem('accessToken') || ''
   tokenPreview.value = tok ? tok.substring(0, 40) + '...' : ''
 })
@@ -69,7 +70,7 @@ function openInfo() { window.open('/actuator/info') }
 async function handleUpload({ file }: any) {
   const form = new FormData()
   form.append('file', file.file)
-  const res = await request.post('/api/files/upload', form)
+  const res = await uploadFile(form)
   if (res.data.success) {
     avatarUrl.value = res.data.url
     notify.success(t('profile.uploadSuccess'))
