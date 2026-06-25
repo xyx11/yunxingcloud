@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchClientInfo } from '@/api/consent'
 import {
-  NConfigProvider, NCard, NButton, NSpace, NTag, NSpin,
+  NCard, NButton, NSpace, NTag, NSpin,
 } from 'naive-ui'
 
 const { t } = useI18n()
@@ -73,30 +73,28 @@ function appendHidden(form: HTMLFormElement, name: string, value: string) {
 </script>
 
 <template>
-  <n-config-provider>
-    <div class="consent-page">
-      <n-card class="consent-card">
-        <h1 class="title">{{ t('consent.title') }}</h1>
+  <div class="consent-page">
+    <n-card class="consent-card">
+      <h1 class="title">{{ t('consent.title') }}</h1>
 
-        <n-spin :show="loading">
-          <p class="prompt">
-            <strong>{{ clientName }}</strong> {{ t('consent.prompt') }}
-          </p>
+      <n-spin :show="loading">
+        <p class="prompt">
+          <strong>{{ clientName }}</strong> {{ t('consent.prompt') }}
+        </p>
 
-          <n-space vertical class="scopes">
-            <n-tag v-for="scope in rawScopes" :key="scope" type="info" size="large">
-              {{ scopeLabel(scope) }}
-            </n-tag>
-          </n-space>
-        </n-spin>
-
-        <n-space justify="center" class="actions">
-          <n-button size="large" @click="deny" :disabled="submitted">{{ t('consent.deny') }}</n-button>
-          <n-button type="primary" size="large" @click="approve" :loading="submitted">{{ t('consent.approve') }}</n-button>
+        <n-space vertical class="scopes">
+          <n-tag v-for="scope in rawScopes" :key="scope" type="info" size="large">
+            {{ scopeLabel(scope) }}
+          </n-tag>
         </n-space>
-      </n-card>
-    </div>
-  </n-config-provider>
+      </n-spin>
+
+      <n-space justify="center" class="actions">
+        <n-button size="large" @click="deny" :disabled="submitted">{{ t('consent.deny') }}</n-button>
+        <n-button type="primary" size="large" @click="approve" :loading="submitted">{{ t('consent.approve') }}</n-button>
+      </n-space>
+    </n-card>
+  </div>
 </template>
 
 <style scoped>

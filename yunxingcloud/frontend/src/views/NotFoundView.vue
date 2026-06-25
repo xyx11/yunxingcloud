@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { NConfigProvider, NButton, NSpace, NTag } from 'naive-ui'
+import { NButton, NSpace, NTag } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -15,30 +15,28 @@ const links = [
 </script>
 
 <template>
-  <n-config-provider>
-    <div class="page">
-      <div class="container">
-        <div class="code">404</div>
-        <div class="divider" />
-        <div class="title">{{ t('notFound.title') }}</div>
-        <div class="subtitle">{{ t('notFound.subtitle') }}</div>
-        <div style="margin: 28px 0 20px;">
-          <n-space justify="center" size="small">
-            <n-tag
-              v-for="link in links" :key="link.path"
-              type="info" size="medium" style="cursor:pointer"
-              @click="router.push(link.path)"
-            >
-              {{ link.label }}
-            </n-tag>
-          </n-space>
-        </div>
-        <n-button type="primary" size="large" @click="router.push('/')">
-          {{ t('notFound.backHome') }}
-        </n-button>
+  <div class="page">
+    <div class="container">
+      <div class="code">404</div>
+      <div class="divider" />
+      <div class="title">{{ t('notFound.title') }}</div>
+      <div class="subtitle">{{ t('notFound.subtitle') }}</div>
+      <div style="margin: 28px 0 20px;">
+        <n-space justify="center" size="small">
+          <n-tag
+            v-for="link in links" :key="link.path"
+            type="info" size="medium" style="cursor:pointer"
+            @click="router.push(link.path)"
+          >
+            {{ link.label }}
+          </n-tag>
+        </n-space>
       </div>
+      <n-button type="primary" size="large" @click="router.push('/')">
+        {{ t('notFound.backHome') }}
+      </n-button>
     </div>
-  </n-config-provider>
+  </div>
 </template>
 
 <style scoped>
