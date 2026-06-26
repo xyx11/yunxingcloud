@@ -31,9 +31,9 @@ const rules: FormRules = {
 }
 
 const socialProviders = computed(() => [
-  { name: t('login.wechat'), icon: '💬', provider: 'wechat' },
-  { name: t('login.qq'), icon: '🐧', provider: 'qq' },
-  { name: t('login.alipay'), icon: '💙', provider: 'alipay' },
+  { name: t('login.wechat'), color: '#07C160', provider: 'wechat', svg: 'M8.5 11.5c-1.5 0-2.7-.5-3.5-1.5l.7-2.3c.5 1 1.5 1.5 2.8 1.5 1.7 0 2.8-1 2.8-2.3 0-1.2-.9-2-2.5-2-.8 0-1.5.2-2 .5l.6-5.5h5.5l-.3 1.5h-4l-.3 2.3c.5-.2 1.2-.3 2-.3 2.5 0 4 1.3 4 3.3 0 2.2-1.8 3.8-4.5 3.8z' },
+  { name: t('login.qq'), color: '#12B7F5', provider: 'qq', svg: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 14c-2.5 0-4.5-2-4.5-4.5S10.5 7 13 7s4.5 2 4.5 4.5S15.5 16 13 16zm0-1.5c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z' },
+  { name: t('login.alipay'), color: '#1677FF', provider: 'alipay', svg: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1 6.5c-1.5 0-3 .5-4 1.5l.5-1c.5-.8 1.3-1.3 2.2-1.3 1.2 0 2 .5 2.5 1.3.3-.2.8-.5 1.3-.5 1 0 1.8.5 2.3 1.3h-2.5c-.5 0-1 .3-1.3.7.5.5 1 1 1.8 1 1.2 0 2.2-.5 3-1.3-.2 1.5-1 3-2.5 3-1 0-2-.5-2.5-1.5-.5.5-1.2.8-2 .8-1.3 0-2.3-.8-2.5-1.8.5.3 1 .5 1.5.5.8 0 1.5-.5 2-1-.3-.5-.5-1.2-.5-2 0-1 .5-2 1.5-2.5.3.5.8 1 1.5 1 .7 0 1.2-.3 1.5-.8-.3-.5-.8-1-1.5-1zM16 15.5c1 0 1.8-.5 2.3-1.3-.3 1-1 2.3-2.3 2.3-.5 0-1-.3-1.3-.7.3-.2.8-.3 1.3-.3z' },
 ])
 
 onMounted(async () => {
@@ -152,7 +152,9 @@ function handleSocialLogin(provider: string) {
 
       <div style="display:flex;justify-content:center;gap:24px;">
         <div v-for="sp in socialProviders" :key="sp.provider" class="social-btn" @click="handleSocialLogin(sp.provider)">
-          <span class="social-icon">{{ sp.icon }}</span>
+          <svg class="social-icon" viewBox="0 0 24 24" width="28" height="28" :fill="sp.color">
+            <path :d="sp.svg" />
+          </svg>
           <span class="social-name">{{ sp.name }}</span>
         </div>
       </div>

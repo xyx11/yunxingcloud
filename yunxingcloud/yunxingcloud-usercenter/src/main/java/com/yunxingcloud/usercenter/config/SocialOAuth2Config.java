@@ -12,9 +12,12 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 public class SocialOAuth2Config {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    public SocialOAuth2Config(CustomOAuth2UserService customOAuth2UserService) {
+    public SocialOAuth2Config(CustomOAuth2UserService customOAuth2UserService,
+                               OAuth2SuccessHandler oAuth2SuccessHandler) {
         this.customOAuth2UserService = customOAuth2UserService;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
     @Bean
@@ -27,7 +30,7 @@ public class SocialOAuth2Config {
                 .loginPage("/login")
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService))
-                .defaultSuccessUrl("/", true)
+                .successHandler(oAuth2SuccessHandler)
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));

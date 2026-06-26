@@ -35,9 +35,10 @@ const ApprovalView = () => import('@/views/ApprovalView.vue')
 const RegisterApprovalView = () => import('@/views/RegisterApprovalView.vue')
 const OAuth2ClientView = () => import('@/views/OAuth2ClientView.vue')
 const DataScreenView = () => import('@/views/DataScreenView.vue')
+const OAuth2CallbackView = () => import('@/views/OAuth2CallbackView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
-const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password']
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
 
 const router = createRouter({
   history: createWebHistory(),
@@ -78,6 +79,7 @@ const router = createRouter({
     },
     { path: '/screen', name: 'DataScreen', component: DataScreenView, meta: { title: '数据大屏' } },
     { path: '/oauth2/consent', name: 'Consent', component: ConsentView, meta: { title: '授权确认' } },
+    { path: '/oauth2/callback', name: 'OAuth2Callback', component: OAuth2CallbackView, meta: { title: '第三方登录' } },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFoundView, meta: { title: '404' } },
   ],
   scrollBehavior() {
