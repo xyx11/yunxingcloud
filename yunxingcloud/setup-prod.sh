@@ -3,7 +3,7 @@ set -e
 # ============================================
 # 生产环境初始化: MySQL + systemd + prod模式
 # ============================================
-DB_PASS="Yunxingcloud@2026"
+DB_PASS="${DB_PASSWORD:?Set DB_PASSWORD}"
 JWT_SECRET="yunxingcloud-prod-jwt-secret-2026-very-long-key-change-me"
 APP_DIR="/opt/yunxingcloud"
 JAVA_BIN="/usr/lib/jvm/java-17-openjdk-17.0.19.0.10-1.0.2.1.al8.x86_64/bin/java"
