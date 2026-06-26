@@ -1,20 +1,36 @@
-FROM eclipse-temurin:17-jdk-alpine AS builder
+# ============================================
+# yunxingcloud 多阶段 Docker 构建
+# 用法: docker build --build-arg SERVICE=core -t yunxingcloud-core .
+# ============================================
+
+# ---- 阶段 1: 前端构建 ----
+FROM node:20-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# ---- 阶段 2: 后端构建 ----
+FROM eclipse-temurin:17-jdk-alpine AS backend-builder
 WORKDIR /build
 COPY . .
+COPY --from=frontend-builder /frontend/dist/ /build/yunxingcloud-core/src/main/resources/static/
 ARG SERVICE=yunxingcloud-core
 RUN ./mvnw package -pl ${SERVICE} -am -DskipTests -q
 
+# ---- 阶段 3: 运行时 ----
 FROM eclipse-temurin:17-jre-alpine
-RUN apk add --no-cache wget
+RUN apk add --no-cache curl
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 ARG SERVICE=yunxingcloud-core
 ARG PORT=8080
-COPY --from=builder /build/${SERVICE}/target/*.jar app.jar
+COPY --from=backend-builder /build/${SERVICE}/target/*.jar app.jar
 RUN mkdir -p uploads/backup logs && chown -R app:app /app
 USER app
 EXPOSE ${PORT}
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=60s \
-  CMD wget -qO- http://localhost:${PORT}/actuator/health || exit 1
-ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Djava.security.egd=file:/dev/./urandom"
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=90s \
+  CMD curl -f http://localhost:${PORT}/actuator/health || exit 1
+ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

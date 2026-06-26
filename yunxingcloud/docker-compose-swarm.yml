@@ -1,0 +1,146 @@
+# ============================================
+# yunxingcloud Docker Swarm 部署配置
+# 用法: docker stack deploy -c docker-compose-swarm.yml yunxingcloud
+# ============================================
+
+version: '3.8'
+
+x-defaults: &defaults
+  restart_policy:
+    condition: on-failure
+    delay: 10s
+    max_attempts: 3
+
+services:
+  # ===== 基础设施 =====
+  mysql:
+    image: mysql:8.0
+    <<: *defaults
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      MYSQL_DATABASE: sso_yunxingcloud
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 512M }
+        reservations: { memory: 256M }
+
+  redis:
+    image: redis:7-alpine
+    <<: *defaults
+    volumes:
+      - redis_data:/data
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 128M }
+        reservations: { memory: 32M }
+
+  # ===== 应用服务 =====
+  core:
+    image: ${REGISTRY:-}yunxingcloud-core:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-core, PORT: 8080 }
+    <<: *defaults
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/sso_yunxingcloud?serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_USERNAME: ${SMTP_USERNAME:-noreply@yunxingcloud.com}
+      SPRING_PROFILES_ACTIVE: prod
+    volumes:
+      - upload_data:/app/uploads
+      - log_data:/app/logs
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 384M }
+        reservations: { memory: 192M }
+
+  usercenter:
+    image: ${REGISTRY:-}yunxingcloud-usercenter:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-usercenter, PORT: 8081 }
+    <<: *defaults
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 384M }
+        reservations: { memory: 192M }
+
+  gateway:
+    image: ${REGISTRY:-}yunxingcloud-gateway:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-gateway, PORT: 8090 }
+    <<: *defaults
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "80:8090"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 192M }
+        reservations: { memory: 64M }
+
+volumes:
+  mysql_data:
+  redis_data:
+  upload_data:
+  log_data:
+
+networks:
+  app:
+    driver: overlay
