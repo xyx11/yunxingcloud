@@ -30,9 +30,9 @@ public class GatewayRouteConfig {
                 .route("usercenter-wellknown", r -> r
                         .path("/.well-known/**")
                         .uri(UC))
-                // User management -> usercenter
+                // User management -> usercenter (social accounts only)
                 .route("usercenter-users", r -> r
-                        .path("/api/users/**", "/api/user/**")
+                        .path("/api/users/**", "/api/user/social/**")
                         .uri(UC))
                 // Roles -> usercenter
                 .route("usercenter-roles", r -> r
