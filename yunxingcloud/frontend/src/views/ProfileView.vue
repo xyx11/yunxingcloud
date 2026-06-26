@@ -3,9 +3,10 @@ import { useI18n } from 'vue-i18n'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchUserInfo, changePassword as changePasswordApi } from '@/api/auth'
+import { fetchSocialAccounts, unbindSocialAccount, type SocialAccount } from '@/api/user'
 import { uploadFile } from '@/api/file'
 import { useNotify } from '@/composables/useNotify'
-import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode, NUpload, NModal, NForm, NFormItem, NInput } from 'naive-ui'
+import { NCard, NTag, NSpace, NDescriptions, NDescriptionsItem, NButton, NCode, NUpload, NModal, NForm, NFormItem, NInput, NPopconfirm } from 'naive-ui'
 
 const { t } = useI18n()
 
@@ -23,6 +24,27 @@ const pwdLoading = ref(false)
 const themeColors = ['#667eea','#43e97b','#f093fb','#4facfe','#ff9a9e','#ffd700']
 const currentColor = ref(localStorage.getItem('themeColor') || '#667eea')
 const pageSizeSetting = ref(Number(localStorage.getItem('pageSize') || '10'))
+const socialAccounts = ref<SocialAccount[]>([])
+const socialLoading = ref(false)
+
+const socialProviderColors: Record<string, string> = { wechat: '#07C160', qq: '#12B7F5', alipay: '#1677FF' }
+const socialProviderNames: Record<string, string> = { wechat: '微信', qq: 'QQ', alipay: '支付宝' }
+
+async function loadSocialAccounts() {
+  socialLoading.value = true
+  try { socialAccounts.value = await fetchSocialAccounts() } catch {}
+  socialLoading.value = false
+}
+
+async function unbindSocial(id: number) {
+  await unbindSocialAccount(id)
+  notify.success('已解绑')
+  loadSocialAccounts()
+}
+
+function bindSocial(provider: string) {
+  window.location.href = `/oauth2/authorization/${provider}`
+}
 
 function setThemeColor(color: string) {
   currentColor.value = color
@@ -57,6 +79,7 @@ onMounted(async () => {
   avatarUrl.value = (userRes as any).avatarUrl || ''
   const tok = localStorage.getItem('accessToken') || ''
   tokenPreview.value = tok ? tok.substring(0, 40) + '...' : ''
+  loadSocialAccounts()
 })
 
 function copyToken() {
@@ -130,6 +153,26 @@ async function handleUpload({ file }: any) {
 
     <n-card :title="t('profile.accountSecurity')" style="margin-top:16px">
       <n-button size="small" type="warning" @click="showPwdModal = true">{{ t('pwd.change') }}</n-button>
+    </n-card>
+
+    <n-card title="第三方账号绑定" style="margin-top:16px">
+      <n-space vertical>
+        <n-space v-if="socialAccounts.length">
+          <n-tag
+            v-for="sa in socialAccounts" :key="sa.id"
+            :color="{ color: socialProviderColors[sa.provider] || '#999', textColor: '#fff' }"
+            size="medium" round closable @close="unbindSocial(sa.id)"
+          >
+            {{ socialProviderNames[sa.provider] || sa.provider }}: {{ sa.nickname }}
+          </n-tag>
+        </n-space>
+        <span v-else style="color:#999;font-size:13px">暂未绑定第三方账号</span>
+        <n-space style="margin-top:8px">
+          <n-button size="tiny" @click="bindSocial('wechat')" :style="{borderColor:socialProviderColors.wechat,color:socialProviderColors.wechat}">💬 绑定微信</n-button>
+          <n-button size="tiny" @click="bindSocial('qq')" :style="{borderColor:socialProviderColors.qq,color:socialProviderColors.qq}">🐧 绑定QQ</n-button>
+          <n-button size="tiny" @click="bindSocial('alipay')" :style="{borderColor:socialProviderColors.alipay,color:socialProviderColors.alipay}">💙 绑定支付宝</n-button>
+        </n-space>
+      </n-space>
     </n-card>
 
     <n-card :title="t('profile.quickActions')" style="margin-top:16px">

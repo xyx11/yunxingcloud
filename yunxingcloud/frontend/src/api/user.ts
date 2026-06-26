@@ -121,3 +121,17 @@ export async function approveUser(id: number) {
 export async function rejectUser(id: number) {
   return request.put(`/api/users/${id}/reject`)
 }
+
+// Social accounts
+export interface SocialAccount {
+  id: number; provider: string; nickname: string; avatarUrl: string
+}
+
+export async function fetchSocialAccounts(): Promise<SocialAccount[]> {
+  const res = await request.get('/api/user/social')
+  return res.data
+}
+
+export async function unbindSocialAccount(id: number) {
+  return request.delete(`/api/user/social/${id}`)
+}
