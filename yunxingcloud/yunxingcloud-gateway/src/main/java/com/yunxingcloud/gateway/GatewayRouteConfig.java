@@ -8,49 +8,52 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayRouteConfig {
 
+    private static final String CORE = "http://localhost:8080";
+    private static final String UC = "http://localhost:8081";
+
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                // Auth endpoints -> core
+                // Auth -> core
                 .route("core-auth", r -> r
                         .path("/api/login", "/api/refresh", "/api/logout", "/api/csrf", "/api/captcha", "/api/publicKey")
-                        .uri("lb://yunxingcloud-core"))
-                // User registration -> usercenter
+                        .uri(CORE))
+                // Register -> usercenter
                 .route("usercenter-register", r -> r
                         .path("/api/register")
-                        .uri("lb://yunxingcloud-usercenter"))
-                // OAuth2 social login -> usercenter
+                        .uri(UC))
+                // OAuth2 -> usercenter
                 .route("usercenter-oauth2", r -> r
                         .path("/oauth2/**", "/login/**")
-                        .uri("lb://yunxingcloud-usercenter"))
-                // OIDC discovery -> usercenter
+                        .uri(UC))
+                // OIDC -> usercenter
                 .route("usercenter-wellknown", r -> r
                         .path("/.well-known/**")
-                        .uri("lb://yunxingcloud-usercenter"))
+                        .uri(UC))
                 // User management -> usercenter
                 .route("usercenter-users", r -> r
                         .path("/api/users/**", "/api/user/**")
-                        .uri("lb://yunxingcloud-usercenter"))
-                // Roles -> usercenter (usercenter has full RoleController)
+                        .uri(UC))
+                // Roles -> usercenter
                 .route("usercenter-roles", r -> r
                         .path("/api/roles/**")
-                        .uri("lb://yunxingcloud-usercenter"))
+                        .uri(UC))
                 // Departments -> usercenter
                 .route("usercenter-depts", r -> r
                         .path("/api/departments/**")
-                        .uri("lb://yunxingcloud-usercenter"))
-                // Password endpoints -> core
+                        .uri(UC))
+                // Password -> core
                 .route("core-password", r -> r
                         .path("/api/password/**")
-                        .uri("lb://yunxingcloud-core"))
+                        .uri(CORE))
                 // Business API -> core
                 .route("core-api", r -> r
                         .path("/api/**")
-                        .uri("lb://yunxingcloud-core"))
-                // SPA frontend -> core
+                        .uri(CORE))
+                // SPA -> core
                 .route("core-spa", r -> r
                         .path("/**")
-                        .uri("lb://yunxingcloud-core"))
+                        .uri(CORE))
                 .build();
     }
 }
