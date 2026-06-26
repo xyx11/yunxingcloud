@@ -57,8 +57,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         log.info("OAuth2 login success: {} -> redirect with token", username);
 
-        // Redirect to frontend with token
-        String redirectUrl = frontendUrl + "/#/oauth2/callback?token=" + token
+        // Check for custom redirect_uri (e.g. binding from profile page)
+        String customRedirect = request.getParameter("redirect_uri");
+        String baseUrl = (customRedirect != null && !customRedirect.isBlank())
+                ? customRedirect
+                : (frontendUrl + "/#/oauth2/callback");
+
+        String redirectUrl = baseUrl + (baseUrl.contains("?") ? "&" : "?")
+                + "token=" + token
                 + "&username=" + username
                 + "&nickname=" + (nickname != null ? nickname : "");
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);

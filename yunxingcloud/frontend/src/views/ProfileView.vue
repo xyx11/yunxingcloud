@@ -29,6 +29,11 @@ const socialLoading = ref(false)
 
 const socialProviderColors: Record<string, string> = { wechat: '#07C160', qq: '#12B7F5', alipay: '#1677FF' }
 const socialProviderNames: Record<string, string> = { wechat: '微信', qq: 'QQ', alipay: '支付宝' }
+const socialProviderSvgs: Record<string, string> = {
+  wechat: 'M8.5 11.5c-1.5 0-2.7-.5-3.5-1.5l.7-2.3c.5 1 1.5 1.5 2.8 1.5 1.7 0 2.8-1 2.8-2.3 0-1.2-.9-2-2.5-2-.8 0-1.5.2-2 .5l.6-5.5h5.5l-.3 1.5h-4l-.3 2.3c.5-.2 1.2-.3 2-.3 2.5 0 4 1.3 4 3.3 0 2.2-1.8 3.8-4.5 3.8z',
+  qq: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 14c-2.5 0-4.5-2-4.5-4.5S10.5 7 13 7s4.5 2 4.5 4.5S15.5 16 13 16zm0-1.5c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z',
+  alipay: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1 6.5c-1.5 0-3 .5-4 1.5l.5-1c.5-.8 1.3-1.3 2.2-1.3 1.2 0 2 .5 2.5 1.3.3-.2.8-.5 1.3-.5 1 0 1.8.5 2.3 1.3h-2.5c-.5 0-1 .3-1.3.7.5.5 1 1 1.8 1 1.2 0 2.2-.5 3-1.3-.2 1.5-1 3-2.5 3-1 0-2-.5-2.5-1.5-.5.5-1.2.8-2 .8-1.3 0-2.3-.8-2.5-1.8.5.3 1 .5 1.5.5.8 0 1.5-.5 2-1-.3-.5-.5-1.2-.5-2 0-1 .5-2 1.5-2.5.3.5.8 1 1.5 1 .7 0 1.2-.3 1.5-.8-.3-.5-.8-1-1.5-1zM16 15.5c1 0 1.8-.5 2.3-1.3-.3 1-1 2.3-2.3 2.3-.5 0-1-.3-1.3-.7.3-.2.8-.3 1.3-.3z',
+}
 
 async function loadSocialAccounts() {
   socialLoading.value = true
@@ -43,7 +48,8 @@ async function unbindSocial(id: number) {
 }
 
 function bindSocial(provider: string) {
-  window.location.href = `/oauth2/authorization/${provider}`
+  const redirect = encodeURIComponent(window.location.origin + '/#/profile')
+  window.location.href = `/oauth2/authorization/${provider}?redirect_uri=${redirect}`
 }
 
 function setThemeColor(color: string) {
@@ -168,9 +174,10 @@ async function handleUpload({ file }: any) {
         </n-space>
         <span v-else style="color:#999;font-size:13px">暂未绑定第三方账号</span>
         <n-space style="margin-top:8px">
-          <n-button size="tiny" @click="bindSocial('wechat')" :style="{borderColor:socialProviderColors.wechat,color:socialProviderColors.wechat}">💬 绑定微信</n-button>
-          <n-button size="tiny" @click="bindSocial('qq')" :style="{borderColor:socialProviderColors.qq,color:socialProviderColors.qq}">🐧 绑定QQ</n-button>
-          <n-button size="tiny" @click="bindSocial('alipay')" :style="{borderColor:socialProviderColors.alipay,color:socialProviderColors.alipay}">💙 绑定支付宝</n-button>
+          <n-button v-for="p in ['wechat','qq','alipay']" :key="p" size="tiny" @click="bindSocial(p)" :style="{borderColor:socialProviderColors[p],color:socialProviderColors[p]}">
+            <svg viewBox="0 0 24 24" width="14" height="14" :fill="socialProviderColors[p]" style="margin-right:4px;vertical-align:middle"><path :d="socialProviderSvgs[p]" /></svg>
+            绑定{{ socialProviderNames[p] }}
+          </n-button>
         </n-space>
       </n-space>
     </n-card>
