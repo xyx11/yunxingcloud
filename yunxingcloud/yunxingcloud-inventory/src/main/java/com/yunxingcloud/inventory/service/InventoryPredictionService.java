@@ -23,8 +23,9 @@ public class InventoryPredictionService {
 
         for (Stock stock : all) {
             // 计算近7天日均出库量
-            List<StockLog> recentOut = logRepo.findByProductIdAndWarehouseIdOrderByCreatedAtDesc(
-                    stock.getProductId(), stock.getWarehouseId()).stream()
+            List<StockLog> recentOut = logRepo.findByProductIdOrderByCreatedAtDesc(
+                    stock.getProductId()).stream()
+                    .filter(l -> l.getWarehouseId().equals(stock.getWarehouseId()))
                     .filter(l -> "out".equals(l.getType()) || "order_out".equals(l.getType()))
                     .toList();
 
