@@ -1,0 +1,17 @@
+# Gateway 开发环境配置
+server:
+  port: 8090
+
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:127.0.0.1:8848}
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin
+
+logging:
+  level:
+    com.yunxingcloud: DEBUG
+    org.springframework.cloud.gateway: DEBUG

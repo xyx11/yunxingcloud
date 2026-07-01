@@ -76,8 +76,17 @@ down() {
 # ---- 滚动更新单个服务 ----
 update() {
   local svc=${1:-core}
-  info "更新 $svc..."
-  docker build --build-arg SERVICE=yunxingcloud-${svc} --build-arg PORT=8080 \
+  local port=8080
+  case "$svc" in
+    core)       port=8080 ;;
+    usercenter) port=8081 ;;
+    payment)    port=8083 ;;
+    order)      port=8084 ;;
+    inventory)  port=8085 ;;
+    gateway)    port=8090 ;;
+  esac
+  info "更新 $svc (端口 $port)..."
+  docker build --build-arg SERVICE=yunxingcloud-${svc} --build-arg PORT=$port \
     -t ${REGISTRY}yunxingcloud-${svc}:${TAG} .
   docker service update --force --image ${REGISTRY}yunxingcloud-${svc}:${TAG} \
     ${STACK_NAME}_${svc}

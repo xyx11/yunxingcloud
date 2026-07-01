@@ -4,14 +4,14 @@
 
 | 数据库 | 表数 | 迁移数 | 服务 |
 |--------|------|--------|------|
-| sso_yunxingcloud | 15 | V1-V18 | core |
+| yunxingcloud_core | 15 | V1-V18 | core |
 | yunxingcloud_usercenter | 3 | V1 | usercenter |
 | yunxingcloud_payment | 2 | V1 | payment |
 | yunxingcloud_order | 14 | V1-V4 | order |
 | yunxingcloud_inventory | 3 | V1-V2 | inventory |
 | yunxingcloud_core | - | - | core(备用) |
 
-## sso_yunxingcloud (认证 + 系统管理)
+## yunxingcloud_core (认证 + 系统管理)
 
 ### sys_user
 | 字段 | 类型 | 说明 |

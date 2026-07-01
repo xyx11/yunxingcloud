@@ -11,12 +11,16 @@ import java.nio.charset.StandardCharsets;
 @RequestMapping("/api/export")
 public class DataExportController {
 
-    private final RestTemplate rest = new RestTemplate();
+    private final RestTemplate rest;
+
+    public DataExportController(RestTemplate rest) {
+        this.rest = rest;
+    }
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @GetMapping("/products")
     public ResponseEntity<byte[]> exportProducts() {
-        byte[] data = rest.getForObject("http://127.0.0.1:8084/api/products/export", byte[].class);
+        byte[] data = rest.getForObject("http://yunxingcloud-order/api/products/export", byte[].class);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .header("Content-Disposition", "attachment; filename=products.csv")

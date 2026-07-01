@@ -2,6 +2,11 @@ spring:
   application:
     name: yunxingcloud-payment
 
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
@@ -44,6 +49,9 @@ spring:
             data-type: json
             rule-type: degrade
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
 management:
   endpoints:
     web:
@@ -52,6 +60,7 @@ management:
 
 server:
   port: 8083
+  shutdown: graceful
 
 # ---- 支付网关配置 ----
 # 留空 = mock 模式（开箱即用，返回模拟支付数据）

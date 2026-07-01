@@ -10,7 +10,11 @@ import java.util.*;
 @RequestMapping("/api/query")
 public class FlexQueryController {
 
-    private final RestTemplate rest = new RestTemplate();
+    private final RestTemplate rest;
+
+    public FlexQueryController(RestTemplate rest) {
+        this.rest = rest;
+    }
 
     /** 灵活数据查询: 一次请求获取多个资源 */
     @PostMapping
@@ -31,13 +35,13 @@ public class FlexQueryController {
 
     private Object fetchResource(String resource, Map<String, Object> params) {
         return switch (resource) {
-            case "products" -> rest.getForObject("http://127.0.0.1:8084/api/products/hot", Object.class);
-            case "orders" -> rest.getForObject("http://127.0.0.1:8084/api/analytics/sales-overview", Object.class);
-            case "revenue" -> rest.getForObject("http://127.0.0.1:8084/api/revenue/overview", Object.class);
-            case "alerts" -> rest.getForObject("http://127.0.0.1:8085/api/inventory/alerts", Object.class);
-            case "reviews" -> rest.getForObject("http://127.0.0.1:8084/api/reviews/stats", Object.class);
-            case "campaigns" -> rest.getForObject("http://127.0.0.1:8084/api/campaigns", Object.class);
-            case "tickets" -> rest.getForObject("http://127.0.0.1:8080/api/tickets", Object.class);
+            case "products" -> rest.getForObject("http://yunxingcloud-order/api/products/hot", Object.class);
+            case "orders" -> rest.getForObject("http://yunxingcloud-order/api/analytics/sales-overview", Object.class);
+            case "revenue" -> rest.getForObject("http://yunxingcloud-order/api/revenue/overview", Object.class);
+            case "alerts" -> rest.getForObject("http://yunxingcloud-inventory/api/inventory/alerts", Object.class);
+            case "reviews" -> rest.getForObject("http://yunxingcloud-order/api/reviews/stats", Object.class);
+            case "campaigns" -> rest.getForObject("http://yunxingcloud-order/api/campaigns", Object.class);
+            case "tickets" -> rest.getForObject("http://yunxingcloud-core/api/tickets", Object.class);
             default -> Map.of("error", "unknown resource: " + resource);
         };
     }

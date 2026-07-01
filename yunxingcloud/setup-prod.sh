@@ -4,9 +4,9 @@ set -e
 # 生产环境初始化: MySQL + systemd + prod模式
 # ============================================
 DB_PASS="${DB_PASSWORD:?Set DB_PASSWORD}"
-JWT_SECRET="yunxingcloud-prod-jwt-secret-2026-very-long-key-change-me"
+JWT_SECRET="${JWT_SECRET:-yunxingcloud-prod-jwt-secret-change-me}"
 APP_DIR="/opt/yunxingcloud"
-JAVA_BIN="/usr/lib/jvm/java-17-openjdk-17.0.19.0.10-1.0.2.1.al8.x86_64/bin/java"
+JAVA_BIN="${JAVA_HOME:-/usr/bin}/java"
 GREEN='\033[0;32m'; NC='\033[0m'
 info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 
@@ -25,16 +25,32 @@ fi
 
 info "2. 创建数据库..."
 mysql -u root -p"$DB_PASS" << SQL 2>/dev/null || mysql -u root << SQL 2>/dev/null
-CREATE DATABASE IF NOT EXISTS sso_yunxingcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS yunxingcloud_core CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS yunxingcloud_usercenter CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS yunxingcloud_payment CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS yunxingcloud_order CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS yunxingcloud_inventory CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS 'yunxingcloud'@'localhost' IDENTIFIED BY '$DB_PASS';
-GRANT ALL PRIVILEGES ON sso_yunxingcloud.* TO 'yunxingcloud'@'localhost';
+GRANT ALL PRIVILEGES ON yunxingcloud_core.* TO 'yunxingcloud'@'localhost';
+GRANT ALL PRIVILEGES ON yunxingcloud_usercenter.* TO 'yunxingcloud'@'localhost';
+GRANT ALL PRIVILEGES ON yunxingcloud_payment.* TO 'yunxingcloud'@'localhost';
+GRANT ALL PRIVILEGES ON yunxingcloud_order.* TO 'yunxingcloud'@'localhost';
+GRANT ALL PRIVILEGES ON yunxingcloud_inventory.* TO 'yunxingcloud'@'localhost';
 FLUSH PRIVILEGES;
 SQL
 
 info "3. 创建 systemd 服务..."
-cat > /etc/systemd/system/yunxingcloud.service << SERVICE
+SERVICES=("usercenter:8081" "payment:8083" "order:8084" "inventory:8085" "core:8080" "gateway:8090")
+
+for svc_port in "${SERVICES[@]}"; do
+    svc="${svc_port%%:*}"
+    port="${svc_port##*:}"
+    db_name="yunxingcloud_${svc}"
+    [ "$svc" = "core" ] && db_name="yunxingcloud_core"
+
+    cat > "/etc/systemd/system/yunxingcloud-${svc}.service" << SERVICE
 [Unit]
-Description=yunxingcloud Application
+Description=yunxingcloud ${svc} Service
 After=network.target mysqld.service mysql.service
 Wants=mysqld.service
 
@@ -43,88 +59,77 @@ Type=simple
 User=root
 WorkingDirectory=$APP_DIR/app
 ExecStart=$JAVA_BIN -Xms512m -Xmx1024m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai \\
-    -jar $APP_DIR/app/yunxingcloud-core-0.0.1-SNAPSHOT.jar \\
+    -jar $APP_DIR/app/yunxingcloud-${svc}.jar \\
     --spring.profiles.active=prod \\
-    --server.port=8080 \\
-    --spring.datasource.url=jdbc:mysql://localhost:3306/sso_yunxingcloud?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai \\
+    --server.port=${port} \\
+    --spring.datasource.url=jdbc:mysql://localhost:3306/${db_name}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai \\
     --spring.datasource.username=yunxingcloud \\
     --spring.datasource.password=$DB_PASS \\
     --jwt.secret=$JWT_SECRET
 ExecStop=/bin/kill -15 \$MAINPID
 Restart=always
 RestartSec=10
-StandardOutput=append:$APP_DIR/logs/stdout.log
-StandardError=append:$APP_DIR/logs/stderr.log
+StandardOutput=append:$APP_DIR/logs/${svc}-stdout.log
+StandardError=append:$APP_DIR/logs/${svc}-stderr.log
 
 [Install]
 WantedBy=multi-user.target
 SERVICE
-
-systemctl daemon-reload
-systemctl enable yunxingcloud
-
-info "4. 停止旧进程，启动 systemd 服务..."
-pkill -f yunxingcloud-core 2>/dev/null || true
-sleep 2
-systemctl restart yunxingcloud
-
-info "5. 等待启动..."
-for i in $(seq 1 20); do
-    code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "000")
-    if [ "$code" = "200" ]; then
-        info "应用启动成功!"
-        break
-    fi
-    echo -n "."
-    sleep 2
 done
 
-info "6. 更新 Nginx 生产配置..."
-cat > /etc/nginx/conf.d/yunxingcloud.conf << 'NGINX'
-upstream backend { server 127.0.0.1:8080; keepalive 32; }
+systemctl daemon-reload
+for svc_port in "${SERVICES[@]}"; do
+    svc="${svc_port%%:*}"
+    systemctl enable "yunxingcloud-${svc}" 2>/dev/null || true
+done
 
+info "4. 启动全部服务..."
+for svc_port in "${SERVICES[@]}"; do
+    svc="${svc_port%%:*}"
+    port="${svc_port##*:}"
+    pkill -f "yunxingcloud-${svc}" 2>/dev/null || true
+    systemctl restart "yunxingcloud-${svc}" 2>/dev/null || true
+    sleep 3
+done
+
+info "5. 等待启动..."
+for svc_port in "${SERVICES[@]}"; do
+    svc="${svc_port%%:*}"
+    port="${svc_port##*:}"
+    for i in $(seq 1 15); do
+        code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}/actuator/health" 2>/dev/null || echo "000")
+        if [ "$code" = "200" ]; then
+            info "  ${svc}:${port} UP"
+            break
+        fi
+        sleep 2
+    done
+done
+
+info "6. 更新 Nginx (反向代理 → Gateway:8090)..."
+cp "$SCRIPT_DIR/nginx-production.conf" /etc/nginx/conf.d/yunxingcloud.conf 2>/dev/null || {
+    cat > /etc/nginx/conf.d/yunxingcloud.conf << 'NGINX'
+upstream backend { server 127.0.0.1:8090; keepalive 32; }
 server {
     listen 80;
-    server_name www.yunxingcloud.com 47.95.111.21;
+    server_name _;
     client_max_body_size 10m;
-
     gzip on;
     gzip_types text/css application/json application/javascript text/xml;
     gzip_min_length 1024;
     gzip_vary on;
-
-    location /assets/ {
-        proxy_pass http://backend;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    location /api/ {
-        proxy_pass http://backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location / {
-        proxy_pass http://backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+    location /assets/ { proxy_pass http://backend; expires 30d; }
+    location /api/ { proxy_pass http://backend; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; }
+    location / { proxy_pass http://backend; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; }
 }
 NGINX
+}
 nginx -t && systemctl restart nginx
 
 echo ""
 info "============================================"
 info "  生产环境部署完成!"
-info "  数据库: MySQL 8 (sso_yunxingcloud)"
-info "  服务: systemctl {start|stop|restart} yunxingcloud"
-info "  日志: journalctl -u yunxingcloud -f"
-info "  访问: http://47.95.111.21"
+info "  数据库: 5 个 (yunxingcloud_core/usercenter/payment/order/inventory)"
+info "  服务: systemctl {start|stop|restart} yunxingcloud-{svc}"
+info "  端口: 8080(core) 8081(usercenter) 8083(payment) 8084(order) 8085(inventory) 8090(gateway)"
 info "============================================"

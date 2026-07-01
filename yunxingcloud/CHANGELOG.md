@@ -1,5 +1,62 @@
 # Changelog
 
+## v2.4.0 (2026-07-01)
+
+### 服务发现与安全
+- Gateway/Aggregation 路由改用 Nacos `lb://` 服务发现 (替换全部 localhost 硬编码)
+- 全部 6 服务密码/URL 环境变量化 (DB_URL/DB_PASSWORD/JWT_SECRET)
+- 所有服务 ddl-auto 统一为 validate/none (生产安全)
+- K8s Secret/ConfigMap 补全 + Deployment 添加独立 DB_URL
+- CSP 安全头 + X-Frame SAMEORIGIN + Permissions-Policy
+- 文件上传白名单 (扩展名+MIME) + 路径遍历防护
+
+### 代码健壮性
+- PaymentService 全部写方法添加 @Transactional
+- OrderService 订单取消竞态条件修复 (re-read status before cancel)
+- CampaignService/FlashSaleService 库存扣减改为 JPQL 原子 UPDATE
+- OrderMailService @Autowired(required=false) + null-safe
+- PasswordValidator null 输入 NPE 修复
+- IdempotentAspect/UserRateLimitAspect 添加 @ConditionalOnClass+@ConditionalOnBean
+- EventBus 线程池 daemon 化 + @PreDestroy 优雅关闭
+- @Async 默认线程池切换为 taskExecutor (4/8 核 + 100 队列)
+
+### 依赖与兼容
+- JaCoCo 0.8.12 → 0.8.15 (JDK 26 官方支持)
+- Redisson 3.37.0 → 4.6.0 (Spring Boot 4.0 兼容)
+- Gateway 添加 micrometer-registry-prometheus
+- Payment/Usercenter 添加 spring-boot-starter-data-redis
+- Inventory 添加 yunxingcloud-api 依赖
+
+### 测试 (43 新增 + 预存修复)
+- common: R/Snowflake/Password/DataSanitizer (37 tests)
+- api: PaymentClient/InventoryClient Fallback (6 tests)
+- frontend-mall: useToast/stores (8 tests)
+- PaymentControllerTest: JWT 权限修复 (ticket:read,ticket:write)
+- ProductControllerTest: 认证期望修复
+- InventoryControllerTest: Redisson 兼容修复
+- FullStackIntegrationTest: 重写为 Core 模块纯集成测试
+- BannerRepository: findAllByOrderBySortOrderAsc 方法名修复
+
+### DevOps
+- Docker Compose payment/order/inventory 添加 healthcheck + REDIS_HOST
+- CI 添加 ESLint + vue-tsc + npm test 质量门禁
+- deploy.sh 健康检查升级为 6 服务逐一验证
+- swarm-deploy.sh update 端口映射修复
+- Makefile 新增 dev-all/test-all/lint/type-check/k6-* (9 targets)
+- prometheus.yml 抓取配置 (6 服务) + prometheus-alerts.yml (8 规则)
+- deploy-blue-green.sh bash 数组语法修复
+
+### 国际化
+- payment/order/inventory 模块添加 i18n (80+ 条中英文消息)
+
+### 高级特性
+- InventoryService 集成 RedissonLockService 分布式锁
+- OrderService.submit 添加 @Idempotent 防重复下单
+- WarehouseService 新建 (仓库 CRUD 专项服务)
+- InventoryService transfer 原子化调拨
+- 全部 6 服务 graceful shutdown 30s 统一配置
+- 旧数据库名 sso_yunxingcloud → yunxingcloud_core 全面清理 (14 文件)
+
 ## v2.0.0 (2026-06-30)
 
 ### 新增微服务模块

@@ -6,6 +6,16 @@ target/
 
 node_modules/
 frontend/dist/
+frontend-mall/dist/
+
+### Test ###
+test-results/
+playwright-report/
+coverage/
+
+### Backup ###
+backups/
+*.tar.gz
 
 ### STS ###
 .apt_generated

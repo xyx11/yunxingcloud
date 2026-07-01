@@ -20,7 +20,7 @@ fi
 info "3. 配置 Nginx 反向代理..."
 cat > /etc/nginx/conf.d/yunxingcloud.conf << 'NGINX'
 upstream yunxingcloud_backend {
-    server 127.0.0.1:8080 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:8090 max_fails=3 fail_timeout=30s;
     keepalive 32;
 }
 
@@ -89,10 +89,17 @@ firewall-cmd --reload 2>/dev/null || true
 echo ""
 echo "============================================"
 echo "  ECS 初始化完成!"
-echo "  下一步: 上传 JAR 并启动应用"
+echo "  下一步: 上传全部 6 服务 JAR 并启动"
 echo ""
-echo "  scp yunxingcloud-core/target/*.jar root@47.95.111.21:/opt/yunxingcloud/app/"
-echo "  ssh root@47.95.111.21"
+echo "  # 上传 JAR 到 ECS"
+echo "  scp yunxingcloud-*/target/yunxingcloud-*-[0-9]*.jar root@HOST:/opt/yunxingcloud/app/"
+echo "  # 或使用 deploy.yml GitHub Actions 自动部署"
+echo ""
+echo "  # 启动顺序 (Gateway 最后):"
+echo "  ssh root@HOST"
 echo "  cd /opt/yunxingcloud/app"
-echo "  nohup java -jar *.jar --spring.profiles.active=prod > ../logs/app.log 2>&1 &"
+echo "  for svc in usercenter payment order inventory core gateway; do"
+echo "    nohup java -jar yunxingcloud-\$svc-*.jar --spring.profiles.active=prod > ../logs/\$svc.log 2>&1 &"
+echo "    sleep 5"
+echo "  done"
 echo "============================================"

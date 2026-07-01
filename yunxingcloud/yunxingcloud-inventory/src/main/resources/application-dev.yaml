@@ -1,0 +1,29 @@
+# Inventory 开发环境配置
+spring:
+  datasource:
+    url: jdbc:h2:mem:inventory_dev;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  flyway:
+    enabled: false
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+    sentinel:
+      enabled: false
+
+app:
+  redis:
+    enabled: false
+
+logging:
+  level:
+    com.yunxingcloud: DEBUG

@@ -44,12 +44,12 @@ jobs:
           username: ${{ secrets.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
           source: |
-            yunxingcloud-core/target/yunxingcloud-core-*.jar
-            yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar
-            yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar
-            yunxingcloud-payment/target/yunxingcloud-payment-*.jar
-            yunxingcloud-order/target/yunxingcloud-order-*.jar
-            yunxingcloud-inventory/target/yunxingcloud-inventory-*.jar
+            yunxingcloud-core/target/yunxingcloud-core-[0-9]*.jar
+            yunxingcloud-usercenter/target/yunxingcloud-usercenter-[0-9]*.jar
+            yunxingcloud-gateway/target/yunxingcloud-gateway-[0-9]*.jar
+            yunxingcloud-payment/target/yunxingcloud-payment-[0-9]*.jar
+            yunxingcloud-order/target/yunxingcloud-order-[0-9]*.jar
+            yunxingcloud-inventory/target/yunxingcloud-inventory-[0-9]*.jar
             frontend-mall/dist/
           target: /opt/yunxingcloud/app/
           strip_components: 0
@@ -63,12 +63,12 @@ jobs:
           script: |
             cd /opt/yunxingcloud/app
             # Copy JARs
-            cp yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar /opt/yunxingcloud/app/yunxingcloud-usercenter.jar
-            cp yunxingcloud-payment/target/yunxingcloud-payment-*.jar /opt/yunxingcloud/app/yunxingcloud-payment.jar
-            cp yunxingcloud-order/target/yunxingcloud-order-*.jar /opt/yunxingcloud/app/yunxingcloud-order.jar
-            cp yunxingcloud-inventory/target/yunxingcloud-inventory-*.jar /opt/yunxingcloud/app/yunxingcloud-inventory.jar
-            cp yunxingcloud-core/target/yunxingcloud-core-*.jar /opt/yunxingcloud/app/yunxingcloud-core.jar
-            cp yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar /opt/yunxingcloud/app/yunxingcloud-gateway.jar
+            cp yunxingcloud-usercenter/target/yunxingcloud-usercenter-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-usercenter.jar
+            cp yunxingcloud-payment/target/yunxingcloud-payment-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-payment.jar
+            cp yunxingcloud-order/target/yunxingcloud-order-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-order.jar
+            cp yunxingcloud-inventory/target/yunxingcloud-inventory-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-inventory.jar
+            cp yunxingcloud-core/target/yunxingcloud-core-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-core.jar
+            cp yunxingcloud-gateway/target/yunxingcloud-gateway-[0-9]*.jar /opt/yunxingcloud/app/yunxingcloud-gateway.jar
             # Deploy Mall
             rm -rf /opt/yunxingcloud/mall/*
             cp -r frontend-mall/dist/* /opt/yunxingcloud/mall/

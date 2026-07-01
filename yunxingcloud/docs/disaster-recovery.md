@@ -69,7 +69,7 @@ echo "1. 验证备份完整性"
 ls -lh /opt/yunxingcloud/backup/latest/
 echo "2. 测试恢复 (staging)"
 mysql -e "CREATE DATABASE test_restore"
-gunzip < backup/latest/sso_yunxingcloud.sql.gz | mysql test_restore
+gunzip < backup/latest/yunxingcloud_core.sql.gz | mysql test_restore
 echo "3. 验证数据一致性"
 mysql test_restore -e "SELECT COUNT(*) FROM sys_user"
 echo "4. 清理"

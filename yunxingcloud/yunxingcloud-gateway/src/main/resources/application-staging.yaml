@@ -1,0 +1,18 @@
+# Gateway Staging 配置
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:nacos:8848}
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:sentinel:8082}
+
+server:
+  shutdown: graceful
+
+logging:
+  level:
+    root: WARN
+    com.yunxingcloud: INFO
+    org.springframework.cloud.gateway: INFO

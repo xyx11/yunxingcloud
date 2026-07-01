@@ -1,7 +1,10 @@
 server:
   port: 8090
+  shutdown: graceful
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   application:
     name: yunxingcloud-gateway
 
@@ -41,7 +44,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      show-details: when_authorized
 
 logging:
   level:

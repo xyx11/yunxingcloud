@@ -7,6 +7,7 @@ import com.yunxingcloud.payment.repository.PaymentOrderRepository;
 import com.yunxingcloud.payment.repository.PaymentRecordRepository;
 import com.yunxingcloud.payment.service.gateway.PaymentGateway;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +30,7 @@ public class PaymentService {
         gatewayList.forEach(g -> gateways.put(g.getChannel(), g));
     }
 
+    @Transactional
     public PaymentOrder create(String title, Long amount, String channel) {
         PaymentOrder order = new PaymentOrder();
         order.setTitle(title);
@@ -39,6 +41,7 @@ public class PaymentService {
         return orderRepo.save(order);
     }
 
+    @Transactional
     public Map<String, Object> pay(Long orderId, String notifyBaseUrl) {
         PaymentOrder order = orderRepo.findById(orderId).orElseThrow();
         PaymentGateway gw = gateways.get(order.getChannel());
@@ -61,6 +64,7 @@ public class PaymentService {
         return result;
     }
 
+    @Transactional
     public void handleCallback(String channel, Map<String, String> params, String body) {
         PaymentGateway gw = gateways.get(channel);
         if (gw == null) return;
@@ -88,6 +92,7 @@ public class PaymentService {
         }
     }
 
+    @Transactional
     public Map<String, Object> refund(Long orderId, Long refundAmount, String reason) {
         PaymentOrder order = orderRepo.findById(orderId).orElseThrow();
         if (!"2".equals(order.getStatus())) throw new IllegalStateException("只有已支付订单可以退款");

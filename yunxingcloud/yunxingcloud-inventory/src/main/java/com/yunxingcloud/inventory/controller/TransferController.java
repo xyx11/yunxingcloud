@@ -15,7 +15,6 @@ public class TransferController {
 
     public TransferController(InventoryService service) { this.service = service; }
 
-    /** 库存调拨: 从A仓出库 → B仓入库 */
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping("/transfer")
     public ResponseEntity<?> transfer(@RequestBody Map<String, Object> body) {
@@ -27,9 +26,7 @@ public class TransferController {
         String remark = (String) body.getOrDefault("remark", "库存调拨");
 
         try {
-            service.stockOut(productId, fromWh, qty, "调拨出库: " + remark);
-            service.stockIn(productId, productName, toWh, qty, "调拨入库: " + remark);
-            return ResponseEntity.ok(Map.of("success", true, "quantity", qty));
+            return ResponseEntity.ok(service.transfer(productId, productName, fromWh, toWh, qty, remark));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

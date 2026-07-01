@@ -19,6 +19,9 @@ public final class PasswordValidator {
         if (password == null || password.length() < MIN_LENGTH) {
             errors.add("密码长度至少" + MIN_LENGTH + "位");
         }
+        if (password == null) {
+            return errors;
+        }
         if (!UPPER.matcher(password).find()) {
             errors.add("需包含大写字母");
         }

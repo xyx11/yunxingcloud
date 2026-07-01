@@ -108,16 +108,21 @@ restart() {
 health_check() {
     info "健康检查 ..."
     sleep 5
-    for i in $(seq 1 30); do
-        local code=$(ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:$APP_PORT/actuator/health" 2>/dev/null)
+    local ports=(8081 8083 8084 8085 8080 8090)
+    local svcs=("usercenter" "payment" "order" "inventory" "core" "gateway")
+    local all_up=true
+    for i in "${!svcs[@]}"; do
+        local svc="${svcs[$i]}"
+        local port="${ports[$i]}"
+        local code=$(ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:$port/actuator/health" 2>/dev/null || echo "000")
         if [ "$code" = "200" ]; then
-            info "应用运行正常 (HTTP 200)"
-            return 0
+            info "  ${svc}:${port} UP"
+        else
+            warn "  ${svc}:${port} HTTP $code"
+            all_up=false
         fi
-        echo -n "."
-        sleep 2
     done
-    error "应用启动失败，请检查日志: ssh $SERVER_USER@$SERVER_HOST 'tail -50 $REMOTE_LOG/app.log'"
+    $all_up && info "全部 6 服务运行正常" || warn "部分服务异常"
 }
 
 # ---- 增量构建 ----
@@ -204,7 +209,8 @@ init_server() {
 migrate() {
     info "执行数据库迁移..."
     ssh_exec "cd $REMOTE_APP && \
-        java -jar yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar \
+        JAR=\$(ls yunxingcloud-core/target/yunxingcloud-core-*.jar 2>/dev/null | head -1) && \
+        java -jar \$JAR \
             --spring.flyway.enabled=true \
             --spring.flyway.locations=classpath:db/migration \
             --spring.jpa.hibernate.ddl-auto=none \

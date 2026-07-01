@@ -8,11 +8,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayRouteConfig {
 
-    private static final String CORE = "http://localhost:8080";
-    private static final String UC = "http://localhost:8081";
-    private static final String PAY = "http://localhost:8083";
-    private static final String ORD = "http://localhost:8084";
-    private static final String INV = "http://localhost:8085";
+    private static final String CORE = "lb://yunxingcloud-core";
+    private static final String UC = "lb://yunxingcloud-usercenter";
+    private static final String PAY = "lb://yunxingcloud-payment";
+    private static final String ORD = "lb://yunxingcloud-order";
+    private static final String INV = "lb://yunxingcloud-inventory";
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {

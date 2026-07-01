@@ -1,6 +1,6 @@
 # Flyway 迁移索引
 
-## sso_yunxingcloud (Core) — 18 迁移
+## yunxingcloud_core (Core) — 18 迁移
 
 | 版本 | 内容 |
 |------|------|

@@ -7,6 +7,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 @Aspect
 @Component
+@ConditionalOnClass(StringRedisTemplate.class)
+@ConditionalOnBean(StringRedisTemplate.class)
 public class UserRateLimitAspect {
 
     private static final Logger log = LoggerFactory.getLogger(UserRateLimitAspect.class);

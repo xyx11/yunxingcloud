@@ -29,21 +29,21 @@ public class AggregationController {
         WebClient client = webClientBuilder.build();
 
         Mono<Map> orderMono = client.get()
-                .uri("http://localhost:8084/api/orders/" + id)
+                .uri("lb://yunxingcloud-order/api/orders/" + id)
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .onErrorResume(e -> Mono.just(Map.of("error", e.getMessage())));
 
         Mono<Map> paymentMono = client.get()
-                .uri("http://localhost:8083/api/payment/orders?orderNo=" + id)
+                .uri("lb://yunxingcloud-payment/api/payment/orders?orderNo=" + id)
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .onErrorResume(e -> Mono.just(Collections.emptyMap()));
 
         Mono<Map> shipmentMono = client.get()
-                .uri("http://localhost:8084/api/shipments?orderId=" + id)
+                .uri("lb://yunxingcloud-order/api/shipments?orderId=" + id)
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
@@ -66,13 +66,13 @@ public class AggregationController {
     public Mono<ResponseEntity<?>> homeData() {
         WebClient client = webClientBuilder.build();
 
-        Mono<Object> hot = client.get().uri("http://localhost:8084/api/products/hot")
+        Mono<Object> hot = client.get().uri("lb://yunxingcloud-order/api/products/hot")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> news = client.get().uri("http://localhost:8084/api/products/new")
+        Mono<Object> news = client.get().uri("lb://yunxingcloud-order/api/products/new")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> categories = client.get().uri("http://localhost:8084/api/categories")
+        Mono<Object> categories = client.get().uri("lb://yunxingcloud-order/api/categories")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> banners = client.get().uri("http://localhost:8084/api/banners")
+        Mono<Object> banners = client.get().uri("lb://yunxingcloud-order/api/banners")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
 
         return Mono.zip(hot, news, categories, banners)

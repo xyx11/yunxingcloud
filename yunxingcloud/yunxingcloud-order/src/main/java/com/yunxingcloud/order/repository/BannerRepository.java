@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface BannerRepository extends JpaRepository<Banner, Long> {
     List<Banner> findByStatus(String status, Sort sort);
-    List<Banner> findAllByOrderBySortAsc();
+    List<Banner> findAllByOrderBySortOrderAsc();
 }

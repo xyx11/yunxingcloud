@@ -1,5 +1,6 @@
 package com.yunxingcloud.common.core;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,11 @@ public class EventBus {
 
     private static final Logger log = LoggerFactory.getLogger(EventBus.class);
     private final Map<String, List<Consumer<Object>>> subscribers = new ConcurrentHashMap<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "eventbus-");
+        t.setDaemon(true);
+        return t;
+    });
 
     /** 订阅 */
     public <T> void subscribe(String eventType, Consumer<T> handler) {
@@ -42,5 +47,11 @@ public class EventBus {
     public void publishSync(String eventType, Object event) {
         List<Consumer<Object>> handlers = subscribers.get(eventType);
         if (handlers != null) handlers.forEach(h -> h.accept(event));
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdown();
+        try { executor.awaitTermination(10, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
     }
 }

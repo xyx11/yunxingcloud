@@ -10,7 +10,7 @@ yunxingcloud 是基于 Spring Boot 4.0 + Vue 3 的 6 微服务分布式平台，
 
 | 服务 | 端口 | 数据库 | 职责 |
 |------|------|--------|------|
-| yunxingcloud-core | 8080 | sso_yunxingcloud | SSO 认证 · RBAC · 系统管理 · 工单 · SPA 托管 |
+| yunxingcloud-core | 8080 | yunxingcloud_core | SSO 认证 · RBAC · 系统管理 · 工单 · SPA 托管 |
 | yunxingcloud-usercenter | 8081 | yunxingcloud_usercenter | 用户注册 · OAuth2/OIDC · 社交登录 |
 | yunxingcloud-payment | 8083 | yunxingcloud_payment | 微信支付 · 支付宝 · 异步回调 |
 | yunxingcloud-order | 8084 | yunxingcloud_order | 商品管理 · 购物车 · 下单 · Feign→Payment |

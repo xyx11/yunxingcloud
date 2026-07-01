@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - prometheus-alerts.yml
+
+scrape_configs:
+  - job_name: yunxingcloud-core
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-core:8080']
+
+  - job_name: yunxingcloud-usercenter
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-usercenter:8081']
+
+  - job_name: yunxingcloud-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-gateway:8090']
+
+  - job_name: yunxingcloud-payment
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-payment:8083']
+
+  - job_name: yunxingcloud-order
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-order:8084']
+
+  - job_name: yunxingcloud-inventory
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['yunxingcloud-inventory:8085']

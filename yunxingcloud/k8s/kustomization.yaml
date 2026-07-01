@@ -9,7 +9,18 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - hpa.yaml
 
 images:
-  - name: yunxingcloud
+  - name: yunxingcloud-core
+    newTag: latest
+  - name: yunxingcloud-usercenter
+    newTag: latest
+  - name: yunxingcloud-gateway
+    newTag: latest
+  - name: yunxingcloud-payment
+    newTag: latest
+  - name: yunxingcloud-order
+    newTag: latest
+  - name: yunxingcloud-inventory
     newTag: latest

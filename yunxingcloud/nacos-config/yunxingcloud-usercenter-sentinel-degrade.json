@@ -1,0 +1,4 @@
+[
+  {"resource":"/api/register","grade":0,"count":50,"timeWindow":10,"minRequestAmount":5,"statIntervalMs":1000,"slowRatioThreshold":0.5},
+  {"resource":"/oauth2/**","grade":1,"count":0.2,"timeWindow":10,"minRequestAmount":5,"statIntervalMs":1000}
+]

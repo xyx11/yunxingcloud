@@ -1,0 +1,7 @@
+[
+  {"resource":"yunxingcloud-gateway","grade":1,"count":300,"intervalSec":1,"controlBehavior":0,"burst":100,"maxQueueingTimeoutMs":500},
+  {"resource":"core-auth","grade":1,"count":80,"intervalSec":1,"controlBehavior":0,"burst":20,"maxQueueingTimeoutMs":500},
+  {"resource":"order-api","grade":1,"count":150,"intervalSec":1,"controlBehavior":0,"burst":30,"maxQueueingTimeoutMs":500},
+  {"resource":"payment-api","grade":1,"count":50,"intervalSec":1,"controlBehavior":0,"burst":10,"maxQueueingTimeoutMs":500},
+  {"resource":"core-api","grade":1,"count":200,"intervalSec":1,"controlBehavior":0,"burst":50,"maxQueueingTimeoutMs":500}
+]

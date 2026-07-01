@@ -9,12 +9,12 @@ info()  { echo -e "${GREEN}[INFO]${NC}  $1"; }
 # ---- 端口 ----
 PORTS=(8081 8083 8084 8085 8080 8090)
 SERVICES=("usercenter" "payment" "order" "inventory" "core" "gateway")
-JARS=("yunxingcloud-usercenter/target/yunxingcloud-usercenter-0.0.1-SNAPSHOT.jar"
-      "yunxingcloud-payment/target/yunxingcloud-payment-0.0.1-SNAPSHOT.jar"
-      "yunxingcloud-order/target/yunxingcloud-order-0.0.1-SNAPSHOT.jar"
-      "yunxingcloud-inventory/target/yunxingcloud-inventory-0.0.1-SNAPSHOT.jar"
-      "yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar"
-      "yunxingcloud-gateway/target/yunxingcloud-gateway-0.0.1-SNAPSHOT.jar")
+JARS=("yunxingcloud-usercenter/target/yunxingcloud-usercenter-[0-9]*.jar"
+      "yunxingcloud-payment/target/yunxingcloud-payment-[0-9]*.jar"
+      "yunxingcloud-order/target/yunxingcloud-order-[0-9]*.jar"
+      "yunxingcloud-inventory/target/yunxingcloud-inventory-[0-9]*.jar"
+      "yunxingcloud-core/target/yunxingcloud-core-[0-9]*.jar"
+      "yunxingcloud-gateway/target/yunxingcloud-gateway-[0-9]*.jar")
 
 echo "========== 重启 yunxingcloud (6 微服务) =========="
 

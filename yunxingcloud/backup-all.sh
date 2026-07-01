@@ -18,7 +18,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # 6 个数据库
 DBS=(
-    "sso_yunxingcloud"
+    "yunxingcloud_core"
     "yunxingcloud_usercenter"
     "yunxingcloud_payment"
     "yunxingcloud_order"

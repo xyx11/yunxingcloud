@@ -4,6 +4,7 @@ import com.yunxingcloud.order.entity.Campaign;
 import com.yunxingcloud.order.repository.CampaignRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +50,9 @@ public class CampaignService {
         };
     }
 
-    /** 锁定活动库存 */
+    @Transactional
     public void lockStock(Long campaignId) {
-        Campaign c = repo.findById(campaignId).orElseThrow();
-        c.setUsedCount(c.getUsedCount() + 1);
-        repo.save(c);
+        int updated = repo.incrementUsedCount(campaignId);
+        if (updated == 0) throw new IllegalStateException("活动库存不足或不存在");
     }
 }

@@ -1,0 +1,49 @@
+# ============================================
+# yunxingcloud 监控栈 (Prometheus + Grafana)
+# 用法:
+#   启动: docker-compose -f docker-compose-monitoring.yml up -d
+#   配合: docker-compose -f docker-compose.yml -f docker-compose-monitoring.yml up -d
+# ============================================
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    container_name: yunxingcloud-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-alerts.yml:/etc/prometheus/rules/alerts.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - yunxingcloud
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: yunxingcloud-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docs/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/yunxingcloud.json:ro
+    networks:
+      - yunxingcloud
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  yunxingcloud:
+    external: true

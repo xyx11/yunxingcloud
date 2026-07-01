@@ -57,9 +57,8 @@ public class FlashSaleService {
             throw new IllegalStateException("已售罄");
         }
 
-        // 更新 DB 已售数量 (异步一致)
-        fs.setSold(fs.getSold() + 1);
-        flashRepo.save(fs);
+        // 原子更新 DB 已售数量
+        flashRepo.incrementSold(flashId);
 
         return true;
     }

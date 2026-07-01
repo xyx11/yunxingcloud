@@ -44,7 +44,9 @@ start_canary() {
 
     ssh_exec "
         # 启动金丝雀实例 (新版本 JAR)
-        nohup java -jar $DEPLOY_DIR/app/yunxingcloud-$svc-$ver.jar \
+        CANARY_JAR=\$(ls $DEPLOY_DIR/app/yunxingcloud-$svc-*.jar 2>/dev/null | head -1)
+        [ -z \"\$CANARY_JAR\" ] && CANARY_JAR=$DEPLOY_DIR/app/yunxingcloud-$svc.jar
+        nohup java -jar \$CANARY_JAR \
             --server.port=$canary_port \
             --spring.application.name=yunxingcloud-$svc-canary \
             > $DEPLOY_DIR/logs/$svc-canary.log 2>&1 &
@@ -64,11 +66,11 @@ start_canary() {
 
     # 更新 Nginx 分流: 10% 流量 → 金丝雀
     info "更新 Nginx 分流 (金丝雀 ${CANARY_WEIGHT}%)..."
+    local stable_weight=$((100 - CANARY_WEIGHT))
     ssh_exec "
-        cat > /etc/nginx/conf.d/yunxingcloud-canary.conf << 'NGX'
-# 金丝雀分流 — upstream 加权
+        cat > /etc/nginx/conf.d/yunxingcloud-canary.conf << NGX
 upstream yunxingcloud_${svc}_canary {
-    server 127.0.0.1:${port} weight=$((100 - CANARY_WEIGHT));
+    server 127.0.0.1:${port} weight=${stable_weight};
     server 127.0.0.1:${canary_port} weight=${CANARY_WEIGHT};
 }
 NGX
@@ -91,10 +93,11 @@ promote_canary() {
         systemctl stop yunxingcloud-$svc 2>/dev/null || true
         sleep 2
 
-        # 金丝雀接管主端口 (重启到主端口)
+        # 金丝雀接管主端口
         kill \$(lsof -ti :$canary_port) 2>/dev/null || true
         sleep 2
-        nohup java -jar $DEPLOY_DIR/app/yunxingcloud-$svc-canary.jar \
+        JAR=\$(ls $DEPLOY_DIR/app/yunxingcloud-$svc*.jar 2>/dev/null | head -1)
+        nohup java -jar \$JAR \
             --server.port=$port \
             > $DEPLOY_DIR/logs/$svc.log 2>&1 &
 

@@ -18,7 +18,7 @@ services:
     <<: *defaults
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      MYSQL_DATABASE: sso_yunxingcloud
+      MYSQL_DATABASE: yunxingcloud_core
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -58,12 +58,14 @@ services:
       args: { SERVICE: yunxingcloud-core, PORT: 8080 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/sso_yunxingcloud?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
       SMTP_HOST: ${SMTP_HOST:-localhost}
       SMTP_PORT: ${SMTP_PORT:-25}
       SMTP_USERNAME: ${SMTP_USERNAME:-noreply@yunxingcloud.com}
@@ -96,6 +98,10 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: prod
     networks:
       - app
@@ -122,6 +128,10 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: prod
     networks:
       - app
@@ -148,6 +158,10 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: prod
     networks:
       - app
@@ -174,6 +188,10 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: prod
     networks:
       - app
@@ -196,6 +214,8 @@ services:
       args: { SERVICE: yunxingcloud-gateway, PORT: 8090 }
     <<: *defaults
     environment:
+      NACOS_SERVER: nacos:8848
+      SENTINEL_DASHBOARD: sentinel:8082
       SPRING_PROFILES_ACTIVE: prod
     ports:
       - "80:8090"

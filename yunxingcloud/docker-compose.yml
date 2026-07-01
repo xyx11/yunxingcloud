@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      MYSQL_DATABASE: sso_yunxingcloud
+      MYSQL_DATABASE: yunxingcloud_core
     ports:
       - "3306:3306"
     volumes:
@@ -187,8 +187,16 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       nacos:
         condition: service_healthy
@@ -211,8 +219,16 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       nacos:
         condition: service_healthy
@@ -235,8 +251,16 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - yunxingcloud
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       nacos:
         condition: service_healthy

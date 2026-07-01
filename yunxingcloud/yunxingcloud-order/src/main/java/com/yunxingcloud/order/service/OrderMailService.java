@@ -3,6 +3,7 @@ package com.yunxingcloud.order.service;
 import com.yunxingcloud.order.entity.OrderHead;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -14,13 +15,13 @@ public class OrderMailService {
     private static final Logger log = LoggerFactory.getLogger(OrderMailService.class);
     private final JavaMailSender mailSender;
 
-    public OrderMailService(JavaMailSender mailSender) {
+    public OrderMailService(@Autowired(required = false) JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     @Async
     public void sendOrderPlaced(OrderHead order, String userEmail) {
-        if (userEmail == null) return;
+        if (userEmail == null || mailSender == null) return;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(userEmail);
@@ -44,7 +45,7 @@ public class OrderMailService {
 
     @Async
     public void sendPaymentSuccess(OrderHead order, String userEmail) {
-        if (userEmail == null) return;
+        if (userEmail == null || mailSender == null) return;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(userEmail);
@@ -67,7 +68,7 @@ public class OrderMailService {
 
     @Async
     public void sendShipped(OrderHead order, String userEmail, String carrier, String trackingNo) {
-        if (userEmail == null) return;
+        if (userEmail == null || mailSender == null) return;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(userEmail);
@@ -92,7 +93,7 @@ public class OrderMailService {
 
     @Async
     public void sendRefund(OrderHead order, String userEmail, Long refundAmount) {
-        if (userEmail == null) return;
+        if (userEmail == null || mailSender == null) return;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(userEmail);

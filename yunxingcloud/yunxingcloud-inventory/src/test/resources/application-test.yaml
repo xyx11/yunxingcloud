@@ -24,6 +24,10 @@ spring:
 jwt:
   secret: test-jwt-secret-for-inventory-tests-min-256-bits
 
+app:
+  redis:
+    enabled: false
+
 logging:
   level:
     root: WARN

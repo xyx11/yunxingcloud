@@ -12,8 +12,8 @@ source "$SCRIPT_DIR/deploy.conf" 2>/dev/null || {
     DB_PORT="3306"
     DB_USER="root"
     DB_PASS="${DB_PASSWORD:-yunxingcloud123}"
-    DB_NAME="sso_yunxingcloud"
 }
+DB_NAME="${DB_NAME:-yunxingcloud_core}"
 
 BACKUP_DIR="${BACKUP_DIR:-/opt/yunxingcloud/backups}"
 RETENTION_DAYS=30

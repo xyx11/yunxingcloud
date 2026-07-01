@@ -3,7 +3,7 @@
 [![CI](https://github.com/xyx11/yunxingcloud/actions/workflows/ci.yml/badge.svg)](https://github.com/xyx11/yunxingcloud/actions)
 [![CodeQL](https://github.com/xyx11/yunxingcloud/actions/workflows/codeql.yml/badge.svg)](https://github.com/xyx11/yunxingcloud/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.3.0-brightgreen.svg)](https://github.com/xyx11/yunxingcloud/releases)
+[![Version](https://img.shields.io/badge/version-2.4.0-brightgreen.svg)](https://github.com/xyx11/yunxingcloud/releases)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen.svg)](https://spring.io/)
 
@@ -21,7 +21,7 @@
 | 前端商城 | Vue 3 · Vite 5 · Pinia · 响应式布局 · 下拉刷新 |
 | 文档 | Knife4j 4.5 · Swagger UI · OpenAPI 3 |
 | 部署 | Docker · Docker Compose · Docker Swarm · K8s · systemd · Nginx · Let's Encrypt |
-| 监控 | Actuator · Prometheus (6 服务) · Sentinel Dashboard · SSE 实时推送 |
+| 监控 | Actuator · Prometheus (8 告警规则) · Sentinel Dashboard · ELK · Zipkin · OpenTelemetry · SSE |
 
 ## 项目结构
 
@@ -123,11 +123,16 @@ cd frontend-mall && npm run dev    # 商城 :5174
 
 ```bash
 make dev              # 启动 Core 开发服务器
+make dev-all          # 启动全部 6 服务
 make dev-payment      # 启动 Payment 开发服务器
-make test             # 运行全部测试 (46+ tests)
+make test             # 运行全部测试 (243+ tests)
+make test-all         # 后端 + 前端全部测试
+make lint             # 前后端 ESLint 检查
+make type-check       # 前后端 TypeScript 检查
 make build            # 编译后端 + 构建前端
 make package          # Maven 打包 6 模块
-make docker-build-all # 构建全部 6 个 Docker 镜像
+make k6-smoke         # k6 冒烟测试
+make k6-load          # k6 负载测试
 make docker-up        # Docker Compose 启动
 make deploy           # 一键部署
 make deploy-quick     # 增量构建快速部署
@@ -200,13 +205,15 @@ make deploy-quick     # 增量构建快速部署
 ## 安全特性
 
 - **认证**: JWT 双 Token (access 2h + refresh 7d) + 黑名单登出
-- **限流**: Sentinel 全链路流控 (QPS) + IP 级别 10次/分钟
-- **熔断**: Sentinel 降级 + Feign fallbackFactory 服务间降级
+- **限流**: Sentinel 全链路流控 + Nacos 动态规则 + IP 级别限流 + 用户级 @UserRateLimit
+- **熔断**: Sentinel 降级 + Feign Fallback 服务间降级
+- **幂等**: @Idempotent 注解 (Redis SETNX) 防重复下单
+- **锁**: Redisson 分布式锁防库存超卖
 - **锁定**: 5次失败锁定 30 分钟
-- **密码**: 8位 + 大写 + 小写 + 数字 + 特殊字符
-- **权限**: RBAC (user_roles 多对多) + @PreAuthorize 方法级控制
-- **安全头**: XSS/HSTS/X-Frame/Referrer-Policy
-- **审计**: Spring Events 异步审计日志
+- **密码**: 8位 + 大写 + 小写 + 数字 + 特殊字符 + TOTP 2FA
+- **权限**: RBAC + @PreAuthorize + @DataScope 数据权限
+- **安全头**: CSP + HSTS + X-Frame + Referrer-Policy + Permissions-Policy
+- **审计**: Spring Events 异步审计 + AuditTrail
 
 ## 部署
 
@@ -214,6 +221,10 @@ make deploy-quick     # 增量构建快速部署
 
 ```bash
 docker-compose up -d  # 9 服务：Nacos + Sentinel + MySQL + Redis + 5 应用服务
+
+# 带监控栈
+docker-compose -f docker-compose.yml -f docker-compose-monitoring.yml up -d
+# + Prometheus :9090 + Grafana :3000 (admin/admin)
 ```
 
 ### Docker Swarm
@@ -251,7 +262,7 @@ kubectl apply -k k8s/
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `DB_URL` | `jdbc:mysql://localhost:3306/sso_yunxingcloud` | 数据库连接 |
+| `DB_URL` | `jdbc:mysql://localhost:3306/yunxingcloud_core` | 数据库连接 |
 | `DB_USERNAME` | `root` | 数据库用户 |
 | `DB_PASSWORD` | - | 数据库密码 |
 | `JWT_SECRET` | (内置) | JWT 签名密钥 |
@@ -262,14 +273,20 @@ kubectl apply -k k8s/
 ## 测试
 
 ```bash
-# 全部测试 (46+ tests)
-make test
+# 全部测试 (257 tests)
+make test-all
 
-# 按服务
-make test-core         # 21 tests
+# 后端按服务 (243 tests)
+make test-core         # 99 tests
+make test-usercenter   # 29 tests
+make test-gateway      # 1 test
 make test-payment      # 6 tests
-make test-order        # 7 tests
+make test-order        # 57 tests
 make test-inventory    # 8 tests
+
+# 前端 (14 tests)
+make test-frontend     # Admin 6 tests
+make test-mall         # Mall 8 tests
 
 # E2E (Playwright)
 cd frontend && npx playwright test

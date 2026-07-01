@@ -10,6 +10,4 @@ data:
   NACOS_SERVER: "nacos-service:8848"
   SENTINEL_DASHBOARD: "sentinel-service:8082"
   JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
-  # Per-service DB URLs set via deployment env overrides
-  DB_URL_CORE: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
-  DB_URL_USERCENTER: "jdbc:mysql://mysql-service:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+  DB_URL: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"

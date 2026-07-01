@@ -12,12 +12,13 @@
     <name>yunxingcloud-inventory</name>
     <description>库存微服务 —— 仓库管理 + 入库/出库 + 库存预警</description>
     <dependencies>
+        <dependency><groupId>com.yunxingcloud</groupId><artifactId>yunxingcloud-api</artifactId></dependency>
         <dependency><groupId>com.yunxingcloud</groupId><artifactId>yunxingcloud-common</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-redis</artifactId></dependency>
-        <dependency><groupId>org.redisson</groupId><artifactId>redisson-spring-boot-starter</artifactId><version>3.37.0</version></dependency>
+        <dependency><groupId>org.redisson</groupId><artifactId>redisson-spring-boot-starter</artifactId><version>4.6.0</version></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
         <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-prometheus</artifactId></dependency>
         <dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-api</artifactId><version>0.12.6</version></dependency>

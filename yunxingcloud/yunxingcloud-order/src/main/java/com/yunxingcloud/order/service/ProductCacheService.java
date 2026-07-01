@@ -56,7 +56,7 @@ public class ProductCacheService {
     @Cacheable(value = "banners", unless = "#result == null || #result.isEmpty()")
     public List<Banner> getBanners() {
         log.debug("Cache MISS: banners");
-        return bannerRepo.findAllByOrderBySortAsc();
+        return bannerRepo.findAllByOrderBySortOrderAsc();
     }
 
     @CacheEvict(value = "hotProducts", allEntries = true)

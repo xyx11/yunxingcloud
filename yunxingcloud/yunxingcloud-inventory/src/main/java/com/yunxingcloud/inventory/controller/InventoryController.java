@@ -3,6 +3,7 @@ package com.yunxingcloud.inventory.controller;
 import com.yunxingcloud.inventory.entity.Warehouse;
 import com.yunxingcloud.inventory.repository.*;
 import com.yunxingcloud.inventory.service.InventoryService;
+import com.yunxingcloud.inventory.service.WarehouseService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,21 +17,21 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class InventoryController {
 
-    private final WarehouseRepository whRepo;
+    private final WarehouseService whService;
     private final StockRepository stockRepo;
     private final StockLogRepository logRepo;
     private final InventoryService service;
 
-    public InventoryController(WarehouseRepository whRepo, StockRepository stockRepo,
+    public InventoryController(WarehouseService whService, StockRepository stockRepo,
                                StockLogRepository logRepo, InventoryService service) {
-        this.whRepo = whRepo; this.stockRepo = stockRepo; this.logRepo = logRepo; this.service = service;
+        this.whService = whService; this.stockRepo = stockRepo; this.logRepo = logRepo; this.service = service;
     }
 
     @GetMapping("/api/warehouses")
-    public ResponseEntity<?> warehouses() { return ResponseEntity.ok(whRepo.findAll()); }
+    public ResponseEntity<?> warehouses() { return ResponseEntity.ok(whService.findAll()); }
 
     @PostMapping("/api/warehouses")
-    public ResponseEntity<?> addWarehouse(@RequestBody Warehouse wh) { return ResponseEntity.ok(whRepo.save(wh)); }
+    public ResponseEntity<?> addWarehouse(@RequestBody Warehouse wh) { return ResponseEntity.ok(whService.create(wh)); }
 
     @GetMapping("/api/inventory")
     public ResponseEntity<?> list(@RequestParam(required = false) Long warehouseId) {

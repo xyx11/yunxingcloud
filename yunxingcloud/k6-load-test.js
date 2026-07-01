@@ -1,12 +1,12 @@
 // yunxingcloud k6 负载测试 (k6 v2.0)
 // 运行: k6 run k6-load-test.js
-// 远程: k6 run -e BASE_URL=http://your-server:8080 k6-load-test.js
+// 远程: k6 run -e BASE_URL=http://your-server:8090 k6-load-test.js
 
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080'
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8090'
 const loginDuration = new Trend('login_duration')
 const apiDuration = new Trend('api_duration')
 const errorRate = new Rate('error_rate')

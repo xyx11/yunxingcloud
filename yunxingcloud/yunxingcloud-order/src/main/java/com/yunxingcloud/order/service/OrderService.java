@@ -1,6 +1,7 @@
 package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.api.client.InventoryClient;
+import com.yunxingcloud.common.annotation.Idempotent;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.repository.*;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +41,7 @@ public class OrderService {
         this.inventoryClient = inventoryClient;
     }
 
+    @Idempotent(prefix = "order", ttl = 10, unit = TimeUnit.SECONDS, message = "请勿重复提交订单")
     @Transactional
     public OrderHead submit(String username, Map<String, String> receiver, Long couponId) {
         List<CartItem> cartItems = cartRepo.findByUsernameOrderByCreatedAtDesc(username);
@@ -116,18 +119,20 @@ public class OrderService {
 
     @Transactional
     public void cancelOrder(OrderHead order) {
-        if ("3".equals(order.getStatus()) || "4".equals(order.getStatus())) return;
-        order.setStatus("4");
-        orderRepo.save(order);
+        OrderHead current = orderRepo.findById(order.getId()).orElse(null);
+        if (current == null) return;
+        if ("3".equals(current.getStatus()) || "4".equals(current.getStatus())) return;
+        current.setStatus("4");
+        orderRepo.save(current);
 
         // 回退库存
-        for (OrderLine line : lineRepo.findByOrderId(order.getId())) {
+        for (OrderLine line : lineRepo.findByOrderId(current.getId())) {
             try {
                 Map<String, Object> invBody = new HashMap<>();
                 invBody.put("productId", line.getProductId());
                 invBody.put("warehouseId", 1L);
                 invBody.put("quantity", line.getQuantity());
-                invBody.put("orderId", order.getId());
+                invBody.put("orderId", current.getId());
                 inventoryClient.orderBack(invBody);
             } catch (Exception e) {
                 log.warn("Inventory order-back failed for product {}: {}", line.getProductId(), e.getMessage());
@@ -135,8 +140,8 @@ public class OrderService {
         }
 
         // 退还优惠券
-        if (order.getCouponId() != null) {
-            couponUserRepo.findById(order.getCouponId()).ifPresent(uc -> {
+        if (current.getCouponId() != null) {
+            couponUserRepo.findById(current.getCouponId()).ifPresent(uc -> {
                 uc.setStatus("0");
                 couponUserRepo.save(uc);
             });
@@ -148,24 +153,30 @@ public class OrderService {
         List<OrderHead> expired = orderRepo.findByStatusAndExpireAtBefore("0", LocalDateTime.now());
         log.info("取消 {} 个超时订单", expired.size());
         for (OrderHead order : expired) {
-            order.setStatus("4");
-            order.setRemark("超时未支付自动取消");
-            orderRepo.save(order);
+            // 重新读取保证状态最新，防止覆盖已支付的订单
+            OrderHead current = orderRepo.findById(order.getId()).orElse(null);
+            if (current == null || !"0".equals(current.getStatus())) {
+                log.info("订单 {} 状态已变更, 跳过取消", order.getId());
+                continue;
+            }
+            current.setStatus("4");
+            current.setRemark("超时未支付自动取消");
+            orderRepo.save(current);
 
-            for (OrderLine line : lineRepo.findByOrderId(order.getId())) {
+            for (OrderLine line : lineRepo.findByOrderId(current.getId())) {
                 try {
                     Map<String, Object> invBody = new HashMap<>();
                     invBody.put("productId", line.getProductId());
                     invBody.put("warehouseId", 1L);
                     invBody.put("quantity", line.getQuantity());
-                    invBody.put("orderId", order.getId());
+                    invBody.put("orderId", current.getId());
                     inventoryClient.orderBack(invBody);
                 } catch (Exception e) {
                     log.warn("Timeout inventory-back failed: {}", e.getMessage());
                 }
             }
-            if (order.getCouponId() != null) {
-                couponUserRepo.findById(order.getCouponId()).ifPresent(uc -> {
+            if (current.getCouponId() != null) {
+                couponUserRepo.findById(current.getCouponId()).ifPresent(uc -> {
                     uc.setStatus("0");
                     couponUserRepo.save(uc);
                 });
