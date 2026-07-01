@@ -88,6 +88,7 @@ async function shareProduct() {
 // 图片画廊
 const images = ref<string[]>([])
 const activeImage = ref(0)
+const fullscreen = ref(false)
 onMounted(() => {
   if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
   else if (product.value?.images) images.value = product.value.images
@@ -102,8 +103,16 @@ onMounted(() => {
   </div>
   <div v-else-if="product" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
     <div style="width:420px;flex-shrink:0">
-      <div @touchstart="onTouchStart" @touchend="onTouchEnd">
+      <div @touchstart="onTouchStart" @touchend="onTouchEnd" class="product-image-area" @click="fullscreen=true">
         <ImageZoom :src="images[activeImage]" :alt="product.name" height="420px" style="margin-bottom:12px" />
+      </div>
+      <div v-if="fullscreen" @click="fullscreen=false" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s">
+        <button @click.stop="fullscreen=false" style="position:absolute;top:16px;right:16px;z-index:2;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;border:none;font-size:18px;cursor:pointer">✕</button>
+        <img v-if="images[activeImage] && images[activeImage]!=='📦'" :src="images[activeImage]" style="max-width:100%;max-height:100%;object-fit:contain" />
+        <span v-else style="font-size:120px">📦</span>
+        <div v-if="images.length > 1" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:4px">
+          <button v-for="(img, i) in images" :key="i" @click.stop="activeImage=i" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer" :style="{background:activeImage===i?'#f10215':'rgba(255,255,255,.4)'}"></button>
+        </div>
       </div>
       <div v-if="images.length > 1" style="display:flex;gap:8px">
         <div v-for="(img, i) in images" :key="i" @click="activeImage = i"

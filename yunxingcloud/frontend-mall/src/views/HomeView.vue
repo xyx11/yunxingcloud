@@ -91,7 +91,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         </div>
         <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div class="flash-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
         <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-'+p.id" @click="goDetail(p.id)"
              style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;text-align:center;transition:transform .3s"
              @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'"
@@ -200,4 +200,9 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
 </template>
 <style scoped>
 .cat-scroll::-webkit-scrollbar { display: none; }
+@media (max-width: 768px) {
+  .flash-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .product-card-img { height: 140px !important; }
+}
 </style>
