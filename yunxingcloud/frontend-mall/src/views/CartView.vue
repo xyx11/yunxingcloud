@@ -29,8 +29,8 @@ async function load() {
   try { const r = await getCart(); items.value = r.data || [] } catch {} finally { loading.value = false }
 }
 
-async function remove(id: number) { await removeFromCart(id); selectedIds.value.delete(id); toast.info(t('toast.removed')); load() }
-async function updateQty(item: any, delta: number) { const n = item.quantity + delta; if (n < 1) return; try { await removeFromCart(item.id); await addToCart(item.productId, n); load() } catch {} }
+async function remove(id: number) { try { await removeFromCart(id); selectedIds.value.delete(id); toast.info(t('toast.removed')); load() } catch { toast.error('删除失败') } }
+async function updateQty(item: any, delta: number) { const n = item.quantity + delta; if (n < 1) return; try { await removeFromCart(item.id); await addToCart(item.productId, n); load() } catch { toast.error('更新失败') } }
 function checkout() { if (selectedIds.value.size === 0) { toast.error(t('checkout.selectAddress')); return }; router.push('/checkout') }
 onMounted(load)
 </script>
