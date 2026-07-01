@@ -42,6 +42,9 @@ const ProductView = () => import('@/views/ProductView.vue')
 const OrderView = () => import('@/views/OrderView.vue')
 const InventoryView = () => import('@/views/InventoryView.vue')
 const WarehouseView = () => import('@/views/WarehouseView.vue')
+const GroupBuyView = () => import('@/views/GroupBuyView.vue')
+const FlashSaleView = () => import('@/views/FlashSaleView.vue')
+const AfterSaleView = () => import('@/views/AfterSaleView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
@@ -78,6 +81,9 @@ const router = createRouter({
         { path: 'products', name: 'Products', component: ProductView, meta: { title: '商品管理' } },
         { path: 'inventory', name: 'Inventory', component: InventoryView, meta: { title: '库存管理' } },
         { path: 'warehouses', name: 'Warehouses', component: WarehouseView, meta: { title: '仓库管理' } },
+        { path: 'groupbuy', name: 'GroupBuy', component: GroupBuyView, meta: { title: '拼团管理' } },
+        { path: 'flashsale', name: 'FlashSale', component: FlashSaleView, meta: { title: '秒杀管理' } },
+        { path: 'aftersale', name: 'AfterSale', component: AfterSaleView, meta: { title: '售后管理' } },
         { path: 'loginlog', name: 'LoginLog', component: LoginLogView, meta: { title: '登录日志' } },
         { path: 'online', name: 'OnlineUser', component: OnlineUserView, meta: { title: '在线用户' } },
         { path: 'backup', name: 'Backup', component: BackupView, meta: { title: '数据备份' } },
