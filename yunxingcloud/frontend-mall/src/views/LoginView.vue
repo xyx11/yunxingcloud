@@ -6,7 +6,8 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 const toast = inject<any>('toast')
-const form = ref({ username: '', password: '' })
+const form = ref({ username: (() => { try { return localStorage.getItem('mall_remember_user') || '' } catch { return '' } })(), password: '' })
+const rememberMe = ref(!!form.value.username)
 const error = ref('')
 const loading = ref(false)
 
@@ -16,6 +17,7 @@ async function doLogin() {
   loading.value = true
   try {
     await auth.login(form.value.username, form.value.password)
+    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user') } catch {}
     toast.success('登录成功')
     const redirect = router.currentRoute.value.query.redirect as string
     router.push(redirect || '/')
@@ -42,6 +44,12 @@ async function doLogin() {
         <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">密码</label>
         <input v-model="form.password" type="password" placeholder="请输入密码" @keyup.enter="doLogin" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none"
                @focus="(e:any) => e.target.style.borderColor='#f10215'" @blur="(e:any) => e.target.style.borderColor='#ddd'" />
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <label style="font-size:12px;color:#999;cursor:pointer;display:flex;align-items:center;gap:4px">
+          <input type="checkbox" v-model="rememberMe" style="accent-color:#f10215" /> 记住用户名
+        </label>
+        <span @click="router.push('/forgot-password')" style="font-size:12px;color:#999;cursor:pointer">忘记密码？</span>
       </div>
       <button @click="doLogin" :disabled="loading" style="width:100%;height:44px;background:#f10215;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;transition:opacity .2s" :style="{opacity:loading?'.7':'1'}">
         {{ loading ? '登录中...' : '登录' }}
