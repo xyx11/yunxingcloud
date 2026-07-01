@@ -34,6 +34,7 @@ onMounted(async () => {
   try { const r = await getBrands(); brands.value = r.data || [] } catch {}
   filters.value.categoryId = (route.query.categoryId as string) || ''
   loadProducts()
+  window.addEventListener('scroll', onScroll)
 })
 
 watch(() => route.query, (q) => {
@@ -43,6 +44,11 @@ watch(() => route.query, (q) => {
   loadProducts()
 })
 
+const loadingMore = ref(false)
+function onScroll() {
+  if (loadingMore.value || currentPage.value >= totalPages.value - 1) return
+  const h = document.documentElement; if (h.scrollTop + h.clientHeight >= h.scrollHeight - 300) { currentPage.value++; loadMore() }
+}
 async function loadProducts() {
   loading.value = true
   try {
@@ -60,7 +66,11 @@ async function loadProducts() {
 
 function applyFilters() { currentPage.value = 0; const q: any = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; router.push({ query: q }); loadProducts() }
 function clearFilters() { filters.value = { categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' }; router.push({ query: {} }); loadProducts() }
-function setSort(s: string) { filters.value.sort = filters.value.sort === s ? '' : s; loadProducts() }
+function setSort(s: string) { filters.value.sort = filters.value.sort === s ? '' : s; currentPage.value = 0; products.value = []; loadProducts() }
+async function loadMore() {
+  if (loadingMore.value) return; loadingMore.value = true
+  try { const params: any = { page: currentPage.value, size: pageSize }; if (filters.value.sort) params.sort = filters.value.sort; if (filters.value.categoryId) params.categoryId = filters.value.categoryId; if (filters.value.brandId) params.brandId = filters.value.brandId; if (filters.value.minPrice) params.minPrice = Number(filters.value.minPrice) * 100; if (filters.value.maxPrice) params.maxPrice = Number(filters.value.maxPrice) * 100; const r = await getProducts(params); const data = r.data; products.value = [...products.value, ...(data.content || data || [])]; totalPages.value = data.totalPages || 0 } catch {} finally { loadingMore.value = false }
+}
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrollTo(0, 0) }
 async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
@@ -155,7 +165,8 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <div v-if="!loading && !products.length" style="text-align:center;padding:60px;color:#999">
         <p style="font-size:48px">📭</p><p>没有找到商品</p>
       </div>
-      <div v-if="totalPages > 1" style="display:flex;justify-content:center;gap:8px;margin-top:24px">
+      <div v-if="loadingMore" style="text-align:center;padding:16px;color:#999;font-size:13px">加载更多...</div>
+      <div v-if="totalPages > 1 && !loadingMore" style="display:flex;justify-content:center;gap:8px;margin-top:24px">
         <button v-for="p in Math.min(totalPages, 10)" :key="p" @click="goPage(p-1)"
                 style="width:36px;height:36px;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:13px"
                 :style="{background:currentPage===p-1?'#e4393c':'#fff',color:currentPage===p-1?'#fff':'#333',borderColor:currentPage===p-1?'#e4393c':'#ddd'}">{{ p }}</button>

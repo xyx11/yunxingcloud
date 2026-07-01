@@ -174,9 +174,15 @@ onMounted(() => {
           <button @click="confirmPriceAlert" style="padding:8px 16px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">确认设置</button>
         </div>
       </div>
+    <div class="mobile-sticky-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:10px 16px;z-index:200;align-items:center;gap:12px;box-shadow:0 -2px 8px rgba(0,0,0,.06)">
+      <div style="flex:1"><span style="color:#e4393c;font-size:20px;font-weight:700">¥{{ (displayPrice()/100).toFixed(2) }}</span></div>
+      <button @click="onAddToCart" style="flex:1;height:40px;background:#fff;border:2px solid #e4393c;color:#e4393c;border-radius:20px;font-size:14px;font-weight:600">加入购物车</button>
+      <button @click="buyNow" style="flex:1;height:40px;background:#e4393c;color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:600">立即购买</button>
     </div>
   </div>
 </template>
-<style scoped>@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+<style scoped>
+@media (max-width: 768px) { .mobile-sticky-bar { display: flex !important; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes cartBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .cart-bounce { animation: cartBounce .3s ease; }</style>
