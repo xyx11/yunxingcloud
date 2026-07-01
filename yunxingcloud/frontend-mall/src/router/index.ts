@@ -20,6 +20,7 @@ const WishlistView = () => import('@/views/WishlistView.vue')
 const CouponCenterView = () => import('@/views/CouponCenterView.vue')
 const AfterSaleView = () => import('@/views/AfterSaleView.vue')
 const GroupBuyView = () => import('@/views/GroupBuyView.vue')
+const FlashSaleView = () => import('@/views/FlashSaleView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -44,5 +45,6 @@ export default createRouter({
     { path: '/coupons', component: CouponCenterView },
     { path: '/after-sale', component: AfterSaleView },
     { path: '/group-buy', component: GroupBuyView },
+    { path: '/flash-sale', component: FlashSaleView },
   ],
 })
