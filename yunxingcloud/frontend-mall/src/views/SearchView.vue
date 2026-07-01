@@ -17,6 +17,17 @@ const showHistory = ref(false)
 
 const hotKeywords = ref(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
 const history = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
+const suggestions = ref<any[]>([])
+let suggestTimer: any = null
+
+function onInput() {
+  clearTimeout(suggestTimer)
+  const q = searchInput.value.trim()
+  if (!q) { suggestions.value = []; return }
+  suggestTimer = setTimeout(async () => {
+    try { const r = await searchProducts(q, 0, 5); suggestions.value = (r.data.content || r.data || []).slice(0, 5) } catch { suggestions.value = [] }
+  }, 300)
+}
 
 onMounted(() => { searchQuery.value = (route.query.q as string) || ''; searchInput.value = searchQuery.value; if (searchQuery.value) doSearch() })
 watch(() => route.query.q, (q) => { searchQuery.value = (q as string) || ''; searchInput.value = searchQuery.value; page.value = 0; if (searchQuery.value) doSearch() })
@@ -38,9 +49,20 @@ function clearHistory() { history.value = []; localStorage.removeItem('searchHis
   <div>
     <div v-if="!searchQuery" style="max-width:600px;margin:0 auto 24px;text-align:center">
       <div style="display:flex;margin-bottom:24px">
-        <input v-model="searchInput" :placeholder="t('search.placeholder')" @keyup.enter="doSearch" @focus="showHistory=true"
+        <input v-model="searchInput" :placeholder="t('search.placeholder')" @input="onInput" @keyup.enter="doSearch" @focus="showHistory=true"
                style="flex:1;height:40px;padding:0 16px;border:2px solid #e4393c;border-radius:8px 0 0 8px;outline:none;font-size:15px" />
         <button @click="doSearch" style="height:40px;padding:0 28px;background:#e4393c;color:#fff;border:none;border-radius:0 8px 8px 0;cursor:pointer;font-size:15px;font-weight:600">{{ t('common.search') }}</button>
+      </div>
+      <div v-if="suggestions.length" style="position:relative;margin-top:-16px;margin-bottom:8px;max-width:600px;margin-left:auto;margin-right:auto">
+        <div style="background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);overflow:hidden">
+          <div v-for="s in suggestions" :key="s.id" @click="searchKeyword(s.name)"
+               style="padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f5f5f5;font-size:14px"
+               @mouseenter="(e:any) => e.target.style.background='#f8f8f8'" @mouseleave="(e:any) => e.target.style.background=''">
+            <span style="color:#999">🔍</span>
+            <span>{{ s.name }}</span>
+            <span style="margin-left:auto;color:#e4393c;font-size:12px">¥{{ (s.price/100).toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
       <div style="margin-bottom:24px"><h4 style="font-size:14px;color:#999;margin-bottom:12px;text-align:left">🔥 {{ t('search.hotKeywords') }}</h4>
         <div style="display:flex;flex-wrap:wrap;gap:8px">

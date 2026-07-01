@@ -5,7 +5,9 @@ import { getProductById, getProductSkus, getProductReviews, getRelatedProducts }
 import { addToCart } from '@/api/cart'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
+import ProductRating from '@/components/ProductRating.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,6 +33,8 @@ onMounted(async () => {
     ])
     product.value = pRes.data; skus.value = skuRes.data || []
     reviews.value = revRes.data || []; related.value = relRes.data || []
+    const { add } = useRecentlyViewed()
+    if (pRes.data) add({ id: pRes.data.id, name: pRes.data.name, price: pRes.data.price, imageUrl: pRes.data.imageUrl })
   } catch {} finally { loading.value = false }
   if (auth.isLoggedIn()) {
     try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch {}
@@ -63,7 +67,11 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     </div>
     <div style="flex:1">
       <h1 style="font-size:22px;margin-bottom:8px">{{ product.name }}</h1>
-      <p style="color:#e4393c;font-size:13px;margin-bottom:16px">{{ product.description || '' }}</p>
+      <p style="color:#e4393c;font-size:13px;margin-bottom:8px">{{ product.description || '' }}</p>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <ProductRating v-if="product.rating" :rating="product.rating || 0" :count="reviews.length" />
+        <span v-if="!product.rating" style="color:#aaa;font-size:12px">暂无评分</span>
+      </div>
       <div style="background:linear-gradient(135deg,#fff5f5,#fff0f0);padding:20px;border-radius:8px;margin-bottom:16px">
         <div style="display:flex;align-items:baseline;gap:12px">
           <span style="color:#999;font-size:13px">{{ t('product.price') }}</span>

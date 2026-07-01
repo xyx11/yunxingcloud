@@ -3,10 +3,12 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBanners, getHotProducts, getNewProducts, getCategories } from '@/api/product'
 import { usePullRefresh } from '@/composables/usePullRefresh'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
 
 const router = useRouter()
 const { t } = useI18n()
+const { items: recentItems } = useRecentlyViewed()
 const banners = ref<any[]>([])
 const hotProducts = ref<any[]>([])
 const newProducts = ref<any[]>([])
@@ -143,6 +145,25 @@ function goProducts(query: Record<string, any>) { router.push({ path: '/products
     <div v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length" style="text-align:center;padding:60px;color:#999">
       <p style="font-size:48px;margin-bottom:16px">🛍️</p>
       <p>{{ t('common.noResults') }}</p>
+    </div>
+    <div v-if="recentItems.length" style="margin-top:32px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="font-size:20px;font-weight:700;color:#333">🕐 最近浏览</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <div v-for="p in recentItems.slice(0, 4)" :key="'rv-'+p.id"
+             @click="goDetail(p.id)"
+             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .3s,transform .3s"
+             @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
+             @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }">
+          <div style="height:200px;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);display:flex;align-items:center;justify-content:center;font-size:56px">📦</div>
+          <div style="padding:12px 16px">
+            <h4 style="font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
+            <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+            <div style="font-size:11px;color:#aaa;margin-top:2px">{{ new Date(p.viewedAt).toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) }}</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
