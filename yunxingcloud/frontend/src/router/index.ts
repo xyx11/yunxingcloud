@@ -51,6 +51,7 @@ const GiftCardView = () => import('@/views/GiftCardView.vue')
 const CampaignView = () => import('@/views/CampaignView.vue')
 const TagView = () => import('@/views/TagView.vue')
 const MemberTierView = () => import('@/views/MemberTierView.vue')
+const FeedbackView = () => import('@/views/FeedbackView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
@@ -96,6 +97,7 @@ const router = createRouter({
         { path: 'campaigns', name: 'Campaigns', component: CampaignView, meta: { title: '营销活动' } },
         { path: 'tags', name: 'Tags', component: TagView, meta: { title: '标签管理' } },
         { path: 'member-tiers', name: 'MemberTiers', component: MemberTierView, meta: { title: '会员等级' } },
+        { path: 'feedback', name: 'Feedback', component: FeedbackView, meta: { title: '客户反馈' } },
         { path: 'loginlog', name: 'LoginLog', component: LoginLogView, meta: { title: '登录日志' } },
         { path: 'online', name: 'OnlineUser', component: OnlineUserView, meta: { title: '在线用户' } },
         { path: 'backup', name: 'Backup', component: BackupView, meta: { title: '数据备份' } },
