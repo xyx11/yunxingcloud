@@ -24,8 +24,8 @@ public class RecommendationService {
         Product p = productRepo.findById(productId).orElse(null);
         if (p == null || p.getCategoryId() == null) return hotProducts(limit);
 
-        return productRepo.findByCategoryIdAndIdNotAndStatus(p.getCategoryId(), productId,
-                "0", PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "sales")));
+        return productRepo.findByCategoryIdAndIdNot(p.getCategoryId(), productId,
+                PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "sales")));
     }
 
     /** 个性化推荐: 基于用户历史购买分类 */
