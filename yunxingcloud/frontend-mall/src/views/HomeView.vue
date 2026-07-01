@@ -126,6 +126,8 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
            :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
         <div style="height:200px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
           📦
+          <span v-if="activeTab==='new' || p.isNew" style="position:absolute;top:6px;left:6px;background:#4caf50;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">新品</span>
+          <span v-else-if="activeTab==='hot' || p.isHot" style="position:absolute;top:6px;left:6px;background:#e4393c;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
         </div>
         <div style="padding:12px 16px">
           <h4 style="font-size:14px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>

@@ -134,7 +134,9 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
              :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
           <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">
             📦
-            <span v-if="p.isHot" style="position:absolute;top:6px;left:6px;background:#e4393c;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
+            <span v-if="p.isNew" style="position:absolute;top:6px;left:6px;background:#4caf50;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">新品</span>
+            <span v-else-if="p.isHot" style="position:absolute;top:6px;left:6px;background:#e4393c;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
+            <span v-if="p.originalPrice && p.originalPrice > p.price" style="position:absolute;top:6px;right:50px;background:#ff9800;color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;z-index:1">-{{ Math.round((1-p.price/p.originalPrice)*100) }}%</span>
             <button @click.stop="toggleCompare({id:p.id,name:p.name,price:p.price,sales:p.sales,description:p.description})"
                     style="position:absolute;top:6px;right:6px;padding:1px 8px;border:1px solid #e4393c;border-radius:10px;background:#fff;color:#e4393c;cursor:pointer;font-size:10px;z-index:1;transition:all .2s"
                     :style="{background:isSelected(p.id)?'#e4393c':'#fff',color:isSelected(p.id)?'#fff':'#e4393c'}">
