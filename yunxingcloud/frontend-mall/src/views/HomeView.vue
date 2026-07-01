@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBanners, getHotProducts, getNewProducts, getCategories, getRecommend } from '@/api/product'
 import { addToCart } from '@/api/cart'
@@ -7,6 +7,7 @@ import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import CountdownTimer from '@/components/CountdownTimer.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -30,7 +31,6 @@ async function loadData() {
 }
 
 const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
-import CountdownTimer from '@/components/CountdownTimer.vue'
 
 const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
 const flashPrice = (price: number) => Math.floor(price * 0.7)
@@ -40,8 +40,10 @@ onMounted(async () => {
   bannerTimer = setInterval(() => {
     if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length
   }, 4000)
-  updateFlashCountdown()
-  flashTimer = setInterval(updateFlashCountdown, 1000)
+})
+
+onUnmounted(() => {
+  clearInterval(bannerTimer)
 })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }

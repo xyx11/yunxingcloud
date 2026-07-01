@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchProducts } from '@/api/product'
 import { addToCart } from '@/api/cart'
@@ -33,6 +33,7 @@ function onInput() {
 }
 
 onMounted(() => { searchQuery.value = (route.query.q as string) || ''; searchInput.value = searchQuery.value; if (searchQuery.value) doSearch() })
+onUnmounted(() => { clearTimeout(suggestTimer) })
 watch(() => route.query.q, (q) => { searchQuery.value = (q as string) || ''; searchInput.value = searchQuery.value; page.value = 0; if (searchQuery.value) doSearch() })
 
 async function doSearch() {
