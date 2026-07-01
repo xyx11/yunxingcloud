@@ -14,3 +14,11 @@ app.config.globalProperties.$toast = toast
 app.provide('toast', toast)
 
 app.mount('#app')
+
+// Web Vitals 监控
+if ('webVitals' in localStorage) {
+  import('web-vitals').then(({ onLCP, onFID, onCLS, onINP, onTTFB }) => {
+    onLCP(console.log); onFID(console.log); onCLS(console.log); onINP(console.log); onTTFB(console.log)
+  }).catch(() => {})
+}
+// 启用: localStorage.setItem('webVitals', '1')
