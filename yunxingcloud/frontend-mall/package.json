@@ -10,7 +10,6 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.ts",
     "lint:fix": "eslint . --ext .vue,.ts --fix",
-    "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
