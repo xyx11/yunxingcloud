@@ -18,6 +18,7 @@ const searchText = ref('')
 const categories = ref<any[]>([])
 const cartCount = ref(0)
 const showBackTop = ref(false)
+const showMega = ref(false)
 const isDark = ref((() => { try { return localStorage.getItem('mall_theme') === 'dark' } catch { return false } })())
 const voiceSearching = ref(false)
 
@@ -92,9 +93,14 @@ const tabItems = [
 
       <!-- Search (desktop) -->
       <div class="search-box" role="search" style="flex:1;max-width:600px;display:flex">
-        <input v-model="searchText" placeholder="华为手机" aria-label="华为手机keyup.enter="doSearch"
-               style="flex:1;height:36px;padding:0 12px;border:none;border-radius:4px 0 0 4px;outline:none;font-size:14px" />
-        <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#f10215;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
+        <input v-model="searchText" placeholder="华为手机" @keyup.enter="doSearch" aria-label="搜索商品"
+               style="flex:1;height:36px;padding:0 12px;border:none;border-radius:0;outline:none;font-size:14px" />
+        <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#f10215;color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:700">🔍 搜索</button>
+      </div>
+      <div class="hot-tags" style="display:flex;gap:10px;font-size:11px;color:#999;margin-top:-6px;margin-bottom:4px;padding-left:0">
+        <span v-for="kw in ['iPhone 17','MacBook Pro','华为Mate 70','茅台飞天','Nike Dunk','戴森V16']" :key="kw"
+              @click="searchText=kw;doSearch()" style="cursor:pointer;transition:color .2s"
+              @mouseenter="(e:any) => e.target.style.color='#f10215'" @mouseleave="(e:any) => e.target.style.color='#999'">{{ kw }}</span>
       </div>
 
       <div class="header-links" role="navigation" aria-label="用户导航" style="display:flex;align-items:center;gap:16px;font-size:13px;white-space:nowrap">
@@ -109,9 +115,18 @@ const tabItems = [
     </header>
 
     <!-- Category Nav (desktop) -->
-    <nav class="cat-nav" style="background:#fff;border-bottom:2px solid #f10215;padding:0 20px;display:flex;gap:0;overflow-x:auto">
-      <span @click="goTo('/products')" style="display:inline-block;padding:10px 16px;cursor:pointer;font-size:14px;white-space:nowrap;color:#333;transition:color .2s"
-            @mouseenter="(e:any) => e.target.style.color='#f10215'" @mouseleave="(e:any) => e.target.style.color='#333'">全部商品</span>
+    <nav class="cat-nav" style="background:#fff;border-bottom:2px solid #f10215;padding:0 20px;display:flex;gap:0;overflow-x:auto;position:relative">
+      <div style="position:relative" @mouseenter="showMega=true" @mouseleave="showMega=false">
+        <span @click="goTo('/products')" style="display:inline-block;padding:10px 20px;cursor:pointer;font-size:14px;white-space:nowrap;color:#fff;background:#f10215;font-weight:600">📂 全部商品分类</span>
+        <div v-if="showMega && categories.length" style="position:absolute;top:100%;left:0;z-index:300;background:#fff;border:1px solid #eee;box-shadow:0 8px 32px rgba(0,0,0,.1);border-radius:0 0 8px 8px;min-width:200px;padding:8px 0">
+          <div v-for="cat in categories" :key="cat.id" @click="goCategory(cat.id);showMega=false"
+               style="padding:8px 20px;cursor:pointer;font-size:13px;color:#333;transition:all .15s;display:flex;align-items:center;gap:8px"
+               @mouseenter="(e:any) => { e.target.style.background='#fff5f5'; e.target.style.color='#f10215' }"
+               @mouseleave="(e:any) => { e.target.style.background='#fff'; e.target.style.color='#333' }">
+            <span>{{ cat.icon || '📁' }}</span>{{ cat.name }}
+          </div>
+        </div>
+      </div>
       <span v-for="cat in categories.slice(0, 8)" :key="cat.id"
             @click="goCategory(cat.id)"
             style="display:inline-block;padding:10px 16px;cursor:pointer;font-size:14px;white-space:nowrap;color:#333;transition:color .2s"
