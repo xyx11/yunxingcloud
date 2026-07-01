@@ -15,11 +15,28 @@ const searchText = ref('')
 const categories = ref<any[]>([])
 const cartCount = ref(0)
 const showBackTop = ref(false)
+const isDark = ref(localStorage.getItem('mall_theme') === 'dark')
+const voiceSearching = ref(false)
 
 function updateCartCount() {
   try { const r = JSON.parse(localStorage.getItem('cart_count') || '0'); cartCount.value = r } catch { cartCount.value = 0 }
 }
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
+function toggleTheme() {
+  isDark.value = !isDark.value
+  localStorage.setItem('mall_theme', isDark.value ? 'dark' : 'light')
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+}
+function startVoiceSearch() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
+  const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+  const rec = new SR(); rec.lang = 'zh-CN'; rec.interimResults = false
+  voiceSearching.value = true; rec.start()
+  rec.onresult = (e: any) => { searchText.value = e.results[0][0].transcript; doSearch(); voiceSearching.value = false }
+  rec.onerror = () => { voiceSearching.value = false }
+}
+
+if (isDark.value) document.documentElement.setAttribute('data-theme', 'dark')
 
 onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch {}
@@ -72,7 +89,9 @@ const tabItems = [
         <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#c82930;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
       </div>
 
-      <div class="header-links" role="navigation" aria-label="用户导航" style="display:flex;align-items:center;gap:20px;font-size:13px;white-space:nowrap">
+      <div class="header-links" role="navigation" aria-label="用户导航" style="display:flex;align-items:center;gap:16px;font-size:13px;white-space:nowrap">
+        <button @click="startVoiceSearch" :disabled="voiceSearching" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;padding:2px 6px;opacity:.8" :style="{opacity:voiceSearching?'.5':'.8'}" :title="voiceSearching?'正在监听...':'语音搜索'">{{ voiceSearching ? '🎙️' : '🎤' }}</button>
+        <button @click="toggleTheme" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;padding:2px 6px;opacity:.8" :title="isDark?'浅色模式':'深色模式'">{{ isDark ? '☀️' : '🌙' }}</button>
         <span @click="goTo('/orders')" style="cursor:pointer">我的订单</span>
         <span @click="goTo('/cart')" style="cursor:pointer;position:relative">
           🛒 购物车
@@ -147,6 +166,14 @@ const tabItems = [
 </template>
 
 <style>
+[data-theme="dark"] {
+  --bg: #1a1a2e; --card-bg: #16213e; --text: #e0e0e0; --text-secondary: #999;
+  --border: #333; --header-bg: #0f3460; --footer-bg: #0a0a1a;
+}
+[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+[data-theme="dark"] .main-content { background: var(--bg); }
+[data-theme="dark"] button { color: var(--text); }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
