@@ -50,7 +50,8 @@ public class GatewayRouteConfig {
                               "/api/points/**", "/api/recommend/**",
                               "/api/articles/**", "/api/notifications/**",
                               "/api/analytics/**",
-                              "/api/logistics/**", "/api/compare/**")
+                              "/api/logistics/**", "/api/compare/**",
+                              "/api/gift-cards/**")
                         .uri(ORD))
                 // Data dashboard -> core
                 .route("core-dashboard", r -> r
