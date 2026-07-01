@@ -2,10 +2,13 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchProducts } from '@/api/product'
+import { addToCart } from '@/api/cart'
+import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const { t } = useI18n()
 const results = ref<any[]>([])
 const totalPages = ref(0)
@@ -40,9 +43,12 @@ async function doSearch() {
   try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; router.replace({ query: { q } }) } catch { results.value = [] } finally { loading.value = false }
 }
 
+const sortBy = ref('')
+function setSort(s: string) { sortBy.value = sortBy.value === s ? '' : s; const sorted = [...results.value]; if (s === 'price_asc') sorted.sort((a:any,b:any) => a.price - b.price); else if (s === 'price_desc') sorted.sort((a:any,b:any) => b.price - a.price); else if (s === 'sales') sorted.sort((a:any,b:any) => (b.sales||0) - (a.sales||0)); results.value = sorted }
 function searchKeyword(kw: string) { searchInput.value = kw; searchQuery.value = kw; doSearch() }
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function clearHistory() { history.value = []; localStorage.removeItem('searchHistory') }
+async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
 </script>
 
 <template>
@@ -84,16 +90,40 @@ function clearHistory() { history.value = []; localStorage.removeItem('searchHis
       </div>
     </div>
     <div v-if="searchQuery">
-      <div style="margin-bottom:16px"><h2 style="font-size:18px">{{ t('search.resultCount', { n: results.length }) }}</h2></div>
-      <div v-if="loading" style="text-align:center;padding:40px;color:#999">{{ t('search.searching') }}</div>
+      <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <h2 style="font-size:18px">"{{ searchQuery }}" 共 {{ results.length }} 件</h2>
+        <div style="display:flex;gap:12px;font-size:13px">
+          <span @click="setSort('')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:!sortBy?'#e4393c':'#666',background:!sortBy?'#fff0f0':''}">综合</span>
+          <span @click="setSort('sales')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='sales'?'#e4393c':'#666',background:sortBy==='sales'?'#fff0f0':''}">销量</span>
+          <span @click="setSort('price_asc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_asc'?'#e4393c':'#666',background:sortBy==='price_asc'?'#fff0f0':''}">价格↑</span>
+          <span @click="setSort('price_desc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_desc'?'#e4393c':'#666',background:sortBy==='price_desc'?'#fff0f0':''}">价格↓</span>
+        </div>
+      </div>
+      <div v-if="loading">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div v-for="i in 8" :key="i" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            <div style="height:180px;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
+            <div style="padding:12px"><div style="height:16px;width:70%;background:#f0f0f0;border-radius:4px;margin-bottom:8px"></div><div style="height:20px;width:40%;background:#f0f0f0;border-radius:4px"></div></div>
+          </div>
+        </div>
+      </div>
       <div v-else-if="results.length" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
         <div v-for="p in results" :key="p.id" @click="goDetail(p.id)" style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s"
              @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''" :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
-          <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px">📦</div>
+          <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">📦</div>
           <div style="padding:12px"><h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-            <div style="display:flex;align-items:baseline;gap:8px">
-              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <span style="color:#999;font-size:11px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span style="color:#999;font-size:11px;margin-left:4px">已售 {{ p.sales || 0 }}</span>
+              </div>
+              <button @click="(e: Event) => quickAdd(e, p)"
+                      style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                      :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
+                      @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#e4393c'; e.target.style.color='#fff' } }"
+                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                {{ (p as any)._added ? '✓' : '+' }}
+              </button>
             </div>
           </div>
         </div>
