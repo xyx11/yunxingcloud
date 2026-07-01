@@ -171,6 +171,78 @@ services:
       usercenter:
         condition: service_healthy
 
+  payment:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-payment
+        PORT: 8083
+    container_name: yunxingcloud-payment
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
+      NACOS_SERVER: nacos:8848
+    networks:
+      - yunxingcloud
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  order:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-order
+        PORT: 8084
+    container_name: yunxingcloud-order
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
+      NACOS_SERVER: nacos:8848
+    networks:
+      - yunxingcloud
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  inventory:
+    build:
+      context: .
+      args:
+        SERVICE: yunxingcloud-inventory
+        PORT: 8085
+    container_name: yunxingcloud-inventory
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}
+      NACOS_SERVER: nacos:8848
+    networks:
+      - yunxingcloud
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
 volumes:
   nacos_data:
   mysql_data:

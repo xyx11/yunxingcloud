@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getBanners, getHotProducts, getNewProducts, getCategories } from '@/api/product'
+import { usePullRefresh } from '@/composables/usePullRefresh'
+import { useI18n } from '@/locales'
+
+const router = useRouter()
+const { t } = useI18n()
+const banners = ref<any[]>([])
+const hotProducts = ref<any[]>([])
+const newProducts = ref<any[]>([])
+const categories = ref<any[]>([])
+const activeTab = ref<'hot' | 'new' | 'flash'>('hot')
+const currentBanner = ref(0)
+let bannerTimer: any = null
+
+async function loadData() {
+  try { const r = await getBanners(); banners.value = r.data || [] } catch {}
+  try { const r = await getHotProducts(); hotProducts.value = r.data || [] } catch {}
+  try { const r = await getNewProducts(); newProducts.value = r.data || [] } catch {}
+  try { const r = await getCategories(); categories.value = r.data || [] } catch {}
+}
+
+const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
+
+const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
+const flashH = ref(0); const flashM = ref(0); const flashS = ref(0)
+let flashTimer: any = null
+
+function updateFlashCountdown() {
+  const diff = Math.max(0, flashEnd.value - Date.now())
+  flashH.value = Math.floor(diff / 3600000)
+  flashM.value = Math.floor((diff % 3600000) / 60000)
+  flashS.value = Math.floor((diff % 60000) / 1000)
+}
+const flashPrice = (price: number) => Math.floor(price * 0.7)
+
+onMounted(async () => {
+  await loadData()
+  bannerTimer = setInterval(() => {
+    if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length
+  }, 4000)
+  updateFlashCountdown()
+  flashTimer = setInterval(updateFlashCountdown, 1000)
+})
+
+function goDetail(id: number) { router.push(`/product/${id}`) }
+function goProducts(query: Record<string, any>) { router.push({ path: '/products', query }) }
+</script>
+
+<template>
+  <div>
+    <div v-if="pulling" class="pull-indicator" style="text-align:center;overflow:hidden;transition:height .2s" :style="{height:pullDistance+'px'}">
+      <span v-if="!refreshing" style="font-size:13px;color:#999">↓ {{ t('common.loading') }}</span>
+      <span v-else style="font-size:13px;color:#999">⏳ {{ t('common.loading') }}</span>
+    </div>
+    <div v-if="banners.length" style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:24px;height:360px">
+      <div v-for="(b, i) in banners" :key="b.id" :style="{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'linear-gradient(135deg,'+(i%2?'#c82930':'#e4393c')+','+(i%2?'#ff6b6b':'#f90')+')',display:'flex',alignItems:'center',justifyContent:'center',opacity:i===currentBanner?1:0,transition:'opacity .6s'}">
+        <div style="text-align:center;color:#fff">
+          <h2 style="font-size:42px;margin-bottom:16px">{{ b.title }}</h2>
+          <p style="font-size:20px;opacity:.9">{{ t('product.hotRecommend') }}</p>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px">
+        <span v-for="(b, i) in banners" :key="b.id" @click="currentBanner=i"
+              style="width:10px;height:10px;border-radius:50%;cursor:pointer;transition:all .3s"
+              :style="{background:i===currentBanner?'#fff':'rgba(255,255,255,.5)',transform:i===currentBanner?'scale(1.3)':''}"></span>
+      </div>
+    </div>
+    <div v-if="categories.length" style="display:flex;gap:24px;justify-content:center;margin-bottom:24px;flex-wrap:wrap">
+      <div v-for="cat in categories.slice(0, 8)" :key="cat.id"
+           @click="goProducts({ categoryId: cat.id })"
+           style="text-align:center;cursor:pointer;width:80px"
+           @mouseenter="(e:any) => e.target.style.transform='scale(1.08)'"
+           @mouseleave="(e:any) => e.target.style.transform=''"
+           :style="{transition:'transform .2s'}">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#fff0f0,#ffe8e8);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px">{{ cat.icon || '📁' }}</div>
+        <div style="font-size:12px;color:#333">{{ cat.name }}</div>
+      </div>
+    </div>
+    <div v-if="hotProducts.length >= 3" style="background:linear-gradient(135deg,#fff5f5,#fff);border:2px solid #e4393c;border-radius:12px;padding:20px 24px;margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:22px;font-weight:800;color:#e4393c">⏰ {{ t('product.flashSale') }}</span>
+          <div style="display:flex;align-items:center;gap:4px;font-size:16px;font-weight:700;color:#333">
+            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashH).padStart(2,'0') }}</span>
+            <span>:</span>
+            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashM).padStart(2,'0') }}</span>
+            <span>:</span>
+            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashS).padStart(2,'0') }}</span>
+          </div>
+        </div>
+        <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-'+p.id" @click="goDetail(p.id)"
+             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;text-align:center;transition:transform .3s"
+             @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'"
+             @mouseleave="(e:any) => e.target.style.transform=''">
+          <div style="height:140px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">
+            📦
+            <span style="position:absolute;top:6px;right:6px;background:#e4393c;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">7{{ t('common.discount', '折') }}</span>
+          </div>
+          <div style="padding:8px 12px 12px">
+            <h5 style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">{{ p.name }}</h5>
+            <div style="display:flex;align-items:baseline;justify-content:center;gap:6px">
+              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
+              <span style="color:#999;font-size:11px;text-decoration:line-through">¥{{ (p.price / 100).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="display:flex;gap:24px">
+        <span @click="activeTab='hot'"
+              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='hot'?'#e4393c':'#999',borderBottom:activeTab==='hot'?'3px solid #e4393c':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.hotRecommend') }}</span>
+        <span @click="activeTab='new'"
+              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='new'?'#e4393c':'#999',borderBottom:activeTab==='new'?'3px solid #e4393c':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.newArrival') }}</span>
+      </div>
+      <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div v-for="p in (activeTab==='hot'?hotProducts:newProducts)" :key="p.id"
+           @click="goDetail(p.id)"
+           style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .3s,transform .3s"
+           @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
+           @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }"
+           :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
+        <div style="height:200px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
+          📦
+        </div>
+        <div style="padding:12px 16px">
+          <h4 style="font-size:14px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="color:#e4393c;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+            <span style="color:#999;font-size:12px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length" style="text-align:center;padding:60px;color:#999">
+      <p style="font-size:48px;margin-bottom:16px">🛍️</p>
+      <p>{{ t('common.noResults') }}</p>
+    </div>
+  </div>
+</template>

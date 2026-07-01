@@ -3,39 +3,39 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '17', distribution: 'temurin', cache: maven }
+      - run: ./mvnw test -q
+
   build-and-deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
+        with: { java-version: '17', distribution: 'temurin', cache: maven }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+        with: { node-version: '20', cache: npm, cache-dependency-path: frontend/package-lock.json }
 
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
+      - name: Build Admin Frontend
+        run: cd frontend && npm ci && npm run build
 
-      - name: Build Backend
-        run: |
-          ./mvnw package -pl yunxingcloud-core -am -DskipTests -q
-          ./mvnw package -pl yunxingcloud-usercenter -am -DskipTests -q
-          ./mvnw package -pl yunxingcloud-gateway -am -DskipTests -q
+      - name: Build Mall Frontend
+        run: cd frontend-mall && npm ci && npm run build
+
+      - name: Build All Services
+        run: ./mvnw package -DskipTests -q -T 4C
 
       - name: Deploy to Server
         uses: appleboy/scp-action@v0.1.7
@@ -47,6 +47,10 @@ jobs:
             yunxingcloud-core/target/yunxingcloud-core-*.jar
             yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar
             yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar
+            yunxingcloud-payment/target/yunxingcloud-payment-*.jar
+            yunxingcloud-order/target/yunxingcloud-order-*.jar
+            yunxingcloud-inventory/target/yunxingcloud-inventory-*.jar
+            frontend-mall/dist/
           target: /opt/yunxingcloud/app/
           strip_components: 0
 
@@ -57,14 +61,25 @@ jobs:
           username: ${{ secrets.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
           script: |
-            # Copy JARs to app dir
-            cp yunxingcloud-core/target/yunxingcloud-core-*.jar /opt/yunxingcloud/app/
-            cp yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar /opt/yunxingcloud/app/
-            cp yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar /opt/yunxingcloud/app/
-            # Restart all services
-            systemctl restart yunxingcloud-core yunxingcloud-usercenter yunxingcloud-gateway
-            # Wait for startup
-            sleep 30
+            cd /opt/yunxingcloud/app
+            # Copy JARs
+            cp yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar /opt/yunxingcloud/app/yunxingcloud-usercenter.jar
+            cp yunxingcloud-payment/target/yunxingcloud-payment-*.jar /opt/yunxingcloud/app/yunxingcloud-payment.jar
+            cp yunxingcloud-order/target/yunxingcloud-order-*.jar /opt/yunxingcloud/app/yunxingcloud-order.jar
+            cp yunxingcloud-inventory/target/yunxingcloud-inventory-*.jar /opt/yunxingcloud/app/yunxingcloud-inventory.jar
+            cp yunxingcloud-core/target/yunxingcloud-core-*.jar /opt/yunxingcloud/app/yunxingcloud-core.jar
+            cp yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar /opt/yunxingcloud/app/yunxingcloud-gateway.jar
+            # Deploy Mall
+            rm -rf /opt/yunxingcloud/mall/*
+            cp -r frontend-mall/dist/* /opt/yunxingcloud/mall/
+            # Restart in dependency order
+            for svc in yunxingcloud-usercenter yunxingcloud-payment yunxingcloud-order yunxingcloud-inventory yunxingcloud-core yunxingcloud-gateway; do
+              systemctl restart $svc
+              sleep 8
+            done
             # Health check
-            curl -f http://localhost:8090/actuator/health || exit 1
-            echo "Deploy successful"
+            sleep 10
+            for port in 8081 8083 8084 8085 8080 8090; do
+              curl -sf http://127.0.0.1:$port/actuator/health || { echo "Port $port FAILED"; exit 1; }
+            done
+            echo "Deploy successful — 6 services healthy"

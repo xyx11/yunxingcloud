@@ -16,7 +16,8 @@ source deploy.conf 2>/dev/null || {
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 REMOTE_APP="$DEPLOY_DIR/app"
 REMOTE_LOG="$DEPLOY_DIR/logs"
-APP_JAR="yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar"
+
+SERVICES="yunxingcloud-core yunxingcloud-gateway yunxingcloud-usercenter yunxingcloud-payment yunxingcloud-order yunxingcloud-inventory"
 
 # ---- 颜色 ----
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
@@ -31,15 +32,13 @@ ssh_exec() {
 
 # ---- 构建 ----
 build() {
-    info "构建后端 (Maven)..."
-    ./mvnw clean package -pl yunxingcloud-core -DskipTests -q
-    info "后端构建完成: $APP_JAR"
-
-    info "构建前端 (Vite)..."
-    cd frontend
-    npm run build --silent 2>/dev/null
-    cd ..
-    info "前端构建完成"
+    info "构建前端 Admin (Vite)..."
+    cd frontend && npm run build --silent 2>/dev/null && cd ..
+    info "构建前端 Mall (Vite)..."
+    cd frontend-mall && npm run build --silent 2>/dev/null && cd ..
+    info "构建后端 (Maven 全模块)..."
+    ./mvnw clean package -DskipTests -q
+    info "全部构建完成"
 }
 
 # ---- 打包 ----
@@ -47,10 +46,14 @@ package() {
     local PKG="yunxingcloud-$TIMESTAMP.tar.gz"
     info "打包: $PKG"
     tar -czf "/tmp/$PKG" \
-        "$APP_JAR" \
-        deploy.conf \
-        --exclude='*.sql' \
-        --exclude='target/original*' 2>/dev/null
+        yunxingcloud-core/target/yunxingcloud-core-*.jar \
+        yunxingcloud-gateway/target/yunxingcloud-gateway-*.jar \
+        yunxingcloud-usercenter/target/yunxingcloud-usercenter-*.jar \
+        yunxingcloud-payment/target/yunxingcloud-payment-*.jar \
+        yunxingcloud-order/target/yunxingcloud-order-*.jar \
+        yunxingcloud-inventory/target/yunxingcloud-inventory-*.jar \
+        frontend-mall/dist/ \
+        deploy.conf 2>/dev/null
     echo "/tmp/$PKG"
 }
 
@@ -58,44 +61,47 @@ package() {
 upload() {
     local PKG=$(package)
     info "上传到 $SERVER_HOST ..."
-    ssh_exec "mkdir -p $REMOTE_APP $REMOTE_LOG $DEPLOY_DIR/backup"
+    ssh_exec "mkdir -p $REMOTE_APP $REMOTE_LOG $DEPLOY_DIR/backup /opt/yunxingcloud/mall"
     scp -P "$SERVER_PORT" -o StrictHostKeyChecking=no "$PKG" "$SERVER_USER@$SERVER_HOST:$DEPLOY_DIR/"
     ssh_exec "cd $DEPLOY_DIR && tar -xzf $(basename $PKG) && rm $(basename $PKG)"
+    # 部署商城前端静态文件
+    ssh_exec "cp -r $DEPLOY_DIR/frontend-mall/dist/* /opt/yunxingcloud/mall/"
     info "上传完成"
 }
 
 # ---- 远程启动 ----
 start() {
-    info "启动应用 (端口 $APP_PORT) ..."
-    ssh_exec "cd $REMOTE_APP && \
-        nohup java $JAVA_OPTS \
-            -jar yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar \
-            --server.port=$APP_PORT \
-            --spring.profiles.active=$SPRING_PROFILES \
-            --spring.datasource.url='$DB_URL' \
-            --spring.datasource.username='$DB_USERNAME' \
-            --spring.datasource.password='$DB_PASSWORD' \
-            --jwt.secret='$JWT_SECRET' \
-            --oauth2.client.id='$OAUTH2_CLIENT_ID' \
-            --oauth2.client.secret='$OAUTH2_CLIENT_SECRET' \
-            > $REMOTE_LOG/app.log 2>&1 &
-        echo \$! > $REMOTE_APP/app.pid"
-    info "应用已启动"
+    info "启动所有微服务..."
+    ssh_exec "
+        for svc in yunxingcloud-usercenter yunxingcloud-payment yunxingcloud-order yunxingcloud-inventory yunxingcloud-core yunxingcloud-gateway; do
+            systemctl start \$svc 2>/dev/null || true
+        done
+        sleep 5
+        echo 'all started'
+    "
 }
 
 # ---- 停止 ----
 stop() {
-    info "停止应用 ..."
-    ssh_exec "if [ -f $REMOTE_APP/app.pid ]; then \
-        kill \$(cat $REMOTE_APP/app.pid) 2>/dev/null; rm -f $REMOTE_APP/app.pid; \
-        echo 'stopped'; else pkill -f 'yunxingcloud-core' && echo 'killed'; fi" || true
+    info "停止所有微服务..."
+    ssh_exec "
+        for svc in yunxingcloud-gateway yunxingcloud-core yunxingcloud-inventory yunxingcloud-order yunxingcloud-payment yunxingcloud-usercenter; do
+            systemctl stop \$svc 2>/dev/null || true
+        done
+        echo 'all stopped'
+    "
 }
 
 # ---- 重启 ----
 restart() {
-    stop
-    sleep 2
-    start
+    info "重启所有微服务..."
+    ssh_exec "
+        for svc in yunxingcloud-usercenter yunxingcloud-payment yunxingcloud-order yunxingcloud-inventory yunxingcloud-core yunxingcloud-gateway; do
+            systemctl restart \$svc 2>/dev/null || true
+            sleep 3
+        done
+        echo 'done'
+    "
 }
 
 # ---- 健康检查 ----
@@ -112,6 +118,34 @@ health_check() {
         sleep 2
     done
     error "应用启动失败，请检查日志: ssh $SERVER_USER@$SERVER_HOST 'tail -50 $REMOTE_LOG/app.log'"
+}
+
+# ---- 增量构建 ----
+quick() {
+    info "增量构建 (跳过 clean + 并行编译)..."
+    cd frontend && npm run build --silent 2>/dev/null && cd ..
+    cd frontend-mall && npm run build --silent 2>/dev/null && cd ..
+    local cpu=$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+    ./mvnw package -DskipTests -T"$cpu"C -pl \
+        yunxingcloud-usercenter,yunxingcloud-payment,yunxingcloud-order,yunxingcloud-inventory,yunxingcloud-core,yunxingcloud-gateway \
+        -am -q
+    info "增量构建完成"
+}
+
+# ---- 仅后端 ----
+build_backend() {
+    info "仅构建后端 (Maven 全模块)..."
+    ./mvnw clean package -DskipTests -q
+    info "后端构建完成"
+}
+
+# ---- 仅前端 ----
+build_frontend() {
+    info "构建 Admin 前端..."
+    cd frontend && npm run build --silent 2>/dev/null && cd ..
+    info "构建 Mall 前端..."
+    cd frontend-mall && npm run build --silent 2>/dev/null && cd ..
+    info "前端构建完成"
 }
 
 # ---- 查看日志 ----
@@ -197,31 +231,37 @@ rollback() {
 # ============================================
 CMD=${1:-full}
 case "$CMD" in
-    full)     full ;;
-    build)    build ;;
-    upload)   upload ;;
-    start)    start ;;
-    stop)     stop ;;
-    restart)  restart ;;
-    logs)     logs ${2:-50} ;;
-    status)   status ;;
-    migrate)  migrate ;;
-    init)     init_server ;;
-    rollback) rollback ;;
+    full)          full ;;
+    build)         build ;;
+    quick)         quick ;;
+    build-backend) build_backend ;;
+    build-frontend) build_frontend ;;
+    upload)        upload ;;
+    start)         start ;;
+    stop)          stop ;;
+    restart)       restart ;;
+    logs)          logs ${2:-50} ;;
+    status)        status ;;
+    migrate)       migrate ;;
+    init)          init_server ;;
+    rollback)      rollback ;;
     *)
-        echo "用法: $0 {full|build|upload|start|stop|restart|logs|status|migrate|init|rollback}"
+        echo "用法: $0 {full|quick|build|build-backend|build-frontend|upload|start|stop|restart|logs|status|migrate|init|rollback}"
         echo ""
-        echo "  full     - 完整部署 (构建→上传→启动→检查)"
-        echo "  init     - 初始化阿里云 ECS 环境"
-        echo "  build    - 仅构建"
-        echo "  upload   - 构建并上传"
-        echo "  start    - 远程启动应用"
-        echo "  stop     - 远程停止应用"
-        echo "  restart  - 远程重启应用"
-        echo "  logs     - 查看远程日志"
-        echo "  status   - 查看服务状态"
-        echo "  migrate  - 执行数据库迁移"
-        echo "  rollback - 回滚到上一个备份"
+        echo "  full           - 完整部署 (构建→上传→启动→检查)"
+        echo "  quick          - 增量构建部署 (跳过clean + 并行编译)"
+        echo "  build          - 完整构建"
+        echo "  build-backend  - 仅构建后端"
+        echo "  build-frontend - 仅构建前端 (Admin + Mall)"
+        echo "  upload         - 构建并上传"
+        echo "  start          - 远程启动应用"
+        echo "  stop           - 远程停止应用"
+        echo "  restart        - 远程重启应用"
+        echo "  logs           - 查看远程日志"
+        echo "  status         - 查看服务状态"
+        echo "  migrate        - 执行数据库迁移"
+        echo "  init           - 初始化阿里云 ECS 环境"
+        echo "  rollback       - 回滚到上一个备份"
         exit 1
         ;;
 esac

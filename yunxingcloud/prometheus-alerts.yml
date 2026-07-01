@@ -1,0 +1,96 @@
+# ============================================
+# Prometheus AlertManager 告警规则
+# 用法: 挂载到 prometheus 容器的 /etc/prometheus/rules/
+# ============================================
+
+groups:
+  - name: yunxingcloud-service
+    rules:
+      # --- 服务宕机 ---
+      - alert: ServiceDown
+        expr: up{job=~"yunxingcloud-.*"} == 0
+        for: 1m
+        labels: { severity: critical, team: backend }
+        annotations:
+          summary: "{{ $labels.job }} 服务宕机"
+          description: "{{ $labels.job }} 已超过 1 分钟无响应"
+
+      # --- CPU 过高 ---
+      - alert: HighCPUUsage
+        expr: system_cpu_usage{job=~"yunxingcloud-.*"} > 0.8
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} CPU 使用率 > 80%"
+          description: "CPU {{ $value | humanizePercentage }}"
+
+      # --- 堆内存过高 ---
+      - alert: HighHeapMemory
+        expr: jvm_memory_used_bytes{area="heap", job=~"yunxingcloud-.*"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} 堆内存 > 85%"
+          description: "堆内存使用率 {{ $value | humanizePercentage }}"
+
+      # --- QPS 异常 (与基线偏差 >3σ) ---
+      - alert: AbnormalQPS
+        expr: |
+          rate(http_server_requests_seconds_count{job=~"yunxingcloud-.*"}[5m])
+          / rate(http_server_requests_seconds_count{job=~"yunxingcloud-.*"}[5m] offset 1h) > 3
+        for: 3m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} QPS 异常波动"
+          description: "当前 QPS 是半小时前的 {{ $value }}x"
+
+      # --- 慢请求 ---
+      - alert: SlowRequests
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_server_requests_seconds_bucket{job=~"yunxingcloud-.*"}[5m])
+          ) > 1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} P95 响应时间 > 1s"
+          description: "P95 = {{ $value }}s"
+
+      # --- 错误率过高 ---
+      - alert: HighErrorRate
+        expr: |
+          rate(http_server_requests_seconds_count{status=~"5..", job=~"yunxingcloud-.*"}[5m])
+          / rate(http_server_requests_seconds_count{job=~"yunxingcloud-.*"}[5m]) > 0.05
+        for: 2m
+        labels: { severity: critical, team: backend }
+        annotations:
+          summary: "{{ $labels.job }} 5xx 错误率 > 5%"
+          description: "错误率 {{ $value | humanizePercentage }}"
+
+      # --- 数据库连接池耗尽 ---
+      - alert: DBConnectionPoolExhausted
+        expr: hikaricp_connections_active{job=~"yunxingcloud-.*"} / hikaricp_connections_max > 0.9
+        for: 3m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} 数据库连接池 > 90%"
+          description: "活跃连接 {{ $value | humanizePercentage }}"
+
+      # --- 库存预警 ---
+      - alert: LowStock
+        expr: yunxingcloud_inventory_alerts_total > 0
+        for: 10m
+        labels: { severity: info }
+        annotations:
+          summary: "库存预警: {{ $value }} 项低于阈值"
+          description: "{{ $value }} 项商品库存不足，请及时补货"
+
+  - name: yunxingcloud-infra
+    rules:
+      - alert: HighDiskUsage
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "磁盘可用空间 < 15%"
+          description: "剩余 {{ $value | humanizePercentage }}"

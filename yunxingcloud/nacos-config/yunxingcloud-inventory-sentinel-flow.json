@@ -1,0 +1,8 @@
+[
+  {"resource":"/api/inventory","grade":1,"count":50,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/inventory/stock-in","grade":1,"count":20,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/inventory/stock-out","grade":1,"count":20,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/inventory/order-out","grade":1,"count":60,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/inventory/order-back","grade":1,"count":30,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/warehouses","grade":1,"count":30,"limitApp":"default","strategy":0,"controlBehavior":0}
+]

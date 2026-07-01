@@ -26,10 +26,23 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-vue': ['vue', 'vue-router', 'pinia'],
-          'vendor-naive': ['naive-ui'],
-          'vendor-echarts': ['echarts', 'vue-echarts'],
+        manualChunks(id, { getModuleInfo }) {
+          if (!id.includes('node_modules')) return;
+          // ECharts 最大，独立拆分（仅仪表盘/大屏使用）
+          if (id.includes('echarts') || id.includes('vue-echarts') || id.includes('zrender')) {
+            return 'vendor-echarts';
+          }
+          // Vue + naive-ui 放一起，避免循环依赖
+          if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router') ||
+              id.includes('naive-ui')) {
+            return 'vendor-vue';
+          }
+          if (id.includes('jsencrypt')) {
+            return 'vendor-jsencrypt';
+          }
+          if (id.includes('axios') || id.includes('js-cookie')) {
+            return 'vendor-utils';
+          }
         },
       },
     },

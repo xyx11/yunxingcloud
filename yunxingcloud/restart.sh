@@ -2,38 +2,63 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-echo "========== 重启 yunxingcloud =========="
 
-# 停止旧进程
+RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
+info()  { echo -e "${GREEN}[INFO]${NC}  $1"; }
+
+# ---- 端口 ----
+PORTS=(8081 8083 8084 8085 8080 8090)
+SERVICES=("usercenter" "payment" "order" "inventory" "core" "gateway")
+JARS=("yunxingcloud-usercenter/target/yunxingcloud-usercenter-0.0.1-SNAPSHOT.jar"
+      "yunxingcloud-payment/target/yunxingcloud-payment-0.0.1-SNAPSHOT.jar"
+      "yunxingcloud-order/target/yunxingcloud-order-0.0.1-SNAPSHOT.jar"
+      "yunxingcloud-inventory/target/yunxingcloud-inventory-0.0.1-SNAPSHOT.jar"
+      "yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar"
+      "yunxingcloud-gateway/target/yunxingcloud-gateway-0.0.1-SNAPSHOT.jar")
+
+echo "========== 重启 yunxingcloud (6 微服务) =========="
+
+# 1. 停止
 echo "1. 停止旧服务..."
-lsof -ti :8080 | xargs kill -9 2>/dev/null || true
-lsof -ti :5173 | xargs kill -9 2>/dev/null || true
+for p in "${PORTS[@]}"; do
+    lsof -ti :"$p" | xargs kill -9 2>/dev/null || true
+done
 sleep 2
 
-# 构建前端
-echo "2. 构建前端..."
+# 2. 构建前端
+echo "2. 构建前端 (admin)..."
 cd "$ROOT/frontend" && npx vite build 2>&1 | tail -1
 
-# 构建后端
-echo "3. 构建后端..."
-cd "$ROOT" && ./mvnw install -pl yunxingcloud-core -am -DskipTests -q
+# 3. 构建全部后端模块
+echo "3. 构建后端 (6 modules)..."
+cd "$ROOT" && ./mvnw clean package -DskipTests -q 2>&1 | tail -1
+info "构建完成"
 
-# 启动后端
-echo "4. 启动后端 (8080)..."
-nohup java -jar "$ROOT/yunxingcloud-core/target/yunxingcloud-core-0.0.1-SNAPSHOT.jar" > /tmp/yunxingcloud.log 2>&1 &
-sleep 8
+# 4. 启动服务（按依赖顺序）
+for i in "${!SERVICES[@]}"; do
+    svc="${SERVICES[$i]}"
+    port="${PORTS[$i]}"
+    jar="${JARS[$i]}"
+    echo "4. 启动 $svc (端口 $port)..."
+    nohup java -jar "$ROOT/$jar" > "/tmp/yunxingcloud-$svc.log" 2>&1 &
+    sleep 4
+done
+sleep 6
 
-# 启动前端
-echo "5. 启动前端 (5173)..."
-cd "$ROOT/frontend" && nohup npx vite --port 5173 --host > /tmp/vite.log 2>&1 &
-sleep 3
-
-# 验证
+# 5. 验证
 echo ""
 echo "========== 验证 =========="
-curl -s -o /dev/null -w "后端: HTTP %{http_code}\n" http://localhost:8080/
-curl -s -o /dev/null -w "前端: HTTP %{http_code}\n" http://localhost:5173/ 2>/dev/null || echo "前端: 启动中..."
+for i in "${!SERVICES[@]}"; do
+    svc="${SERVICES[$i]}"
+    port="${PORTS[$i]}"
+    code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$port/actuator/health" 2>/dev/null || echo "N/A")
+    case "$code" in
+        200) echo -e "  $svc ($port): ${GREEN}HTTP $code${NC}" ;;
+        *)   echo -e "  $svc ($port): ${RED}$code${NC}" ;;
+    esac
+done
+
 echo ""
-echo "http://localhost:5173"
-echo "http://localhost:8080"
-echo "admin / admin123"
+echo "  Admin:  http://localhost:5173"
+echo "  Gateway: http://localhost:8090"
+echo "  admin / admin123"

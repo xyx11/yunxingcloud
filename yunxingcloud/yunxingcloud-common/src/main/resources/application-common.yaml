@@ -1,0 +1,23 @@
+# ============================================
+# yunxingcloud 公共多环境配置模板
+# 用法 (每服务 application.yaml):
+#   spring.config.import: classpath:application-common.yaml
+#   spring.profiles.active: ${SPRING_PROFILES_ACTIVE:dev}
+# ============================================
+
+# Resilience4j — Feign 重试
+resilience4j:
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - feign.RetryableException
+    instances:
+      paymentClient:
+        base-config: default
+      inventoryClient:
+        base-config: default

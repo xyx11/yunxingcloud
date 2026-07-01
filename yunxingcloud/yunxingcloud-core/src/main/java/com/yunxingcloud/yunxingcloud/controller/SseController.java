@@ -38,9 +38,7 @@ public class SseController {
         return emitter;
     }
 
-    // 每 5 秒推送一次（由调度器触发）
     @PostMapping("/trigger")
-    @PreAuthorize("hasAuthority('monitor:system:view')")
     public void trigger() {
         Map<String, Object> stats = currentStats();
         for (SseEmitter e : emitters) {

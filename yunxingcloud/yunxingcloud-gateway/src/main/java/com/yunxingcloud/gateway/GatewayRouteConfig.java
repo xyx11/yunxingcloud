@@ -10,6 +10,9 @@ public class GatewayRouteConfig {
 
     private static final String CORE = "http://localhost:8080";
     private static final String UC = "http://localhost:8081";
+    private static final String PAY = "http://localhost:8083";
+    private static final String ORD = "http://localhost:8084";
+    private static final String INV = "http://localhost:8085";
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
@@ -30,18 +33,25 @@ public class GatewayRouteConfig {
                 .route("usercenter-wellknown", r -> r
                         .path("/.well-known/**")
                         .uri(UC))
-                // User management -> usercenter (social accounts only)
-                .route("usercenter-users", r -> r
-                        .path("/api/users/**", "/api/user/social/**")
+                // User social accounts -> usercenter
+                .route("usercenter-social", r -> r
+                        .path("/api/user/social/**")
                         .uri(UC))
-                // Roles -> usercenter
-                .route("usercenter-roles", r -> r
-                        .path("/api/roles/**")
-                        .uri(UC))
-                // Departments -> usercenter
-                .route("usercenter-depts", r -> r
-                        .path("/api/departments/**")
-                        .uri(UC))
+                // Order -> order service
+                .route("order-api", r -> r
+                        .path("/api/products/**", "/api/cart/**", "/api/orders/**",
+                              "/api/categories/**", "/api/brands/**", "/api/coupons/**",
+                              "/api/addresses/**", "/api/shipments/**", "/api/skus/**",
+                              "/api/banners/**", "/api/favorites/**")
+                        .uri(ORD))
+                // Inventory -> inventory service
+                .route("inventory-api", r -> r
+                        .path("/api/warehouses/**", "/api/inventory/**")
+                        .uri(INV))
+                // Payment -> payment service
+                .route("payment-api", r -> r
+                        .path("/api/payment/**")
+                        .uri(PAY))
                 // Password -> core
                 .route("core-password", r -> r
                         .path("/api/password/**")

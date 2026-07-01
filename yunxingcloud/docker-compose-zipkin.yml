@@ -1,0 +1,31 @@
+# ============================================
+# Zipkin 分布式链路追踪 (追加到 docker-compose.yml)
+# 用法: docker-compose -f docker-compose.yml -f docker-compose-zipkin.yml up -d
+# 访问: http://localhost:9411
+# ============================================
+version: '3.8'
+
+services:
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: yunxingcloud-zipkin
+    restart: unless-stopped
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: mem
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 512M }
+
+networks:
+  yunxingcloud:
+    external: true

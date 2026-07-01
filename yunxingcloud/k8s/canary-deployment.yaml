@@ -1,0 +1,79 @@
+# ============================================
+# Kubernetes 金丝雀部署模板
+# 用法: kubectl apply -f canary-deployment.yaml
+# ============================================
+
+# --- 金丝雀 Deployment (以 core 为例) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-core-canary
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-core
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-core
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-core
+        track: canary
+        version: canary
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-core:canary
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+
+---
+# --- Istio/VirtualService 流量分割 (可选) ---
+# apiVersion: networking.istio.io/v1beta1
+# kind: VirtualService
+# metadata:
+#   name: yunxingcloud-core
+#   namespace: yunxingcloud
+# spec:
+#   hosts:
+#     - yunxingcloud-core
+#   http:
+#     - match:
+#         - headers:
+#             x-canary:
+#               exact: "true"
+#       route:
+#         - destination:
+#             host: yunxingcloud-core
+#             subset: canary
+#     - route:
+#         - destination:
+#             host: yunxingcloud-core
+#             subset: stable
+#       weight: 90
+#     - route:
+#         - destination:
+#             host: yunxingcloud-core
+#             subset: canary
+#       weight: 10

@@ -54,15 +54,15 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
                 "超级管理员", "admin", "系统超级管理员",
-                "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write");
+                "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write");
             jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
-                "普通用户", "user", "普通用户", "user:read,dept:read");
+                "普通用户", "user", "普通用户", "user:read,dept:read,ticket:read,ticket:write");
         }
 
         // 确保 admin 角色始终拥有最新权限（增量更新）
         try {
-            String newPerms = "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write";
+            String newPerms = "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write";
             jdbcTemplate.update("UPDATE role SET permissions = ? WHERE code = 'admin'", newPerms);
         } catch (Exception ignored) {}
     }
@@ -258,6 +258,24 @@ public class DataInitializer implements CommandLineRunner {
 
             if (systemParent != null && !paths.contains("/posts")) {
                 menuRepository.save(createMenu("岗位管理", systemParent.getId(), 5, "/posts", "PostView", "C", "system:post:list"));
+            }
+            if (systemParent != null && !paths.contains("/tickets")) {
+                menuRepository.save(createMenu("工单管理", systemParent.getId(), 6, "/tickets", "TicketView", "C", "ticket:read"));
+            }
+            if (systemParent != null && !paths.contains("/payments")) {
+                menuRepository.save(createMenu("支付管理", systemParent.getId(), 7, "/payments", "PaymentView", "C", "ticket:read"));
+            }
+            if (systemParent != null && !paths.contains("/orders")) {
+                menuRepository.save(createMenu("订单管理", systemParent.getId(), 8, "/orders", "OrderView", "C", "ticket:read"));
+            }
+            if (systemParent != null && !paths.contains("/products")) {
+                menuRepository.save(createMenu("商品管理", systemParent.getId(), 9, "/products", "ProductView", "C", "ticket:write"));
+            }
+            if (systemParent != null && !paths.contains("/inventory")) {
+                menuRepository.save(createMenu("库存管理", systemParent.getId(), 10, "/inventory", "InventoryView", "C", "ticket:read"));
+            }
+            if (systemParent != null && !paths.contains("/warehouses")) {
+                menuRepository.save(createMenu("仓库管理", systemParent.getId(), 11, "/warehouses", "WarehouseView", "C", "ticket:write"));
             }
             if (monitorParent != null) {
                 if (!paths.contains("/loginlog")) {

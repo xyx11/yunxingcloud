@@ -33,29 +33,19 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-core"
           resources:
-            requests:
-              memory: "256Mi"
-              cpu: "200m"
-            limits:
-              memory: "1Gi"
-              cpu: "1000m"
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "1Gi", cpu: "1000m" }
           startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
+            httpGet: { path: /actuator/health, port: 8080 }
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
+            httpGet: { path: /actuator/health, port: 8080 }
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
+            httpGet: { path: /actuator/health, port: 8080 }
             initialDelaySeconds: 15
             periodSeconds: 5
       restartPolicy: Always
@@ -95,29 +85,19 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-usercenter"
           resources:
-            requests:
-              memory: "256Mi"
-              cpu: "200m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
           startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8081
+            httpGet: { path: /actuator/health, port: 8081 }
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8081
+            httpGet: { path: /actuator/health, port: 8081 }
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8081
+            httpGet: { path: /actuator/health, port: 8081 }
             initialDelaySeconds: 15
             periodSeconds: 5
       restartPolicy: Always
@@ -155,29 +135,175 @@ spec:
             - name: NACOS_SERVER
               value: "nacos-service:8848"
           resources:
-            requests:
-              memory: "256Mi"
-              cpu: "200m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
           startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8090
+            httpGet: { path: /actuator/health, port: 8090 }
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8090
+            httpGet: { path: /actuator/health, port: 8090 }
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8090
+            httpGet: { path: /actuator/health, port: 8090 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-payment
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-payment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-payment
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-payment
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-payment:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVICE_NAME
+              value: "yunxingcloud-payment"
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-order
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-order
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-order
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-order
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-order:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVICE_NAME
+              value: "yunxingcloud-order"
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yunxingcloud-inventory
+  namespace: yunxingcloud
+  labels:
+    app: yunxingcloud-inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-inventory
+  template:
+    metadata:
+      labels:
+        app: yunxingcloud-inventory
+    spec:
+      containers:
+        - name: app
+          image: yunxingcloud-inventory:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: yunxingcloud-config
+            - secretRef:
+                name: yunxingcloud-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVICE_NAME
+              value: "yunxingcloud-inventory"
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8085 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8085 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8085 }
             initialDelaySeconds: 15
             periodSeconds: 5
       restartPolicy: Always

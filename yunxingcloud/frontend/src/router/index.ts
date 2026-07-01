@@ -36,6 +36,12 @@ const RegisterApprovalView = () => import('@/views/RegisterApprovalView.vue')
 const OAuth2ClientView = () => import('@/views/OAuth2ClientView.vue')
 const DataScreenView = () => import('@/views/DataScreenView.vue')
 const OAuth2CallbackView = () => import('@/views/OAuth2CallbackView.vue')
+const TicketView = () => import('@/views/TicketView.vue')
+const PaymentView = () => import('@/views/PaymentView.vue')
+const ProductView = () => import('@/views/ProductView.vue')
+const OrderView = () => import('@/views/OrderView.vue')
+const InventoryView = () => import('@/views/InventoryView.vue')
+const WarehouseView = () => import('@/views/WarehouseView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
@@ -66,6 +72,12 @@ const router = createRouter({
         { path: 'dict', name: 'Dict', component: DictView, meta: { title: '字典管理' } },
         { path: 'notices', name: 'Notices', component: NoticeView, meta: { title: '通知公告' } },
         { path: 'posts', name: 'Posts', component: PostView, meta: { title: '岗位管理' } },
+        { path: 'tickets', name: 'Tickets', component: TicketView, meta: { title: '工单管理' } },
+        { path: 'payments', name: 'Payments', component: PaymentView, meta: { title: '支付管理' } },
+        { path: 'orders', name: 'Orders', component: OrderView, meta: { title: '订单管理' } },
+        { path: 'products', name: 'Products', component: ProductView, meta: { title: '商品管理' } },
+        { path: 'inventory', name: 'Inventory', component: InventoryView, meta: { title: '库存管理' } },
+        { path: 'warehouses', name: 'Warehouses', component: WarehouseView, meta: { title: '仓库管理' } },
         { path: 'loginlog', name: 'LoginLog', component: LoginLogView, meta: { title: '登录日志' } },
         { path: 'online', name: 'OnlineUser', component: OnlineUserView, meta: { title: '在线用户' } },
         { path: 'backup', name: 'Backup', component: BackupView, meta: { title: '数据备份' } },

@@ -8,4 +8,7 @@ import java.lang.annotation.*;
 public @interface DataScope {
     String deptAlias() default "d";
     String userAlias() default "u";
+    String deptField() default "dept_id";
+    boolean filterDept() default true;
+    boolean filterUser() default false;
 }

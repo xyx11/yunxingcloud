@@ -1,0 +1,23 @@
+# ============================================
+# Filebeat 配置: 采集 6 个微服务日志
+# ============================================
+
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /app/logs/yunxingcloud-core*.log
+      - /app/logs/yunxingcloud-usercenter*.log
+      - /app/logs/yunxingcloud-payment*.log
+      - /app/logs/yunxingcloud-order*.log
+      - /app/logs/yunxingcloud-inventory*.log
+      - /app/logs/yunxingcloud-gateway*.log
+    fields:
+      source: yunxingcloud
+    multiline:
+      pattern: '^\d{4}-\d{2}-\d{2}'
+      negate: true
+      match: after
+
+output.logstash:
+  hosts: ["logstash:5044"]

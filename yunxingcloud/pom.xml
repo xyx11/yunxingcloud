@@ -22,6 +22,9 @@
         <module>yunxingcloud-core</module>
         <module>yunxingcloud-gateway</module>
         <module>yunxingcloud-usercenter</module>
+        <module>yunxingcloud-payment</module>
+        <module>yunxingcloud-order</module>
+        <module>yunxingcloud-inventory</module>
     </modules>
 
     <properties>

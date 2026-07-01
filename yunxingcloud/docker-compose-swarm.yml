@@ -111,6 +111,84 @@ services:
         limits: { memory: 384M }
         reservations: { memory: 192M }
 
+  payment:
+    image: ${REGISTRY:-}yunxingcloud-payment:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-payment, PORT: 8083 }
+    <<: *defaults
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 384M }
+        reservations: { memory: 192M }
+
+  order:
+    image: ${REGISTRY:-}yunxingcloud-order:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-order, PORT: 8084 }
+    <<: *defaults
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 384M }
+        reservations: { memory: 192M }
+
+  inventory:
+    image: ${REGISTRY:-}yunxingcloud-inventory:${TAG:-latest}
+    build:
+      context: .
+      args: { SERVICE: yunxingcloud-inventory, PORT: 8085 }
+    <<: *defaults
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 1
+      resources:
+        limits: { memory: 384M }
+        reservations: { memory: 192M }
+
   gateway:
     image: ${REGISTRY:-}yunxingcloud-gateway:${TAG:-latest}
     build:

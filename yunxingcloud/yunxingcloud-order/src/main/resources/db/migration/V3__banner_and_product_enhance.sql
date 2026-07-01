@@ -1,0 +1,26 @@
+-- Product 增加销量/标记字段
+ALTER TABLE product ADD COLUMN IF NOT EXISTS sales INT DEFAULT 0 COMMENT '销量';
+ALTER TABLE product ADD COLUMN IF NOT EXISTS is_new BOOLEAN DEFAULT FALSE COMMENT '新品';
+ALTER TABLE product ADD COLUMN IF NOT EXISTS is_hot BOOLEAN DEFAULT FALSE COMMENT '热门';
+ALTER TABLE product ADD COLUMN IF NOT EXISTS tags VARCHAR(500) COMMENT '标签,JSON数组';
+
+-- 首页轮播图
+CREATE TABLE IF NOT EXISTS banner (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    link_url VARCHAR(500),
+    sort_order INT DEFAULT 0,
+    status CHAR(1) DEFAULT '0' COMMENT '0=启用 1=禁用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 用户收藏
+CREATE TABLE IF NOT EXISTS user_favorite (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    product_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_fav_user ON user_favorite(username);
+CREATE UNIQUE INDEX idx_fav_unique ON user_favorite(username, product_id);

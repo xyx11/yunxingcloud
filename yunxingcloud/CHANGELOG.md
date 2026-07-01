@@ -1,5 +1,96 @@
 # Changelog
 
+## v2.0.0 (2026-06-30)
+
+### 新增微服务模块
+- 工单管理 (sys_ticket) — 创建/指派/处理/关闭工单，自动编号 TK+日期+序号
+- 支付系统 (yunxingcloud-payment:8083) — 微信支付/支付宝 SDK 集成 + 异步回调
+- 订单系统 (yunxingcloud-order:8084) — 商品管理 + 购物车 + 下单 + Feign→Payment
+- 库存系统 (yunxingcloud-inventory:8085) — 仓库管理 + 入库/出库 + 预警 + Feign↔Order
+
+### 架构演进
+- 6 微服务: Core + Gateway + Usercenter + Payment + Order + Inventory
+- Feign 服务间调用: Order→Payment 支付, Order↔Inventory 库存扣减/回退
+- Gateway 路由分发到 6 个服务
+
+### 生产优化
+- JVM 内存调优 (6 服务共 ~1.1GB RSS)
+- 防火墙 (仅 22/80/443) + 服务 127.0.0.1 绑定
+- Nginx: Cache-Control、SW 不缓存、API 故障转移
+- Service Worker v3 (全缓存清除 + 强制重载)
+- SSL 自动续期 (certbot-renew.timer)
+- Swap 1GB + MySQL 慢查询监控
+- deploy.sh 支持全服务一键部署
+
+## v2.1.0 (2026-07-01)
+
+### 安全加固
+- 分布式锁防超卖 (Redisson) — 库存扣减/订单提交关键路径保护
+- XSS 防护过滤器 — 请求参数 HTML 转义 + 安全响应头
+- 文件上传安全校验 — 魔数验证 + 类型白名单 + 大小限制
+- 敏感数据脱敏 (@Sensitive) — 手机号/邮箱/身份证/地址自动掩码
+- 幂等性处理 (@Idempotent) — Redis SETNX 防重复下单/支付
+- 数据权限隔离 (@DataScope) — 部门级数据权限 AOP
+- 统一错误码 (ErrorCode) — 30+ 错误码 + BusinessException + 标准 JSON 响应
+- 配置加密 (Jasypt) — ENC() 密文存储敏感配置
+- 登录审计增强 — 异步记录 IP/UserAgent/OS/设备类型
+
+### 业务增强
+- 优惠券下单核销 — 自动匹配可用优惠券 + 门槛校验 + 金额扣减
+- 库存预留机制 — 下单预占库存 + 超时 15 分钟自动释放
+- 订单超时取消 (Quartz) — 每 30s 扫描过期订单自动取消退券
+- 订单邮件通知 — 下单/支付/发货/退款 4 生命周期异步邮件
+- WebSocket 实时推送 — 管理员新订单通知 + 库存预警
+- 商城 i18n — 6 个核心页面中英切换 + 参数插值
+- 商品图片上传 — 多图上传 + JPG/PNG/GIF/WEBP + UUID 命名
+
+### 韧性架构
+- Feign Sentinel 降级 — PaymentClient/InventoryClient fallbackFactory
+- Resilience4j 重试 — Feign 调用自动重试 3 次间隔 500ms
+- 支付网关 mock/live 双模 — 空配置→mock，填凭证→真实 API
+- 库存预警 SSE 实时推送 — 30s 间隔推送低库存数据
+- 服务优雅关闭 — graceful shutdown 30s + K8s 就绪探针
+- 健康检查聚合 — DB/磁盘/JVM 内存综合健康状态
+
+### 可观测性
+- Prometheus 告警规则 — 8 条规则 (CPU/内存/QPS/错误率/连接池/库存)
+- ELK 日志聚合 — ES + Logstash + Kibana + Filebeat + JSON 日志格式
+- Zipkin 链路追踪 — Gateway→Order→Payment/Inventory 全链路可视化
+- OpenTelemetry 配置 — OTLP gRPC + Prometheus 导出 + 10% 采样
+- Micrometer 业务指标 — 订单/支付/库存 Counter + Timer
+- API 请求日志 (@ApiLog) — AOP 自动记录入参/出参/IP/耗时
+
+### 基础设施
+- K8s 完整清单 — 6 服务 Deployment + Service + HPA + 金丝雀模板
+- Docker Swarm 编排 — 6 应用 + MySQL + Redis 生产级部署
+- frontend-mall 独立 SPA — 13 视图 + API 模块化 + 构建集成
+- 全链路压测 (k6) — 8 步全流程 + 尖峰 50VU 脚本
+- 灰度发布 — deploy-canary.sh (启动/全量/回滚) + Nginx 加权分流
+- Nacos 动态配置 — 6 服务流控/降级/功能开关模板
+- 全库备份脚本 — 6 DB mysqldump + rsync 异地同步
+- 多环境配置 — dev/staging/prod 三套 profile
+- Nginx 生产增强 — TLS 1.3 + Brotli + 限流 zone + 安全头
+- Makefile 全服覆盖 — dev/package/test/docker 全部 6 服务
+- 冒烟测试脚本 — 6 服务健康检查 + 关键 API 一键验证
+- Git pre-commit hook — ESLint + TypeScript + Maven 编译检查
+
+### 开发体验
+- 统一分页 (PageRequest/PageResponse) — 标准化列表接口
+- 自定义校验 (@Phone/@IdCard) — 手机号/身份证 Bean Validation
+- 通用 CSV 导出 — 反射 + 注解自动导出 JPA 实体
+- CORS 自动配置 — 开发环境一键放行
+- 领域事件 — OrderCreated/Paid/Shipped/Canceled 异步解耦
+- 多租户上下文 — TenantContext + X-Tenant-Id 请求头隔离
+
+### 测试
+- 新增 21 个集成测试 (payment 6 + order 7 + inventory 8)
+- E2E 新增 10 个用例 (工单/支付/订单/商品/库存/仓库)
+
+### 文档
+- README.md 全面刷新 — 6 服务架构图 + API 端点表 + 部署方式
+- docs/README.md — 微服务表格 + 服务间调用关系
+- docs/deployment.md — 全 6 服务架构图 + 支付配置 + K8s/Swarm
+
 ## v1.0.0 (2026-06-05)
 
 ### 核心架构

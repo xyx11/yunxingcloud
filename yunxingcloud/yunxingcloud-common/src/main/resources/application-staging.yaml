@@ -1,0 +1,31 @@
+# ============================================
+# yunxingcloud 预发布环境通用配置
+# ============================================
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 3
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  redis:
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 4
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:sentinel:8082}
+      eager: true
+
+server:
+  shutdown: graceful
+
+logging:
+  level:
+    root: WARN
+    com.yunxingcloud: DEBUG

@@ -1,0 +1,8 @@
+[
+  {"resource":"/api/login","grade":1,"count":50,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/register","grade":1,"count":10,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/refresh","grade":1,"count":20,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/api/**","grade":1,"count":200,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"GET:/api/tickets","grade":1,"count":30,"limitApp":"default","strategy":0,"controlBehavior":0},
+  {"resource":"/oauth2/authorize","grade":1,"count":20,"limitApp":"default","strategy":0,"controlBehavior":0}
+]

@@ -1,0 +1,52 @@
+# ============================================
+# yunxingcloud 生产环境性能调优 (所有服务参考)
+# ============================================
+
+# JVM 建议参数 (每个服务):
+#   -Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+#   -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs/
+#   --add-opens java.base/java.lang=ALL-UNNAMED
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20       # (CPU*2)+1, 4核 → 9
+      minimum-idle: 5
+      idle-timeout: 300000        # 5min
+      connection-timeout: 5000    # 5s
+      max-lifetime: 1200000       # 20min
+      validation-timeout: 3000
+      leak-detection-threshold: 60000  # 60s 连接泄漏告警
+  redis:
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 8
+        min-idle: 4
+      cluster:
+        refresh:
+          adaptive: true
+          period: 30s
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 100
+      thread-name-prefix: async-
+
+server:
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 100
+    max-connections: 10000
+    connection-timeout: 30000
+
+# 日志异步输出
+logging:
+  logback:
+    rollingpolicy:
+      max-history: 7
+      total-size-cap: 1GB
