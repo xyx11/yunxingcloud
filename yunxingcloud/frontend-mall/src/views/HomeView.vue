@@ -70,15 +70,14 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
               :style="{background:i===currentBanner?'#fff':'rgba(255,255,255,.5)',transform:i===currentBanner?'scale(1.3)':''}"></span>
       </div>
     </div>
-    <div v-if="categories.length" style="display:flex;gap:24px;justify-content:center;margin-bottom:24px;flex-wrap:wrap">
-      <div v-for="cat in categories.slice(0, 8)" :key="cat.id"
+    <div v-if="categories.length" class="cat-scroll" style="display:flex;gap:16px;justify-content:center;margin-bottom:20px;overflow-x:auto;padding:4px 0;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch">
+      <div v-for="cat in categories.slice(0, 10)" :key="cat.id"
            @click="goProducts({ categoryId: cat.id })"
-           style="text-align:center;cursor:pointer;width:80px"
+           style="text-align:center;cursor:pointer;flex-shrink:0;width:72px;transition:transform .2s"
            @mouseenter="(e:any) => e.target.style.transform='scale(1.08)'"
-           @mouseleave="(e:any) => e.target.style.transform=''"
-           :style="{transition:'transform .2s'}">
-        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#fff0f0,#ffe8e8);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px">{{ cat.icon || '📁' }}</div>
-        <div style="font-size:12px;color:#333">{{ cat.name }}</div>
+           @mouseleave="(e:any) => e.target.style.transform=''">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#fff5f5,#ffe0e0);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 2px 6px rgba(241,2,21,.08)">{{ cat.icon || '📁' }}</div>
+        <div style="font-size:11px;color:#333;white-space:nowrap">{{ cat.name }}</div>
       </div>
     </div>
     <div v-if="hotProducts.length >= 3" style="background:linear-gradient(135deg,#fff5f5,#fff);border:2px solid #f10215;border-radius:12px;padding:20px 24px;margin-bottom:24px">
@@ -198,3 +197,6 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
     </div>
   </div>
 </template>
+<style scoped>
+.cat-scroll::-webkit-scrollbar { display: none; }
+</style>
