@@ -54,7 +54,9 @@ public class GatewayRouteConfig {
                               "/api/gift-cards/**",
                               "/api/campaigns/**", "/api/social/**",
                               "/api/personalized/**", "/api/reviews/**",
-                              "/api/tags/**", "/api/member/**")
+                              "/api/tags/**", "/api/member/**",
+                              "/api/feedback/**", "/api/price-alert/**",
+                              "/api/bundles/**")
                         .uri(ORD))
                 // System overview -> core
                 .route("core-system", r -> r
