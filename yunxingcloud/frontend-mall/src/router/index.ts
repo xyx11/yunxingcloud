@@ -22,6 +22,7 @@ const AfterSaleView = () => import('@/views/AfterSaleView.vue')
 const GroupBuyView = () => import('@/views/GroupBuyView.vue')
 const FlashSaleView = () => import('@/views/FlashSaleView.vue')
 const InvoiceView = () => import('@/views/InvoiceView.vue')
+const RecentView = () => import('@/views/RecentView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -48,5 +49,6 @@ export default createRouter({
     { path: '/group-buy', component: GroupBuyView },
     { path: '/flash-sale', component: FlashSaleView },
     { path: '/invoices', component: InvoiceView },
+    { path: '/recent', component: RecentView },
   ],
 })
