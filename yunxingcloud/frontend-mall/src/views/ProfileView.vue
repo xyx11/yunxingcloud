@@ -12,6 +12,8 @@ const activeTab = ref<'addresses' | 'coupons' | 'favorites' | 'password'>('addre
 const addresses = ref<any[]>([])
 const coupons = ref<any[]>([])
 const favorites = ref<any[]>([])
+const shareCopied = ref(false)
+async function copyShareLink() { try { await navigator.clipboard.writeText(window.location.origin + '/register?ref=' + (auth.user?.username || '')); shareCopied.value = true; toast.success('邀请链接已复制'); setTimeout(() => shareCopied.value = false, 2000) } catch {} }
 const editAddr = ref<any>(null)
 const showAddrForm = ref(false)
 const loading = ref(true)
@@ -84,6 +86,13 @@ async function toggleDefault(addr: any) {
         <div style="width:64px;height:64px;border-radius:50%;background:#e4393c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700">{{ auth.user?.username?.charAt(0)?.toUpperCase() }}</div>
         <div><h2 style="font-size:20px">{{ auth.user?.username }}</h2><p style="color:#999;font-size:13px">YXCLOUD 商城会员</p></div>
       </div>
+    </div>
+    <div @click="copyShareLink" style="background:linear-gradient(135deg,#fff5f5,#fff0f0);border:1px solid #ffcccc;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)" @mouseenter="(e:any) => e.target.style.borderColor='#e4393c'" @mouseleave="(e:any) => e.target.style.borderColor='#ffcccc'">
+      <div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px">🎁 邀请好友，双方各得 <span style="color:#e4393c">50 积分</span></div>
+        <div style="font-size:11px;color:#999">分享链接给好友注册即可获得奖励</div>
+      </div>
+      <button @click.stop="copyShareLink" style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap" :style="shareCopied?{background:'#4caf50'}:{}">{{ shareCopied ? '✓ 已复制' : '立即邀请' }}</button>
     </div>
     <div style="display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <span v-for="tab in [{key:'addresses',label:'收货地址'},{key:'favorites',label:'我的收藏'},{key:'coupons',label:'优惠券'},{key:'password',label:'修改密码'}]"

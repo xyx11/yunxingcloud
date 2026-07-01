@@ -1,32 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/api/request'
+import CountdownTimer from '@/components/CountdownTimer.vue'
 
 const router = useRouter()
 const sales = ref<any[]>([])
 const loading = ref(true)
-const now = ref(Date.now())
-let timer: any = null
 
 onMounted(async () => {
   try { const r = await request.get('/flash-sale'); sales.value = r.data || [] } catch {}
   finally { loading.value = false }
-  timer = setInterval(() => now.value = Date.now(), 1000)
 })
-onUnmounted(() => clearInterval(timer))
 
 function goProduct(id: number) { router.push(`/product/${id}`) }
 
-const timeDisplay = (s: any) => {
-  const start = new Date(s.startTime).getTime()
-  const end = new Date(s.endTime).getTime()
-  if (now.value < start) { const d = start - now.value; const h = Math.floor(d/3600000); const m = Math.floor((d%3600000)/60000); const sec = Math.floor((d%60000)/1000); return { label: '距开始', time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`, active: false } }
-  if (now.value > end) return { label: '已结束', time: '00:00:00', active: false }
-  const d = end - now.value; const h = Math.floor(d/3600000); const m = Math.floor((d%3600000)/60000); const sec = Math.floor((d%60000)/1000)
-  return { label: '距结束', time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`, active: true }
-}
-
+const isActive = (s: any) => new Date(s.startTime).getTime() <= Date.now() && new Date(s.endTime).getTime() > Date.now()
 const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold||0)) / Math.max(1, s.stock)) * 100))
 </script>
 
@@ -49,7 +38,7 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold||0)) / M
         <div style="height:200px;background:linear-gradient(135deg,#1a1a1a,#333);display:flex;align-items:center;justify-content:center;font-size:64px;position:relative">
           📦
           <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:600">
-            {{ timeDisplay(s).label }} {{ timeDisplay(s).time }}
+            <CountdownTimer :end-time="s.endTime" :label="new Date(s.startTime).getTime() > Date.now() ? '距开始' : '距结束'" compact />
           </div>
           <span style="position:absolute;bottom:10px;left:10px;background:#e4393c;color:#fff;font-size:11px;padding:2px 8px;border-radius:4px">{{ stockPct(s) }}%剩余</span>
         </div>
@@ -63,8 +52,8 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold||0)) / M
             <div style="height:100%;background:linear-gradient(90deg,#e4393c,#ff6b6b);border-radius:4px;transition:width 1s" :style="{width:(100-stockPct(s))+'%'}"></div>
           </div>
           <button style="width:100%;margin-top:12px;padding:8px;background:linear-gradient(90deg,#e4393c,#c82930);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700"
-                  :style="{opacity:timeDisplay(s).active?'1':'.5'}" @click.stop="goProduct(s.productId)">
-            {{ timeDisplay(s).active ? '立即抢购' : '即将开始' }}
+                  :style="{opacity:isActive(s)?'1':'.5'}" @click.stop="goProduct(s.productId)">
+            {{ isActive(s) ? '立即抢购' : '即将开始' }}
           </button>
         </div>
       </div>
