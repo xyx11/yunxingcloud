@@ -15,10 +15,12 @@ app.provide('toast', toast)
 
 app.mount('#app')
 
-// Web Vitals 监控
-if ('webVitals' in localStorage) {
-  import('web-vitals').then(({ onLCP, onFID, onCLS, onINP, onTTFB }) => {
-    onLCP(console.log); onFID(console.log); onCLS(console.log); onINP(console.log); onTTFB(console.log)
+// Web Vitals 监控 (需要: npm install web-vitals)
+// 启用方式: localStorage.setItem('webVitals', '1') 后刷新页面
+if (typeof localStorage !== 'undefined' && localStorage.getItem('webVitals')) {
+  import('web-vitals').then(m => {
+    m.onLCP(v => console.debug('[LCP]', (v/1000).toFixed(2)+'s'))
+    m.onCLS(v => console.debug('[CLS]', v.toFixed(3)))
+    m.onINP(v => console.debug('[INP]', v.toFixed(0)+'ms'))
   }).catch(() => {})
 }
-// 启用: localStorage.setItem('webVitals', '1')
