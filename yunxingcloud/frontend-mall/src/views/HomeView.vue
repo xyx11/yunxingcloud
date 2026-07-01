@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getBanners, getHotProducts, getNewProducts, getCategories } from '@/api/product'
+import { getBanners, getHotProducts, getNewProducts, getCategories, getRecommend } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
@@ -16,6 +16,7 @@ const banners = ref<any[]>([])
 const hotProducts = ref<any[]>([])
 const newProducts = ref<any[]>([])
 const categories = ref<any[]>([])
+const recommended = ref<any[]>([])
 const activeTab = ref<'hot' | 'new' | 'flash'>('hot')
 const currentBanner = ref(0)
 let bannerTimer: any = null
@@ -25,6 +26,7 @@ async function loadData() {
   try { const r = await getHotProducts(); hotProducts.value = r.data || [] } catch {}
   try { const r = await getNewProducts(); newProducts.value = r.data || [] } catch {}
   try { const r = await getCategories(); categories.value = r.data || [] } catch {}
+  try { const r = await getRecommend(); recommended.value = r.data || [] } catch {}
 }
 
 const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
@@ -162,6 +164,30 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
             <h4 style="font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
             <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
             <div style="font-size:11px;color:#aaa;margin-top:2px">{{ new Date(p.viewedAt).toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="recommended.length" style="margin-top:32px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="font-size:20px;font-weight:700;color:#333">🤖 为你推荐</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <div v-for="p in recommended.slice(0, 8)" :key="'rec-'+p.id"
+             @click="goDetail(p.id)"
+             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .3s,transform .3s"
+             @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
+             @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }"
+             :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
+          <div style="height:200px;background:linear-gradient(135deg,#f8f0ff,#e8e0ff);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
+            🤖
+          </div>
+          <div style="padding:12px 16px">
+            <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+            </div>
           </div>
         </div>
       </div>

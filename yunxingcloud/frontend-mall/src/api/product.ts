@@ -31,3 +31,6 @@ export const getBrands = () => request.get('/brands')
 
 // Banners
 export const getBanners = () => request.get('/banners')
+
+// Recommendations
+export const getRecommend = () => request.get('/recommend/hot')
