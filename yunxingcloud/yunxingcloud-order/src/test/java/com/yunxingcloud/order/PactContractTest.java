@@ -24,7 +24,7 @@ class PactContractTest {
         var request = java.util.Map.of("title", "订单ORD20260101", "amount", 9900, "channel", "wechat");
         assertNotNull(request.get("title"));
         assertTrue(request.get("title").toString().startsWith("订单"));
-        assertEquals(9900L, request.get("amount"));
+        assertEquals(9900, ((Number)request.get("amount")).intValue());
         assertEquals("wechat", request.get("channel"));
     }
 
