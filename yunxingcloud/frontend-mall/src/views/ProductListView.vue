@@ -6,6 +6,7 @@ import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
 import QuickViewModal from '@/components/QuickViewModal.vue'
+import SkeletonBox from '@/components/SkeletonBox.vue'
 
 const route = useRoute()
 const { toggle: toggleCompare, isSelected } = useCompare()
@@ -121,7 +122,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <span @click="setSort('price_desc')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='price_desc'?'#e4393c':'#666',background:filters.sort==='price_desc'?'#fff0f0':''}">价格↓</span>
         <span @click="setSort('newest')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='newest'?'#e4393c':'#666',background:filters.sort==='newest'?'#fff0f0':''}">最新</span>
       </div>
-      <div v-if="loading" style="text-align:center;padding:40px;color:#999">加载中...</div>
+      <div v-if="loading" style="padding:16px 0"><SkeletonBox :columns="3" :count="6" height="280px" /></div>
       <div v-else style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
         <div v-for="p in products" :key="p.id"
              @click="goDetail(p.id)"
