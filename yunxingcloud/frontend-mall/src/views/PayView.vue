@@ -13,6 +13,18 @@ const polling = ref(false)
 const pollCount = ref(0)
 let pollTimer: any = null
 
+// 15分钟支付倒计时
+const minutes = ref(15); const seconds = ref(0)
+let countdownTimer: any = null
+function startCountdown() {
+  countdownTimer = setInterval(() => {
+    if (seconds.value > 0) seconds.value--
+    else if (minutes.value > 0) { minutes.value--; seconds.value = 59 }
+    else { clearInterval(countdownTimer) }
+  }, 1000)
+}
+startCountdown()
+
 onMounted(async () => {
   try {
     const r = await getOrderById(Number(route.params.id))
@@ -49,7 +61,7 @@ async function confirmPay() {
   }
 }
 
-onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer) clearInterval(countdownTimer) })
 </script>
 
 <template>
@@ -64,8 +76,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
       </template>
       <template v-else>
         <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">选择支付方式</h2>
-        <div v-if="order" style="color:#999;font-size:13px;margin-bottom:20px">
+        <div v-if="order" style="color:#999;font-size:13px;margin-bottom:8px">
           订单 {{ order.orderNo }} · 应付 <b style="color:#e4393c;font-size:18px">¥{{ (order.totalAmount/100).toFixed(2) }}</b>
+        </div>
+        <div style="background:#fff3cd;border-radius:6px;padding:8px 12px;margin-bottom:16px;text-align:center;font-size:13px;color:#856404">
+          ⏱ 请在 {{ String(minutes).padStart(2,'0') }}:{{ String(seconds).padStart(2,'0') }} 内完成支付，超时订单将自动取消
         </div>
         <div style="margin-bottom:24px">
           <div @click="selectedChannel='wechat'" style="display:flex;align-items:center;padding:16px;border-radius:8px;margin-bottom:12px;cursor:pointer;transition:all .2s"
