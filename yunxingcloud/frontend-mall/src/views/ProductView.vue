@@ -9,6 +9,7 @@ import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
 import ProductRating from '@/components/ProductRating.vue'
 import ImageZoom from '@/components/ImageZoom.vue'
+import ReviewSummary from '@/components/ReviewSummary.vue'
 import request from '@/api/request'
 
 const route = useRoute()
@@ -146,6 +147,7 @@ onMounted(() => {
   </div>
   <div v-if="product" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
     <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">{{ t('product.reviews') }} ({{ reviews.length }})</h3>
+    <ReviewSummary v-if="reviews.length" :reviews="reviews" />
     <div v-if="reviews.length"><div v-for="r in reviews" :key="r.id" style="padding:16px 0;border-bottom:1px solid #f5f5f5">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:14px">{{ r.username }}</span><span style="color:#f90;font-size:14px">{{ '★'.repeat(r.rating) }}</span></div><span style="color:#999;font-size:12px">{{ r.createdAt?.substring(0,10) }}</span></div>
       <p style="font-size:14px;color:#333;line-height:1.6">{{ r.content }}</p>
