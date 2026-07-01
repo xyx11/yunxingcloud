@@ -4,7 +4,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useGlobalToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import { useCompare } from '@/composables/useCompare'
 import request from '@/api/request'
+import CompareFloatingBar from '@/views/CompareView.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -153,6 +155,9 @@ const tabItems = [
             @mouseenter="(e:any) => e.target.style.transform='scale(1.1)'" @mouseleave="(e:any) => e.target.style.transform=''">
       ↑
     </button>
+
+    <!-- Compare Floating Bar -->
+    <CompareFloatingBar />
 
     <!-- Toast Container -->
     <div style="position:fixed;top:60px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px">
