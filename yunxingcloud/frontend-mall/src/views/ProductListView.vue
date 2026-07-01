@@ -5,6 +5,7 @@ import { getCategories, getBrands, getProducts } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
+import { useCartFly } from '@/composables/useCartFly'
 import QuickViewModal from '@/components/QuickViewModal.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 
@@ -74,7 +75,8 @@ async function loadMore() {
 }
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrollTo(0, 0) }
-async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
+const { flyToCart } = useCartFly()
+async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') } }
 </script>
 
 <template>

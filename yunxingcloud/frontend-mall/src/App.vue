@@ -100,7 +100,7 @@ const tabItems = [
         <button @click="startVoiceSearch" :disabled="voiceSearching" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;padding:2px 6px;opacity:.8" :style="{opacity:voiceSearching?'.5':'.8'}" :title="voiceSearching?'正在监听...':'语音搜索'">{{ voiceSearching ? '🎙️' : '🎤' }}</button>
         <button @click="toggleTheme" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;padding:2px 6px;opacity:.8" :title="isDark?'浅色模式':'深色模式'">{{ isDark ? '☀️' : '🌙' }}</button>
         <span @click="goTo('/orders')" style="cursor:pointer">我的订单</span>
-        <span @click="goTo('/cart')" style="cursor:pointer;position:relative">
+        <span @click="goTo('/cart')" class="cart-icon" style="cursor:pointer;position:relative">
           🛒 购物车
           <span v-if="cartCount > 0" style="position:absolute;top:-8px;right:-12px;background:#fff;color:#e4393c;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center;line-height:14px">{{ cartCount > 99 ? '99+' : cartCount }}</span>
         </span>
