@@ -83,8 +83,9 @@ async function submitReview() {
     </div>
     <div v-if="shipment" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
       <h3 style="font-size:16px;font-weight:600;margin-bottom:12px">物流信息</h3>
-      <div style="display:flex;gap:16px;color:#666;font-size:14px">
+      <div style="display:flex;gap:16px;color:#666;font-size:14px;flex-wrap:wrap;align-items:center">
         <span>快递公司：{{ shipment.carrier || '-' }}</span><span>物流单号：{{ shipment.trackingNo || '-' }}</span>
+        <span v-if="order.status==='2'" style="color:#4caf50;font-size:13px;font-weight:600;margin-left:auto">📦 预计 {{ new Date(Date.now()+3*86400000).toLocaleDateString('zh-CN',{month:'long',day:'numeric'}) }} 送达</span>
       </div>
     </div>
     <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">

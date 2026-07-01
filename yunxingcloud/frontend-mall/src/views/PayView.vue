@@ -71,7 +71,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
         <div style="text-align:center;padding:40px 0">
           <div style="font-size:48px;margin-bottom:16px;animation:spin 1s linear infinite">⏳</div>
           <h3 style="font-size:18px;margin-bottom:8px">支付处理中...</h3>
-          <p style="color:#999;font-size:13px">正在确认支付结果，请稍候 ({{ pollCount }}/30)</p>
+          <p style="color:#999;font-size:13px;margin-bottom:16px">正在确认支付结果，请稍候</p>
+          <div style="width:200px;height:4px;background:#eee;border-radius:2px;margin:0 auto;overflow:hidden">
+            <div style="height:100%;background:#f10215;border-radius:2px;transition:width .3s" :style="{width:(pollCount/30*100)+'%'}"></div>
+          </div>
+          <p style="color:#aaa;font-size:11px;margin-top:8px">{{ pollCount }}/30 秒</p>
+          <p v-if="pollCount > 25" style="color:#ff9800;font-size:12px;margin-top:8px">如超过 60 秒未响应，请检查支付 App 或 <span @click="router.replace('/orders')" style="color:#f10215;cursor:pointer;text-decoration:underline">返回订单页</span></p>
         </div>
       </template>
       <template v-else>
