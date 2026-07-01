@@ -284,6 +284,7 @@ onMounted(async () => {
       { label: t('nav.aftersale'), key: 'aftersale', icon: menuIcons.aftersale },
       { label: t('nav.articles'), key: 'articles', icon: menuIcons.articles },
       { label: t('nav.notifications'), key: 'notifications', icon: menuIcons.notifications },
+      { label: t('nav.giftcards'), key: 'giftcards', icon: menuIcons.giftcards },
       { label: t('nav.loginlog'), key: 'loginlog', icon: menuIcons.loginlog },
       { label: t('nav.online'), key: 'online', icon: menuIcons.online },
       { label: t('nav.backup'), key: 'backup', icon: menuIcons.backup },

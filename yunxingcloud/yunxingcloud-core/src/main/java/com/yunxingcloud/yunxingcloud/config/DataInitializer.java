@@ -294,6 +294,9 @@ public class DataInitializer implements CommandLineRunner {
             if (systemParent != null && !paths.contains("/notifications")) {
                 menuRepository.save(createMenu("通知管理", systemParent.getId(), 16, "/notifications", "NotificationView", "C", "ticket:write"));
             }
+            if (systemParent != null && !paths.contains("/giftcards")) {
+                menuRepository.save(createMenu("礼品卡管理", systemParent.getId(), 17, "/giftcards", "GiftCardView", "C", "ticket:write"));
+            }
             if (monitorParent != null) {
                 if (!paths.contains("/loginlog")) {
                     menuRepository.save(createMenu("登录日志", monitorParent.getId(), 5, "/loginlog", "LoginLogView", "C", "monitor:logininfor:list"));
