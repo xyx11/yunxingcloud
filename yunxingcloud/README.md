@@ -1,5 +1,12 @@
 # yunxingcloud
 
+[![CI](https://github.com/xyx11/yunxingcloud/actions/workflows/ci.yml/badge.svg)](https://github.com/xyx11/yunxingcloud/actions)
+[![CodeQL](https://github.com/xyx11/yunxingcloud/actions/workflows/codeql.yml/badge.svg)](https://github.com/xyx11/yunxingcloud/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.3.0-brightgreen.svg)](https://github.com/xyx11/yunxingcloud/releases)
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen.svg)](https://spring.io/)
+
 分布式微服务平台 — 6 微服务架构：SSO + 管理 + 网关 + 用户中心 + 支付 + 订单 + 库存
 
 ## 技术栈
