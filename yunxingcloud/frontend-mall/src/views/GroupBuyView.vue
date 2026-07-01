@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/api/request'
+import CountdownTimer from '@/components/CountdownTimer.vue'
 
 const router = useRouter()
 const groups = ref<any[]>([])
@@ -13,14 +14,6 @@ onMounted(async () => {
 })
 
 function goProduct(id: number) { router.push(`/product/${id}`) }
-
-const timeLeft = (endTime: string) => {
-  const diff = new Date(endTime).getTime() - Date.now()
-  if (diff <= 0) return '已结束'
-  const h = Math.floor(diff / 3600000)
-  const m = Math.floor((diff % 3600000) / 60000)
-  return `${h}时${m}分后结束`
-}
 
 const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
 </script>
@@ -44,7 +37,7 @@ const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) /
         <div style="height:200px;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);display:flex;align-items:center;justify-content:center;font-size:64px;position:relative">
           📦
           <span style="position:absolute;top:10px;left:10px;background:#e4393c;color:#fff;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">{{ g.minMembers }}人团</span>
-          <span style="position:absolute;top:10px;right:10px;color:#e4393c;font-size:12px;font-weight:700;background:#fff;padding:2px 8px;border-radius:4px">{{ timeLeft(g.endTime) }}</span>
+          <span style="position:absolute;top:10px;right:10px;color:#e4393c;font-size:12px;font-weight:700;background:#fff;padding:2px 8px;border-radius:4px"><CountdownTimer :end-time="g.endTime" compact /></span>
         </div>
         <div style="padding:16px">
           <h3 style="font-size:15px;font-weight:600;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.productName || '拼团商品' }}</h3>

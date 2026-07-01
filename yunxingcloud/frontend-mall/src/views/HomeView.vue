@@ -28,17 +28,9 @@ async function loadData() {
 }
 
 const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
+import CountdownTimer from '@/components/CountdownTimer.vue'
 
 const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
-const flashH = ref(0); const flashM = ref(0); const flashS = ref(0)
-let flashTimer: any = null
-
-function updateFlashCountdown() {
-  const diff = Math.max(0, flashEnd.value - Date.now())
-  flashH.value = Math.floor(diff / 3600000)
-  flashM.value = Math.floor((diff % 3600000) / 60000)
-  flashS.value = Math.floor((diff % 60000) / 1000)
-}
 const flashPrice = (price: number) => Math.floor(price * 0.7)
 
 onMounted(async () => {
@@ -90,11 +82,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:22px;font-weight:800;color:#e4393c">⏰ {{ t('product.flashSale') }}</span>
           <div style="display:flex;align-items:center;gap:4px;font-size:16px;font-weight:700;color:#333">
-            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashH).padStart(2,'0') }}</span>
-            <span>:</span>
-            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashM).padStart(2,'0') }}</span>
-            <span>:</span>
-            <span style="background:#333;color:#fff;padding:2px 6px;border-radius:4px;font-size:14px">{{ String(flashS).padStart(2,'0') }}</span>
+            <CountdownTimer :end-time="flashEnd" label="" />
           </div>
         </div>
         <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
