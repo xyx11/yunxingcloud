@@ -13,6 +13,9 @@ const RegisterView = () => import('@/views/RegisterView.vue')
 const ProfileView = () => import('@/views/ProfileView.vue')
 const PaymentResultView = () => import('@/views/PaymentResultView.vue')
 const PayView = () => import('@/views/PayView.vue')
+const PointsView = () => import('@/views/PointsView.vue')
+const MallGiftCardView = () => import('@/views/GiftCardView.vue')
+const LogisticsView = () => import('@/views/LogisticsView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -30,5 +33,8 @@ export default createRouter({
     { path: '/profile', component: ProfileView },
     { path: '/pay/:id', component: PayView },
     { path: '/order/:id/result', component: PaymentResultView },
+    { path: '/points', component: PointsView },
+    { path: '/gift-card', component: MallGiftCardView },
+    { path: '/logistics', component: LogisticsView },
   ],
 })
