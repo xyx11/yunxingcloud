@@ -34,19 +34,26 @@ onMounted(async () => {
   try { const r = await request.get(`/orders/${route.params.id}/shipment`); shipment.value = r.data } catch {}
 })
 
+const receiving = ref(false)
+const reviewing = ref(false)
+
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
 async function cancel() {
   if (!confirm('确认取消订单？')) return
   try { await cancelOrder(order.value.id); order.value.status = '4'; toast.info('已取消') } catch {}
 }
 async function confirmReceive() {
-  try { await request.put(`/orders/${order.value.id}/status`, { status: '3' }); order.value.status = '3'; toast.success('已确认收货') } catch {}
+  if (receiving.value) return; receiving.value = true
+  try { await request.put(`/orders/${order.value.id}/status`, { status: '3' }); order.value.status = '3'; toast.success('已确认收货') } catch { toast.error('操作失败') }
+  finally { receiving.value = false }
 }
 function openReview(productId: number) {
   reviewForm.value = { productId, rating: 5, content: '' }; showReview.value = true
 }
 async function submitReview() {
+  if (reviewing.value) return; reviewing.value = true
   try { await request.post(`/products/${reviewForm.value.productId}/reviews`, reviewForm.value); toast.success('评价成功'); showReview.value = false } catch { toast.error('评价失败') }
+  finally { reviewing.value = false }
 }
 </script>
 
@@ -99,7 +106,7 @@ async function submitReview() {
     <div style="display:flex;justify-content:flex-end;gap:12px">
       <button v-if="order.status==='0'" @click="cancel" style="padding:10px 24px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:14px">取消订单</button>
       <button v-if="order.status==='0'" @click="pay" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">去支付</button>
-      <button v-if="order.status==='2'" @click="confirmReceive" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">确认收货</button>
+      <button v-if="order.status==='2'" @click="confirmReceive" :disabled="receiving" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600" :style="{opacity:receiving?'.7':'1'}">{{ receiving ? '处理中...' : '确认收货' }}</button>
     </div>
     <div v-if="showReview" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200">
       <div style="background:#fff;border-radius:12px;padding:24px;width:400px;max-width:90vw">

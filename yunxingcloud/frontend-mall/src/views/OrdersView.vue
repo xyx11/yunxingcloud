@@ -29,9 +29,11 @@ const tabs = [
   { key: '3', label: t('order.statusDone') },
 ]
 
+const canceling = ref<Set<number>>(new Set())
+
 async function load() { loading.value = true; try { const r = await getOrders(); orders.value = r.data || [] } catch {} finally { loading.value = false } }
 function pay(id: number) { router.push(`/pay/${id}`) }
-async function cancel(id: number) { if (!confirm(t('order.cancelOrder') + '?')) return; try { await cancelOrder(id); toast.info(t('toast.orderCanceled')); load() } catch {} }
+async function cancel(id: number) { if (!confirm(t('order.cancelOrder') + '?')) return; if (canceling.value.has(id)) return; canceling.value.add(id); try { await cancelOrder(id); toast.info(t('toast.orderCanceled')); load() } catch {} finally { canceling.value.delete(id) } }
 function goDetail(id: number) { router.push(`/order/${id}`) }
 onMounted(load)
 </script>
@@ -63,7 +65,7 @@ onMounted(load)
           <span style="font-size:20px;color:#e4393c;font-weight:700">¥{{ (o.totalAmount / 100).toFixed(2) }}</span>
         </div>
         <div v-if="o.status==='0'" style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px" @click.stop>
-          <button @click="cancel(o.id)" style="padding:4px 16px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px">{{ t('order.cancelOrder') }}</button>
+          <button @click="cancel(o.id)" :disabled="canceling.has(o.id)" style="padding:4px 16px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px" :style="{opacity:canceling.has(o.id)?'.5':'1'}">{{ canceling.has(o.id) ? '取消中...' : t('order.cancelOrder') }}</button>
           <button @click="pay(o.id)" style="padding:4px 16px;background:#e4393c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">{{ t('order.toPay') }}</button>
         </div>
       </div>
