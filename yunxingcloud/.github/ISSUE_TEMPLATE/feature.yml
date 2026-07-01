@@ -1,0 +1,15 @@
+name: Feature Request
+description: 提议新功能
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: 需求描述
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 建议方案
+  - type: textarea
+    attributes:
+      label: 替代方案
