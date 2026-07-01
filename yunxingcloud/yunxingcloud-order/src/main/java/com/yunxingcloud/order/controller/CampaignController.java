@@ -1,0 +1,46 @@
+package com.yunxingcloud.order.controller;
+
+import com.yunxingcloud.order.entity.Campaign;
+import com.yunxingcloud.order.repository.CampaignRepository;
+import com.yunxingcloud.order.service.CampaignService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/campaigns")
+public class CampaignController {
+
+    private final CampaignRepository repo;
+    private final CampaignService service;
+
+    public CampaignController(CampaignRepository repo, CampaignService service) {
+        this.repo = repo; this.service = service;
+    }
+
+    private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
+
+    @GetMapping
+    public ResponseEntity<?> active() {
+        LocalDateTime now = LocalDateTime.now();
+        return ResponseEntity.ok(repo.findByStatusAndStartTimeBeforeAndEndTimeAfter("1", now, now));
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @PostMapping
+    public ResponseEntity<?> create(@RequestBody Campaign c) { return ResponseEntity.ok(repo.save(c)); }
+
+    @GetMapping("/{id}/calculate")
+    public ResponseEntity<?> calculate(@PathVariable Long id, @RequestParam Long amount) {
+        try {
+            long discount = service.calculateDiscount(id, amount, user());
+            return ResponseEntity.ok(Map.of("discount", discount, "finalAmount", amount - discount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+}
