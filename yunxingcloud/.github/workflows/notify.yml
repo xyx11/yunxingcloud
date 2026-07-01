@@ -1,0 +1,23 @@
+name: Deploy Notification
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Production"]
+    types: [completed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Deploy Status
+        run: |
+          STATUS="${{ github.event.workflow_run.conclusion }}"
+          echo "Deploy status: $STATUS"
+          echo "Branch: ${{ github.event.workflow_run.head_branch }}"
+          echo "Commit: ${{ github.event.workflow_run.head_commit.message }}"
+
+          if [ "$STATUS" = "success" ]; then
+            echo "✅ 部署成功 — yunxingcloud v2.1.0 已上线"
+          else
+            echo "❌ 部署失败 — 请检查 GitHub Actions 日志"
+          fi
