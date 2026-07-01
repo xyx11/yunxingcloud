@@ -5,9 +5,12 @@ import { getCategories, getBrands, getProducts } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
+import QuickViewModal from '@/components/QuickViewModal.vue'
 
 const route = useRoute()
 const { toggle: toggleCompare, isSelected } = useCompare()
+const quickViewProduct = ref<any>(null)
+function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct.value = p }
 const router = useRouter()
 const toast = useToast()
 const products = ref<any[]>([])
@@ -124,6 +127,12 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
                     :style="{background:isSelected(p.id)?'#e4393c':'#fff',color:isSelected(p.id)?'#fff':'#e4393c'}">
               {{ isSelected(p.id) ? '✓ 对比' : '+ 对比' }}
             </button>
+            <button @click.stop="openQuickView($event, {id:p.id,name:p.name,price:p.price,sales:p.sales,description:p.description,imageUrl:p.imageUrl,stock:p.stock,rating:p.rating,reviewCount:p.reviewCount})"
+                    style="position:absolute;bottom:60px;right:6px;padding:2px 8px;border:1px solid #1677ff;border-radius:10px;background:#fff;color:#1677ff;cursor:pointer;font-size:10px;z-index:1;transition:all .2s"
+                    @mouseenter="(e:any) => { e.target.style.background='#1677ff'; e.target.style.color='#fff' }"
+                    @mouseleave="(e:any) => { e.target.style.background='#fff'; e.target.style.color='#1677ff' }">
+              👁 预览
+            </button>
           </div>
           <div style="padding:12px">
             <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
@@ -152,5 +161,6 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
                 :style="{background:currentPage===p-1?'#e4393c':'#fff',color:currentPage===p-1?'#fff':'#333',borderColor:currentPage===p-1?'#e4393c':'#ddd'}">{{ p }}</button>
       </div>
     </div>
+    <QuickViewModal :product="quickViewProduct" :show="!!quickViewProduct" @close="quickViewProduct = null" />
   </div>
 </template>
