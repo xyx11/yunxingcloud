@@ -22,6 +22,11 @@ const showMega = ref(false)
 const isDark = ref((() => { try { return localStorage.getItem('mall_theme') === 'dark' } catch { return false } })())
 const voiceSearching = ref(false)
 
+// 新用户欢迎弹窗
+const showWelcome = ref(false)
+const welcomeDismissed = ref((() => { try { return localStorage.getItem('mall_welcome') } catch { return '1' } })())
+function dismissWelcome() { showWelcome.value = false; try { localStorage.setItem('mall_welcome', '1') } catch {} }
+
 function updateCartCount() {
   try { const r = JSON.parse(localStorage.getItem('cart_count') || '0'); cartCount.value = r } catch { cartCount.value = 0 }
 }
@@ -52,6 +57,7 @@ onMounted(async () => {
   updateCartCount()
   window.addEventListener('scroll', () => { showBackTop.value = window.scrollY > 400 })
   window.addEventListener('cart_updated', updateCartCount)
+  if (!welcomeDismissed.value) setTimeout(() => showWelcome.value = true, 1500)
 })
 
 function doSearch() {
@@ -193,6 +199,22 @@ const tabItems = [
         </div>
       </div>
     </nav>
+
+    <!-- New User Welcome -->
+    <div v-if="showWelcome" @click.self="dismissWelcome" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999;animation:fadeIn .3s">
+      <div style="background:#fff;border-radius:20px;padding:40px 32px 28px;text-align:center;max-width:380px;width:90%;position:relative;animation:slideUp .4s ease-out">
+        <button @click="dismissWelcome" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:20px;color:#ccc;cursor:pointer">✕</button>
+        <div style="font-size:56px;margin-bottom:12px">🎉</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:8px">欢迎来到 YXCLOUD</h2>
+        <p style="color:#666;font-size:14px;margin-bottom:6px">品质生活，一站购齐</p>
+        <div style="background:linear-gradient(135deg,#fff5f5,#fff0f0);border-radius:12px;padding:16px;margin:16px 0">
+          <div style="font-size:28px;font-weight:800;color:#f10215">¥50</div>
+          <div style="font-size:12px;color:#999;margin-top:2px">新用户专属优惠券礼包</div>
+        </div>
+        <button @click="dismissWelcome();router.push('/coupons')" style="width:100%;height:44px;background:#f10215;color:#fff;border:none;border-radius:22px;font-size:16px;cursor:pointer;font-weight:700">🎁 立即领取</button>
+        <p @click="dismissWelcome" style="margin-top:12px;font-size:12px;color:#999;cursor:pointer">暂不领取，随便逛逛</p>
+      </div>
+    </div>
 
     <!-- Back to Top -->
     <button v-if="showBackTop" @click="scrollToTop"

@@ -136,7 +136,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
               <span style="color:#f10215;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <span style="color:#999;font-size:12px;margin-left:4px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
+              <span style="color:#999;font-size:11px;margin-left:4px">{{ (p.sales || 0) > 1000 ? '🔥 ' + (p.sales/1000).toFixed(1) + 'k人已购' : (p.sales || 0) > 0 ? (p.sales || 0) + '人已购' : '' }}</span>
             </div>
             <button @click="(e: Event) => quickAdd(e, p)"
                     style="width:30px;height:30px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
