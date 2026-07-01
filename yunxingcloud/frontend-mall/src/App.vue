@@ -13,9 +13,19 @@ const toast = useGlobalToast()
 const { t, locale, setLocale } = useI18n()
 const searchText = ref('')
 const categories = ref<any[]>([])
+const cartCount = ref(0)
+const showBackTop = ref(false)
+
+function updateCartCount() {
+  try { const r = JSON.parse(localStorage.getItem('cart_count') || '0'); cartCount.value = r } catch { cartCount.value = 0 }
+}
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
 onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch {}
+  updateCartCount()
+  window.addEventListener('scroll', () => { showBackTop.value = window.scrollY > 400 })
+  window.addEventListener('cart_updated', updateCartCount)
 })
 
 function doSearch() {
@@ -64,7 +74,10 @@ const tabItems = [
 
       <div class="header-links" style="display:flex;align-items:center;gap:20px;font-size:13px;white-space:nowrap">
         <span @click="goTo('/orders')" style="cursor:pointer">我的订单</span>
-        <span @click="goTo('/cart')" style="cursor:pointer;position:relative">🛒 购物车</span>
+        <span @click="goTo('/cart')" style="cursor:pointer;position:relative">
+          🛒 购物车
+          <span v-if="cartCount > 0" style="position:absolute;top:-8px;right:-12px;background:#fff;color:#e4393c;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center;line-height:14px">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+        </span>
       </div>
     </header>
 
@@ -107,12 +120,20 @@ const tabItems = [
     <nav class="mobile-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:6px 0 env(safe-area-inset-bottom);z-index:200">
       <div style="display:flex;justify-content:space-around">
         <div v-for="t in tabItems" :key="t.path" @click="goTo(t.path)"
-             style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 12px">
+             style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 12px;position:relative">
           <span style="font-size:20px">{{ t.icon }}</span>
+          <span v-if="t.path==='/cart' && cartCount > 0" style="position:absolute;top:0;right:2px;background:#e4393c;color:#fff;border-radius:10px;font-size:9px;padding:0 4px;min-width:14px;text-align:center;line-height:14px;font-weight:700">{{ cartCount > 99 ? '99+' : cartCount }}</span>
           <span style="font-size:10px" :style="{color:route.path===t.path?'#e4393c':'#999'}">{{ t.label }}</span>
         </div>
       </div>
     </nav>
+
+    <!-- Back to Top -->
+    <button v-if="showBackTop" @click="scrollToTop"
+            style="position:fixed;bottom:80px;right:20px;z-index:150;width:40px;height:40px;border-radius:50%;background:#e4393c;color:#fff;border:none;cursor:pointer;font-size:18px;box-shadow:0 2px 12px rgba(228,57,60,.4);transition:transform .2s;display:flex;align-items:center;justify-content:center"
+            @mouseenter="(e:any) => e.target.style.transform='scale(1.1)'" @mouseleave="(e:any) => e.target.style.transform=''">
+      ↑
+    </button>
 
     <!-- Toast Container -->
     <div style="position:fixed;top:60px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px">
