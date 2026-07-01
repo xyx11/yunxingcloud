@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
 import ProductRating from '@/components/ProductRating.vue'
+import request from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,6 +50,15 @@ async function buyNow() { if (!auth.isLoggedIn()) { router.push('/login'); retur
 async function toggleFavorite() {
   if (!auth.isLoggedIn()) { router.push('/login'); return }
   try { if (favorited.value) { await removeFavorite(product.value.id); toast.info(t('product.unfavorite')) } else { await addFavorite(product.value.id); toast.success(t('product.favorite')) }; favorited.value = !favorited.value } catch {}
+}
+
+// 价格提醒
+const alertPrice = ref('')
+const showPriceAlert = ref(false)
+const alertSet = ref(false)
+function setPriceAlert() { if (!auth.isLoggedIn()) { router.push('/login'); return }; alertPrice.value = String((displayPrice() / 100).toFixed(2)); showPriceAlert.value = true }
+async function confirmPriceAlert() {
+  try { await request.post('/price-alert', { productId: product.value.id, targetPrice: Number(alertPrice.value) * 100 }); alertSet.value = true; showPriceAlert.value = false; toast.success('降价时将通过通知提醒您') } catch { toast.error('设置失败') }
 }
 const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
 const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
@@ -104,6 +114,7 @@ onMounted(() => {
         <div style="display:flex;align-items:baseline;gap:12px">
           <span style="color:#999;font-size:13px">{{ t('product.price') }}</span>
           <span style="color:#e4393c;font-size:32px;font-weight:700">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
+          <button @click="setPriceAlert" style="margin-left:8px;background:none;border:1px solid #e4393c;color:#e4393c;border-radius:4px;cursor:pointer;font-size:12px;padding:2px 8px;white-space:nowrap" :style="alertSet?{background:'#e4393c',color:'#fff'}:{}">{{ alertSet ? '🔔 已设置' : '🔔 降价提醒' }}</button>
         </div>
         <div style="display:flex;gap:24px;margin-top:12px;font-size:13px;color:#666">
           <span>{{ t('product.salesCount') }} <b style="color:#e4393c">{{ product.sales || 0 }}</b></span>
@@ -150,6 +161,20 @@ onMounted(() => {
            @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''" :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
         <div style="height:140px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:36px">📦</div>
         <div style="padding:8px 12px"><h5 style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">{{ p.name }}</h5><span style="color:#e4393c;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span></div>
+      </div>
+    </div>
+    <div v-if="showPriceAlert" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:300">
+      <div style="background:#fff;border-radius:12px;padding:24px;width:360px;max-width:90vw">
+        <h3 style="font-size:18px;font-weight:600;margin-bottom:16px">🔔 设置降价提醒</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:12px">当商品价格低于目标价时，将通知您</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:13px;color:#666">目标价 ¥</span>
+          <input v-model="alertPrice" type="number" step="0.01" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px" />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button @click="showPriceAlert=false" style="padding:8px 16px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
+          <button @click="confirmPriceAlert" style="padding:8px 16px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">确认设置</button>
+        </div>
       </div>
     </div>
   </div>
