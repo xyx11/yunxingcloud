@@ -14,6 +14,10 @@ const loading = ref(true)
 const total = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
 const receiver = ref({ name: '', phone: '', address: '' })
 const selectedAddr = ref<any>(null)
+const couponCode = ref('')
+const couponApplied = ref(false)
+const paymentMethod = ref('wechat')
+const submitting = ref(false)
 
 async function load() {
   loading.value = true
@@ -27,10 +31,13 @@ function selectAddress(addr: any) {
   receiver.value = { name: addr.name, phone: addr.phone, address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(' ') }
 }
 
+function applyCoupon() { if (!couponCode.value.trim()) return; couponApplied.value = true; toast.success('优惠券已使用') }
 async function submit() {
   if (!receiver.value.name || !receiver.value.phone || !receiver.value.address) { toast.error(t('checkout.selectAddress')); return }
-  try { await submitOrder(receiver.value); toast.success(t('toast.orderPlaced')); router.push('/orders') }
+  submitting.value = true
+  try { await submitOrder({ ...receiver.value, couponCode: couponCode.value, paymentMethod: paymentMethod.value }); toast.success(t('toast.orderPlaced')); router.push('/orders') }
   catch (e: any) { toast.error(e.response?.data?.message || t('toast.orderFail')) }
+  finally { submitting.value = false }
 }
 
 onMounted(load)
@@ -67,12 +74,32 @@ onMounted(load)
           <span style="flex:1;font-size:14px">{{ item.productName }} × {{ item.quantity }}</span>
           <span style="color:#e4393c;font-weight:600;font-size:15px">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</span>
         </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input v-model="couponCode" placeholder="输入优惠券码" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:13px" />
+            <button @click="applyCoupon" style="padding:8px 16px;border:1px solid #e4393c;color:#e4393c;background:#fff;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap" :style="couponApplied?{background:'#e4393c',color:'#fff'}:{}">{{ couponApplied ? '✓ 已使用' : '使用' }}</button>
+          </div>
+          <div style="margin-bottom:12px">
+            <span style="font-size:13px;color:#666;margin-right:12px">支付方式</span>
+            <div style="display:flex;gap:12px;margin-top:8px">
+              <span @click="paymentMethod='wechat'" style="cursor:pointer;padding:8px 16px;border-radius:6px;font-size:13px;transition:all .2s;display:flex;align-items:center;gap:6px"
+                    :style="{border:paymentMethod==='wechat'?'2px solid #07c160':'1px solid #ddd',background:paymentMethod==='wechat'?'#f0fff4':'#fff'}">
+                <span style="color:#07c160;font-size:18px">💬</span>微信支付
+              </span>
+              <span @click="paymentMethod='alipay'" style="cursor:pointer;padding:8px 16px;border-radius:6px;font-size:13px;transition:all .2s;display:flex;align-items:center;gap:6px"
+                    :style="{border:paymentMethod==='alipay'?'2px solid #1677ff':'1px solid #ddd',background:paymentMethod==='alipay'?'#f0f5ff':'#fff'}">
+                <span style="color:#1677ff;font-size:18px">🔵</span>支付宝
+              </span>
+            </div>
+          </div>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:20px">
           <span style="font-size:14px;color:#666">{{ t('checkout.totalItems', { n: items.length }) }}</span>
           <div><span style="font-size:16px;color:#666;margin-right:12px">{{ t('checkout.actualPay') }}：</span><span style="font-size:28px;color:#e4393c;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
         </div>
-        <button @click="submit" style="width:100%;height:50px;background:#e4393c;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;margin-top:20px;transition:background .2s"
-                @mouseenter="(e:any) => e.target.style.background='#c82930'" @mouseleave="(e:any) => e.target.style.background='#e4393c'">{{ t('order.submitOrder') }}</button>
+        <button @click="submit" :disabled="submitting" style="width:100%;height:50px;background:#e4393c;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;margin-top:20px;transition:background .2s"
+                @mouseenter="(e:any) => { if(!submitting) e.target.style.background='#c82930' }" @mouseleave="(e:any) => { if(!submitting) e.target.style.background='#e4393c' }"
+                :style="{opacity:submitting?'.7':'1',cursor:submitting?'not-allowed':'pointer'}">{{ submitting ? '提交中...' : t('order.submitOrder') }}</button>
       </div>
     </template>
   </div>
