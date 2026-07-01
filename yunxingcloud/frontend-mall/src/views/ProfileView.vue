@@ -83,29 +83,29 @@ async function toggleDefault(addr: any) {
   <div v-if="auth.isLoggedIn()" style="max-width:900px;margin:0 auto">
     <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:16px">
-        <div style="width:64px;height:64px;border-radius:50%;background:#e4393c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700">{{ auth.user?.username?.charAt(0)?.toUpperCase() }}</div>
+        <div style="width:64px;height:64px;border-radius:50%;background:#f10215;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700">{{ auth.user?.username?.charAt(0)?.toUpperCase() }}</div>
         <div><h2 style="font-size:20px">{{ auth.user?.username }}</h2><p style="color:#999;font-size:13px">YXCLOUD 商城会员</p></div>
       </div>
     </div>
-    <div @click="copyShareLink" style="background:linear-gradient(135deg,#fff5f5,#fff0f0);border:1px solid #ffcccc;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)" @mouseenter="(e:any) => e.target.style.borderColor='#e4393c'" @mouseleave="(e:any) => e.target.style.borderColor='#ffcccc'">
+    <div @click="copyShareLink" style="background:linear-gradient(135deg,#fff5f5,#fff0f0);border:1px solid #ffcccc;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)" @mouseenter="(e:any) => e.target.style.borderColor='#f10215'" @mouseleave="(e:any) => e.target.style.borderColor='#ffcccc'">
       <div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:2px">🎁 邀请好友，双方各得 <span style="color:#e4393c">50 积分</span></div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px">🎁 邀请好友，双方各得 <span style="color:#f10215">50 积分</span></div>
         <div style="font-size:11px;color:#999">分享链接给好友注册即可获得奖励</div>
       </div>
-      <button @click.stop="copyShareLink" style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap" :style="shareCopied?{background:'#4caf50'}:{}">{{ shareCopied ? '✓ 已复制' : '立即邀请' }}</button>
+      <button @click.stop="copyShareLink" style="padding:6px 16px;background:#f10215;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap" :style="shareCopied?{background:'#4caf50'}:{}">{{ shareCopied ? '✓ 已复制' : '立即邀请' }}</button>
     </div>
     <div style="display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <span v-for="tab in [{key:'addresses',label:'收货地址'},{key:'favorites',label:'我的收藏'},{key:'coupons',label:'优惠券'},{key:'password',label:'修改密码'}]"
             :key="tab.key" @click="activeTab = tab.key; loadTab()"
             style="flex:1;text-align:center;padding:12px;cursor:pointer;font-size:14px;transition:all .2s"
-            :style="{background:activeTab===tab.key?'#e4393c':'#fff',color:activeTab===tab.key?'#fff':'#666'}">{{ tab.label }}</span>
+            :style="{background:activeTab===tab.key?'#f10215':'#fff',color:activeTab===tab.key?'#fff':'#666'}">{{ tab.label }}</span>
     </div>
     <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);min-height:300px">
       <div v-if="activeTab==='addresses'">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 style="font-size:16px;font-weight:600">收货地址</h3>
           <button @click="editAddr=null;addrForm={name:'',phone:'',province:'',city:'',district:'',detail:'',isDefault:false};showAddrForm=true"
-                  style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">+ 新增</button>
+                  style="padding:6px 16px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">+ 新增</button>
         </div>
         <div v-if="showAddrForm" style="background:#fafafa;padding:20px;border-radius:8px;margin-bottom:16px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
@@ -120,18 +120,18 @@ async function toggleDefault(addr: any) {
             <label style="font-size:13px;cursor:pointer"><input type="checkbox" v-model="addrForm.isDefault" /> 设为默认</label>
             <div style="display:flex;gap:8px">
               <button @click="showAddrForm=false;editAddr=null" style="padding:6px 16px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-              <button @click="saveAddress" style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">保存</button>
+              <button @click="saveAddress" style="padding:6px 16px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">保存</button>
             </div>
           </div>
         </div>
         <div v-if="addresses.length">
           <div v-for="addr in addresses" :key="addr.id" style="padding:16px;border:1px solid #f0f0f0;border-radius:8px;margin-bottom:12px;position:relative">
-            <div v-if="addr.isDefault" style="position:absolute;top:0;right:0;background:#e4393c;color:#fff;font-size:11px;padding:2px 8px;border-radius:0 8px 0 8px">默认</div>
+            <div v-if="addr.isDefault" style="position:absolute;top:0;right:0;background:#f10215;color:#fff;font-size:11px;padding:2px 8px;border-radius:0 8px 0 8px">默认</div>
             <div style="font-weight:600;margin-bottom:4px">{{ addr.name }} <span style="color:#999;font-weight:400;margin-left:8px">{{ addr.phone }}</span></div>
             <div style="color:#666;font-size:13px">{{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detail }}</div>
             <div style="margin-top:8px;display:flex;gap:8px">
               <button @click="editAddress(addr)" style="padding:2px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px">编辑</button>
-              <button @click="deleteAddressById(addr.id)" style="padding:2px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;color:#e4393c">删除</button>
+              <button @click="deleteAddressById(addr.id)" style="padding:2px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;color:#f10215">删除</button>
               <button v-if="!addr.isDefault" @click="toggleDefault(addr)" style="padding:2px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px">设为默认</button>
             </div>
           </div>
@@ -153,7 +153,7 @@ async function toggleDefault(addr: any) {
         <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">我的优惠券</h3>
         <div v-if="coupons.length">
           <div v-for="c in coupons" :key="c.id" style="display:flex;align-items:center;padding:16px;border:1px solid #f0f0f0;border-radius:8px;margin-bottom:12px">
-            <div style="width:80px;height:80px;background:linear-gradient(135deg,#e4393c,#ff6b6b);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;margin-right:16px;flex-shrink:0">
+            <div style="width:80px;height:80px;background:linear-gradient(135deg,#f10215,#ff6b6b);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;margin-right:16px;flex-shrink:0">
               <span style="font-size:12px">优惠券</span><span style="font-size:18px;font-weight:700">#{{ c.couponId }}</span>
             </div>
             <div><div style="font-weight:600;margin-bottom:4px">优惠券 #{{ c.couponId }}</div><div style="color:#999;font-size:12px">{{ c.status === '0' ? '未使用' : '已使用' }}</div></div>
@@ -167,7 +167,7 @@ async function toggleDefault(addr: any) {
           <div style="margin-bottom:12px"><label style="display:block;font-size:13px;color:#666;margin-bottom:4px">当前密码</label><input v-model="pwForm.oldPassword" type="password" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" /></div>
           <div style="margin-bottom:12px"><label style="display:block;font-size:13px;color:#666;margin-bottom:4px">新密码</label><input v-model="pwForm.newPassword" type="password" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" /></div>
           <div style="margin-bottom:16px"><label style="display:block;font-size:13px;color:#666;margin-bottom:4px">确认新密码</label><input v-model="pwForm.confirmPassword" type="password" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" /></div>
-          <button @click="changePwd" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">确认修改</button>
+          <button @click="changePwd" style="padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">确认修改</button>
         </div>
       </div>
     </div>

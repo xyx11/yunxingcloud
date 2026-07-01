@@ -40,18 +40,18 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold||0)) / M
           <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:600">
             <CountdownTimer :end-time="s.endTime" :label="new Date(s.startTime).getTime() > Date.now() ? '距开始' : '距结束'" compact />
           </div>
-          <span style="position:absolute;bottom:10px;left:10px;background:#e4393c;color:#fff;font-size:11px;padding:2px 8px;border-radius:4px">{{ stockPct(s) }}%剩余</span>
+          <span style="position:absolute;bottom:10px;left:10px;background:#f10215;color:#fff;font-size:11px;padding:2px 8px;border-radius:4px">{{ stockPct(s) }}%剩余</span>
         </div>
         <div style="padding:16px">
           <h3 style="font-size:15px;font-weight:600;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.productName || '秒杀商品' }}</h3>
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
-            <span style="color:#e4393c;font-size:22px;font-weight:700">¥{{ (s.flashPrice/100).toFixed(2) }}</span>
+            <span style="color:#f10215;font-size:22px;font-weight:700">¥{{ (s.flashPrice/100).toFixed(2) }}</span>
             <span style="color:#999;font-size:12px;text-decoration:line-through">¥{{ (s.originalPrice/100).toFixed(2) }}</span>
           </div>
           <div style="background:#f5f5f5;border-radius:4px;height:6px;overflow:hidden">
-            <div style="height:100%;background:linear-gradient(90deg,#e4393c,#ff6b6b);border-radius:4px;transition:width 1s" :style="{width:(100-stockPct(s))+'%'}"></div>
+            <div style="height:100%;background:linear-gradient(90deg,#f10215,#ff6b6b);border-radius:4px;transition:width 1s" :style="{width:(100-stockPct(s))+'%'}"></div>
           </div>
-          <button style="width:100%;margin-top:12px;padding:8px;background:linear-gradient(90deg,#e4393c,#c82930);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700"
+          <button style="width:100%;margin-top:12px;padding:8px;background:linear-gradient(90deg,#f10215,#d4000f);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700"
                   :style="{opacity:isActive(s)?'1':'.5'}" @click.stop="goProduct(s.productId)">
             {{ isActive(s) ? '立即抢购' : '即将开始' }}
           </button>

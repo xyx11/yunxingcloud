@@ -57,8 +57,8 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
     <div v-if="!searchQuery" style="max-width:600px;margin:0 auto 24px;text-align:center">
       <div style="display:flex;margin-bottom:24px">
         <input v-model="searchInput" :placeholder="t('search.placeholder')" @input="onInput" @keyup.enter="doSearch" @focus="showHistory=true"
-               style="flex:1;height:40px;padding:0 16px;border:2px solid #e4393c;border-radius:8px 0 0 8px;outline:none;font-size:15px" />
-        <button @click="doSearch" style="height:40px;padding:0 28px;background:#e4393c;color:#fff;border:none;border-radius:0 8px 8px 0;cursor:pointer;font-size:15px;font-weight:600">{{ t('common.search') }}</button>
+               style="flex:1;height:40px;padding:0 16px;border:2px solid #f10215;border-radius:8px 0 0 8px;outline:none;font-size:15px" />
+        <button @click="doSearch" style="height:40px;padding:0 28px;background:#f10215;color:#fff;border:none;border-radius:0 8px 8px 0;cursor:pointer;font-size:15px;font-weight:600">{{ t('common.search') }}</button>
       </div>
       <div v-if="suggestions.length" style="position:relative;margin-top:-16px;margin-bottom:8px;max-width:600px;margin-left:auto;margin-right:auto">
         <div style="background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);overflow:hidden">
@@ -67,14 +67,14 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
                @mouseenter="(e:any) => e.target.style.background='#f8f8f8'" @mouseleave="(e:any) => e.target.style.background=''">
             <span style="color:#999">🔍</span>
             <span>{{ s.name }}</span>
-            <span style="margin-left:auto;color:#e4393c;font-size:12px">¥{{ (s.price/100).toFixed(2) }}</span>
+            <span style="margin-left:auto;color:#f10215;font-size:12px">¥{{ (s.price/100).toFixed(2) }}</span>
           </div>
         </div>
       </div>
       <div style="margin-bottom:24px"><h4 style="font-size:14px;color:#999;margin-bottom:12px;text-align:left">🔥 {{ t('search.hotKeywords') }}</h4>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <span v-for="kw in hotKeywords" :key="kw" @click="searchKeyword(kw)"
-                style="padding:6px 14px;background:#fff0f0;color:#e4393c;border-radius:16px;cursor:pointer;font-size:13px;transition:background .2s"
+                style="padding:6px 14px;background:#fff0f0;color:#f10215;border-radius:16px;cursor:pointer;font-size:13px;transition:background .2s"
                 @mouseenter="(e:any) => e.target.style.background='#ffe0e0'" @mouseleave="(e:any) => e.target.style.background='#fff0f0'">{{ kw }}</span>
         </div>
       </div>
@@ -94,10 +94,10 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
         <h2 style="font-size:18px">"{{ searchQuery }}" 共 {{ results.length }} 件</h2>
         <div style="display:flex;gap:12px;font-size:13px">
-          <span @click="setSort('')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:!sortBy?'#e4393c':'#666',background:!sortBy?'#fff0f0':''}">综合</span>
-          <span @click="setSort('sales')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='sales'?'#e4393c':'#666',background:sortBy==='sales'?'#fff0f0':''}">销量</span>
-          <span @click="setSort('price_asc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_asc'?'#e4393c':'#666',background:sortBy==='price_asc'?'#fff0f0':''}">价格↑</span>
-          <span @click="setSort('price_desc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_desc'?'#e4393c':'#666',background:sortBy==='price_desc'?'#fff0f0':''}">价格↓</span>
+          <span @click="setSort('')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:!sortBy?'#f10215':'#666',background:!sortBy?'#fff0f0':''}">综合</span>
+          <span @click="setSort('sales')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='sales'?'#f10215':'#666',background:sortBy==='sales'?'#fff0f0':''}">销量</span>
+          <span @click="setSort('price_asc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_asc'?'#f10215':'#666',background:sortBy==='price_asc'?'#fff0f0':''}">价格↑</span>
+          <span @click="setSort('price_desc')" style="cursor:pointer;padding:4px 8px;border-radius:4px" :style="{color:sortBy==='price_desc'?'#f10215':'#666',background:sortBy==='price_desc'?'#fff0f0':''}">价格↓</span>
         </div>
       </div>
       <div v-if="loading">
@@ -115,14 +115,14 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <div style="padding:12px"><h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
             <div style="display:flex;align-items:center;justify-content:space-between">
               <div>
-                <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
                 <span style="color:#999;font-size:11px;margin-left:4px">已售 {{ p.sales || 0 }}</span>
               </div>
               <button @click="(e: Event) => quickAdd(e, p)"
-                      style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
-                      :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
-                      @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#e4393c'; e.target.style.color='#fff' } }"
-                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                      style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                      :style="{background: (p as any)._added ? '#f10215' : '#fff', color: (p as any)._added ? '#fff' : '#f10215'}"
+                      @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#f10215'; e.target.style.color='#fff' } }"
+                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#f10215' } }">
                 {{ (p as any)._added ? '✓' : '+' }}
               </button>
             </div>

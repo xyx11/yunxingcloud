@@ -27,17 +27,17 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <span style="color:#e4393c;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span>
+              <span style="color:#f10215;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span>
               <div style="font-size:10px;color:#aaa;margin-top:2px">{{ new Date(p.viewedAt).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) }}</div>
             </div>
-            <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+            <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
           </div>
         </div>
       </div>
     </div>
     <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <p style="font-size:48px;margin-bottom:12px">🕐</p><p>暂无浏览记录</p>
-      <button @click="router.push('/')" style="margin-top:12px;padding:8px 24px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">去逛逛</button>
+      <button @click="router.push('/')" style="margin-top:12px;padding:8px 24px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">去逛逛</button>
     </div>
   </div>
 </template>

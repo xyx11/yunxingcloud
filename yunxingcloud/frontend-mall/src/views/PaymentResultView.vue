@@ -32,11 +32,11 @@ onMounted(async () => {
         <p style="color:#666;font-size:14px;margin-bottom:24px">您的订单已支付成功，我们将尽快发货</p>
         <div v-if="orderNo" style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:24px;text-align:left">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:#999">订单号</span><span style="font-weight:600">{{ orderNo }}</span></div>
-          <div v-if="orderInfo" style="display:flex;justify-content:space-between"><span style="color:#999">支付金额</span><span style="color:#e4393c;font-weight:700;font-size:18px">¥{{ (orderInfo.totalAmount/100).toFixed(2) }}</span></div>
+          <div v-if="orderInfo" style="display:flex;justify-content:space-between"><span style="color:#999">支付金额</span><span style="color:#f10215;font-weight:700;font-size:18px">¥{{ (orderInfo.totalAmount/100).toFixed(2) }}</span></div>
         </div>
         <div style="display:flex;gap:12px">
           <button @click="router.push(`/order/${orderId}`)" style="flex:1;height:44px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:14px">查看订单</button>
-          <button @click="router.push('/')" style="flex:1;height:44px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">继续购物</button>
+          <button @click="router.push('/')" style="flex:1;height:44px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">继续购物</button>
         </div>
       </template>
       <template v-else>
@@ -45,7 +45,7 @@ onMounted(async () => {
         <p style="color:#666;font-size:14px;margin-bottom:24px">支付未完成，请重试或选择其他支付方式</p>
         <div style="display:flex;gap:12px">
           <button @click="router.back()" style="flex:1;height:44px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:14px">返回重试</button>
-          <button @click="router.push('/')" style="flex:1;height:44px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">返回首页</button>
+          <button @click="router.push('/')" style="flex:1;height:44px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">返回首页</button>
         </div>
       </template>
     </div>

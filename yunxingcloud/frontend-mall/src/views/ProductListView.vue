@@ -91,7 +91,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <div v-for="cat in categories" :key="cat.id" style="margin-bottom:4px">
           <span @click="filters.categoryId = cat.id+''; applyFilters()"
                 style="display:block;padding:6px 8px;cursor:pointer;font-size:13px;border-radius:4px;transition:all .2s"
-                :style="{background:filters.categoryId===cat.id+''?'#fff0f0':'',color:filters.categoryId===cat.id+''?'#e4393c':'#666'}">{{ cat.name }}</span>
+                :style="{background:filters.categoryId===cat.id+''?'#fff0f0':'',color:filters.categoryId===cat.id+''?'#f10215':'#666'}">{{ cat.name }}</span>
         </div>
       </div>
       <div style="background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
@@ -99,7 +99,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <div v-for="b in brands" :key="b.id" style="margin-bottom:4px">
           <span @click="filters.brandId = b.id+''; applyFilters()"
                 style="display:block;padding:6px 8px;cursor:pointer;font-size:13px;border-radius:4px;transition:all .2s"
-                :style="{background:filters.brandId===b.id+''?'#fff0f0':'',color:filters.brandId===b.id+''?'#e4393c':'#666'}">{{ b.name }}</span>
+                :style="{background:filters.brandId===b.id+''?'#fff0f0':'',color:filters.brandId===b.id+''?'#f10215':'#666'}">{{ b.name }}</span>
         </div>
       </div>
       <div style="background:#fff;border-radius:8px;padding:16px;margin-top:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
@@ -108,13 +108,13 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <input v-model="filters.minPrice" placeholder="¥最低" type="number" style="width:70px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" />
           <span style="color:#999">-</span>
           <input v-model="filters.maxPrice" placeholder="¥最高" type="number" style="width:70px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" />
-          <button @click="applyFilters()" style="padding:6px 10px;background:#e4393c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">确定</button>
+          <button @click="applyFilters()" style="padding:6px 10px;background:#f10215;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">确定</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
           <span v-for="r in [{label:'¥100以下',min:'',max:'100'},{label:'¥100-500',min:'100',max:'500'},{label:'¥500-1000',min:'500',max:'1000'},{label:'¥1000以上',min:'1000',max:''}]" :key="r.label"
                 @click="filters.minPrice=r.min; filters.maxPrice=r.max; applyFilters()"
                 style="padding:4px 10px;background:#f5f5f5;border-radius:12px;cursor:pointer;font-size:11px;color:#666;transition:all .2s"
-                @mouseenter="(e:any) => e.target.style.background='#fff0f0'; e.target.style.color='#e4393c'"
+                @mouseenter="(e:any) => e.target.style.background='#fff0f0'; e.target.style.color='#f10215'"
                 @mouseleave="(e:any) => { e.target.style.background='#f5f5f5'; e.target.style.color='#666' }">{{ r.label }}</span>
         </div>
       </div>
@@ -122,11 +122,11 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
     <div style="flex:1">
       <div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;gap:16px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.06)">
         <span style="font-size:13px;color:#999">排序：</span>
-        <span @click="setSort('')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:!filters.sort?'#e4393c':'#666',background:!filters.sort?'#fff0f0':''}">综合</span>
-        <span @click="setSort('sales')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='sales'?'#e4393c':'#666',background:filters.sort==='sales'?'#fff0f0':''}">销量</span>
-        <span @click="setSort('price_asc')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='price_asc'?'#e4393c':'#666',background:filters.sort==='price_asc'?'#fff0f0':''}">价格↑</span>
-        <span @click="setSort('price_desc')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='price_desc'?'#e4393c':'#666',background:filters.sort==='price_desc'?'#fff0f0':''}">价格↓</span>
-        <span @click="setSort('newest')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='newest'?'#e4393c':'#666',background:filters.sort==='newest'?'#fff0f0':''}">最新</span>
+        <span @click="setSort('')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:!filters.sort?'#f10215':'#666',background:!filters.sort?'#fff0f0':''}">综合</span>
+        <span @click="setSort('sales')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='sales'?'#f10215':'#666',background:filters.sort==='sales'?'#fff0f0':''}">销量</span>
+        <span @click="setSort('price_asc')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='price_asc'?'#f10215':'#666',background:filters.sort==='price_asc'?'#fff0f0':''}">价格↑</span>
+        <span @click="setSort('price_desc')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='price_desc'?'#f10215':'#666',background:filters.sort==='price_desc'?'#fff0f0':''}">价格↓</span>
+        <span @click="setSort('newest')" style="cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px" :style="{color:filters.sort==='newest'?'#f10215':'#666',background:filters.sort==='newest'?'#fff0f0':''}">最新</span>
       </div>
       <div v-if="loading" style="padding:16px 0"><SkeletonBox :columns="3" :count="6" height="280px" /></div>
       <div v-else style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
@@ -139,11 +139,11 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">
             📦
             <span v-if="p.isNew" style="position:absolute;top:6px;left:6px;background:#4caf50;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">新品</span>
-            <span v-else-if="p.isHot" style="position:absolute;top:6px;left:6px;background:#e4393c;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
+            <span v-else-if="p.isHot" style="position:absolute;top:6px;left:6px;background:#f10215;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
             <span v-if="p.originalPrice && p.originalPrice > p.price" style="position:absolute;top:6px;right:50px;background:#ff9800;color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;z-index:1">-{{ Math.round((1-p.price/p.originalPrice)*100) }}%</span>
             <button @click.stop="toggleCompare({id:p.id,name:p.name,price:p.price,sales:p.sales,description:p.description})"
-                    style="position:absolute;top:6px;right:6px;padding:1px 8px;border:1px solid #e4393c;border-radius:10px;background:#fff;color:#e4393c;cursor:pointer;font-size:10px;z-index:1;transition:all .2s"
-                    :style="{background:isSelected(p.id)?'#e4393c':'#fff',color:isSelected(p.id)?'#fff':'#e4393c'}">
+                    style="position:absolute;top:6px;right:6px;padding:1px 8px;border:1px solid #f10215;border-radius:10px;background:#fff;color:#f10215;cursor:pointer;font-size:10px;z-index:1;transition:all .2s"
+                    :style="{background:isSelected(p.id)?'#f10215':'#fff',color:isSelected(p.id)?'#fff':'#f10215'}">
               {{ isSelected(p.id) ? '✓ 对比' : '+ 对比' }}
             </button>
             <button @click.stop="openQuickView($event, {id:p.id,name:p.name,price:p.price,sales:p.sales,description:p.description,imageUrl:p.imageUrl,stock:p.stock,rating:p.rating,reviewCount:p.reviewCount})"
@@ -157,14 +157,14 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
             <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
             <div style="display:flex;align-items:center;justify-content:space-between">
               <div>
-                <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
                 <span style="color:#999;font-size:11px;margin-left:4px">已售 {{ p.sales || 0 }}</span>
               </div>
               <button @click="(e: Event) => quickAdd(e, p)"
-                      style="width:32px;height:32px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
-                      :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
-                      @mouseenter="(e:any) => { if(!(p as any)._added) e.target.style.background='#e4393c'; e.target.style.color='#fff' }"
-                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                      style="width:32px;height:32px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                      :style="{background: (p as any)._added ? '#f10215' : '#fff', color: (p as any)._added ? '#fff' : '#f10215'}"
+                      @mouseenter="(e:any) => { if(!(p as any)._added) e.target.style.background='#f10215'; e.target.style.color='#fff' }"
+                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#f10215' } }">
                 {{ (p as any)._added ? '✓' : '+' }}
               </button>
             </div>
@@ -178,7 +178,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <div v-if="totalPages > 1 && !loadingMore" style="display:flex;justify-content:center;gap:8px;margin-top:24px">
         <button v-for="p in Math.min(totalPages, 10)" :key="p" @click="goPage(p-1)"
                 style="width:36px;height:36px;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:13px"
-                :style="{background:currentPage===p-1?'#e4393c':'#fff',color:currentPage===p-1?'#fff':'#333',borderColor:currentPage===p-1?'#e4393c':'#ddd'}">{{ p }}</button>
+                :style="{background:currentPage===p-1?'#f10215':'#fff',color:currentPage===p-1?'#fff':'#333',borderColor:currentPage===p-1?'#f10215':'#ddd'}">{{ p }}</button>
       </div>
     </div>
     <QuickViewModal :product="quickViewProduct" :show="!!quickViewProduct" @close="quickViewProduct = null" />

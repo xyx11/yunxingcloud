@@ -36,10 +36,10 @@ onMounted(load)
     <div style="display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <span @click="activeTab='available'"
             style="flex:1;text-align:center;padding:12px;cursor:pointer;font-size:14px;transition:all .2s"
-            :style="{background:activeTab==='available'?'#e4393c':'#fff',color:activeTab==='available'?'#fff':'#666'}">可领取</span>
+            :style="{background:activeTab==='available'?'#f10215':'#fff',color:activeTab==='available'?'#fff':'#666'}">可领取</span>
       <span @click="activeTab='mine'"
             style="flex:1;text-align:center;padding:12px;cursor:pointer;font-size:14px;transition:all .2s"
-            :style="{background:activeTab==='mine'?'#e4393c':'#fff',color:activeTab==='mine'?'#fff':'#666'}">我的优惠券 ({{ myCoupons.length }})</span>
+            :style="{background:activeTab==='mine'?'#f10215':'#fff',color:activeTab==='mine'?'#fff':'#666'}">我的优惠券 ({{ myCoupons.length }})</span>
     </div>
     <div v-if="loading" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
       <div v-for="i in 4" :key="i" style="background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);height:120px">
@@ -49,7 +49,7 @@ onMounted(load)
     <div v-else-if="activeTab==='available'" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
       <div v-for="c in availableCoupons" :key="c.id"
            style="background:linear-gradient(135deg,#fff,#fff5f5);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;cursor:default">
-        <div style="width:120px;background:linear-gradient(135deg,#e4393c,#ff6b6b);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;flex-shrink:0">
+        <div style="width:120px;background:linear-gradient(135deg,#f10215,#ff6b6b);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;flex-shrink:0">
           <span style="font-size:28px;font-weight:800">¥{{ (c.amount/100).toFixed(0) }}</span>
           <span style="font-size:11px;opacity:.8;margin-top:4px">{{ discountLabel(c) }}</span>
         </div>
@@ -59,10 +59,10 @@ onMounted(load)
             <div style="color:#999;font-size:11px">满¥{{ ((c.threshold||0)/100).toFixed(0) }}可用 · {{ c.startTime?.substring(0,10) }} ~ {{ c.endTime?.substring(0,10) }}</div>
           </div>
           <button @click="claim(c.id)" :disabled="claiming.has(c.id)"
-                  style="align-self:flex-end;padding:4px 16px;border:1px solid #e4393c;color:#e4393c;background:#fff;border-radius:14px;cursor:pointer;font-size:12px;transition:all .2s;margin-top:8px"
+                  style="align-self:flex-end;padding:4px 16px;border:1px solid #f10215;color:#f10215;background:#fff;border-radius:14px;cursor:pointer;font-size:12px;transition:all .2s;margin-top:8px"
                   :style="claiming.has(c.id)?{opacity:'.5'}:{}"
-                  @mouseenter="(e:any) => { if(!claiming.has(c.id)) { e.target.style.background='#e4393c'; e.target.style.color='#fff' } }"
-                  @mouseleave="(e:any) => { if(!claiming.has(c.id)) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                  @mouseenter="(e:any) => { if(!claiming.has(c.id)) { e.target.style.background='#f10215'; e.target.style.color='#fff' } }"
+                  @mouseleave="(e:any) => { if(!claiming.has(c.id)) { e.target.style.background='#fff'; e.target.style.color='#f10215' } }">
             {{ claiming.has(c.id) ? '领取中...' : '立即领取' }}
           </button>
         </div>
@@ -76,7 +76,7 @@ onMounted(load)
            style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex"
            :style="{opacity: c.status==='1' ? '.5' : '1'}">
         <div style="width:120px;background:linear-gradient(135deg,#999,#bbb);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;flex-shrink:0"
-             :style="{background: c.status==='0' ? 'linear-gradient(135deg,#e4393c,#ff6b6b)' : 'linear-gradient(135deg,#999,#bbb)'}">
+             :style="{background: c.status==='0' ? 'linear-gradient(135deg,#f10215,#ff6b6b)' : 'linear-gradient(135deg,#999,#bbb)'}">
           <span style="font-size:28px;font-weight:800">¥{{ (c.amount/100).toFixed(0) }}</span>
           <span style="font-size:10px;opacity:.8;margin-top:4px">{{ c.status==='1'?'已使用':c.status==='0'?'待使用':'已过期' }}</span>
         </div>
@@ -87,7 +87,7 @@ onMounted(load)
       </div>
       <div v-if="!myCoupons.length" style="grid-column:1/-1;text-align:center;padding:60px;color:#999;background:#fff;border-radius:12px">
         <p style="font-size:48px;margin-bottom:12px">📭</p><p>还没有优惠券</p>
-        <button @click="activeTab='available'" style="margin-top:12px;padding:8px 24px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">去领取</button>
+        <button @click="activeTab='available'" style="margin-top:12px;padding:8px 24px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">去领取</button>
       </div>
     </div>
   </div>

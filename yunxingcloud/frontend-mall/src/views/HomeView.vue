@@ -58,7 +58,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <span v-else style="font-size:13px;color:#999">⏳ {{ t('common.loading') }}</span>
     </div>
     <div v-if="banners.length" style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:24px;height:360px">
-      <div v-for="(b, i) in banners" :key="b.id" :style="{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'linear-gradient(135deg,'+(i%2?'#c82930':'#e4393c')+','+(i%2?'#ff6b6b':'#f90')+')',display:'flex',alignItems:'center',justifyContent:'center',opacity:i===currentBanner?1:0,transition:'opacity .6s'}">
+      <div v-for="(b, i) in banners" :key="b.id" :style="{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'linear-gradient(135deg,'+(i%2?'#d4000f':'#f10215')+','+(i%2?'#ff6b6b':'#f90')+')',display:'flex',alignItems:'center',justifyContent:'center',opacity:i===currentBanner?1:0,transition:'opacity .6s'}">
         <div style="text-align:center;color:#fff">
           <h2 style="font-size:42px;margin-bottom:16px">{{ b.title }}</h2>
           <p style="font-size:20px;opacity:.9">{{ t('product.hotRecommend') }}</p>
@@ -81,10 +81,10 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <div style="font-size:12px;color:#333">{{ cat.name }}</div>
       </div>
     </div>
-    <div v-if="hotProducts.length >= 3" style="background:linear-gradient(135deg,#fff5f5,#fff);border:2px solid #e4393c;border-radius:12px;padding:20px 24px;margin-bottom:24px">
+    <div v-if="hotProducts.length >= 3" style="background:linear-gradient(135deg,#fff5f5,#fff);border:2px solid #f10215;border-radius:12px;padding:20px 24px;margin-bottom:24px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:22px;font-weight:800;color:#e4393c">⏰ {{ t('product.flashSale') }}</span>
+          <span style="font-size:22px;font-weight:800;color:#f10215">⏰ {{ t('product.flashSale') }}</span>
           <div style="display:flex;align-items:center;gap:4px;font-size:16px;font-weight:700;color:#333">
             <CountdownTimer :end-time="flashEnd" label="" />
           </div>
@@ -98,12 +98,12 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
              @mouseleave="(e:any) => e.target.style.transform=''">
           <div style="height:140px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">
             📦
-            <span style="position:absolute;top:6px;right:6px;background:#e4393c;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">7{{ t('common.discount', '折') }}</span>
+            <span style="position:absolute;top:6px;right:6px;background:#f10215;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">7{{ t('common.discount', '折') }}</span>
           </div>
           <div style="padding:8px 12px 12px">
             <h5 style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">{{ p.name }}</h5>
             <div style="display:flex;align-items:baseline;justify-content:center;gap:6px">
-              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
+              <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
               <span style="color:#999;font-size:11px;text-decoration:line-through">¥{{ (p.price / 100).toFixed(2) }}</span>
             </div>
           </div>
@@ -113,9 +113,9 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div style="display:flex;gap:24px">
         <span @click="activeTab='hot'"
-              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='hot'?'#e4393c':'#999',borderBottom:activeTab==='hot'?'3px solid #e4393c':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.hotRecommend') }}</span>
+              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='hot'?'#f10215':'#999',borderBottom:activeTab==='hot'?'3px solid #f10215':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.hotRecommend') }}</span>
         <span @click="activeTab='new'"
-              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='new'?'#e4393c':'#999',borderBottom:activeTab==='new'?'3px solid #e4393c':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.newArrival') }}</span>
+              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='new'?'#f10215':'#999',borderBottom:activeTab==='new'?'3px solid #f10215':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.newArrival') }}</span>
       </div>
       <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
     </div>
@@ -129,20 +129,20 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
         <div style="height:200px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
           📦
           <span v-if="activeTab==='new' || p.isNew" style="position:absolute;top:6px;left:6px;background:#4caf50;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">新品</span>
-          <span v-else-if="activeTab==='hot' || p.isHot" style="position:absolute;top:6px;left:6px;background:#e4393c;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
+          <span v-else-if="activeTab==='hot' || p.isHot" style="position:absolute;top:6px;left:6px;background:#f10215;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
         </div>
         <div style="padding:12px 16px">
           <h4 style="font-size:14px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <span style="color:#e4393c;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <span style="color:#f10215;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
               <span style="color:#999;font-size:12px;margin-left:4px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
             </div>
             <button @click="(e: Event) => quickAdd(e, p)"
-                    style="width:30px;height:30px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
-                    :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
-                    @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#e4393c'; e.target.style.color='#fff' } }"
-                    @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                    style="width:30px;height:30px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                    :style="{background: (p as any)._added ? '#f10215' : '#fff', color: (p as any)._added ? '#fff' : '#f10215'}"
+                    @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#f10215'; e.target.style.color='#fff' } }"
+                    @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#f10215' } }">
               {{ (p as any)._added ? '✓' : '+' }}
             </button>
           </div>
@@ -166,7 +166,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <div style="height:200px;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);display:flex;align-items:center;justify-content:center;font-size:56px">📦</div>
           <div style="padding:12px 16px">
             <h4 style="font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-            <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+            <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
             <div style="font-size:11px;color:#aaa;margin-top:2px">{{ new Date(p.viewedAt).toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) }}</div>
           </div>
         </div>
@@ -189,8 +189,8 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <div style="padding:12px 16px">
             <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
             <div style="display:flex;align-items:center;justify-content:space-between">
-              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+              <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
             </div>
           </div>
         </div>

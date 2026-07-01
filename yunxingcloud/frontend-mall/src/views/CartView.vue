@@ -46,11 +46,11 @@ onMounted(load)
     </div>
     <div v-else-if="items.length">
       <div style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:13px;color:#666">
-        <label style="cursor:pointer;display:flex;align-items:center;gap:8px"><input type="checkbox" v-model="allSelected" style="accent-color:#e4393c" />{{ t('cart.selectAll') }}</label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:8px"><input type="checkbox" v-model="allSelected" style="accent-color:#f10215" />{{ t('cart.selectAll') }}</label>
         <span style="margin-left:auto">{{ t('cart.unitPrice') }}</span><span style="margin:0 120px 0 60px">{{ t('product.quantity') }}</span><span style="margin-right:60px">{{ t('cart.subTotal') }}</span><span style="width:40px">{{ t('cart.actions') }}</span>
       </div>
       <div v-for="item in items" :key="item.id" style="display:flex;align-items:center;padding:16px 0;border-bottom:1px solid #f5f5f5">
-        <label style="cursor:pointer;margin-right:12px"><input type="checkbox" :value="item.id" v-model="selectedIds" style="accent-color:#e4393c" /></label>
+        <label style="cursor:pointer;margin-right:12px"><input type="checkbox" :value="item.id" v-model="selectedIds" style="accent-color:#f10215" /></label>
         <div style="width:80px;height:80px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-right:16px;flex-shrink:0">📦</div>
         <div style="flex:1;min-width:0"><router-link :to="`/product/${item.productId}`" style="font-weight:600;color:#333;text-decoration:none;font-size:15px">{{ item.productName }}</router-link></div>
         <div style="width:80px;text-align:center;color:#666;font-size:14px">¥{{ (item.price / 100).toFixed(2) }}</div>
@@ -59,22 +59,22 @@ onMounted(load)
           <span style="width:36px;text-align:center;border-top:1px solid #ddd;border-bottom:1px solid #ddd;height:28px;line-height:28px;font-size:13px">{{ item.quantity }}</span>
           <button @click="updateQty(item, 1)" style="width:28px;height:28px;border:1px solid #ddd;background:#fff;cursor:pointer;border-radius:0 4px 4px 0">+</button>
         </div>
-        <div style="width:80px;text-align:center;color:#e4393c;font-weight:700;font-size:16px">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</div>
+        <div style="width:80px;text-align:center;color:#f10215;font-weight:700;font-size:16px">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</div>
         <button @click="remove(item.id)" style="width:40px;text-align:center;border:none;background:none;cursor:pointer;color:#ccc;font-size:18px"
-                @mouseenter="(e:any) => e.target.style.color='#e4393c'" @mouseleave="(e:any) => e.target.style.color='#ccc'">✕</button>
+                @mouseenter="(e:any) => e.target.style.color='#f10215'" @mouseleave="(e:any) => e.target.style.color='#ccc'">✕</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:20px;margin-top:8px">
-        <div><label style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#666"><input type="checkbox" v-model="allSelected" style="accent-color:#e4393c" /> {{ t('cart.selectAll') }}</label><span style="font-size:13px;color:#999;margin-left:16px">{{ t('cart.selected') }} {{ selectedIds.size }} {{ t('cart.items') }}</span></div>
+        <div><label style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#666"><input type="checkbox" v-model="allSelected" style="accent-color:#f10215" /> {{ t('cart.selectAll') }}</label><span style="font-size:13px;color:#999;margin-left:16px">{{ t('cart.selected') }} {{ selectedIds.size }} {{ t('cart.items') }}</span></div>
         <div style="display:flex;align-items:center;gap:20px">
-          <div><span style="font-size:14px;color:#666">{{ t('cart.total') }}：</span><span style="font-size:26px;color:#e4393c;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
-          <button @click="checkout" style="padding:14px 48px;background:#e4393c;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;transition:background .2s"
-                  @mouseenter="(e:any) => e.target.style.background='#c82930'" @mouseleave="(e:any) => e.target.style.background='#e4393c'">{{ t('cart.checkout') }}</button>
+          <div><span style="font-size:14px;color:#666">{{ t('cart.total') }}：</span><span style="font-size:26px;color:#f10215;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
+          <button @click="checkout" style="padding:14px 48px;background:#f10215;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;transition:background .2s"
+                  @mouseenter="(e:any) => e.target.style.background='#d4000f'" @mouseleave="(e:any) => e.target.style.background='#f10215'">{{ t('cart.checkout') }}</button>
         </div>
       </div>
     </div>
     <div v-else style="text-align:center;padding:80px 40px;color:#999">
       <p style="font-size:64px;margin-bottom:16px">🛒</p><p style="font-size:16px;margin-bottom:8px">{{ t('common.emptyCart') }}</p>
-      <button @click="router.push('/')" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">{{ t('common.goShopping') }}</button>
+      <button @click="router.push('/')" style="padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">{{ t('common.goShopping') }}</button>
     </div>
   </div>
 </template>

@@ -55,10 +55,10 @@ onMounted(load)
         <div v-if="addresses.length" style="margin-bottom:16px">
           <div v-for="addr in addresses" :key="addr.id" @click="selectAddress(addr)"
                style="padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .2s"
-               :style="{border:selectedAddr?.id===addr.id?'2px solid #e4393c':'1px solid #eee',background:selectedAddr?.id===addr.id?'#fff5f5':'#fff'}">
+               :style="{border:selectedAddr?.id===addr.id?'2px solid #f10215':'1px solid #eee',background:selectedAddr?.id===addr.id?'#fff5f5':'#fff'}">
             <div style="font-weight:600;margin-bottom:4px">{{ addr.name }} <span style="color:#999;font-weight:400">{{ addr.phone }}</span></div>
             <div style="color:#666;font-size:13px">{{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detail }}
-              <span v-if="addr.isDefault" style="color:#e4393c;font-size:11px;margin-left:8px">[{{ t('profile.defaultAddr') }}]</span></div>
+              <span v-if="addr.isDefault" style="color:#f10215;font-size:11px;margin-left:8px">[{{ t('profile.defaultAddr') }}]</span></div>
           </div>
         </div>
         <div v-if="!selectedAddr" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -72,12 +72,12 @@ onMounted(load)
         <div v-for="item in items" :key="item.id" style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">
           <div style="width:60px;height:60px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-right:16px;flex-shrink:0">📦</div>
           <span style="flex:1;font-size:14px">{{ item.productName }} × {{ item.quantity }}</span>
-          <span style="color:#e4393c;font-weight:600;font-size:15px">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</span>
+          <span style="color:#f10215;font-weight:600;font-size:15px">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</span>
         </div>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0">
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <input v-model="couponCode" placeholder="输入优惠券码" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:13px" />
-            <button @click="applyCoupon" style="padding:8px 16px;border:1px solid #e4393c;color:#e4393c;background:#fff;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap" :style="couponApplied?{background:'#e4393c',color:'#fff'}:{}">{{ couponApplied ? '✓ 已使用' : '使用' }}</button>
+            <button @click="applyCoupon" style="padding:8px 16px;border:1px solid #f10215;color:#f10215;background:#fff;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap" :style="couponApplied?{background:'#f10215',color:'#fff'}:{}">{{ couponApplied ? '✓ 已使用' : '使用' }}</button>
           </div>
           <div style="margin-bottom:12px">
             <span style="font-size:13px;color:#666;margin-right:12px">支付方式</span>
@@ -95,10 +95,10 @@ onMounted(load)
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:20px">
           <span style="font-size:14px;color:#666">{{ t('checkout.totalItems', { n: items.length }) }}</span>
-          <div><span style="font-size:16px;color:#666;margin-right:12px">{{ t('checkout.actualPay') }}：</span><span style="font-size:28px;color:#e4393c;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
+          <div><span style="font-size:16px;color:#666;margin-right:12px">{{ t('checkout.actualPay') }}：</span><span style="font-size:28px;color:#f10215;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
         </div>
-        <button @click="submit" :disabled="submitting" style="width:100%;height:50px;background:#e4393c;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;margin-top:20px;transition:background .2s"
-                @mouseenter="(e:any) => { if(!submitting) e.target.style.background='#c82930' }" @mouseleave="(e:any) => { if(!submitting) e.target.style.background='#e4393c' }"
+        <button @click="submit" :disabled="submitting" style="width:100%;height:50px;background:#f10215;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;margin-top:20px;transition:background .2s"
+                @mouseenter="(e:any) => { if(!submitting) e.target.style.background='#d4000f' }" @mouseleave="(e:any) => { if(!submitting) e.target.style.background='#f10215' }"
                 :style="{opacity:submitting?'.7':'1',cursor:submitting?'not-allowed':'pointer'}">{{ submitting ? '提交中...' : t('order.submitOrder') }}</button>
       </div>
     </template>

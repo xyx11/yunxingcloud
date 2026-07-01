@@ -45,7 +45,7 @@ async function submit() {
   <div style="max-width:700px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2 style="font-size:20px;font-weight:700">🛡️ 售后申请</h2>
-      <button @click="showForm=true" style="padding:8px 20px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ 新建申请</button>
+      <button @click="showForm=true" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ 新建申请</button>
     </div>
 
     <div v-if="showForm" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
@@ -54,7 +54,7 @@ async function submit() {
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
           <div v-for="t in types" :key="t.value" @click="form.type=t.value"
                style="padding:12px;border-radius:8px;cursor:pointer;text-align:center;transition:all .2s"
-               :style="{border:form.type===t.value?'2px solid #e4393c':'1px solid #eee',background:form.type===t.value?'#fff5f5':'#fff'}">
+               :style="{border:form.type===t.value?'2px solid #f10215':'1px solid #eee',background:form.type===t.value?'#fff5f5':'#fff'}">
             <div style="font-size:24px;margin-bottom:4px">{{ t.icon }}</div>
             <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ t.label }}</div>
             <div style="font-size:10px;color:#999">{{ t.desc }}</div>
@@ -66,7 +66,7 @@ async function submit() {
       <textarea v-model="form.reason" placeholder="请描述售后原因..." style="width:100%;height:80px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button @click="showForm=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting?'提交中...':'提交申请' }}</button>
+        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting?'提交中...':'提交申请' }}</button>
       </div>
     </div>
 
@@ -85,7 +85,7 @@ async function submit() {
           <span style="padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff" :style="{background:statusMap[r.status]?.color}">{{ statusMap[r.status]?.label }}</span>
         </div>
         <div style="color:#666;font-size:13px">{{ r.reason }}</div>
-        <div v-if="r.amount" style="color:#e4393c;font-weight:700;margin-top:4px">¥{{ (Number(r.amount)/100).toFixed(2) }}</div>
+        <div v-if="r.amount" style="color:#f10215;font-weight:700;margin-top:4px">¥{{ (Number(r.amount)/100).toFixed(2) }}</div>
         <div style="color:#aaa;font-size:11px;margin-top:6px">{{ r.createdAt?.substring(0,16) }}</div>
       </div>
     </div>

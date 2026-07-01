@@ -15,7 +15,7 @@ async function activate() { try{loading.value=true;const r=await request.post('/
 </script>
 <template>
   <div style="max-width:420px;margin:30px auto">
-    <div v-if="card" style="background:linear-gradient(135deg,#e4393c 0%,#c82930 50%,#ff6b6b 100%);color:#fff;border-radius:16px;padding:28px;margin-bottom:24px;box-shadow:0 8px 32px rgba(228,57,60,.3);position:relative;overflow:hidden">
+    <div v-if="card" style="background:linear-gradient(135deg,#f10215 0%,#d4000f 50%,#ff6b6b 100%);color:#fff;border-radius:16px;padding:28px;margin-bottom:24px;box-shadow:0 8px 32px rgba(228,57,60,.3);position:relative;overflow:hidden">
       <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.1)"></div>
       <div style="position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)"></div>
       <div style="position:relative;z-index:1">
@@ -32,12 +32,12 @@ async function activate() { try{loading.value=true;const r=await request.post('/
     </div>
     <div style="background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">💳 礼品卡</h2>
-      <input v-model="cardNo" placeholder="输入卡号" style="width:100%;padding:12px;border:2px solid #e4393c;border-radius:8px;font-size:15px;text-align:center;box-sizing:border-box;margin-bottom:12px" />
+      <input v-model="cardNo" placeholder="输入卡号" style="width:100%;padding:12px;border:2px solid #f10215;border-radius:8px;font-size:15px;text-align:center;box-sizing:border-box;margin-bottom:12px" />
       <div style="display:flex;gap:8px">
-        <button @click="query" :disabled="loading" style="flex:1;padding:10px;background:#fff;border:1px solid #e4393c;color:#e4393c;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">查询</button>
-        <button @click="activate" :disabled="loading" style="flex:1;padding:10px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">{{ loading ? '处理中...' : '激活' }}</button>
+        <button @click="query" :disabled="loading" style="flex:1;padding:10px;background:#fff;border:1px solid #f10215;color:#f10215;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">查询</button>
+        <button @click="activate" :disabled="loading" style="flex:1;padding:10px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">{{ loading ? '处理中...' : '激活' }}</button>
       </div>
-      <p v-if="msg" style="text-align:center;margin-top:12px;font-size:13px" :style="{color:msg.includes('成功')?'#4caf50':'#e4393c'}">{{ msg }}</p>
+      <p v-if="msg" style="text-align:center;margin-top:12px;font-size:13px" :style="{color:msg.includes('成功')?'#4caf50':'#f10215'}">{{ msg }}</p>
     </div>
   </div>
 </template>

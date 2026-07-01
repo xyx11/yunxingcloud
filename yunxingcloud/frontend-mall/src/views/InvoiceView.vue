@@ -38,7 +38,7 @@ const statusMap: Record<string, { label: string; color: string }> = {
   <div style="max-width:700px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2 style="font-size:20px;font-weight:700">🧾 发票管理</h2>
-      <button @click="showForm=true" style="padding:8px 20px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ 申请开票</button>
+      <button @click="showForm=true" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ 申请开票</button>
     </div>
 
     <div v-if="showForm" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
@@ -46,9 +46,9 @@ const statusMap: Record<string, { label: string; color: string }> = {
         <label style="font-size:13px;color:#666;margin-bottom:6px;display:block">发票类型</label>
         <div style="display:flex;gap:8px">
           <span @click="form.type='personal'" style="cursor:pointer;padding:6px 16px;border-radius:6px;font-size:13px"
-                :style="{border:form.type==='personal'?'2px solid #e4393c':'1px solid #ddd',background:form.type==='personal'?'#fff5f5':'#fff'}">个人</span>
+                :style="{border:form.type==='personal'?'2px solid #f10215':'1px solid #ddd',background:form.type==='personal'?'#fff5f5':'#fff'}">个人</span>
           <span @click="form.type='company'" style="cursor:pointer;padding:6px 16px;border-radius:6px;font-size:13px"
-                :style="{border:form.type==='company'?'2px solid #e4393c':'1px solid #ddd',background:form.type==='company'?'#fff5f5':'#fff'}">企业</span>
+                :style="{border:form.type==='company'?'2px solid #f10215':'1px solid #ddd',background:form.type==='company'?'#fff5f5':'#fff'}">企业</span>
         </div>
       </div>
       <input v-model="form.orderNo" placeholder="订单号" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:10px" />
@@ -59,7 +59,7 @@ const statusMap: Record<string, { label: string; color: string }> = {
       <input v-model="form.email" placeholder="接收邮箱" type="email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button @click="showForm=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting?'提交中...':'提交申请' }}</button>
+        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting?'提交中...':'提交申请' }}</button>
       </div>
     </div>
 

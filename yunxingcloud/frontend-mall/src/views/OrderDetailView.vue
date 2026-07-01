@@ -73,11 +73,11 @@ async function submitReview() {
       <div style="display:flex;justify-content:space-between;position:relative;padding:20px 0">
         <div v-for="(s, i) in steps" :key="s" style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1">
           <div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:4px"
-               :style="{background:parseInt(order.status)>=parseInt(s)?'#e4393c':'#ddd',color:'#fff'}">{{ parseInt(order.status) >= parseInt(s) ? '✓' : i+1 }}</div>
-          <span style="font-size:11px" :style="{color:parseInt(order.status)>=parseInt(s)?'#e4393c':'#999'}">{{ ['下单','已支付','已发货','已完成'][i] }}</span>
+               :style="{background:parseInt(order.status)>=parseInt(s)?'#f10215':'#ddd',color:'#fff'}">{{ parseInt(order.status) >= parseInt(s) ? '✓' : i+1 }}</div>
+          <span style="font-size:11px" :style="{color:parseInt(order.status)>=parseInt(s)?'#f10215':'#999'}">{{ ['下单','已支付','已发货','已完成'][i] }}</span>
         </div>
         <div style="position:absolute;top:32px;left:12%;right:12%;height:2px;background:#eee;z-index:0">
-          <div style="height:100%;background:#e4393c;transition:width .6s" :style="{width:((parseInt(order.status)/(steps.length-1))*100)+'%'}"></div>
+          <div style="height:100%;background:#f10215;transition:width .6s" :style="{width:((parseInt(order.status)/(steps.length-1))*100)+'%'}"></div>
         </div>
       </div>
     </div>
@@ -96,17 +96,17 @@ async function submitReview() {
       <div v-for="l in lines" :key="l.id" style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #f5f5f5">
         <div style="width:60px;height:60px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-right:16px;flex-shrink:0">📦</div>
         <div style="flex:1"><div style="font-weight:600">{{ l.productName }}</div><div style="color:#999;font-size:13px">¥{{ (l.price/100).toFixed(2) }} × {{ l.quantity }}</div></div>
-        <div style="color:#e4393c;font-weight:700">¥{{ (l.price*l.quantity/100).toFixed(2) }}</div>
-        <button v-if="order.status==='3'" @click="openReview(l.productId)" style="margin-left:12px;padding:4px 12px;border:1px solid #e4393c;color:#e4393c;background:#fff;border-radius:4px;cursor:pointer;font-size:12px">评价</button>
+        <div style="color:#f10215;font-weight:700">¥{{ (l.price*l.quantity/100).toFixed(2) }}</div>
+        <button v-if="order.status==='3'" @click="openReview(l.productId)" style="margin-left:12px;padding:4px 12px;border:1px solid #f10215;color:#f10215;background:#fff;border-radius:4px;cursor:pointer;font-size:12px">评价</button>
       </div>
       <div style="text-align:right;padding-top:16px">
-        <span style="font-size:14px;color:#666">合计：</span><span style="font-size:22px;color:#e4393c;font-weight:700">¥{{ (order.totalAmount/100).toFixed(2) }}</span>
+        <span style="font-size:14px;color:#666">合计：</span><span style="font-size:22px;color:#f10215;font-weight:700">¥{{ (order.totalAmount/100).toFixed(2) }}</span>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:12px">
       <button v-if="order.status==='0'" @click="cancel" style="padding:10px 24px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:14px">取消订单</button>
-      <button v-if="order.status==='0'" @click="pay" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">去支付</button>
-      <button v-if="order.status==='2'" @click="confirmReceive" :disabled="receiving" style="padding:10px 32px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600" :style="{opacity:receiving?'.7':'1'}">{{ receiving ? '处理中...' : '确认收货' }}</button>
+      <button v-if="order.status==='0'" @click="pay" style="padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">去支付</button>
+      <button v-if="order.status==='2'" @click="confirmReceive" :disabled="receiving" style="padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600" :style="{opacity:receiving?'.7':'1'}">{{ receiving ? '处理中...' : '确认收货' }}</button>
     </div>
     <div v-if="showReview" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200">
       <div style="background:#fff;border-radius:12px;padding:24px;width:400px;max-width:90vw">
@@ -118,7 +118,7 @@ async function submitReview() {
         <textarea v-model="reviewForm.content" placeholder="分享你的使用体验..." style="width:100%;height:100px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;resize:none;box-sizing:border-box;margin-bottom:16px"></textarea>
         <div style="display:flex;justify-content:flex-end;gap:8px">
           <button @click="showReview=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-          <button @click="submitReview" style="padding:8px 20px;background:#e4393c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">提交评价</button>
+          <button @click="submitReview" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">提交评价</button>
         </div>
       </div>
     </div>

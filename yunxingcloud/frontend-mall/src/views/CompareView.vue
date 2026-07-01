@@ -20,7 +20,7 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
       <h3 style="font-size:16px;font-weight:700">商品对比 ({{ items.length }}/3)</h3>
       <div style="display:flex;gap:8px">
         <button @click="clear" style="padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;color:#999">清空</button>
-        <button @click="router.push('/compare')" style="padding:4px 12px;background:#e4393c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">全屏对比</button>
+        <button @click="router.push('/compare')" style="padding:4px 12px;background:#f10215;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">全屏对比</button>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
@@ -28,7 +28,7 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
         <button @click="remove(p.id)" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#f44336;color:#fff;border:none;cursor:pointer;font-size:11px;line-height:20px">✕</button>
         <div style="height:100px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:8px">📦</div>
         <h4 style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">{{ p.name }}</h4>
-        <span style="color:#e4393c;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span>
+        <span style="color:#f10215;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span>
         <div style="font-size:11px;color:#999">销量 {{ p.sales || 0 }}</div>
       </div>
       <div v-for="i in (3 - items.length)" :key="'empty-'+i" style="text-align:center;border:2px dashed #eee;border-radius:8px;height:160px;display:flex;align-items:center;justify-content:center;color:#ddd;font-size:12px">

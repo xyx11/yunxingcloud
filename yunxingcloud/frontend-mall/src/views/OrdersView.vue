@@ -44,7 +44,7 @@ onMounted(load)
     <div style="display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <span v-for="tab in tabs" :key="tab.key" @click="activeTab=tab.key"
             style="flex:1;text-align:center;padding:12px;cursor:pointer;font-size:14px;transition:all .2s"
-            :style="{background:activeTab===tab.key?'#e4393c':'#fff',color:activeTab===tab.key?'#fff':'#666'}">{{ tab.label }}</span>
+            :style="{background:activeTab===tab.key?'#f10215':'#fff',color:activeTab===tab.key?'#fff':'#666'}">{{ tab.label }}</span>
     </div>
     <div v-if="loading" style="display:flex;flex-direction:column;gap:12px">
       <div v-for="i in 3" :key="i" style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
@@ -62,17 +62,17 @@ onMounted(load)
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div><span v-if="o.receiverName" style="color:#666;font-size:13px">{{ o.receiverName }} {{ o.receiverAddress?.substring(0,20) }}...</span></div>
-          <span style="font-size:20px;color:#e4393c;font-weight:700">¥{{ (o.totalAmount / 100).toFixed(2) }}</span>
+          <span style="font-size:20px;color:#f10215;font-weight:700">¥{{ (o.totalAmount / 100).toFixed(2) }}</span>
         </div>
         <div v-if="o.status==='0'" style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px" @click.stop>
           <button @click="cancel(o.id)" :disabled="canceling.has(o.id)" style="padding:4px 16px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px" :style="{opacity:canceling.has(o.id)?'.5':'1'}">{{ canceling.has(o.id) ? '取消中...' : t('order.cancelOrder') }}</button>
-          <button @click="pay(o.id)" style="padding:4px 16px;background:#e4393c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">{{ t('order.toPay') }}</button>
+          <button @click="pay(o.id)" style="padding:4px 16px;background:#f10215;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">{{ t('order.toPay') }}</button>
         </div>
       </div>
     </div>
     <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <p style="font-size:48px;margin-bottom:16px">📋</p><p style="font-size:16px">{{ t('common.noOrders') }}</p>
-      <button @click="router.push('/')" style="margin-top:16px;padding:8px 24px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">{{ t('common.goShopping') }}</button>
+      <button @click="router.push('/')" style="margin-top:16px;padding:8px 24px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">{{ t('common.goShopping') }}</button>
     </div>
   </div>
 </template>

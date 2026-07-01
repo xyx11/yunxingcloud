@@ -87,14 +87,14 @@ const tabItems = [
     </div>
 
     <!-- Main Header -->
-    <header class="main-header" style="background:#e4393c;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)">
-      <h1 style="font-size:22px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0" @click="router.push('/')">YXCLOUD 商城</h1>
+    <header class="main-header" style="background:#fff;color:#333;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)">
+      <h1 style="font-size:22px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0" @click="router.push('/')">YXCLOUD</h1>
 
       <!-- Search (desktop) -->
       <div class="search-box" role="search" style="flex:1;max-width:600px;display:flex">
-        <input v-model="searchText" placeholder="搜索商品..." aria-label="搜索商品" @keyup.enter="doSearch"
+        <input v-model="searchText" placeholder="华为手机" aria-label="华为手机keyup.enter="doSearch"
                style="flex:1;height:36px;padding:0 12px;border:none;border-radius:4px 0 0 4px;outline:none;font-size:14px" />
-        <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#c82930;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
+        <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#f10215;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
       </div>
 
       <div class="header-links" role="navigation" aria-label="用户导航" style="display:flex;align-items:center;gap:16px;font-size:13px;white-space:nowrap">
@@ -103,27 +103,27 @@ const tabItems = [
         <span @click="goTo('/orders')" style="cursor:pointer">我的订单</span>
         <span @click="goTo('/cart')" class="cart-icon" style="cursor:pointer;position:relative">
           🛒 购物车
-          <span v-if="cartCount > 0" style="position:absolute;top:-8px;right:-12px;background:#fff;color:#e4393c;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center;line-height:14px">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+          <span v-if="cartCount > 0" style="position:absolute;top:-8px;right:-12px;background:#fff;color:#f10215;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center;line-height:14px">{{ cartCount > 99 ? '99+' : cartCount }}</span>
         </span>
       </div>
     </header>
 
     <!-- Category Nav (desktop) -->
-    <nav class="cat-nav" style="background:#fff;border-bottom:2px solid #e4393c;padding:0 20px;display:flex;gap:0;overflow-x:auto">
+    <nav class="cat-nav" style="background:#fff;border-bottom:2px solid #f10215;padding:0 20px;display:flex;gap:0;overflow-x:auto">
       <span @click="goTo('/products')" style="display:inline-block;padding:10px 16px;cursor:pointer;font-size:14px;white-space:nowrap;color:#333;transition:color .2s"
-            @mouseenter="(e:any) => e.target.style.color='#e4393c'" @mouseleave="(e:any) => e.target.style.color='#333'">全部商品</span>
+            @mouseenter="(e:any) => e.target.style.color='#f10215'" @mouseleave="(e:any) => e.target.style.color='#333'">全部商品</span>
       <span v-for="cat in categories.slice(0, 8)" :key="cat.id"
             @click="goCategory(cat.id)"
             style="display:inline-block;padding:10px 16px;cursor:pointer;font-size:14px;white-space:nowrap;color:#333;transition:color .2s"
-            @mouseenter="(e:any) => e.target.style.color='#e4393c'" @mouseleave="(e:any) => e.target.style.color='#333'">{{ cat.name }}</span>
+            @mouseenter="(e:any) => e.target.style.color='#f10215'" @mouseleave="(e:any) => e.target.style.color='#333'">{{ cat.name }}</span>
     </nav>
 
     <!-- Mobile Search -->
-    <div class="mobile-search" style="display:none;padding:8px 12px;background:#e4393c">
+    <div class="mobile-search" style="display:none;padding:8px 12px;background:#f10215">
       <div style="display:flex;border-radius:20px;overflow:hidden">
-        <input v-model="searchText" placeholder="搜索商品..." aria-label="搜索商品" @keyup.enter="doSearch"
+        <input v-model="searchText" placeholder="华为手机" aria-label="华为手机keyup.enter="doSearch"
                style="flex:1;height:32px;padding:0 12px;border:none;outline:none;font-size:13px" />
-        <button @click="doSearch" style="height:32px;padding:0 16px;background:#c82930;color:#fff;border:none;cursor:pointer;font-size:12px">搜索</button>
+        <button @click="doSearch" style="height:32px;padding:0 16px;background:#f10215;color:#fff;border:none;cursor:pointer;font-size:12px">搜索</button>
       </div>
     </div>
 
@@ -140,7 +140,7 @@ const tabItems = [
     <div v-if="showPushBanner" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:180;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:14px 20px;display:flex;align-items:center;gap:12px;max-width:400px;animation:slideUp .4s ease-out">
       <span style="font-size:24px">🔔</span>
       <div style="flex:1"><div style="font-weight:600;font-size:13px">开启通知</div><div style="color:#999;font-size:11px">第一时间获取促销和订单状态</div></div>
-      <button @click="enablePush" style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">开启</button>
+      <button @click="enablePush" style="padding:6px 16px;background:#fff;color:#333;border:none;border-radius:16px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">开启</button>
       <button @click="showPushBanner = false" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px">✕</button>
     </div>
 
@@ -161,15 +161,15 @@ const tabItems = [
         <div v-for="t in tabItems" :key="t.path" @click="goTo(t.path)"
              style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 12px;position:relative">
           <span style="font-size:20px">{{ t.icon }}</span>
-          <span v-if="t.path==='/cart' && cartCount > 0" style="position:absolute;top:0;right:2px;background:#e4393c;color:#fff;border-radius:10px;font-size:9px;padding:0 4px;min-width:14px;text-align:center;line-height:14px;font-weight:700">{{ cartCount > 99 ? '99+' : cartCount }}</span>
-          <span style="font-size:10px" :style="{color:route.path===t.path?'#e4393c':'#999'}">{{ t.label }}</span>
+          <span v-if="t.path==='/cart' && cartCount > 0" style="position:absolute;top:0;right:2px;background:#fff;color:#333;border-radius:10px;font-size:9px;padding:0 4px;min-width:14px;text-align:center;line-height:14px;font-weight:700">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+          <span style="font-size:10px" :style="{color:route.path===t.path?'#f10215':'#999'}">{{ t.label }}</span>
         </div>
       </div>
     </nav>
 
     <!-- Back to Top -->
     <button v-if="showBackTop" @click="scrollToTop"
-            style="position:fixed;bottom:80px;right:20px;z-index:150;width:40px;height:40px;border-radius:50%;background:#e4393c;color:#fff;border:none;cursor:pointer;font-size:18px;box-shadow:0 2px 12px rgba(228,57,60,.4);transition:transform .2s;display:flex;align-items:center;justify-content:center"
+            style="position:fixed;bottom:80px;right:20px;z-index:150;width:40px;height:40px;border-radius:50%;background:#fff;color:#333;border:none;cursor:pointer;font-size:18px;box-shadow:0 2px 12px rgba(228,57,60,.4);transition:transform .2s;display:flex;align-items:center;justify-content:center"
             @mouseenter="(e:any) => e.target.style.transform='scale(1.1)'" @mouseleave="(e:any) => e.target.style.transform=''">
       ↑
     </button>
@@ -181,7 +181,7 @@ const tabItems = [
     <div style="position:fixed;top:60px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px">
       <div v-for="t in toast.toasts.value" :key="t.id"
            style="padding:12px 20px;border-radius:8px;font-size:14px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:fadeIn .3s;min-width:200px;max-width:360px"
-           :style="{background:t.type==='success'?'#52c41a':t.type==='error'?'#e4393c':'#1677ff'}">
+           :style="{background:t.type==='success'?'#52c41a':t.type==='error'?'#f10215':'#1677ff'}">
         {{ t.message }}
       </div>
     </div>

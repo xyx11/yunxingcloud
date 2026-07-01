@@ -50,15 +50,15 @@ onMounted(load)
         <div style="padding:12px">
           <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.productName || p.name || '商品' }}</h4>
           <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="color:#e4393c;font-size:16px;font-weight:700">¥{{ ((p.price || 0) / 100).toFixed(2) }}</span>
-            <button @click.stop="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+            <span style="color:#f10215;font-size:16px;font-weight:700">¥{{ ((p.price || 0) / 100).toFixed(2) }}</span>
+            <button @click.stop="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
           </div>
         </div>
       </div>
     </div>
     <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <p style="font-size:48px;margin-bottom:16px">💝</p><p style="font-size:16px">{{ t('profile.noFavorites') }}</p>
-      <button @click="router.push('/')" style="margin-top:16px;padding:8px 24px;background:#e4393c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">{{ t('common.goShopping') }}</button>
+      <button @click="router.push('/')" style="margin-top:16px;padding:8px 24px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">{{ t('common.goShopping') }}</button>
     </div>
   </div>
 </template>
