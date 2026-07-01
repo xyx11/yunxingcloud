@@ -21,6 +21,7 @@ const CouponCenterView = () => import('@/views/CouponCenterView.vue')
 const AfterSaleView = () => import('@/views/AfterSaleView.vue')
 const GroupBuyView = () => import('@/views/GroupBuyView.vue')
 const FlashSaleView = () => import('@/views/FlashSaleView.vue')
+const InvoiceView = () => import('@/views/InvoiceView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -46,5 +47,6 @@ export default createRouter({
     { path: '/after-sale', component: AfterSaleView },
     { path: '/group-buy', component: GroupBuyView },
     { path: '/flash-sale', component: FlashSaleView },
+    { path: '/invoices', component: InvoiceView },
   ],
 })
