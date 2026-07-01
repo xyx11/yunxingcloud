@@ -18,16 +18,17 @@ const searchText = ref('')
 const categories = ref<any[]>([])
 const cartCount = ref(0)
 const showBackTop = ref(false)
-const isDark = ref(localStorage.getItem('mall_theme') === 'dark')
+const isDark = ref((() => { try { return localStorage.getItem('mall_theme') === 'dark' } catch { return false } })())
 const voiceSearching = ref(false)
 
 function updateCartCount() {
   try { const r = JSON.parse(localStorage.getItem('cart_count') || '0'); cartCount.value = r } catch { cartCount.value = 0 }
 }
+function safeSetStorage(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 function toggleTheme() {
   isDark.value = !isDark.value
-  localStorage.setItem('mall_theme', isDark.value ? 'dark' : 'light')
+  safeSetStorage('mall_theme', isDark.value ? 'dark' : 'light')
   document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
 }
 function startVoiceSearch() {

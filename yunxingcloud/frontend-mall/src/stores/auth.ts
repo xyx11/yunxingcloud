@@ -2,14 +2,18 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { login as apiLogin, register as apiRegister } from '@/api/auth'
 
+function safeGet(k: string) { try { return localStorage.getItem(k) || '' } catch { return '' } }
+function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
+function safeRemove(k: string) { try { localStorage.removeItem(k) } catch {} }
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
-  const token = ref(localStorage.getItem('accessToken') || '')
+  const token = ref(safeGet('accessToken'))
 
   async function login(username: string, password: string) {
     const res = await apiLogin({ username, password })
     token.value = res.data.accessToken
-    localStorage.setItem('accessToken', token.value)
+    safeSet('accessToken', token.value)
     user.value = { username }
   }
 
@@ -20,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     token.value = ''
     user.value = null
-    localStorage.removeItem('accessToken')
+    safeRemove('accessToken')
   }
 
   const isLoggedIn = () => !!token.value

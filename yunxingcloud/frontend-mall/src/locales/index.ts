@@ -2,8 +2,11 @@ import { ref } from 'vue'
 import zh from './zh'
 import en from './en'
 
+function safeGet(k: string, d: string) { try { return localStorage.getItem(k) || d } catch { return d } }
+function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
+
 const messages: Record<string, any> = { zh, en }
-const locale = ref(localStorage.getItem('locale') || 'zh')
+const locale = ref(safeGet('locale', 'zh'))
 
 function t(key: string, fallbackOrParams?: string | Record<string, any>): string {
   const keys = key.split('.')
@@ -23,7 +26,7 @@ function t(key: string, fallbackOrParams?: string | Record<string, any>): string
 
 function setLocale(lang: string) {
   locale.value = lang
-  localStorage.setItem('locale', lang)
+  safeSet('locale', lang)
 }
 
 export function useI18n() {
