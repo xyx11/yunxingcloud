@@ -46,6 +46,21 @@ async function doLogin() {
       <button @click="doLogin" :disabled="loading" style="width:100%;height:44px;background:#e4393c;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;transition:opacity .2s" :style="{opacity:loading?'.7':'1'}">
         {{ loading ? '登录中...' : '登录' }}
       </button>
+      <div style="margin-top:20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="flex:1;height:1px;background:#eee"></div>
+          <span style="font-size:12px;color:#999;white-space:nowrap">其他方式登录</span>
+          <div style="flex:1;height:1px;background:#eee"></div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <a href="/oauth2/authorization/wechat" style="display:flex;align-items:center;gap:4px;padding:8px 16px;border:1px solid #07c160;border-radius:20px;cursor:pointer;text-decoration:none;color:#07c160;font-size:12px;transition:all .2s;background:#fff"
+             @mouseenter="(e:any) => e.target.style.background='#f0fff4'" @mouseleave="(e:any) => e.target.style.background='#fff'">💬 微信</a>
+          <a href="/oauth2/authorization/qq" style="display:flex;align-items:center;gap:4px;padding:8px 16px;border:1px solid #12b7f5;border-radius:20px;cursor:pointer;text-decoration:none;color:#12b7f5;font-size:12px;transition:all .2s;background:#fff"
+             @mouseenter="(e:any) => e.target.style.background='#f0f9ff'" @mouseleave="(e:any) => e.target.style.background='#fff'">🐧 QQ</a>
+          <a href="/oauth2/authorization/alipay" style="display:flex;align-items:center;gap:4px;padding:8px 16px;border:1px solid #1677ff;border-radius:20px;cursor:pointer;text-decoration:none;color:#1677ff;font-size:12px;transition:all .2s;background:#fff"
+             @mouseenter="(e:any) => e.target.style.background='#f0f5ff'" @mouseleave="(e:any) => e.target.style.background='#fff'">🔵 支付宝</a>
+        </div>
+      </div>
       <p style="text-align:center;margin-top:16px;font-size:13px;color:#999">还没有账号？<span @click="router.push('/register')" style="color:#e4393c;cursor:pointer;font-weight:600">立即注册</span></p>
       <p style="text-align:center;margin-top:8px;font-size:11px;color:#aaa">演示账号: admin / admin123</p>
     </div>
