@@ -17,6 +17,7 @@ const PointsView = () => import('@/views/PointsView.vue')
 const MallGiftCardView = () => import('@/views/GiftCardView.vue')
 const LogisticsView = () => import('@/views/LogisticsView.vue')
 const WishlistView = () => import('@/views/WishlistView.vue')
+const CouponCenterView = () => import('@/views/CouponCenterView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -38,5 +39,6 @@ export default createRouter({
     { path: '/gift-card', component: MallGiftCardView },
     { path: '/logistics', component: LogisticsView },
     { path: '/wishlist', component: WishlistView },
+    { path: '/coupons', component: CouponCenterView },
   ],
 })
