@@ -1,0 +1,22 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 新功能'
+    labels: ['feature', 'enhancement']
+  - title: '🐛 修复'
+    labels: ['fix', 'bug']
+  - title: '📚 文档'
+    labels: ['documentation']
+  - title: '🔧 依赖'
+    labels: ['dependencies']
+  - title: '⚡ 性能'
+    labels: ['performance']
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+template: |
+  ## 变更
+
+  $CHANGES
+
+  ## 贡献者
+
+  $CONTRIBUTORS
