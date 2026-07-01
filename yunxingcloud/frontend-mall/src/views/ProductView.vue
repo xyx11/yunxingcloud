@@ -123,8 +123,16 @@ onMounted(() => {
       <div v-if="skus.length" style="margin-bottom:16px">
         <div style="font-size:13px;color:#666;margin-bottom:8px">{{ t('product.skuSelector') }}</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
-          <span v-for="sku in skus" :key="sku.id" @click="selectedSku = sku" style="padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px;transition:all .2s"
-                :style="{border:selectedSku?.id===sku.id?'2px solid #e4393c':'1px solid #ddd',color:selectedSku?.id===sku.id?'#e4393c':'#333',background:selectedSku?.id===sku.id?'#fff0f0':'#fff'}">{{ sku.name }}</span>
+          <span v-for="sku in skus" :key="sku.id" @click="selectedSku = sku"
+                style="padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;font-weight:500;display:flex;align-items:center;gap:6px"
+                :style="{border:selectedSku?.id===sku.id?'2px solid #e4393c':'1px solid #ddd',color:selectedSku?.id===sku.id?'#e4393c':'#333',background:selectedSku?.id===sku.id?'#fff0f0':'#fff'}">
+            <span v-if="sku.specs && /红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/i.test(sku.specs || sku.name)"
+                  style="width:14px;height:14px;border-radius:50%;border:1px solid #ddd;display:inline-block;flex-shrink:0"
+                  :style="{background:({'红':'#e4393c','蓝':'#1677ff','绿':'#4caf50','黄':'#ffc107','紫':'#9c27b0','黑':'#333','白':'#fff','灰':'#999','粉':'#e91e63','金':'#ffc107','银':'#ccc','橙':'#ff9800'} as any)[sku.specs?.match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''] || '#ddd'}">
+            </span>
+            {{ sku.name }}
+            <span style="font-size:11px;color:#999">¥{{ (sku.price/100).toFixed(2) }}</span>
+          </span>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
