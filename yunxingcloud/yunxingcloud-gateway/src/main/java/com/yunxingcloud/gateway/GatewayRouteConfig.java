@@ -42,8 +42,19 @@ public class GatewayRouteConfig {
                         .path("/api/products/**", "/api/cart/**", "/api/orders/**",
                               "/api/categories/**", "/api/brands/**", "/api/coupons/**",
                               "/api/addresses/**", "/api/shipments/**", "/api/skus/**",
-                              "/api/banners/**", "/api/favorites/**")
+                              "/api/banners/**", "/api/favorites/**",
+                              // v2.2+
+                              "/api/group-buy/**", "/api/flash-sale/**",
+                              "/api/after-sale/**", "/api/invoices/**",
+                              // v2.3+
+                              "/api/points/**", "/api/recommend/**",
+                              "/api/articles/**", "/api/notifications/**",
+                              "/api/analytics/**")
                         .uri(ORD))
+                // Data dashboard -> core
+                .route("core-dashboard", r -> r
+                        .path("/api/dashboard/**")
+                        .uri(CORE))
                 // Inventory -> inventory service
                 .route("inventory-api", r -> r
                         .path("/api/warehouses/**", "/api/inventory/**")
