@@ -48,6 +48,7 @@ const AfterSaleView = () => import('@/views/AfterSaleView.vue')
 const ArticleView = () => import('@/views/ArticleView.vue')
 const NotificationView = () => import('@/views/NotificationView.vue')
 const GiftCardView = () => import('@/views/GiftCardView.vue')
+const CampaignView = () => import('@/views/CampaignView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
@@ -90,6 +91,7 @@ const router = createRouter({
         { path: 'articles', name: 'Articles', component: ArticleView, meta: { title: '内容管理' } },
         { path: 'notifications', name: 'Notifications', component: NotificationView, meta: { title: '通知管理' } },
         { path: 'giftcards', name: 'GiftCards', component: GiftCardView, meta: { title: '礼品卡管理' } },
+        { path: 'campaigns', name: 'Campaigns', component: CampaignView, meta: { title: '营销活动' } },
         { path: 'loginlog', name: 'LoginLog', component: LoginLogView, meta: { title: '登录日志' } },
         { path: 'online', name: 'OnlineUser', component: OnlineUserView, meta: { title: '在线用户' } },
         { path: 'backup', name: 'Backup', component: BackupView, meta: { title: '数据备份' } },
