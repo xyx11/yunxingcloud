@@ -42,7 +42,8 @@ public class AnalyticsService {
     public List<Map<String, Object>> topProducts(int limit) {
         List<Map<String, Object>> result = new ArrayList<>();
         productRepo.findAll().stream()
-                .sorted((a, b) -> (b.getSales() != null ? b.getSales() : 0).compareTo(
+                .sorted((a, b) -> Integer.compare(
+                                    b.getSales() != null ? b.getSales() : 0,
                                     a.getSales() != null ? a.getSales() : 0))
                 .limit(limit)
                 .forEach(p -> result.add(Map.of(
