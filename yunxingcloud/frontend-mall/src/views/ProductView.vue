@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
 import ProductRating from '@/components/ProductRating.vue'
+import ImageZoom from '@/components/ImageZoom.vue'
 import request from '@/api/request'
 
 const route = useRoute()
@@ -90,10 +91,7 @@ onMounted(() => {
   </div>
   <div v-else-if="product" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
     <div style="width:420px;flex-shrink:0">
-      <div style="width:100%;height:420px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:100px;margin-bottom:12px;overflow:hidden">
-        <img v-if="images[activeImage] && images[activeImage] !== '📦'" :src="images[activeImage]" style="width:100%;height:100%;object-fit:cover" :alt="product.name" />
-        <span v-else style="font-size:100px">📦</span>
-      </div>
+      <ImageZoom :src="images[activeImage]" :alt="product.name" height="420px" style="margin-bottom:12px" />
       <div v-if="images.length > 1" style="display:flex;gap:8px">
         <div v-for="(img, i) in images" :key="i" @click="activeImage = i"
              style="width:60px;height:60px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;transition:border .2s"
