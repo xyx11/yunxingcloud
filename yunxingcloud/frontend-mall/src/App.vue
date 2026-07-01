@@ -66,13 +66,13 @@ const tabItems = [
       <h1 style="font-size:22px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0" @click="router.push('/')">YXCLOUD 商城</h1>
 
       <!-- Search (desktop) -->
-      <div class="search-box" style="flex:1;max-width:600px;display:flex">
-        <input v-model="searchText" placeholder="搜索商品..." @keyup.enter="doSearch"
+      <div class="search-box" role="search" style="flex:1;max-width:600px;display:flex">
+        <input v-model="searchText" placeholder="搜索商品..." aria-label="搜索商品" @keyup.enter="doSearch"
                style="flex:1;height:36px;padding:0 12px;border:none;border-radius:4px 0 0 4px;outline:none;font-size:14px" />
-        <button @click="doSearch" style="height:36px;padding:0 20px;background:#c82930;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
+        <button @click="doSearch" aria-label="搜索按钮" style="height:36px;padding:0 20px;background:#c82930;color:#fff;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-size:14px;font-weight:600">搜索</button>
       </div>
 
-      <div class="header-links" style="display:flex;align-items:center;gap:20px;font-size:13px;white-space:nowrap">
+      <div class="header-links" role="navigation" aria-label="用户导航" style="display:flex;align-items:center;gap:20px;font-size:13px;white-space:nowrap">
         <span @click="goTo('/orders')" style="cursor:pointer">我的订单</span>
         <span @click="goTo('/cart')" style="cursor:pointer;position:relative">
           🛒 购物车
@@ -94,14 +94,14 @@ const tabItems = [
     <!-- Mobile Search -->
     <div class="mobile-search" style="display:none;padding:8px 12px;background:#e4393c">
       <div style="display:flex;border-radius:20px;overflow:hidden">
-        <input v-model="searchText" placeholder="搜索商品..." @keyup.enter="doSearch"
+        <input v-model="searchText" placeholder="搜索商品..." aria-label="搜索商品" @keyup.enter="doSearch"
                style="flex:1;height:32px;padding:0 12px;border:none;outline:none;font-size:13px" />
         <button @click="doSearch" style="height:32px;padding:0 16px;background:#c82930;color:#fff;border:none;cursor:pointer;font-size:12px">搜索</button>
       </div>
     </div>
 
     <!-- Main Content -->
-    <main class="main-content" style="min-height:calc(100vh - 180px);max-width:1200px;margin:0 auto;padding:16px 20px">
+    <main class="main-content" role="main" style="min-height:calc(100vh - 180px);max-width:1200px;margin:0 auto;padding:16px 20px">
       <router-view />
     </main>
 
@@ -117,7 +117,7 @@ const tabItems = [
     </footer>
 
     <!-- Mobile Bottom Nav -->
-    <nav class="mobile-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:6px 0 env(safe-area-inset-bottom);z-index:200">
+    <nav class="mobile-nav" role="navigation" aria-label="底部导航" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:6px 0 env(safe-area-inset-bottom);z-index:200">
       <div style="display:flex;justify-content:space-around">
         <div v-for="t in tabItems" :key="t.path" @click="goTo(t.path)"
              style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 12px;position:relative">
