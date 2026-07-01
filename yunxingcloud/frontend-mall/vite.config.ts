@@ -18,7 +18,11 @@ export default defineConfig({
     outDir: 'dist',
     target: 'es2020',
     cssCodeSplit: true,
-    minify: 'esbuild',
+    cssMinify: true,
+    minify: 'terser',
+    terserOptions: { compress: { drop_console: true, drop_debugger: true } },
+    chunkSizeWarningLimit: 500,
+    reportCompressedSize: true,
     rollupOptions: {
       output: {
         manualChunks: {
