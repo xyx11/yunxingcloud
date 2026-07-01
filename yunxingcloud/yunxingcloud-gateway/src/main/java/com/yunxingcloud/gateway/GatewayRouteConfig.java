@@ -52,8 +52,14 @@ public class GatewayRouteConfig {
                               "/api/analytics/**",
                               "/api/logistics/**", "/api/compare/**",
                               "/api/gift-cards/**",
-                              "/api/campaigns/**", "/api/social/**")
+                              "/api/campaigns/**", "/api/social/**",
+                              "/api/personalized/**", "/api/reviews/**",
+                              "/api/tags/**")
                         .uri(ORD))
+                // System overview -> core
+                .route("core-system", r -> r
+                        .path("/api/system/**")
+                        .uri(CORE))
                 // Data dashboard -> core
                 .route("core-dashboard", r -> r
                         .path("/api/dashboard/**")
