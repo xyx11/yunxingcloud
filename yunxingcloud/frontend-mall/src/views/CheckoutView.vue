@@ -94,8 +94,15 @@ onMounted(load)
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:20px">
-          <span style="font-size:14px;color:#666">{{ t('checkout.totalItems', { n: items.length }) }}</span>
-          <div><span style="font-size:16px;color:#666;margin-right:12px">{{ t('checkout.actualPay') }}：</span><span style="font-size:28px;color:#f10215;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px"><span>商品总额</span><span>¥{{ (total/100).toFixed(2) }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px"><span>优惠</span><span style="color:#f10215">-¥{{ couponApplied ? (total/100*0.1).toFixed(2) : '0.00' }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#666"><span>运费</span><span style="color:#4caf50">免运费</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px">
+            <span style="font-size:14px;color:#666">{{ t('checkout.totalItems', { n: items.length }) }}</span>
+            <div><span style="font-size:16px;color:#666;margin-right:12px">{{ t('checkout.actualPay') }}：</span><span style="font-size:28px;color:#f10215;font-weight:700">¥{{ (total / 100).toFixed(2) }}</span></div>
+          </div>
         </div>
         <button @click="submit" :disabled="submitting" style="width:100%;height:50px;background:#f10215;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;margin-top:20px;transition:background .2s"
                 @mouseenter="(e:any) => { if(!submitting) e.target.style.background='#d4000f' }" @mouseleave="(e:any) => { if(!submitting) e.target.style.background='#f10215' }"

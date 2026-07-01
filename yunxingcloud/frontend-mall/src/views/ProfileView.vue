@@ -94,6 +94,14 @@ async function toggleDefault(addr: any) {
       </div>
       <button @click.stop="copyShareLink" style="padding:6px 16px;background:#f10215;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap" :style="shareCopied?{background:'#4caf50'}:{}">{{ shareCopied ? '✓ 已复制' : '立即邀请' }}</button>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div v-for="l in [{icon:'⭐',label:'积分',path:'/points',color:'#ff9800'},{icon:'🎁',label:'礼品卡',path:'/gift-card',color:'#f10215'},{icon:'🏆',label:'排行榜',path:'/ranking',color:'#ff6b00'},{icon:'❓',label:'帮助',path:'/help',color:'#1677ff'}]" :key="l.path"
+           @click="router.push(l.path)" style="background:#fff;border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:transform .2s"
+           @mouseenter="(e:any) => e.target.style.transform='translateY(-2px)'" @mouseleave="(e:any) => e.target.style.transform=''">
+        <div style="font-size:24px;margin-bottom:4px">{{ l.icon }}</div>
+        <div style="font-size:11px;color:#333;font-weight:500">{{ l.label }}</div>
+      </div>
+    </div>
     <div style="display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
       <span v-for="tab in [{key:'addresses',label:'收货地址'},{key:'favorites',label:'我的收藏'},{key:'coupons',label:'优惠券'},{key:'password',label:'修改密码'}]"
             :key="tab.key" @click="activeTab = tab.key; loadTab()"
