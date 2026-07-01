@@ -277,6 +277,23 @@ public class DataInitializer implements CommandLineRunner {
             if (systemParent != null && !paths.contains("/warehouses")) {
                 menuRepository.save(createMenu("仓库管理", systemParent.getId(), 11, "/warehouses", "WarehouseView", "C", "ticket:write"));
             }
+            // v2.2+ 营销工具
+            if (systemParent != null && !paths.contains("/groupbuy")) {
+                menuRepository.save(createMenu("拼团管理", systemParent.getId(), 12, "/groupbuy", "GroupBuyView", "C", "ticket:write"));
+            }
+            if (systemParent != null && !paths.contains("/flashsale")) {
+                menuRepository.save(createMenu("秒杀管理", systemParent.getId(), 13, "/flashsale", "FlashSaleView", "C", "ticket:write"));
+            }
+            if (systemParent != null && !paths.contains("/aftersale")) {
+                menuRepository.save(createMenu("售后管理", systemParent.getId(), 14, "/aftersale", "AfterSaleView", "C", "ticket:write"));
+            }
+            // v2.3+ 内容运营
+            if (systemParent != null && !paths.contains("/articles")) {
+                menuRepository.save(createMenu("内容管理", systemParent.getId(), 15, "/articles", "ArticleView", "C", "ticket:write"));
+            }
+            if (systemParent != null && !paths.contains("/notifications")) {
+                menuRepository.save(createMenu("通知管理", systemParent.getId(), 16, "/notifications", "NotificationView", "C", "ticket:write"));
+            }
             if (monitorParent != null) {
                 if (!paths.contains("/loginlog")) {
                     menuRepository.save(createMenu("登录日志", monitorParent.getId(), 5, "/loginlog", "LoginLogView", "C", "monitor:logininfor:list"));

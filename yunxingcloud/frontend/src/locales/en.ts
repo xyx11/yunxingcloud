@@ -6,7 +6,7 @@ export default {
     jobs: 'Scheduled Tasks', config: 'Configuration', generator: 'Code Generator',
     swagger: 'API Docs', monitor: 'System Monitor', maintenance: 'Maintenance',
     profile: 'Profile', logout: 'Logout',
-    dict: 'Dictionary', notice: 'Notices', posts: 'Positions', tickets: 'Tickets', payments: 'Payments', orders: 'Orders', products: 'Products', inventory: 'Inventory', warehouses: 'Warehouses', loginlog: 'Login Log',
+    dict: 'Dictionary', notice: 'Notices', posts: 'Positions', tickets: 'Tickets', payments: 'Payments', orders: 'Orders', products: 'Products', inventory: 'Inventory', warehouses: 'Warehouses', groupbuy: 'Group Buy', flashsale: 'Flash Sale', aftersale: 'After-Sale', articles: 'CMS', notifications: 'Notifications', loginlog: 'Login Log',
     online: 'Online Users', backup: 'Backup', messages: 'Messages', ipBlacklist: 'IP Blacklist',
     registerApproval: 'Registration Approval', approval: 'Approval', search: 'Global Search',
     dataScreen: 'Data Screen', systemLogs: 'System Logs', emailTest: 'Email Test', oauth2Client: 'OAuth2 Clients',

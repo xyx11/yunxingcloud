@@ -6,7 +6,7 @@ export default {
     jobs: '定时任务', config: '参数配置', generator: '代码生成',
     swagger: 'API文档', monitor: '系统监控', maintenance: '数据维护',
     profile: '个人中心', logout: '退出登录',
-    dict: '字典管理', notice: '通知公告', posts: '岗位管理', tickets: '工单管理', payments: '支付管理', orders: '订单管理', products: '商品管理', inventory: '库存管理', warehouses: '仓库管理', loginlog: '登录日志',
+    dict: '字典管理', notice: '通知公告', posts: '岗位管理', tickets: '工单管理', payments: '支付管理', orders: '订单管理', products: '商品管理', inventory: '库存管理', warehouses: '仓库管理', groupbuy: '拼团管理', flashsale: '秒杀管理', aftersale: '售后管理', articles: '内容管理', notifications: '通知管理', loginlog: '登录日志',
     online: '在线用户', backup: '数据备份', messages: '站内信', ipBlacklist: 'IP黑名单',
     registerApproval: '注册审核', approval: '审批流程', search: '全局搜索',
     dataScreen: '数据大屏', systemLogs: '系统日志', emailTest: '邮件测试', oauth2Client: 'OAuth2客户端',
