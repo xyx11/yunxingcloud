@@ -88,6 +88,13 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           <input v-model="filters.maxPrice" placeholder="¥最高" type="number" style="width:70px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" />
           <button @click="applyFilters()" style="padding:6px 10px;background:#e4393c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">确定</button>
         </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+          <span v-for="r in [{label:'¥100以下',min:'',max:'100'},{label:'¥100-500',min:'100',max:'500'},{label:'¥500-1000',min:'500',max:'1000'},{label:'¥1000以上',min:'1000',max:''}]" :key="r.label"
+                @click="filters.minPrice=r.min; filters.maxPrice=r.max; applyFilters()"
+                style="padding:4px 10px;background:#f5f5f5;border-radius:12px;cursor:pointer;font-size:11px;color:#666;transition:all .2s"
+                @mouseenter="(e:any) => e.target.style.background='#fff0f0'; e.target.style.color='#e4393c'"
+                @mouseleave="(e:any) => { e.target.style.background='#f5f5f5'; e.target.style.color='#666' }">{{ r.label }}</span>
+        </div>
       </div>
     </aside>
     <div style="flex:1">

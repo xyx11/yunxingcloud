@@ -54,6 +54,15 @@ const displayPrice = () => selectedSku.value ? selectedSku.value.price : product
 const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
 function goDetail(id: number) { router.push(`/product/${id}`) }
 
+// 分享
+const shareMenu = ref(false)
+async function shareProduct() {
+  const url = window.location.href; const title = product.value?.name || ''
+  if (navigator.share) { try { await navigator.share({ title, url }) } catch {} }
+  else { await navigator.clipboard.writeText(url); toast.success('链接已复制') }
+  shareMenu.value = false
+}
+
 // 图片画廊
 const images = ref<string[]>([])
 const activeImage = ref(0)
@@ -121,6 +130,8 @@ onMounted(() => {
                 @mouseenter="(e:any) => { e.target.style.background='#c82930' }" @mouseleave="(e:any) => { e.target.style.background='#e4393c' }">{{ t('product.buyNow') }}</button>
         <button @click="toggleFavorite" style="width:48px;height:48px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:22px;background:#fff;transition:all .2s"
                 :style="{color:favorited?'#e4393c':'#999'}">{{ favorited ? '❤️' : '🤍' }}</button>
+        <button @click="shareProduct" style="width:48px;height:48px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:18px;background:#fff;transition:all .2s;color:#666"
+                @mouseenter="(e:any) => { e.target.style.background='#f0f0f0' }" @mouseleave="(e:any) => { e.target.style.background='#fff' }">📤</button>
       </div>
     </div>
   </div>
