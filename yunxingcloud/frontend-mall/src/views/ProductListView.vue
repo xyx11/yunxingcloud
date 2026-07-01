@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategories, getBrands, getProducts } from '@/api/product'
 import { addToCart } from '@/api/cart'
@@ -37,6 +37,10 @@ onMounted(async () => {
   filters.value.categoryId = (route.query.categoryId as string) || ''
   loadProducts()
   window.addEventListener('scroll', onScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
 })
 
 watch(() => route.query, (q) => {
