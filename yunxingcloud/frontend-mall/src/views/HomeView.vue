@@ -2,11 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBanners, getHotProducts, getNewProducts, getCategories } from '@/api/product'
+import { addToCart } from '@/api/cart'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
+import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 
 const router = useRouter()
+const toast = useToast()
 const { t } = useI18n()
 const { items: recentItems } = useRecentlyViewed()
 const banners = ref<any[]>([])
@@ -49,6 +52,7 @@ onMounted(async () => {
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goProducts(query: Record<string, any>) { router.push({ path: '/products', query }) }
+async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
 </script>
 
 <template>
@@ -135,9 +139,18 @@ function goProducts(query: Record<string, any>) { router.push({ path: '/products
         </div>
         <div style="padding:12px 16px">
           <h4 style="font-size:14px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-          <div style="display:flex;align-items:baseline;gap:8px">
-            <span style="color:#e4393c;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-            <span style="color:#999;font-size:12px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <span style="color:#e4393c;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <span style="color:#999;font-size:12px;margin-left:4px">{{ t('product.salesCount') }} {{ p.sales || 0 }}</span>
+            </div>
+            <button @click="(e: Event) => quickAdd(e, p)"
+                    style="width:30px;height:30px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                    :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
+                    @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#e4393c'; e.target.style.color='#fff' } }"
+                    @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+              {{ (p as any)._added ? '✓' : '+' }}
+            </button>
           </div>
         </div>
       </div>

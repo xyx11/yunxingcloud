@@ -2,9 +2,12 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategories, getBrands, getProducts } from '@/api/product'
+import { addToCart } from '@/api/cart'
+import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const products = ref<any[]>([])
 const totalPages = ref(0)
 const currentPage = ref(0)
@@ -55,6 +58,7 @@ function clearFilters() { filters.value = { categoryId: '', brandId: '', minPric
 function setSort(s: string) { filters.value.sort = filters.value.sort === s ? '' : s; loadProducts() }
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrollTo(0, 0) }
+async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
 </script>
 
 <template>
@@ -109,9 +113,18 @@ function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrol
           </div>
           <div style="padding:12px">
             <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-            <div style="display:flex;align-items:baseline;gap:8px">
-              <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <span style="color:#999;font-size:11px">已售 {{ p.sales || 0 }}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <span style="color:#e4393c;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span style="color:#999;font-size:11px;margin-left:4px">已售 {{ p.sales || 0 }}</span>
+              </div>
+              <button @click="(e: Event) => quickAdd(e, p)"
+                      style="width:32px;height:32px;border-radius:50%;border:2px solid #e4393c;background:#fff;color:#e4393c;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
+                      :style="{background: (p as any)._added ? '#e4393c' : '#fff', color: (p as any)._added ? '#fff' : '#e4393c'}"
+                      @mouseenter="(e:any) => { if(!(p as any)._added) e.target.style.background='#e4393c'; e.target.style.color='#fff' }"
+                      @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#e4393c' } }">
+                {{ (p as any)._added ? '✓' : '+' }}
+              </button>
             </div>
           </div>
         </div>
