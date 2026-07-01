@@ -128,7 +128,11 @@ const tabItems = [
 
     <!-- Main Content -->
     <main class="main-content" role="main" style="min-height:calc(100vh - 180px);max-width:1200px;margin:0 auto;padding:16px 20px">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </main>
 
     <!-- Push Notification Banner -->
@@ -184,6 +188,9 @@ const tabItems = [
 </template>
 
 <style>
+.page-fade-enter-active, .page-fade-leave-active { transition: opacity .2s ease; }
+.page-fade-enter-from, .page-fade-leave-to { opacity: 0; }
+
 [data-theme="dark"] {
   --bg: #1a1a2e; --card-bg: #16213e; --text: #e0e0e0; --text-secondary: #999;
   --border: #333; --header-bg: #0f3460; --footer-bg: #0a0a1a;
