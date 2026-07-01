@@ -57,7 +57,8 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <span v-if="!refreshing" style="font-size:13px;color:#999">↓ {{ t('common.loading') }}</span>
       <span v-else style="font-size:13px;color:#999">⏳ {{ t('common.loading') }}</span>
     </div>
-    <div v-if="banners.length" style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:24px;height:360px">
+    <div v-if="banners.length" style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:24px;height:360px"
+         @mouseenter="clearInterval(bannerTimer)" @mouseleave="bannerTimer = setInterval(() => { if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length }, 4000)">
       <div v-for="(b, i) in banners" :key="b.id" :style="{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'linear-gradient(135deg,'+(i%2?'#d4000f':'#f10215')+','+(i%2?'#ff6b6b':'#f90')+')',display:'flex',alignItems:'center',justifyContent:'center',opacity:i===currentBanner?1:0,transition:'opacity .6s'}">
         <div style="text-align:center;color:#fff">
           <h2 style="font-size:42px;margin-bottom:16px">{{ b.title }}</h2>

@@ -129,8 +129,15 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
           </div>
         </div>
       </div>
-      <div v-else style="text-align:center;padding:60px;color:#999">
-        <p style="font-size:48px;margin-bottom:16px">🔍</p><p>{{ t('search.noMatch') }}</p><p style="font-size:13px;margin-top:8px;color:#aaa">{{ t('search.tryOther') }}</p>
+      <div v-else style="text-align:center;padding:40px;color:#999">
+        <p style="font-size:48px;margin-bottom:12px">🔍</p><p style="font-size:16px;margin-bottom:4px">{{ t('search.noMatch') }}</p>
+        <p style="font-size:13px;margin-bottom:20px;color:#aaa">{{ t('search.tryOther') }}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:400px;margin:0 auto">
+          <span v-for="kw in hotKeywords" :key="kw" @click="searchKeyword(kw)"
+                style="padding:6px 16px;background:#fff;border:1px solid #f10215;color:#f10215;border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s"
+                @mouseenter="(e:any) => { e.target.style.background='#f10215'; e.target.style.color='#fff' }"
+                @mouseleave="(e:any) => { e.target.style.background='#fff'; e.target.style.color='#f10215' }">{{ kw }}</span>
+        </div>
       </div>
     </div>
   </div>
