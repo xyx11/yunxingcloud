@@ -56,8 +56,13 @@ public class GatewayRouteConfig {
                               "/api/personalized/**", "/api/reviews/**",
                               "/api/tags/**", "/api/member/**",
                               "/api/feedback/**", "/api/price-alert/**",
-                              "/api/bundles/**")
+                              "/api/bundles/**", "/api/suppliers/**",
+                              "/api/batch/**")
                         .uri(ORD))
+                // Export + GlobalDashboard -> core
+                .route("core-export", r -> r
+                        .path("/api/export/**", "/api/global-dashboard/**")
+                        .uri(CORE))
                 // System overview -> core
                 .route("core-system", r -> r
                         .path("/api/system/**")
