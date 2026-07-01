@@ -2,12 +2,14 @@
 import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCart, addToCart, removeFromCart } from '@/api/cart'
+import { getHotProducts } from '@/api/product'
 import { useI18n } from '@/locales'
 
 const router = useRouter()
 const { t } = useI18n()
 const toast = inject<any>('toast')
 const items = ref<any[]>([])
+const recs = ref<any[]>([])
 const loading = ref(true)
 const selectedIds = ref<Set<number>>(new Set())
 
@@ -26,7 +28,7 @@ const allSelected = computed({
 
 async function load() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data || [] } catch {} finally { loading.value = false }
+  try { const r = await getCart(); items.value = r.data || []; if (!items.value.length) { const h = await getHotProducts(); recs.value = (h.data || []).slice(0, 4) } } catch {} finally { loading.value = false }
 }
 
 async function remove(id: number) { try { await removeFromCart(id); selectedIds.value.delete(id); toast.info(t('toast.removed')); load() } catch { toast.error('删除失败') } }
@@ -72,9 +74,19 @@ onMounted(load)
         </div>
       </div>
     </div>
-    <div v-else style="text-align:center;padding:80px 40px;color:#999">
-      <p style="font-size:64px;margin-bottom:16px">🛒</p><p style="font-size:16px;margin-bottom:8px">{{ t('common.emptyCart') }}</p>
-      <button @click="router.push('/')" style="padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">{{ t('common.goShopping') }}</button>
+    <div v-else style="text-align:center;padding:40px 20px;color:#999">
+      <p style="font-size:64px;margin-bottom:12px">🛒</p><p style="font-size:16px;margin-bottom:4px">{{ t('common.emptyCart') }}</p>
+      <button @click="router.push('/')" style="margin-top:12px;padding:10px 32px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">{{ t('common.goShopping') }}</button>
+      <div v-if="recs.length" style="margin-top:32px;text-align:left">
+        <h3 style="font-size:15px;font-weight:600;color:#333;margin-bottom:12px">🔥 为你推荐</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div v-for="p in recs" :key="p.id" @click="router.push('/product/'+p.id)" style="background:#fafafa;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .2s"
+               @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''">
+            <div style="height:120px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:36px">📦</div>
+            <div style="padding:8px 12px"><div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333">{{ p.name }}</div><span style="color:#f10215;font-weight:700;font-size:14px">¥{{ (p.price/100).toFixed(2) }}</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

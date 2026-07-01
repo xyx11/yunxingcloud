@@ -218,8 +218,9 @@ const tabItems = [
 
     <!-- Back to Top -->
     <button v-if="showBackTop" @click="scrollToTop"
-            style="position:fixed;bottom:80px;right:20px;z-index:150;width:40px;height:40px;border-radius:50%;background:#fff;color:#333;border:none;cursor:pointer;font-size:18px;box-shadow:0 2px 12px rgba(228,57,60,.4);transition:transform .2s;display:flex;align-items:center;justify-content:center"
-            @mouseenter="(e:any) => e.target.style.transform='scale(1.1)'" @mouseleave="(e:any) => e.target.style.transform=''">
+            style="position:fixed;bottom:120px;right:16px;z-index:150;width:36px;height:36px;border-radius:50%;background:rgba(241,2,21,.85);color:#fff;border:none;cursor:pointer;font-size:16px;box-shadow:0 2px 8px rgba(241,2,21,.3);transition:all .25s;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)"
+            @mouseenter="(e:any) => { e.target.style.transform='scale(1.15)'; e.target.style.background='rgba(241,2,21,1)' }"
+            @mouseleave="(e:any) => { e.target.style.transform=''; e.target.style.background='rgba(241,2,21,.85)' }">
       ↑
     </button>
 
