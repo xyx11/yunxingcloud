@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useGlobalToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 import { useCompare } from '@/composables/useCompare'
+import { useNotification } from '@/composables/useNotification'
 import request from '@/api/request'
 import CompareFloatingBar from '@/views/CompareView.vue'
 
@@ -39,6 +40,10 @@ function startVoiceSearch() {
 }
 
 if (isDark.value) document.documentElement.setAttribute('data-theme', 'dark')
+
+const { supported: pushSupported, subscribed: pushSubscribed, request: requestPush, sendTest } = useNotification()
+const showPushBanner = ref(pushSupported.value && !pushSubscribed.value)
+async function enablePush() { const ok = await requestPush(); if (ok) { showPushBanner.value = false; sendTest() } }
 
 onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch {}
@@ -125,6 +130,14 @@ const tabItems = [
     <main class="main-content" role="main" style="min-height:calc(100vh - 180px);max-width:1200px;margin:0 auto;padding:16px 20px">
       <router-view />
     </main>
+
+    <!-- Push Notification Banner -->
+    <div v-if="showPushBanner" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:180;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:14px 20px;display:flex;align-items:center;gap:12px;max-width:400px;animation:slideUp .4s ease-out">
+      <span style="font-size:24px">🔔</span>
+      <div style="flex:1"><div style="font-weight:600;font-size:13px">开启通知</div><div style="color:#999;font-size:11px">第一时间获取促销和订单状态</div></div>
+      <button @click="enablePush" style="padding:6px 16px;background:#e4393c;color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">开启</button>
+      <button @click="showPushBanner = false" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px">✕</button>
+    </div>
 
     <!-- Footer (desktop) -->
     <footer class="footer-desk" style="background:#333;color:#999;padding:32px 20px 20px">
