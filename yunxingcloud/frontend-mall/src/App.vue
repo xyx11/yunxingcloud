@@ -185,7 +185,7 @@ const tabItems = [
         <div><h4 style="color:#fff;margin-bottom:12px">售后服务</h4><p @click="goTo('/after-sale')" style="margin:6px 0;cursor:pointer">退货政策</p><p @click="goTo('/help')" style="margin:6px 0;cursor:pointer">退款说明</p><p style="margin:6px 0;cursor:pointer">联系客服</p></div>
         <div><h4 style="color:#fff;margin-bottom:12px">关于我们</h4><p style="margin:6px 0;cursor:pointer">公司介绍</p><p style="margin:6px 0;cursor:pointer">联系我们</p><p style="margin:6px 0;cursor:pointer">加入我们</p></div>
       </div>
-      <div style="text-align:center;padding-top:20px;margin-top:20px;border-top:1px solid #444;font-size:12px">© 2026 YXCLOUD 商城 v2.4.0</div>
+      <div style="text-align:center;padding-top:20px;margin-top:20px;border-top:1px solid #444;font-size:12px">© {{ new Date().getFullYear() }} YXCLOUD 商城 v2.4.0</div>
     </footer>
 
     <!-- Mobile Bottom Nav -->
