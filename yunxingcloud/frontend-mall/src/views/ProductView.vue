@@ -66,6 +66,16 @@ const displayPrice = () => selectedSku.value ? selectedSku.value.price : product
 const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
 function goDetail(id: number) { router.push(`/product/${id}`) }
 
+// 触屏滑动
+let touchX = 0
+function onTouchStart(e: TouchEvent) { touchX = e.touches[0].clientX }
+function onTouchEnd(e: TouchEvent) {
+  const dx = e.changedTouches[0].clientX - touchX
+  if (Math.abs(dx) > 50 && images.value.length > 1) {
+    activeImage.value = dx < 0 ? Math.min(images.value.length - 1, activeImage.value + 1) : Math.max(0, activeImage.value - 1)
+  }
+}
+
 // 分享
 const shareMenu = ref(false)
 async function shareProduct() {
@@ -92,7 +102,9 @@ onMounted(() => {
   </div>
   <div v-else-if="product" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
     <div style="width:420px;flex-shrink:0">
-      <ImageZoom :src="images[activeImage]" :alt="product.name" height="420px" style="margin-bottom:12px" />
+      <div @touchstart="onTouchStart" @touchend="onTouchEnd">
+        <ImageZoom :src="images[activeImage]" :alt="product.name" height="420px" style="margin-bottom:12px" />
+      </div>
       <div v-if="images.length > 1" style="display:flex;gap:8px">
         <div v-for="(img, i) in images" :key="i" @click="activeImage = i"
              style="width:60px;height:60px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;transition:border .2s"
@@ -113,6 +125,8 @@ onMounted(() => {
         <div style="display:flex;align-items:baseline;gap:12px">
           <span style="color:#999;font-size:13px">{{ t('product.price') }}</span>
           <span style="color:#e4393c;font-size:32px;font-weight:700">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
+          <span v-if="displayStock() > 0 && displayStock() <= 10" style="margin-left:8px;padding:2px 6px;background:#fff3cd;color:#856404;border-radius:3px;font-size:11px">仅剩 {{ displayStock() }} 件</span>
+          <span v-if="displayStock() === 0" style="margin-left:8px;padding:2px 6px;background:#f8d7da;color:#721c24;border-radius:3px;font-size:11px">暂时缺货</span>
           <button @click="setPriceAlert" style="margin-left:8px;background:none;border:1px solid #e4393c;color:#e4393c;border-radius:4px;cursor:pointer;font-size:12px;padding:2px 8px;white-space:nowrap" :style="alertSet?{background:'#e4393c',color:'#fff'}:{}">{{ alertSet ? '🔔 已设置' : '🔔 降价提醒' }}</button>
         </div>
         <div style="display:flex;gap:24px;margin-top:12px;font-size:13px;color:#666">
