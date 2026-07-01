@@ -16,17 +16,17 @@ public class ProductImportController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping("/import")
-    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(service.importExcel(file));
+    public ResponseEntity<?> importCsv(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(service.importCsv(file));
     }
 
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('ticket:write')")
-    public ResponseEntity<byte[]> exportExcel() {
-        byte[] data = service.exportExcel();
+    public ResponseEntity<byte[]> exportCsv() {
+        byte[] data = service.exportCsv();
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .header("Content-Disposition", "attachment; filename=products.xlsx")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header("Content-Disposition", "attachment; filename=products.csv")
                 .body(data);
     }
 }
