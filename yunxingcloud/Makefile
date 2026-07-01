@@ -35,8 +35,8 @@ dev-all:
 # ---- 构建 ----
 build:
 	./mvnw compile -q
-	cd frontend && npm run build
-	cd frontend-mall && npm run build
+	(cd frontend && npm run build)
+	(cd frontend-mall && npm run build)
 
 package:
 	./mvnw package -pl yunxingcloud-core,yunxingcloud-usercenter,yunxingcloud-gateway,yunxingcloud-payment,yunxingcloud-order,yunxingcloud-inventory -DskipTests -q

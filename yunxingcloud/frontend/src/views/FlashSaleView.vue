@@ -17,7 +17,7 @@ const columns: DataTableColumns<FlashSale> = [
   { title: 'ID', key: 'id', width: 60 },
   { title: '商品ID', key: 'productId', width: 80 },
   { title: '秒杀价', key: 'flashPrice', width: 90, render(r:any){ return '¥'+(r.flashPrice/100).toFixed(2) } },
-  { title: '库存/已售', key: 'stock', width: 100, render(r:FlashSale){ return `${r.sold||0}/${r.stock}` } },
+  { title: '库存/已售', key: 'stock', width: 100, render(r:any){ return `${r.sold||0}/${r.stock}` } },
   { title: '限购', key: 'limitPerUser', width: 60 },
   { title: '状态', key: 'status', width: 80, render(r:FlashSale){ return h(NTag, {size:'small', type:r.status==='1'?'error':'default'},{default:()=>statusLabel[r.status||'0']}) } },
   { title: '开始', key: 'startTime', width: 140, render(r:any){ return r.startTime?.substring(0,16) } },

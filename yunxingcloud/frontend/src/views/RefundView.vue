@@ -11,10 +11,10 @@ const items = ref<any[]>([])
 const columns: DataTableColumns<any> = [
   { title:'ID', key:'id', width:60 }, { title:'用户', key:'username', width:90 },
   { title:'订单号', key:'orderNo', width:170 },
-  { title:'类型', key:'type', width:70, render(r:any){ return ({refund:'退款',return:'退货',exchange:'换货'}[r.type]) } },
+  { title:'类型', key:'type', width:70, render(r:any){ return ({refund:'退款',return:'退货',exchange:'换货'} as Record<string,string>)[r.type] } },
   { title:'退款金额', key:'refundAmount', width:100, render(r:any){ return r.refundAmount?'¥'+(r.refundAmount/100).toFixed(2):'-' } },
   { title:'原因', key:'reason', width:150, ellipsis:{tooltip:true} },
-  { title:'状态', key:'status', width:80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'||r.status==='4'?'success':r.status==='2'?'error':'warning'},{default:()=>({'0':'待审核','1':'已通过','2':'已拒绝','3':'退款中','4':'已完成'}[r.status])}) } },
+  { title:'状态', key:'status', width:80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'||r.status==='4'?'success':r.status==='2'?'error':'warning'},{default:()=>({'0':'待审核','1':'已通过','2':'已拒绝','3':'退款中','4':'已完成'} as Record<string,string>)[r.status]}) } },
   { title:'时间', key:'createdAt', width:140, render(r:any){ return r.createdAt?.substring(0,16) } },
 ]
 
