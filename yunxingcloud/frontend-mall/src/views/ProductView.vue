@@ -53,6 +53,15 @@ async function toggleFavorite() {
 const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
 const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
 function goDetail(id: number) { router.push(`/product/${id}`) }
+
+// 图片画廊
+const images = ref<string[]>([])
+const activeImage = ref(0)
+onMounted(() => {
+  if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
+  else if (product.value?.images) images.value = product.value.images
+  if (!images.value.length) images.value = ['📦']
+})
 </script>
 
 <template>
@@ -62,8 +71,18 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
   </div>
   <div v-else-if="product" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
     <div style="width:420px;flex-shrink:0">
-      <div style="width:100%;height:420px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:100px;margin-bottom:12px">📦</div>
-      <div style="display:flex;gap:8px"><div style="width:60px;height:60px;border:2px solid #e4393c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:28px">📦</div><div v-for="i in 3" :key="i" style="width:60px;height:60px;border:1px solid #ddd;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#fafafa">📦</div></div>
+      <div style="width:100%;height:420px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:100px;margin-bottom:12px;overflow:hidden">
+        <img v-if="images[activeImage] && images[activeImage] !== '📦'" :src="images[activeImage]" style="width:100%;height:100%;object-fit:cover" :alt="product.name" />
+        <span v-else style="font-size:100px">📦</span>
+      </div>
+      <div v-if="images.length > 1" style="display:flex;gap:8px">
+        <div v-for="(img, i) in images" :key="i" @click="activeImage = i"
+             style="width:60px;height:60px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;transition:border .2s"
+             :style="{border: activeImage===i ? '2px solid #e4393c' : '1px solid #ddd'}">
+          <img v-if="img !== '📦'" :src="img" style="width:100%;height:100%;object-fit:cover" />
+          <span v-else>📦</span>
+        </div>
+      </div>
     </div>
     <div style="flex:1">
       <h1 style="font-size:22px;margin-bottom:8px">{{ product.name }}</h1>
