@@ -91,6 +91,46 @@
 - docs/README.md — 微服务表格 + 服务间调用关系
 - docs/deployment.md — 全 6 服务架构图 + 支付配置 + K8s/Swarm
 
+## v2.3.0 (2026-07-01)
+
+### 营销引擎
+- 营销活动 — 满减/折扣/赠品 + Redis限购 + 库存锁定
+- 拼团完善 — GroupBuyService 开团/参团/成团/超时退款
+- 秒杀完善 — FlashSaleService Redis原子库存+预热+限购
+- 售后系统 — AfterSaleService 退款/退货/换货审核流程
+- 发票系统 — InvoiceService 个人/企业发票申请开具
+- 积分体系 — PointsService 注册赠送/购物返利/积分抵扣
+- 礼品卡 — GiftCardService 16位卡号/激活绑定/余额支付
+- 推荐引擎 — RecommendationService 协同过滤/个性化/热门
+
+### 内容运营
+- CMS 文章管理 — Article 实体+Controller+管理页
+- 通知中心 — Notification 系统/订单/促销消息推送
+- SEO 优化 — SeoMetaService OG标签/sitemap生成
+- A/B 测试 — ABTestService 一致性哈希+加权分流
+
+### 物流与对比
+- 物流追踪 — LogisticsTrace 轨迹查询+快递单号
+- 商品对比 — CompareList 最多4商品属性对比
+
+### 基础设施
+- 数据看板 — AnalyticsService 销售概览/订单趋势/商品排行
+- 实时大屏 — RealtimeDashboard SSE每秒推送JVM指标
+- 迁移 V5-V10 — 15张新表
+- 管理后台 10+ 新页面 — 拼团/秒杀/售后/内容/通知/礼品卡/营销
+- Gateway 路由 20+ 新路径
+
+### 开源社区
+- MIT License + README 徽章
+- PR/Issue 模板 + CONTRIBUTING.md
+- Dependabot + CodeQL + Release Drafter
+- JaCoCo 代码覆盖率
+
+### 文档
+- 系统架构文档 + 灾备方案 + 安全清单(OWASP)
+- 成本优化指南 + 数据库迁移索引
+- 部署检查清单 + 生产部署 Checklist
+
 ## v1.0.0 (2026-06-05)
 
 ### 核心架构
