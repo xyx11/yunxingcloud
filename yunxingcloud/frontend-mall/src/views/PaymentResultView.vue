@@ -27,8 +27,8 @@ onMounted(async () => {
   <div style="max-width:500px;margin:40px auto;text-align:center">
     <div style="background:#fff;border-radius:16px;padding:48px 40px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
       <template v-if="status === 'success'">
-        <div style="width:80px;height:80px;border-radius:50%;background:#d4edda;color:#28a745;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px">✓</div>
-        <h2 style="font-size:22px;color:#155724;margin-bottom:8px">支付成功</h2>
+        <div style="width:80px;height:80px;border-radius:50%;background:#d4edda;color:#28a745;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px;animation:popIn .4s ease-out">✓</div>
+        <h2 style="font-size:22px;color:#155724;margin-bottom:8px">🎉 支付成功</h2>
         <p style="color:#666;font-size:14px;margin-bottom:24px">您的订单已支付成功，我们将尽快发货</p>
         <div v-if="orderNo" style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:24px;text-align:left">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:#999">订单号</span><span style="font-weight:600">{{ orderNo }}</span></div>
@@ -51,3 +51,6 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+<style scoped>
+@keyframes popIn { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+</style>
