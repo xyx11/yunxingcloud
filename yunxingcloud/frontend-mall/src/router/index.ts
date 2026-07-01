@@ -24,6 +24,7 @@ const FlashSaleView = () => import('@/views/FlashSaleView.vue')
 const InvoiceView = () => import('@/views/InvoiceView.vue')
 const RecentView = () => import('@/views/RecentView.vue')
 const RankingView = () => import('@/views/RankingView.vue')
+const HelpView = () => import('@/views/HelpView.vue')
 
 export default createRouter({
   history: createWebHistory('/mall'),
@@ -52,5 +53,6 @@ export default createRouter({
     { path: '/invoices', component: InvoiceView },
     { path: '/recent', component: RecentView },
     { path: '/ranking', component: RankingView },
+    { path: '/help', component: HelpView },
   ],
 })

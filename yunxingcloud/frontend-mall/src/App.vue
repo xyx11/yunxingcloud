@@ -159,15 +159,27 @@ const tabItems = [
       <button @click="showPushBanner = false" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px">✕</button>
     </div>
 
+    <!-- JD-style Service Guarantees -->
+    <div class="footer-desk" style="background:#fff;border-top:1px solid #eee;padding:24px 20px;text-align:center">
+      <div style="max-width:1000px;margin:0 auto;display:flex;justify-content:space-around;gap:20px">
+        <div v-for="s in [{icon:'✅',t:'品质保证',d:'正品保障 假一赔十'},{icon:'🚚',t:'极速配送',d:'全国包邮 1-3日达'},{icon:'🔄',t:'7天退换',d:'无忧退货 极速退款'},{icon:'🛡️',t:'售后无忧',d:'专属客服 随时响应'}]" :key="s.t"
+             style="text-align:center;flex:1">
+          <div style="font-size:32px;margin-bottom:8px">{{ s.icon }}</div>
+          <div style="font-weight:700;font-size:14px;color:#333;margin-bottom:4px">{{ s.t }}</div>
+          <div style="font-size:11px;color:#999">{{ s.d }}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer (desktop) -->
     <footer class="footer-desk" style="background:#333;color:#999;padding:32px 20px 20px">
       <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;font-size:13px">
-        <div><h4 style="color:#fff;margin-bottom:12px">购物指南</h4><p style="margin:6px 0;cursor:pointer">购物流程</p><p style="margin:6px 0;cursor:pointer">会员介绍</p><p style="margin:6px 0;cursor:pointer">常见问题</p></div>
+        <div><h4 style="color:#fff;margin-bottom:12px">购物指南</h4><p @click="goTo('/help')" style="margin:6px 0;cursor:pointer">购物流程</p><p style="margin:6px 0;cursor:pointer">会员介绍</p><p @click="goTo('/help')" style="margin:6px 0;cursor:pointer">常见问题</p></div>
         <div><h4 style="color:#fff;margin-bottom:12px">配送方式</h4><p style="margin:6px 0;cursor:pointer">配送范围</p><p style="margin:6px 0;cursor:pointer">配送时效</p><p style="margin:6px 0;cursor:pointer">验货签收</p></div>
-        <div><h4 style="color:#fff;margin-bottom:12px">售后服务</h4><p style="margin:6px 0;cursor:pointer">退货政策</p><p style="margin:6px 0;cursor:pointer">退款说明</p><p style="margin:6px 0;cursor:pointer">联系客服</p></div>
+        <div><h4 style="color:#fff;margin-bottom:12px">售后服务</h4><p @click="goTo('/after-sale')" style="margin:6px 0;cursor:pointer">退货政策</p><p @click="goTo('/help')" style="margin:6px 0;cursor:pointer">退款说明</p><p style="margin:6px 0;cursor:pointer">联系客服</p></div>
         <div><h4 style="color:#fff;margin-bottom:12px">关于我们</h4><p style="margin:6px 0;cursor:pointer">公司介绍</p><p style="margin:6px 0;cursor:pointer">联系我们</p><p style="margin:6px 0;cursor:pointer">加入我们</p></div>
       </div>
-      <div style="text-align:center;padding-top:20px;margin-top:20px;border-top:1px solid #444;font-size:12px">© 2026 yunxingcloud 商城</div>
+      <div style="text-align:center;padding-top:20px;margin-top:20px;border-top:1px solid #444;font-size:12px">© 2026 YXCLOUD 商城 v2.4.0</div>
     </footer>
 
     <!-- Mobile Bottom Nav -->
