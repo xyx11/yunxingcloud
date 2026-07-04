@@ -50,7 +50,7 @@ class ProductControllerTest {
     @Test
     void shouldSearchProducts() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/products/search?keyword=test")))
+                .uri(URI.create(url("/api/products/search?q=test")))
                 .header("Authorization", "Bearer " + token).GET().build();
         int code = client.send(req, HttpResponse.BodyHandlers.ofString()).statusCode();
         assertTrue(code == 200 || code == 403, "搜索应返回200或403, 实际: " + code);

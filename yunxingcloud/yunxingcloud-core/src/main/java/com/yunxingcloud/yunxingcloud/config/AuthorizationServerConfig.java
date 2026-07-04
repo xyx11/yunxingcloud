@@ -57,7 +57,7 @@ public class AuthorizationServerConfig {
     @Value("${oauth2.client.secret:secret}")
     private String clientSecret;
 
-    @Value("${oauth2.client.redirect-uri:http://127.0.0.1:9090/callback}")
+    @Value("${oauth2.client.redirect-uri:${app.base-url:https://www.yunxingcloud.com}/callback}")
     private String redirectUri;
 
     private KeyPair rsaKeyPair;
@@ -92,7 +92,7 @@ public class AuthorizationServerConfig {
             return OidcUserInfo.builder()
                     .subject(username)
                     .name(username)
-                    .claim("email", username + "@yunxingcloud.com")
+                    .claim("email", username.contains("@") ? username : username + "@yunxingcloud.com")
                     .build();
         };
     }
@@ -105,7 +105,7 @@ public class AuthorizationServerConfig {
         if (repository.findByClientId(clientId) == null) {
             RegisteredClient testClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientName("Test Client")
+                    .clientName(clientId.equals("test-client") ? "Test Client" : "YXCLOUD OAuth2 Client")
                     .clientSecret(passwordEncoder.encode(clientSecret))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)

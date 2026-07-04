@@ -37,6 +37,20 @@ public class OAuth2ClientController {
     }
 
     @PreAuthorize("hasAuthority('config:write')")
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> update(@PathVariable String id, @RequestBody Map<String, String> body) {
+        List<Object> params = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("UPDATE oauth2_registered_client SET ");
+        if (body.containsKey("clientName")) { sql.append("client_name=?,"); params.add(body.get("clientName")); }
+        if (body.containsKey("redirectUris")) { sql.append("redirect_uris=?,"); params.add(body.get("redirectUris")); }
+        if (body.containsKey("scopes")) { sql.append("scopes=?,"); params.add(body.get("scopes")); }
+        if (params.isEmpty()) return ResponseEntity.badRequest().body(Map.of("message", "no fields to update"));
+        sql.setLength(sql.length() - 1); sql.append(" WHERE id=?"); params.add(id);
+        jdbc.update(sql.toString(), params.toArray());
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PreAuthorize("hasAuthority('config:write')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable String id) {
         jdbc.update("DELETE FROM oauth2_registered_client WHERE id=?", id);

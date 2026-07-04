@@ -1,1 +1,0 @@
-import{aF as s}from"./vendor-vue-B_b1Q2eN.js";function o(){const e=s();return{success(r){e.success(r,{duration:3e3})},error(r){e.error(r,{duration:5e3})},warning(r){e.warning(r,{duration:4e3})},info(r){e.info(r,{duration:3e3})}}}export{o as u};

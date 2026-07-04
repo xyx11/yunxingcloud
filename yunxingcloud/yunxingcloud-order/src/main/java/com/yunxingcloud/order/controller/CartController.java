@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import java.util.Map;
 
 @RestController
@@ -26,12 +28,19 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<?> list() {
-        return ResponseEntity.ok(cartRepo.findByUsernameOrderByCreatedAtDesc(user()));
+        var items = cartRepo.findByUsernameOrderByCreatedAtDesc(user());
+        if (items.isEmpty()) {
+            var recs = productRepo.findByStatus("0", PageRequest.of(0, 4, Sort.by(Sort.Direction.DESC, "sales")));
+            return ResponseEntity.ok(Map.of("items", items, "recommended", recs));
+        }
+        return ResponseEntity.ok(Map.of("items", items));
     }
 
     @PostMapping
     public ResponseEntity<?> add(@RequestBody Map<String, Object> body) {
-        Long productId = Long.valueOf(body.get("productId").toString());
+        Object pid = body.get("productId");
+        if (pid == null) return ResponseEntity.badRequest().body(Map.of("message", "缺少商品ID"));
+        Long productId = Long.valueOf(pid.toString());
         int quantity = body.containsKey("quantity") ? Integer.parseInt(body.get("quantity").toString()) : 1;
         Product p = productRepo.findById(productId).orElse(null);
         if (p == null) return ResponseEntity.badRequest().body(Map.of("message", "商品不存在"));

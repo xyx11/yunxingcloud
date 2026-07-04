@@ -1,8 +1,10 @@
 package com.yunxingcloud.inventory.controller;
 
+import com.yunxingcloud.inventory.dto.WarehouseDTO;
 import com.yunxingcloud.inventory.entity.Warehouse;
 import com.yunxingcloud.inventory.repository.*;
 import com.yunxingcloud.inventory.service.InventoryService;
+import jakarta.validation.Valid;
 import com.yunxingcloud.inventory.service.WarehouseService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +33,7 @@ public class InventoryController {
     public ResponseEntity<?> warehouses() { return ResponseEntity.ok(whService.findAll()); }
 
     @PostMapping("/api/warehouses")
-    public ResponseEntity<?> addWarehouse(@RequestBody Warehouse wh) { return ResponseEntity.ok(whService.create(wh)); }
+    public ResponseEntity<?> addWarehouse(@Valid @RequestBody WarehouseDTO dto) { Warehouse wh = new Warehouse(); wh.setName(dto.getName()); wh.setAddress(dto.getAddress()); wh.setStatus(dto.getStatus()); return ResponseEntity.ok(whService.create(wh)); }
 
     @GetMapping("/api/inventory")
     public ResponseEntity<?> list(@RequestParam(required = false) Long warehouseId) {

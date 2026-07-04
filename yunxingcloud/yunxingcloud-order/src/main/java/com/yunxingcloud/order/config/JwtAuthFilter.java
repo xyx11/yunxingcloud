@@ -1,5 +1,8 @@
 package com.yunxingcloud.order.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -23,6 +26,7 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final SecretKey key;
 
@@ -44,7 +48,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         : List.of();
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(username, null, authorities));
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.debug("JWT parse skipped: {}", e.getMessage()); }
         }
         chain.doFilter(request, response);
     }

@@ -2,6 +2,13 @@ app:
   base-url: https://www.yunxingcloud.com
 
 spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 5000
+            read-timeout: 30000
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -19,6 +26,13 @@ spring:
       ddl-auto: none
     show-sql: false
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 30
+          fetch_size: 200
+        order_inserts: true
+        order_updates: true
 
   flyway:
     enabled: true
@@ -31,7 +45,7 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:redis}
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       lettuce:
@@ -54,6 +68,9 @@ spring:
 
 server:
   port: 8080
+  error:
+    whitelabel:
+      enabled: false
   compression:
     enabled: true
   tomcat:

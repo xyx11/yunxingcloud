@@ -1,0 +1,29 @@
+# ============================================
+# yunxingcloud 部署配置 (示例模板)
+# 用法: cp deploy.conf.example deploy.conf 并填入真实值
+# deploy.conf 已在 .gitignore 中，不会被提交到 Git
+# ============================================
+
+APP_DOMAIN=www.yunxingcloud.com
+APP_BASE_URL=https://www.yunxingcloud.com
+
+SERVER_HOST=your-server-ip
+SERVER_PORT=22
+SERVER_USER=root
+DEPLOY_DIR=/opt/yunxingcloud
+
+APP_PORT=8080
+SPRING_PROFILES=prod
+
+export DB_URL="jdbc:mysql://localhost:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+export DB_USERNAME=root
+export DB_PASSWORD="change-me"
+export JWT_SECRET="change-me-at-least-256-bits-long-secret"
+export OAUTH2_CLIENT_ID="yunxingcloud-client"
+export OAUTH2_CLIENT_SECRET="change-me"
+export OAUTH2_REDIRECT_URI="https://www.yunxingcloud.com/callback"
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+NACOS_SERVER=127.0.0.1:8848
+JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"

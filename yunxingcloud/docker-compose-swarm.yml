@@ -50,6 +50,44 @@ services:
         limits: { memory: 128M }
         reservations: { memory: 32M }
 
+  nacos:
+    image: nacos/nacos-server:v2.4.3
+    <<: *defaults
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - nacos_data:/home/nacos/data
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { memory: 512M }
+        reservations: { memory: 256M }
+
+  sentinel:
+    image: bladex/sentinel-dashboard:1.8.8
+    <<: *defaults
+    ports:
+      - "8082:8082"
+    environment:
+      SENTINEL_AUTH_USERNAME: admin
+      SENTINEL_AUTH_PASSWORD: admin
+    networks:
+      - app
+    deploy:
+      resources:
+        limits: { memory: 256M }
+        reservations: { memory: 128M }
+
   # ===== 应用服务 =====
   core:
     image: ${REGISTRY:-}yunxingcloud-core:${TAG:-latest}
@@ -58,7 +96,7 @@ services:
       args: { SERVICE: yunxingcloud-core, PORT: 8080 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
@@ -94,7 +132,7 @@ services:
       args: { SERVICE: yunxingcloud-usercenter, PORT: 8081 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
@@ -124,7 +162,7 @@ services:
       args: { SERVICE: yunxingcloud-payment, PORT: 8083 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
@@ -154,7 +192,7 @@ services:
       args: { SERVICE: yunxingcloud-order, PORT: 8084 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
@@ -184,7 +222,7 @@ services:
       args: { SERVICE: yunxingcloud-inventory, PORT: 8085 }
     <<: *defaults
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?serverTimezone=Asia/Shanghai
+      DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
       JWT_SECRET: ${JWT_SECRET:-changeme}
@@ -234,6 +272,7 @@ services:
         reservations: { memory: 64M }
 
 volumes:
+  nacos_data:
   mysql_data:
   redis_data:
   upload_data:

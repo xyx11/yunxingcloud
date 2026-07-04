@@ -1,0 +1,2 @@
+ALTER TABLE product ADD COLUMN IF NOT EXISTS meta_title VARCHAR(200) AFTER tags;
+ALTER TABLE product ADD COLUMN IF NOT EXISTS meta_description VARCHAR(500) AFTER meta_title;

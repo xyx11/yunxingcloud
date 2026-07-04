@@ -44,6 +44,7 @@ public class PaymentService {
     @Transactional
     public Map<String, Object> pay(Long orderId, String notifyBaseUrl) {
         PaymentOrder order = orderRepo.findById(orderId).orElseThrow();
+        if (!"0".equals(order.getStatus())) throw new IllegalStateException("订单状态不允许支付: " + order.getStatus());
         PaymentGateway gw = gateways.get(order.getChannel());
         if (gw == null) throw new IllegalArgumentException("Unsupported channel: " + order.getChannel());
         order.setStatus("1");

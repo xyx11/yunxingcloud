@@ -1,4 +1,7 @@
 package com.yunxingcloud.inventory.config;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.jsonwebtoken.Claims; import io.jsonwebtoken.Jwts; import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.*; import jakarta.servlet.http.*;
 import org.springframework.beans.factory.annotation.Value; import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -8,6 +11,7 @@ import javax.crypto.SecretKey; import java.io.IOException; import java.nio.chars
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
     private final SecretKey key;
     public JwtAuthFilter(@Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -24,7 +28,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 List<SimpleGrantedAuthority> authorities = (authStr != null && !authStr.isEmpty())
                         ? Arrays.stream(authStr.split(",")).filter(s -> !s.isBlank()).map(SimpleGrantedAuthority::new).toList() : List.of();
                 SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(username, null, authorities));
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.debug("JWT parse skipped: {}", e.getMessage()); }
         }
         chain.doFilter(request, response);
     }

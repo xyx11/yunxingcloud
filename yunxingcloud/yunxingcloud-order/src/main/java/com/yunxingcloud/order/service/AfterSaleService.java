@@ -56,6 +56,7 @@ public class AfterSaleService {
         return afterSaleRepo.save(as);
     }
 
+    @Transactional
     public AfterSale reject(Long afterSaleId, String remark) {
         AfterSale as = afterSaleRepo.findById(afterSaleId).orElseThrow();
         as.setStatus("2");
@@ -63,6 +64,7 @@ public class AfterSaleService {
         return afterSaleRepo.save(as);
     }
 
+    @Transactional
     public AfterSale complete(Long afterSaleId) {
         AfterSale as = afterSaleRepo.findById(afterSaleId).orElseThrow();
         as.setStatus("4");

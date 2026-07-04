@@ -1,9 +1,12 @@
 package com.yunxingcloud.order.controller;
 
+import com.yunxingcloud.order.dto.TagDTO;
+import com.yunxingcloud.order.entity.ProductTag;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.repository.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -26,7 +29,7 @@ public class TagController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody ProductTag tag) { return ResponseEntity.ok(tagRepo.save(tag)); }
+    public ResponseEntity<?> create(@Valid @RequestBody TagDTO dto) { ProductTag t = new ProductTag(); t.setName(dto.getName()); return ResponseEntity.ok(tagRepo.save(t)); }
 
     @GetMapping("/product/{productId}")
     public ResponseEntity<?> tagsOfProduct(@PathVariable Long productId) {

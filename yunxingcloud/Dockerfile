@@ -7,7 +7,7 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
@@ -33,4 +33,9 @@ EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=90s \
   CMD curl -f http://localhost:${PORT}/actuator/health || exit 1
 ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# OpenTelemetry Java Agent (可选, 通过 OTEL_ENABLED=true 启用)
+ADD --chown=app:app https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar /app/otel/
+ENV OTEL_ENABLED=false
+ENTRYPOINT ["sh", "-c", "if [ \"$OTEL_ENABLED\" = \"true\" ]; then \
+  java $JAVA_OPTS -javaagent:/app/otel/opentelemetry-javaagent.jar -jar app.jar; \
+  else java $JAVA_OPTS -jar app.jar; fi"]

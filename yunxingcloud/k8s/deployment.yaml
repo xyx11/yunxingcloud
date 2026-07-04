@@ -33,7 +33,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-core"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "1Gi", cpu: "1000m" }
@@ -87,7 +87,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-usercenter"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -191,7 +191,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-payment"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -245,7 +245,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-order"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -299,7 +299,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-inventory"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }

@@ -90,7 +90,14 @@ public class OrderSagaService {
             orderService.cancelOrder(order);
             log.info("SAGA 补偿完成: orderId={}", order.getId());
         } catch (Exception ex) {
-            log.error("SAGA 补偿失败: orderId={}", order.getId(), ex);
+            log.error("SAGA 补偿失败，需人工介入: orderId={}, orderNo={}", order.getId(), order.getOrderNo(), ex);
+            // 标记订单为补偿失败状态，等待人工处理
+            try {
+                order.setStatus("5"); // 5=异常/售后中
+                orderRepo.save(order);
+            } catch (Exception saveEx) {
+                log.error("无法更新订单状态为补偿失败: orderId={}", order.getId(), saveEx);
+            }
         }
     }
 }

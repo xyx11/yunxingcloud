@@ -62,9 +62,12 @@ ExecStart=$JAVA_BIN -Xms512m -Xmx1024m -XX:+UseG1GC -Duser.timezone=Asia/Shangha
     -jar $APP_DIR/app/yunxingcloud-${svc}.jar \\
     --spring.profiles.active=prod \\
     --server.port=${port} \\
-    --spring.datasource.url=jdbc:mysql://localhost:3306/${db_name}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai \\
+    --spring.datasource.url=jdbc:mysql://localhost:3306/${db_name}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai \\
     --spring.datasource.username=yunxingcloud \\
     --spring.datasource.password=$DB_PASS \\
+    --spring.data.redis.host=localhost \\
+    --spring.data.redis.port=6379 \\
+    --spring.cloud.nacos.discovery.server-addr=localhost:8848 \\
     --jwt.secret=$JWT_SECRET
 ExecStop=/bin/kill -15 \$MAINPID
 Restart=always

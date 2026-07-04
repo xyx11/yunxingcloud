@@ -4,6 +4,8 @@ import com.yunxingcloud.yunxingcloud.entity.SysMenu;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.SysMenuRepository;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +16,7 @@ import java.util.*;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
     private final SysMenuRepository menuRepository;
@@ -39,6 +42,7 @@ public class DataInitializer implements CommandLineRunner {
         initMenus();
         initNewModuleMenus();
         initDemoData();
+        initMissingMenus();
     }
 
     private void initRoles() {
@@ -54,15 +58,15 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
                 "超级管理员", "admin", "系统超级管理员",
-                "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write");
+                "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write,monitor:banner:list,monitor:review:list,monitor:import:list,monitor:sku:list,monitor:shipment:list");
             jdbcTemplate.update(
                 "INSERT INTO role (name, code, description, permissions) VALUES (?,?,?,?)",
-                "普通用户", "user", "普通用户", "user:read,dept:read,ticket:read,ticket:write");
+                "普通用户", "user", "普通用户", "user:read,dept:read,ticket:read,ticket:write,monitor:banner:list,monitor:review:list,monitor:import:list,monitor:sku:list,monitor:shipment:list");
         }
 
         // 确保 admin 角色始终拥有最新权限（增量更新）
         try {
-            String newPerms = "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write";
+            String newPerms = "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write,monitor:banner:list,monitor:review:list,monitor:import:list,monitor:sku:list,monitor:shipment:list";
             jdbcTemplate.update("UPDATE role SET permissions = ? WHERE code = 'admin'", newPerms);
         } catch (Exception ignored) {}
     }
@@ -329,6 +333,23 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
         } catch (Exception ignored) {}
+    }
+
+    /** 增量添加新页面菜单项 */
+    private void initMissingMenus() {
+        try {
+            Long monitorId = jdbcTemplate.queryForObject("SELECT id FROM sys_menu WHERE path='' AND parent_id IS NULL AND name='系统监控'", Long.class);
+            if (monitorId == null) return;
+            if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE path='banners'", Integer.class) == 0) {
+                jdbcTemplate.update("INSERT INTO sys_menu (name,parent_id,sort_order,path,component,menu_type,perms,visible,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                    "Banner管理", monitorId, 7, "banners", "BannerView", "C", "monitor:banner:list", 1, java.time.LocalDateTime.now());
+            if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE path='products/import'", Integer.class) == 0) { jdbcTemplate.update("INSERT INTO sys_menu (name,parent_id,sort_order,path,component,menu_type,perms,visible,created_at) VALUES (?,?,?,?,?,?,?,?,?)", "批量导入", monitorId, 9, "products/import", "ProductImportView", "C", "monitor:import:list", 1, java.time.LocalDateTime.now()); }
+            }
+            if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_menu WHERE path='reviews'", Integer.class) == 0) {
+                jdbcTemplate.update("INSERT INTO sys_menu (name,parent_id,sort_order,path,component,menu_type,perms,visible,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                    "评价管理", monitorId, 8, "reviews", "ReviewManageView", "C", "monitor:review:list", 1, java.time.LocalDateTime.now());
+            }
+        } catch (Exception e) { log.warn("initMissingMenus: {}", e.getMessage()); }
     }
 
     private SysMenu createMenu(String name, Long parentId, int sort, String path, String component, String type, String perms) {

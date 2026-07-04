@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS oauth2_registered_client (
     client_settings varchar(2000) NOT NULL,
     token_settings varchar(2000) NOT NULL,
     PRIMARY KEY (id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS oauth2_authorization (
     id varchar(100) NOT NULL,
@@ -50,11 +50,11 @@ CREATE TABLE IF NOT EXISTS oauth2_authorization (
     device_code_expires_at timestamp NULL DEFAULT NULL,
     device_code_metadata blob DEFAULT NULL,
     PRIMARY KEY (id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS oauth2_authorization_consent (
     registered_client_id varchar(100) NOT NULL,
     principal_name varchar(200) NOT NULL,
     authorities varchar(1000) NOT NULL,
     PRIMARY KEY (registered_client_id, principal_name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

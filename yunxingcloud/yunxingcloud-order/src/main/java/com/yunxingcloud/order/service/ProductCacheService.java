@@ -29,31 +29,31 @@ public class ProductCacheService {
         this.bannerRepo = bannerRepo;
     }
 
-    @Cacheable(value = "hotProducts", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(value = "hotProducts", unless = "#result == null || #result.isEmpty()", sync = true)
     public List<Product> getHotProducts() {
         log.debug("Cache MISS: hotProducts");
         return productRepo.findByIsHotTrueAndStatus("0", Sort.by(Sort.Direction.DESC, "sales"));
     }
 
-    @Cacheable(value = "newProducts", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(value = "newProducts", unless = "#result == null || #result.isEmpty()", sync = true)
     public List<Product> getNewProducts() {
         log.debug("Cache MISS: newProducts");
         return productRepo.findByIsNewTrueAndStatus("0", Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
-    @Cacheable(value = "categories", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(value = "categories", unless = "#result == null || #result.isEmpty()", sync = true)
     public List<ProductCategory> getCategories() {
         log.debug("Cache MISS: categories");
         return categoryRepo.findAll();
     }
 
-    @Cacheable(value = "brands", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(value = "brands", unless = "#result == null || #result.isEmpty()", sync = true)
     public List<ProductBrand> getBrands() {
         log.debug("Cache MISS: brands");
         return brandRepo.findAll();
     }
 
-    @Cacheable(value = "banners", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(value = "banners", unless = "#result == null || #result.isEmpty()", sync = true)
     public List<Banner> getBanners() {
         log.debug("Cache MISS: banners");
         return bannerRepo.findAllByOrderBySortOrderAsc();

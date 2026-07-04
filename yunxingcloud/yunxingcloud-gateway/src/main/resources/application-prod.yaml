@@ -1,0 +1,22 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:nacos:8848}
+    gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:sentinel:8082}
+      eager: true
+
+server:
+  shutdown: graceful
+
+logging:
+  level:
+    root: WARN
+    com.yunxingcloud: INFO
+    org.springframework.cloud.gateway: INFO

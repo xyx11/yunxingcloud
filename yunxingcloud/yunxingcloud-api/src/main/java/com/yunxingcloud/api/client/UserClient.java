@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "yunxingcloud-usercenter", contextId = "userClient", path = "/api")
+@FeignClient(name = "yunxingcloud-usercenter", contextId = "userClient", path = "/api", fallback = UserClientFallback.class)
 public interface UserClient {
 
     @GetMapping("/user")

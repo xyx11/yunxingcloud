@@ -1,7 +1,9 @@
 package com.yunxingcloud.order.controller;
 
+import com.yunxingcloud.order.dto.ProductBundleDTO;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.repository.*;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,5 +38,10 @@ public class BundleController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody ProductBundle b) { return ResponseEntity.ok(bundleRepo.save(b)); }
+    public ResponseEntity<?> create(@Valid @RequestBody ProductBundleDTO dto) {
+        ProductBundle b = new ProductBundle();
+        b.setName(dto.getName()); b.setBundlePrice(dto.getBundlePrice()); b.setOriginalPrice(dto.getOriginalPrice());
+        b.setProductIds(dto.getProductIds()); b.setImageUrl(dto.getImageUrl()); b.setStatus(dto.getStatus());
+        return ResponseEntity.ok(bundleRepo.save(b));
+    }
 }

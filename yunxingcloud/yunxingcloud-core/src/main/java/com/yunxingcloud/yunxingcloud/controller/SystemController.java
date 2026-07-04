@@ -205,4 +205,21 @@ public class SystemController {
         if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
+
+    @GetMapping("/health-check")
+    public ResponseEntity<Map<String, String>> healthCheck() {
+        Map<String, String> status = new LinkedHashMap<>();
+        int[][] services = {{8080,0},{8081,0},{8083,0},{8084,0},{8085,0},{8090,0}};
+        String[] names = {"core","usercenter","payment","order","inventory","gateway"};
+        for (int i = 0; i < services.length; i++) {
+            try {
+                java.net.URL url = new java.net.URL("http://127.0.0.1:" + services[i][0] + "/actuator/health");
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(2000); conn.setReadTimeout(2000);
+                status.put(names[i], conn.getResponseCode() == 200 ? "UP" : "DOWN");
+                conn.disconnect();
+            } catch (Exception e) { status.put(names[i], "DOWN"); }
+        }
+        return ResponseEntity.ok(status);
+    }
 }

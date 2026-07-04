@@ -49,7 +49,7 @@ spring:
     locations: classpath:db/migration
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:yunxingcloud123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -109,6 +109,17 @@ spring:
   mail:
     host: localhost
     port: 25
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
 
 management:
   endpoints:

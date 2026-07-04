@@ -1,3 +1,4 @@
+
 # yunxingcloud 数据库 Schema
 
 ## 概览
@@ -53,7 +54,7 @@ sys_config, sys_notice, sys_post, sys_dict_type, sys_dict_data, sys_oper_log, sy
 ### users
 id, username UNIQUE, password, email, enabled, approved, created_at
 
-### roles  
+### roles
 id, name, code UNIQUE, description, permissions
 
 ### departments

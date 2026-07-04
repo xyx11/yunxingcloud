@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS oauth2_registered_client (
     client_settings varchar(2000) NOT NULL,
     token_settings varchar(2000) NOT NULL,
     PRIMARY KEY (id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS oauth2_authorization (
     id varchar(100) NOT NULL,
@@ -51,14 +51,14 @@ CREATE TABLE IF NOT EXISTS oauth2_authorization (
     device_code_expires_at timestamp NULL DEFAULT NULL,
     device_code_metadata blob DEFAULT NULL,
     PRIMARY KEY (id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS oauth2_authorization_consent (
     registered_client_id varchar(100) NOT NULL,
     principal_name varchar(200) NOT NULL,
     authorities varchar(1000) NOT NULL,
     PRIMARY KEY (registered_client_id, principal_name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Users table (with all columns from later migrations)
 CREATE TABLE IF NOT EXISTS users (
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS users (
     failed_attempts INT DEFAULT 0,
     locked_until TIMESTAMP NULL DEFAULT NULL,
     last_login_time TIMESTAMP NULL DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Role table
 CREATE TABLE IF NOT EXISTS role (
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS role (
     permissions VARCHAR(2000) DEFAULT '',
     enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User-role join table
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (role_id) REFERENCES role(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Department table
 CREATE TABLE IF NOT EXISTS department (
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS department (
     sort_order INT DEFAULT 0,
     enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Social accounts
 CREATE TABLE IF NOT EXISTS social_accounts (
@@ -119,4 +119,4 @@ CREATE TABLE IF NOT EXISTS social_accounts (
     access_token VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (provider, provider_user_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-@FeignClient(name = "yunxingcloud-usercenter", contextId = "roleClient", path = "/api/roles")
+@FeignClient(name = "yunxingcloud-usercenter", contextId = "roleClient", path = "/api/roles", fallback = RoleClientFallback.class)
 public interface RoleClient {
 
     @GetMapping

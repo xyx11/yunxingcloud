@@ -11,6 +11,6 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     List<Campaign> findByStatusAndStartTimeBeforeAndEndTimeAfter(String status, LocalDateTime now1, LocalDateTime now2);
 
     @Modifying
-    @Query("UPDATE Campaign c SET c.usedCount = c.usedCount + 1 WHERE c.id = :id AND c.totalStock IS NULL OR c.usedCount < c.totalStock")
+    @Query("UPDATE Campaign c SET c.usedCount = c.usedCount + 1 WHERE c.id = :id AND (c.totalStock IS NULL OR c.usedCount < c.totalStock)")
     int incrementUsedCount(Long id);
 }

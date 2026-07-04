@@ -1,8 +1,12 @@
 package com.yunxingcloud.order.controller;
 
+import com.yunxingcloud.order.dto.ProductDTO;
 import com.yunxingcloud.order.entity.Product;
 import com.yunxingcloud.order.repository.ProductRepository;
+import com.yunxingcloud.order.repository.ProductReviewRepository;
+import com.yunxingcloud.order.repository.ProductSkuRepository;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -12,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -19,8 +24,12 @@ import java.util.List;
 public class ProductController {
 
     private final ProductRepository repo;
+    private final ProductSkuRepository skuRepo;
+    private final ProductReviewRepository reviewRepo;
 
-    public ProductController(ProductRepository repo) { this.repo = repo; }
+    public ProductController(ProductRepository repo, ProductSkuRepository skuRepo, ProductReviewRepository reviewRepo) {
+        this.repo = repo; this.skuRepo = skuRepo; this.reviewRepo = reviewRepo;
+    }
 
     @GetMapping
     public ResponseEntity<?> list(@RequestParam(required = false) Long categoryId,
@@ -104,15 +113,33 @@ public class ProductController {
         return repo.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<?> detail(@PathVariable Long id) {
+        Product p = repo.findById(id).orElse(null);
+        if (p == null) return ResponseEntity.notFound().build();
+        var skus = skuRepo.findByProductId(id);
+        var reviews = reviewRepo.findByProductIdOrderByCreatedAtDesc(id);
+        var related = repo.findByCategoryIdAndIdNot(p.getCategoryId() != null ? p.getCategoryId() : 0L, id,
+                PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "sales")));
+        return ResponseEntity.ok(Map.of(
+            "product", p, "skus", skus, "reviews", reviews, "related", related
+        ));
+    }
+
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Product product) {
-        return ResponseEntity.ok(repo.save(product));
+    public ResponseEntity<?> create(@Valid @RequestBody ProductDTO dto) {
+        Product p = new Product();
+        p.setName(dto.getName()); p.setDescription(dto.getDescription()); p.setPrice(dto.getPrice());
+        p.setStock(dto.getStock()); p.setCategoryId(dto.getCategoryId()); p.setBrandId(dto.getBrandId());
+        p.setImages(dto.getImages()); p.setImageUrl(dto.getImageUrl());
+        p.setIsNew(dto.getIsNew()); p.setIsHot(dto.getIsHot()); p.setTags(dto.getTags()); p.setStatus(dto.getStatus());
+        return ResponseEntity.ok(repo.save(p));
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Product body) {
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody Product body) {
         return repo.findById(id).map(p -> {
             if (body.getName() != null) p.setName(body.getName());
             if (body.getDescription() != null) p.setDescription(body.getDescription());

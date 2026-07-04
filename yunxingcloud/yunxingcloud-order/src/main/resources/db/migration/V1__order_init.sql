@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS product (
     image_url VARCHAR(500),
     status CHAR(1) DEFAULT '0' COMMENT '0=上架 1=下架',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS cart_item (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS cart_item (
     price BIGINT NOT NULL COMMENT '加入时价格(分)',
     quantity INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_cart_username ON cart_item(username);
 
 CREATE TABLE IF NOT EXISTS order_head (
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS order_head (
     remark VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_order_username ON order_head(username);
 CREATE INDEX idx_order_status ON order_head(status);
 
@@ -45,5 +45,5 @@ CREATE TABLE IF NOT EXISTS order_line (
     price BIGINT NOT NULL COMMENT '单价(分)',
     quantity INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_order_line_order ON order_line(order_id);

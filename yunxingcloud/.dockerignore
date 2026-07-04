@@ -1,4 +1,7 @@
-frontend/
+frontend/node_modules/
+frontend/dist/
+frontend-mall/node_modules/
+frontend-mall/dist/
 node_modules/
 .git/
 *.md

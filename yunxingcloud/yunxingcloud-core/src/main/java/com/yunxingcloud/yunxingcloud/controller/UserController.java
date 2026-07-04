@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Tag(name = "用户管理", description = "用户的增删改查、部门/角色分配、导入导出")
+@Tag(name = "用户管理", description = "用户 CRUD、角色分配、部门关联")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

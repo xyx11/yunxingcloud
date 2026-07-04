@@ -10,11 +10,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
 
     private final OrderHeadRepository orderRepo;
     private final OrderService orderService;
@@ -75,13 +80,13 @@ public class OrderController {
                     orderRepo.save(order);
                     paymentClient.pay(Long.valueOf(result.get("id").toString()), null);
                     return ResponseEntity.ok(result);
+                } else {
+                    return ResponseEntity.status(502).body(Map.of("message", "创建支付订单失败"));
                 }
             } catch (Exception e) {
-                // Payment service unavailable — still allow local status update
+                log.warn("Payment service unavailable for order {}: {}", order.getOrderNo(), e.getMessage());
+                return ResponseEntity.status(503).body(Map.of("message", "支付服务暂不可用，请稍后重试"));
             }
-            order.setStatus("1");
-            orderRepo.save(order);
-            return ResponseEntity.ok(Map.of("orderNo", order.getOrderNo(), "status", order.getStatus()));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -89,9 +94,20 @@ public class OrderController {
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return orderRepo.findById(id).map(order -> {
-            order.setStatus(body.get("status"));
+            String newStatus = body.get("status");
+            if (!isValidTransition(order.getStatus(), newStatus))
+                return ResponseEntity.badRequest().body(Map.of("message","无效的状态变更: "+order.getStatus()+"→"+newStatus));
+            order.setStatus(newStatus);
             return ResponseEntity.ok(orderRepo.save(order));
         }).orElse(ResponseEntity.notFound().build());
+    }
+    private boolean isValidTransition(String from, String to) {
+        return switch (from) {
+            case "0" -> "1".equals(to) || "4".equals(to);
+            case "1" -> "2".equals(to) || "4".equals(to);
+            case "2" -> "3".equals(to);
+            default -> false;
+        };
     }
 
     @PutMapping("/{id}/cancel")

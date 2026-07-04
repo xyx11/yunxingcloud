@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS payment_order (
     refund_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_payment_order_no ON payment_order(order_no);
 CREATE INDEX idx_payment_order_status ON payment_order(status);
 CREATE INDEX idx_payment_order_channel ON payment_order(channel);
@@ -27,5 +27,5 @@ CREATE TABLE IF NOT EXISTS payment_record (
     response TEXT COMMENT '响应/回调数据(JSON)',
     success BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_payment_record_order ON payment_record(order_id);

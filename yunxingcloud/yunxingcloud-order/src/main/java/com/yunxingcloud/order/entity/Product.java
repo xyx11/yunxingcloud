@@ -30,6 +30,10 @@ public class Product {
     private Boolean isHot = false;
     @Column(length = 500)
     private String tags;
+    @Column(name = "meta_title", length = 200)
+    private String metaTitle;
+    @Column(name = "meta_description", length = 500)
+    private String metaDescription;
     @Column(length = 1)
     private String status = "0";
     @Column(name = "created_at", updatable = false)
@@ -64,6 +68,10 @@ public class Product {
     public void setIsHot(Boolean isHot) { this.isHot = isHot; }
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
+    public String getMetaTitle() { return metaTitle; }
+    public void setMetaTitle(String metaTitle) { this.metaTitle = metaTitle; }
+    public String getMetaDescription() { return metaDescription; }
+    public void setMetaDescription(String metaDescription) { this.metaDescription = metaDescription; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
