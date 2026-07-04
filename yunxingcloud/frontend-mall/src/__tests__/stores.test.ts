@@ -24,14 +24,14 @@ describe('authStore', () => {
     const store = useAuthStore()
     expect(store.user).toBeNull()
     expect(store.token).toBe('')
-    expect(store.isLoggedIn()).toBe(false)
+    expect(store.isLoggedIn).toBe(false)
   })
 
   it('should restore token from localStorage', () => {
     localStorage.setItem('accessToken', 'test-token-123')
     const store = useAuthStore()
     expect(store.token).toBe('test-token-123')
-    expect(store.isLoggedIn()).toBe(true)
+    expect(store.isLoggedIn).toBe(true)
   })
 
   it('should clear state on logout', () => {

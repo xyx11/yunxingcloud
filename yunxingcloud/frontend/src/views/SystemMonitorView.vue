@@ -18,6 +18,7 @@ const sessions = ref<any[]>([])
 const cacheInfo = ref<any>({})
 const dbHealth = ref<any>({})
 const diskHealth = ref<any>({})
+const serviceHealth = ref<Record<string,string>>({})
 const benchmark = ref<any>({})
 const flags = ref<any>({})
 const editingAnnouncement = ref(false)
@@ -62,6 +63,8 @@ async function loadAll() {
   dbHealth.value = db.data; diskHealth.value = disk.data
   benchmark.value = bench.data
   flags.value = flg.data
+  // Check service health via gateway
+  try { const r = await fetch('/api/system/health-check').then(r=>r.json()); serviceHealth.value = r } catch { serviceHealth.value = {} }
 }
 
 async function clearSystemCache() {
@@ -210,6 +213,15 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
         </n-grid-item>
         <n-grid-item>
           <n-statistic :label="t('monitor.module')" :value="benchmark.module || '-'" />
+        </n-grid-item>
+      </n-grid>
+      <n-grid v-if="Object.keys(serviceHealth).length" cols="6" x-gap="12" style="margin-top:16px">
+        <n-grid-item v-for="(status, svc) in serviceHealth" :key="svc">
+          <n-card size="small" :content-style="{padding:'12px',textAlign:'center'}">
+            <div :style="{fontSize:'24px',marginBottom:'4px'}">{{ status === 'UP' ? '✅' : '❌' }}</div>
+            <div style="fontSize:13px;fontWeight:600">{{ svc }}</div>
+            <n-tag :type="status==='UP'?'success':'error'" size="small">{{ status }}</n-tag>
+          </n-card>
         </n-grid-item>
       </n-grid>
     </n-card>

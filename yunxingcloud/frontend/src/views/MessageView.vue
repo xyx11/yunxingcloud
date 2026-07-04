@@ -4,7 +4,7 @@ import { ref, onMounted, h } from 'vue'
 import { fetchInbox, fetchSent, sendMessage, markAsRead, deleteMessage } from '@/api/message'
 import { useNotify } from '@/composables/useNotify'
 
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm } from 'naive-ui'
 
 const { t } = useI18n()
 import type { DataTableColumns } from 'naive-ui'
@@ -79,14 +79,16 @@ onMounted(loadMsgs)
       </template>
       <n-dataTable :columns="columns" :data="messages" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: Msg) => row.id" />
 
-      <n-modal v-model:show="showModal" :title="t('message.send')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form label-placement="left" label-width="60">
-          <n-form-item :label="t('message.toUser')"><n-input v-model:value="form.toUser" /></n-form-item>
-          <n-form-item :label="t('message.title')"><n-input v-model:value="form.title" /></n-form-item>
-          <n-form-item :label="t('message.content')"><n-input v-model:value="form.content" type="textarea" :rows="4" /></n-form-item>
-        </n-form>
-        <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="sendMsg">{{ t('message.send') }}</n-button></n-space></template>
-      </n-modal>
+      <n-drawer v-model:show="showModal" :width="420" placement="right">
+        <n-drawer-content :title="t('message.send')" closable>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="sendMsg">{{ t('message.send') }}</n-button></n-space></template>
+          <n-form label-placement="left" label-width="60" size="small">
+            <n-form-item :label="t('message.toUser')"><n-input v-model:value="form.toUser" /></n-form-item>
+            <n-form-item :label="t('message.title')"><n-input v-model:value="form.title" /></n-form-item>
+            <n-form-item :label="t('message.content')"><n-input v-model:value="form.content" type="textarea" :rows="4" /></n-form-item>
+          </n-form>
+        </n-drawer-content>
+      </n-drawer>
     </n-card>
   </div>
 </template>

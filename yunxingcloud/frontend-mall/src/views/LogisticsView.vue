@@ -1,28 +1,33 @@
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from '@/locales'
+const { t } = useI18n()
+import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 
 const route = useRoute()
-const toast = inject<any>('toast')
+const toast = inject(ToastInjectionKey)!
 const traces = ref<any[]>([])
 const trackingNo = ref('')
 const carrier = ref('')
 const copying = ref(false)
+const loading = ref(false)
 
 onMounted(async () => {
   const orderId = route.query.orderId
   if (orderId) {
+    loading.value = true
     try {
       const r = await request.get('/logistics/order/' + orderId)
       traces.value = r.data?.traces || r.data || []
       carrier.value = r.data?.carrier || ''
       trackingNo.value = r.data?.trackingNo || ''
-    } catch {}
+    } catch {} finally { loading.value = false }
   }
 })
 
-async function track() { if(!trackingNo.value.trim())return; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{} }
+async function track() { if(!trackingNo.value.trim())return; loading.value=true; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{} finally{loading.value=false} }
 async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success('已复制'); setTimeout(() => copying.value = false, 1500) } catch {} }
 </script>
 <template>
@@ -41,7 +46,11 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
         <button @click="copyNo" style="padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap"
                 :style="{background:copying?'#f10215':'#fff',color:copying?'#fff':'#666'}">{{ copying ? '✓ 已复制' : '复制单号' }}</button>
       </div>
-      <div v-if="traces.length">
+      <div v-if="loading" style="text-align:center;padding:40px 0">
+        <div style="width:48px;height:48px;border:3px solid #eee;border-top-color:#f10215;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+        <span style="font-size:13px;color:#999">查询物流信息...</span>
+      </div>
+      <div v-else-if="traces.length">
         <div v-for="(t,i) in traces" :key="t.id || i" style="display:flex;gap:16px;position:relative">
           <div style="display:flex;flex-direction:column;align-items:center">
             <div style="width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff" :style="{background:i===0?'#f10215':'#ddd'}">{{ i===0 ? '✓' : '' }}</div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSpace, NTag } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchNotifications, sendNotification, type Notification } from '@/api/notification'
 import { useNotify } from '@/composables/useNotify'
@@ -26,14 +28,16 @@ onMounted(load)
     <n-space vertical><n-button type="primary" @click="showModal=true">发送通知</n-button>
       <n-dataTable :columns="columns" :data="items" :pagination="{pageSize:10}" />
     </n-space>
-    <n-modal v-model:show="showModal" title="发送通知" preset="card" style="max-width:400px">
-      <n-form :model="form">
-        <n-form-item label="接收人"><n-input v-model:value="form.username" placeholder="ALL=全员" /></n-form-item>
-        <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
-        <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" /></n-form-item>
-        <n-form-item label="类型"><n-select v-model:value="form.type" :options="[{label:'系统',value:'system'},{label:'订单',value:'order'},{label:'促销',value:'promotion'}]" /></n-form-item>
-      </n-form>
-      <template #footer><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="send">发送</n-button></template>
-    </n-modal>
+    <n-drawer v-model:show="showModal" :width="400" placement="right">
+      <n-drawer-content title="发送通知" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="send">发送</n-button></n-space></template>
+        <n-form :model="form" label-placement="left" label-width="70" size="small">
+          <n-form-item label="接收人"><n-input v-model:value="form.username" placeholder="ALL=全员" /></n-form-item>
+          <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" /></n-form-item>
+          <n-form-item label="类型"><n-select v-model:value="form.type" :options="[{label:'系统',value:'system'},{label:'订单',value:'order'},{label:'促销',value:'promotion'}]" /></n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
   </n-card>
 </template>

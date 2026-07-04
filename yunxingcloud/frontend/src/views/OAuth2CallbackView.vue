@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { NConfigProvider, NResult, NButton, NSpin } from 'naive-ui'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const status = ref<'loading' | 'success' | 'error'>('loading')
@@ -21,7 +23,7 @@ onMounted(() => {
     setTimeout(() => router.push('/'), 1500)
   } else {
     status.value = 'error'
-    message.value = 'OAuth2 登录失败：缺少 token'
+    message.value = t('auth.oauthFailed')
   }
 })
 </script>
@@ -31,8 +33,8 @@ onMounted(() => {
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea,#764ba2)">
       <n-result
         v-if="status === 'loading'"
-        title="正在登录..."
-        description="正在通过第三方平台验证您的身份"
+        :title="t('auth.loggingIn')"
+        :description="t('auth.verifying')"
       >
         <template #icon>
           <n-spin size="large" />
@@ -41,17 +43,17 @@ onMounted(() => {
       <n-result
         v-else-if="status === 'success'"
         status="success"
-        :title="`欢迎，${message}`"
-        description="登录成功，正在跳转..."
+        :title="t('auth.welcomeBack', {name: message})"
+        :description="t('auth.loginRedirect')"
       />
       <n-result
         v-else
         status="error"
-        title="登录失败"
+        :title="t('auth.loginFailed')"
         :description="message"
       >
         <template #footer>
-          <n-button type="primary" @click="router.push('/login')">返回登录</n-button>
+          <n-button type="primary" @click="router.push('/login')">{{ t('auth.backToLogin') }}</n-button>
         </template>
       </n-result>
     </div>

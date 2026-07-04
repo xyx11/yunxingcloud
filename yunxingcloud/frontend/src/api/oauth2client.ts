@@ -8,6 +8,10 @@ export async function createOAuth2Client(data: any) {
   return request.post('/api/oauth2/clients', data)
 }
 
+export async function updateOAuth2Client(id: string, data: any) {
+  return request.put(`/api/oauth2/clients/${id}`, data)
+}
+
 export async function deleteOAuth2Client(id: number) {
   return request.delete(`/api/oauth2/clients/${id}`)
 }

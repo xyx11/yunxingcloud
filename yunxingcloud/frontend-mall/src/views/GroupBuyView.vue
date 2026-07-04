@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/locales'
+const { t } = useI18n()
 import request from '@/api/request'
 import CountdownTimer from '@/components/CountdownTimer.vue'
+import LazyImage from '@/components/LazyImage.vue'
 
 const router = useRouter()
 const groups = ref<any[]>([])
@@ -34,9 +37,9 @@ const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) /
       <div v-for="g in groups" :key="g.id" @click="goProduct(g.productId)"
            style="background:#fff;border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .3s"
            @mouseenter="(e:any) => e.target.style.transform='translateY(-6px)'" @mouseleave="(e:any) => e.target.style.transform=''">
-        <div style="height:200px;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);display:flex;align-items:center;justify-content:center;font-size:64px;position:relative">
-          📦
-          <span style="position:absolute;top:10px;left:10px;background:#f10215;color:#fff;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">{{ g.minMembers }}人团</span>
+        <div style="height:200px;position:relative">
+          <LazyImage :src="g.imageUrl || ''" :alt="g.productName" height="200px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
+          <span style="position:absolute;top:10px;left:10px;z-index:1;background:#f10215;color:#fff;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600">{{ g.minMembers }}人团</span>
           <span style="position:absolute;top:10px;right:10px;color:#f10215;font-size:12px;font-weight:700;background:#fff;padding:2px 8px;border-radius:4px"><CountdownTimer :end-time="g.endTime" compact /></span>
         </div>
         <div style="padding:16px">

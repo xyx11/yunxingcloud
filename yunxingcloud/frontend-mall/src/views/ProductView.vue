@@ -1,72 +1,130 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, onUnmounted, inject, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getProductById, getProductSkus, getProductReviews, getRelatedProducts } from '@/api/product'
+import { getProductDetail } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useI18n } from '@/locales'
+import { ToastInjectionKey } from '@/composables/useToast'
+import type { Product, Sku } from '@/types'
 import ProductRating from '@/components/ProductRating.vue'
-import ImageZoom from '@/components/ImageZoom.vue'
 import ReviewSummary from '@/components/ReviewSummary.vue'
+import LazyImage from '@/components/LazyImage.vue'
+import JdButton from '@/components/JdButton.vue'
 import request from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
-const toast = inject<any>('toast')
-const product = ref<any>(null)
-const skus = ref<any[]>([])
+const toast = inject(ToastInjectionKey)!
+const product = ref<Product | null>(null)
+const skus = ref<Sku[]>([])
 const reviews = ref<any[]>([])
 const related = ref<any[]>([])
-const selectedSku = ref<any>(null)
+const selectedSku = ref<Sku | null>(null)
 const qty = ref(1)
 const favorited = ref(false)
 const loading = ref(true)
 const addAnim = ref(false)
+const shareMenu = ref(false)
+const fullscreen = ref(false)
+const showFloatingBar = ref(false)
+const activeImage = ref(0)
+const images = ref<string[]>([])
+const alertPrice = ref('')
+const showPriceAlert = ref(false)
+const alertSet = ref(false)
+const viewerCount = ref(Math.floor(Math.random() * 200) + 50)
+let viewerTimer: ReturnType<typeof setInterval> | null = null
+
+const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
+const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
+
+function productImage(p: any): string {
+  if (p?.imageUrl && p.imageUrl !== '📦') return p.imageUrl
+  if (p?.images?.length) return p.images[0]
+  return ''
+}
 
 onMounted(async () => {
   const id = route.params.id
   try {
-    const [pRes, skuRes, revRes, relRes] = await Promise.all([
-      getProductById(Number(id)), getProductSkus(Number(id)),
-      getProductReviews(Number(id)), getRelatedProducts(Number(id)),
-    ])
-    product.value = pRes.data; skus.value = skuRes.data || []
-    reviews.value = revRes.data || []; related.value = relRes.data || []
+    const res = await getProductDetail(Number(id))
+    product.value = res.data.product
+    skus.value = res.data.skus || []
+    reviews.value = res.data.reviews || []
+    related.value = res.data.related || []
     const { add } = useRecentlyViewed()
-    if (pRes.data) add({ id: pRes.data.id, name: pRes.data.name, price: pRes.data.price, imageUrl: pRes.data.imageUrl })
+    if (product.value) {
+      add({ id: product.value.id, name: product.value.name, price: product.value.price, imageUrl: product.value.imageUrl })
+    }
   } catch {} finally { loading.value = false }
-  if (auth.isLoggedIn()) {
+
+  if (auth.isLoggedIn) {
     try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch {}
   }
+
+  window.addEventListener('scroll', () => { showFloatingBar.value = window.scrollY > 500 })
+
+  if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
+  else if (product.value?.images) images.value = product.value.images
+  if (!images.value.length) images.value = ['📦']
+
+  viewerTimer = setInterval(() => {
+    viewerCount.value = Math.max(10, viewerCount.value + Math.floor(Math.random() * 7) - 3)
+  }, 5000)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', () => {})
+  if (viewerTimer) clearInterval(viewerTimer)
 })
 
 async function onAddToCart() {
-  if (!auth.isLoggedIn()) { router.push('/login'); return }
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  if (!product.value) return
   try { await addToCart(product.value.id, qty.value); toast.success(t('toast.addedToCart')); addAnim.value = true; setTimeout(() => addAnim.value = false, 600) } catch { toast.error(t('toast.addCartFail')) }
 }
-async function buyNow() { if (!auth.isLoggedIn()) { router.push('/login'); return }; try { await addToCart(product.value.id, qty.value); router.push('/cart') } catch {} }
+async function buyNow() {
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  if (!product.value) return
+  try { await addToCart(product.value.id, qty.value); router.push('/cart') } catch {}
+}
 async function toggleFavorite() {
-  if (!auth.isLoggedIn()) { router.push('/login'); return }
-  try { if (favorited.value) { await removeFavorite(product.value.id); toast.info(t('product.unfavorite')) } else { await addFavorite(product.value.id); toast.success(t('product.favorite')) }; favorited.value = !favorited.value } catch {}
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  if (!product.value) return
+  try {
+    if (favorited.value) { await removeFavorite(product.value.id); toast.info(t('product.unfavorite')) }
+    else { await addFavorite(product.value.id); toast.success(t('product.favorite')) }
+    favorited.value = !favorited.value
+  } catch {}
 }
 
-// 价格提醒
-const alertPrice = ref('')
-const showPriceAlert = ref(false)
-const alertSet = ref(false)
-function setPriceAlert() { if (!auth.isLoggedIn()) { router.push('/login'); return }; alertPrice.value = String((displayPrice() / 100).toFixed(2)); showPriceAlert.value = true }
+function setPriceAlert() {
+  if (!auth.isLoggedIn) { router.push('/login'); return }
+  if (!product.value) return
+  alertPrice.value = String((displayPrice() / 100).toFixed(2))
+  showPriceAlert.value = true
+}
 async function confirmPriceAlert() {
+  if (!product.value) return
   try { await request.post('/price-alert', { productId: product.value.id, targetPrice: Number(alertPrice.value) * 100 }); alertSet.value = true; showPriceAlert.value = false; toast.success('降价时将通过通知提醒您') } catch { toast.error('设置失败') }
 }
-const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
-const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
+
+async function shareProduct() {
+  const url = window.location.href
+  const title = product.value?.name || ''
+  if (navigator.share) { try { await navigator.share({ title, url }) } catch {} }
+  else { await navigator.clipboard.writeText(url); toast.success('链接已复制') }
+  shareMenu.value = false
+}
+
 function goDetail(id: number) { router.push(`/product/${id}`) }
 
-// 触屏滑动
+// Touch swipe
 let touchX = 0
 function onTouchStart(e: TouchEvent) { touchX = e.touches[0].clientX }
 function onTouchEnd(e: TouchEvent) {
@@ -76,146 +134,319 @@ function onTouchEnd(e: TouchEvent) {
   }
 }
 
-// 分享
-const shareMenu = ref(false)
-async function shareProduct() {
-  const url = window.location.href; const title = product.value?.name || ''
-  if (navigator.share) { try { await navigator.share({ title, url }) } catch {} }
-  else { await navigator.clipboard.writeText(url); toast.success('链接已复制') }
-  shareMenu.value = false
-}
-
-// 图片画廊
-const images = ref<string[]>([])
-const activeImage = ref(0)
-const fullscreen = ref(false)
-onMounted(() => {
-  if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
-  else if (product.value?.images) images.value = product.value.images
-  if (!images.value.length) images.value = ['📦']
-})
+const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff', '绿': '#4caf50', '黄': '#ffc107', '紫': '#9c27b0', '黑': '#333', '白': '#fff', '灰': '#999', '粉': '#e91e63', '金': '#ffc107', '银': '#ccc', '橙': '#ff9800' }
 </script>
 
 <template>
-  <div v-if="loading" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-    <div style="width:420px;height:420px;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;flex-shrink:0"></div>
-    <div style="flex:1"><div style="height:28px;width:60%;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:16px"></div></div>
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <span @click="router.push('/')" class="crumb-link">首页</span><span>/</span>
+    <span v-if="product?.categoryId" @click="router.push('/products?categoryId=' + product.categoryId)" class="crumb-link">{{ (product as any).categoryName || '分类' }}</span><span v-if="product?.categoryId">/</span>
+    <span class="crumb-current">{{ product?.name || '商品详情' }}</span>
   </div>
-  <div v-else-if="product" style="display:flex;gap:32px;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
-    <div style="width:420px;flex-shrink:0">
-      <div @touchstart="onTouchStart" @touchend="onTouchEnd" class="product-image-area" @click="fullscreen=true">
-        <ImageZoom :src="images[activeImage]" :alt="product.name" height="420px" style="margin-bottom:12px" />
+
+  <!-- Skeleton -->
+  <div v-if="loading" class="pdp-skeleton">
+    <div class="sk-img" />
+    <div class="sk-body"><div class="sk-line" style="width:60%;height:28px;margin-bottom:16px" /></div>
+  </div>
+
+  <!-- Main Product -->
+  <div v-else-if="product" class="pdp-main">
+    <!-- Gallery -->
+    <div class="gallery">
+      <div @touchstart="onTouchStart" @touchend="onTouchEnd" @click="fullscreen = true" class="gallery-main">
+        <LazyImage :src="images[activeImage]" :alt="product.name" height="420px" rounded="8px" />
       </div>
-      <div v-if="fullscreen" @click="fullscreen=false" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s">
-        <button @click.stop="fullscreen=false" style="position:absolute;top:16px;right:16px;z-index:2;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;border:none;font-size:18px;cursor:pointer">✕</button>
-        <img v-if="images[activeImage] && images[activeImage]!=='📦'" :src="images[activeImage]" style="max-width:100%;max-height:100%;object-fit:contain" />
-        <span v-else style="font-size:120px">📦</span>
-        <div v-if="images.length > 1" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:4px">
-          <button v-for="(img, i) in images" :key="i" @click.stop="activeImage=i" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer" :style="{background:activeImage===i?'#f10215':'rgba(255,255,255,.4)'}"></button>
+
+      <!-- Fullscreen -->
+      <div v-if="fullscreen" class="fullscreen-overlay" @click="fullscreen = false">
+        <button class="fs-close" @click.stop="fullscreen = false" aria-label="关闭">✕</button>
+        <button v-if="images.length > 1" class="fs-nav fs-nav--prev" @click.stop="activeImage = activeImage > 0 ? activeImage - 1 : images.length - 1" aria-label="上一张">‹</button>
+        <button v-if="images.length > 1" class="fs-nav fs-nav--next" @click.stop="activeImage = activeImage < images.length - 1 ? activeImage + 1 : 0" aria-label="下一张">›</button>
+        <img v-if="images[activeImage] && images[activeImage] !== '📦'" :src="images[activeImage]" class="fs-img" />
+        <span v-else class="fs-placeholder">📦</span>
+        <div v-if="images.length > 1" class="fs-dots">
+          <button v-for="(_img, i) in images" :key="i" class="fs-dot" :class="{ active: activeImage === i }" @click.stop="activeImage = i" />
         </div>
       </div>
-      <div v-if="images.length > 1" style="display:flex;gap:8px">
-        <div v-for="(img, i) in images" :key="i" @click="activeImage = i"
-             style="width:60px;height:60px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;transition:border .2s"
-             :style="{border: activeImage===i ? '2px solid #f10215' : '1px solid #ddd'}">
-          <img v-if="img !== '📦'" :src="img" style="width:100%;height:100%;object-fit:cover" />
-          <span v-else>📦</span>
+
+      <!-- Thumbnails -->
+      <div v-if="images.length > 1" class="thumbnails">
+        <div v-for="(img, i) in images" :key="i" class="thumb" :class="{ active: activeImage === i }" @click="activeImage = i">
+          <LazyImage :src="img" alt="" height="100%" />
         </div>
       </div>
     </div>
-    <div style="flex:1">
-      <h1 style="font-size:22px;margin-bottom:8px">{{ product.name }}<span style="font-size:11px;background:#f10215;color:#fff;padding:1px 6px;border-radius:3px;margin-left:8px;vertical-align:middle;font-weight:400">自营</span></h1>
-      <p style="color:#f10215;font-size:13px;margin-bottom:8px">{{ product.description || '' }}</p>
-      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+
+    <!-- Info -->
+    <div class="pdp-info">
+      <h1 class="pdp-name">{{ product.name }}<span class="jd-tag">自营</span></h1>
+      <p class="pdp-desc">{{ product.description || '' }}</p>
+
+      <div class="pdp-rating">
         <ProductRating v-if="product.rating" :rating="product.rating || 0" :count="reviews.length" />
-        <span v-if="!product.rating" style="color:#aaa;font-size:12px">暂无评分</span>
+        <span v-else class="no-rating">暂无评分</span>
       </div>
-      <div style="background:linear-gradient(135deg,#fff5f5,#fff0f0);padding:20px;border-radius:8px;margin-bottom:16px">
-        <div style="display:flex;align-items:baseline;gap:12px">
-          <span style="color:#999;font-size:13px">{{ t('product.price') }}</span>
-          <span style="color:#f10215;font-size:32px;font-weight:700">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
-          <span v-if="displayStock() > 0 && displayStock() <= 10" style="margin-left:8px;padding:2px 6px;background:#fff3cd;color:#856404;border-radius:3px;font-size:11px">仅剩 {{ displayStock() }} 件</span>
-          <span v-if="displayStock() === 0" style="margin-left:8px;padding:2px 6px;background:#f8d7da;color:#721c24;border-radius:3px;font-size:11px">暂时缺货</span>
-          <button @click="setPriceAlert" style="margin-left:8px;background:none;border:1px solid #f10215;color:#f10215;border-radius:4px;cursor:pointer;font-size:12px;padding:2px 8px;white-space:nowrap" :style="alertSet?{background:'#f10215',color:'#fff'}:{}">{{ alertSet ? '🔔 已设置' : '🔔 降价提醒' }}</button>
+
+      <!-- Price Box -->
+      <div class="price-box">
+        <div class="price-row">
+          <span class="price-label">{{ t('product.price') }}</span>
+          <span class="price-value">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
+          <span v-if="displayStock() > 0 && displayStock() <= 10" class="stock-warn">仅剩 {{ displayStock() }} 件</span>
+          <span v-if="displayStock() === 0" class="stock-out">暂时缺货</span>
+          <button class="alert-btn" :class="{ set: alertSet }" @click="setPriceAlert">{{ alertSet ? '🔔 已设置' : '🔔 降价提醒' }}</button>
         </div>
-        <div style="display:flex;gap:24px;margin-top:12px;font-size:13px;color:#666">
-          <span>{{ t('product.salesCount') }} <b style="color:#f10215">{{ product.sales || 0 }}</b></span>
+        <div class="meta-row">
+          <span>{{ t('product.salesCount') }} <b class="text-red">{{ product.sales || 0 }}</b></span>
+          <span>👁 <b class="text-blue">{{ viewerCount }}</b> 人正在看</span>
           <span>{{ t('product.stock') }} <b>{{ displayStock() }}</b></span>
         </div>
       </div>
-      <div v-if="skus.length" style="margin-bottom:16px">
-        <div style="font-size:13px;color:#666;margin-bottom:8px">{{ t('product.skuSelector') }}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          <span v-for="sku in skus" :key="sku.id" @click="selectedSku = sku"
-                style="padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;font-weight:500;display:flex;align-items:center;gap:6px"
-                :style="{border:selectedSku?.id===sku.id?'2px solid #f10215':'1px solid #ddd',color:selectedSku?.id===sku.id?'#f10215':'#333',background:selectedSku?.id===sku.id?'#fff0f0':'#fff'}">
-            <span v-if="sku.specs && /红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/i.test(sku.specs || sku.name)"
-                  style="width:14px;height:14px;border-radius:50%;border:1px solid #ddd;display:inline-block;flex-shrink:0"
-                  :style="{background:({'红':'#f10215','蓝':'#1677ff','绿':'#4caf50','黄':'#ffc107','紫':'#9c27b0','黑':'#333','白':'#fff','灰':'#999','粉':'#e91e63','金':'#ffc107','银':'#ccc','橙':'#ff9800'} as any)[sku.specs?.match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''] || '#ddd'}">
-            </span>
+
+      <!-- SKU Selector -->
+      <div v-if="skus.length" class="sku-section">
+        <div class="sku-label">{{ t('product.skuSelector') }}</div>
+        <div class="sku-grid">
+          <span v-for="sku in skus" :key="sku.id" class="sku-item" :class="{ selected: selectedSku?.id === sku.id }" @click="selectedSku = sku">
+            <span v-if="(sku as any).specs" class="sku-color" :style="{ background: SKU_COLORS[((sku as any).specs || '').match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''] || '#ddd' }" />
             {{ sku.name }}
-            <span style="font-size:11px;color:#999">¥{{ (sku.price/100).toFixed(2) }}</span>
+            <span class="sku-price">¥{{ (sku.price / 100).toFixed(2) }}</span>
           </span>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <span style="font-size:13px;color:#666">{{ t('product.quantity') }}</span>
-        <button @click="qty = Math.max(1, qty - 1)" style="width:32px;height:32px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:18px;border-radius:4px">-</button>
-        <span style="width:44px;text-align:center;font-size:15px">{{ qty }}</span>
-        <button @click="qty = Math.min(displayStock(), qty + 1)" style="width:32px;height:32px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:18px;border-radius:4px">+</button>
+
+      <!-- Quantity -->
+      <div class="qty-row">
+        <span class="qty-label">{{ t('product.quantity') }}</span>
+        <button class="qty-btn" @click="qty = Math.max(1, qty - 1)">-</button>
+        <span class="qty-val">{{ qty }}</span>
+        <button class="qty-btn" @click="qty = Math.min(displayStock(), qty + 1)">+</button>
       </div>
-      <div style="display:flex;gap:12px">
-        <button @click="onAddToCart" style="flex:1;height:48px;background:#fff;border:2px solid #f10215;color:#f10215;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;transition:all .2s"
-                @mouseenter="(e:any) => { e.target.style.background='#fff0f0' }" @mouseleave="(e:any) => { e.target.style.background='#fff' }" :class="{ 'cart-bounce': addAnim }">{{ t('product.addToCart') }}</button>
-        <button @click="buyNow" style="flex:1;height:48px;background:#f10215;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;transition:all .2s"
-                @mouseenter="(e:any) => { e.target.style.background='#d4000f' }" @mouseleave="(e:any) => { e.target.style.background='#f10215' }">{{ t('product.buyNow') }}</button>
-        <button @click="toggleFavorite" style="width:48px;height:48px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:22px;background:#fff;transition:all .2s"
-                :style="{color:favorited?'#f10215':'#999'}">{{ favorited ? '❤️' : '🤍' }}</button>
-        <button @click="shareProduct" style="width:48px;height:48px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:18px;background:#fff;transition:all .2s;color:#666"
-                @mouseenter="(e:any) => { e.target.style.background='#f0f0f0' }" @mouseleave="(e:any) => { e.target.style.background='#fff' }">📤</button>
+
+      <!-- Actions -->
+      <div class="action-row">
+        <JdButton type="outline" size="lg" class="flex-1" @click="onAddToCart">{{ t('product.addToCart') }}</JdButton>
+        <JdButton size="lg" class="flex-1" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
+        <button class="icon-btn" :class="{ active: favorited }" @click="toggleFavorite" aria-label="收藏">{{ favorited ? '❤️' : '🤍' }}</button>
+        <button class="icon-btn" @click="shareProduct" aria-label="分享">📤</button>
       </div>
     </div>
   </div>
-  <div v-if="product" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">{{ t('product.reviews') }} ({{ reviews.length }})</h3>
+
+  <!-- Reviews -->
+  <div v-if="product" class="pdp-section">
+    <h3 class="section-title">{{ t('product.reviews') }} ({{ reviews.length }})</h3>
     <ReviewSummary v-if="reviews.length" :reviews="reviews" />
-    <div v-if="reviews.length"><div v-for="r in reviews" :key="r.id" style="padding:16px 0;border-bottom:1px solid #f5f5f5">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:14px">{{ r.username }}</span><span style="color:#f90;font-size:14px">{{ '★'.repeat(r.rating) }}</span></div><span style="color:#999;font-size:12px">{{ r.createdAt?.substring(0,10) }}</span></div>
-      <p style="font-size:14px;color:#333;line-height:1.6">{{ r.content }}</p>
-    </div></div>
-    <div v-else style="text-align:center;padding:30px;color:#999">{{ t('product.noReviews') }}</div>
+    <div v-if="reviews.length">
+      <div v-for="r in reviews" :key="r.id" class="review-item">
+        <div class="review-header">
+          <div class="review-user">
+            <span class="review-username">{{ r.username }}</span>
+            <span class="review-stars">{{ '★'.repeat(r.rating) }}</span>
+          </div>
+          <span class="review-date">{{ r.createdAt?.substring(0, 10) }}</span>
+        </div>
+        <p class="review-content">{{ r.content }}</p>
+      </div>
+    </div>
+    <div v-else class="empty-text">{{ t('product.noReviews') }}</div>
   </div>
+
+  <!-- Specs -->
+  <div v-if="product" class="pdp-section">
+    <h3 class="section-title">规格参数</h3>
+    <div class="spec-grid">
+      <div class="spec-row"><span class="spec-label">商品名称</span><span>{{ product.name }}</span></div>
+      <div class="spec-row"><span class="spec-label">商品编号</span><span>{{ product.id }}</span></div>
+      <div v-if="(product as any).brandId" class="spec-row"><span class="spec-label">品牌</span><span>{{ (product as any).brandName || '品牌#' + (product as any).brandId }}</span></div>
+      <div class="spec-row"><span class="spec-label">上架时间</span><span>{{ (product as any).createdAt?.substring(0, 10) || '-' }}</span></div>
+    </div>
+  </div>
+
+  <!-- Related -->
   <div v-if="related.length">
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">{{ t('product.relatedProducts') }}</h3>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-      <div v-for="p in related" :key="p.id" @click="goDetail(p.id)" style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s"
-           @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''" :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
-        <div style="height:140px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:36px">📦</div>
-        <div style="padding:8px 12px"><h5 style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">{{ p.name }}</h5><span style="color:#f10215;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span></div>
-      </div>
-    </div>
-    <div v-if="showPriceAlert" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:300">
-      <div style="background:#fff;border-radius:12px;padding:24px;width:360px;max-width:90vw">
-        <h3 style="font-size:18px;font-weight:600;margin-bottom:16px">🔔 设置降价提醒</h3>
-        <p style="color:#666;font-size:13px;margin-bottom:12px">当商品价格低于目标价时，将通知您</p>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <span style="font-size:13px;color:#666">目标价 ¥</span>
-          <input v-model="alertPrice" type="number" step="0.01" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px" />
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button @click="showPriceAlert=false" style="padding:8px 16px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-          <button @click="confirmPriceAlert" style="padding:8px 16px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">确认设置</button>
+    <h3 class="section-title">{{ t('product.relatedProducts') }}</h3>
+    <div class="related-grid">
+      <div v-for="p in related" :key="p.id" class="related-card" @click="goDetail(p.id)">
+        <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
+        <div class="related-info">
+          <h5 class="related-name">{{ p.name }}</h5>
+          <span class="related-price">¥{{ (p.price / 100).toFixed(2) }}</span>
         </div>
       </div>
-    <div class="mobile-sticky-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:10px 16px;z-index:200;align-items:center;gap:12px;box-shadow:0 -2px 8px rgba(0,0,0,.06)">
-      <div style="flex:1"><span style="color:#f10215;font-size:20px;font-weight:700">¥{{ (displayPrice()/100).toFixed(2) }}</span></div>
-      <button @click="onAddToCart" style="flex:1;height:40px;background:#fff;border:2px solid #f10215;color:#f10215;border-radius:20px;font-size:14px;font-weight:600">加入购物车</button>
-      <button @click="buyNow" style="flex:1;height:40px;background:#f10215;color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:600">立即购买</button>
     </div>
+  </div>
+
+  <!-- Price Alert Modal -->
+  <div v-if="showPriceAlert" class="modal-overlay" @click.self="showPriceAlert = false">
+    <div class="alert-modal">
+      <h3 class="alert-title">🔔 设置降价提醒</h3>
+      <p class="alert-desc">当商品价格低于目标价时，将通知您</p>
+      <div class="alert-input-row">
+        <span class="alert-input-label">目标价 ¥</span>
+        <input v-model="alertPrice" type="number" step="0.01" class="alert-input" />
+      </div>
+      <div class="alert-actions">
+        <JdButton type="ghost" @click="showPriceAlert = false">取消</JdButton>
+        <JdButton @click="confirmPriceAlert">确认设置</JdButton>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Bar -->
+  <div v-if="showFloatingBar && product" class="floating-bar">
+    <LazyImage :src="images[activeImage]" :alt="product.name" height="48px" width="48px" rounded="6px" />
+    <div class="floating-name">{{ product.name }}</div>
+    <span class="floating-price">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
+    <JdButton type="outline" @click="onAddToCart">{{ t('product.addToCart') }}</JdButton>
+    <JdButton @click="buyNow">{{ t('product.buyNow') }}</JdButton>
+  </div>
+
+  <!-- Mobile Sticky Bar -->
+  <div v-if="product" class="mobile-bar">
+    <div class="mobile-bar-price">¥{{ (displayPrice() / 100).toFixed(2) }}</div>
+    <JdButton type="outline" class="flex-1" @click="onAddToCart">加入购物车</JdButton>
+    <JdButton class="flex-1" @click="buyNow">立即购买</JdButton>
   </div>
 </template>
+
 <style scoped>
-@media (max-width: 768px) { .mobile-sticky-bar { display: flex !important; } }
+.breadcrumb { font-size: var(--font-sm); color: var(--text-tertiary); margin-bottom: var(--space-md); display: flex; align-items: center; gap: 6px; }
+.crumb-link { cursor: pointer; color: var(--text-secondary); }
+.crumb-link:hover { color: var(--jd-red); }
+.crumb-current { color: var(--text-primary); }
+
+/* Skeleton */
+.pdp-skeleton { display: flex; gap: var(--space-xxxl); background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxxl); box-shadow: var(--shadow-sm); }
+.sk-img { width: 420px; height: 420px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); flex-shrink: 0; }
+.sk-body { flex: 1; }
+.sk-line { background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+
+/* Main */
+.pdp-main { display: flex; gap: var(--space-xxxl); background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); }
+.gallery { width: 420px; flex-shrink: 0; }
+.gallery-main { cursor: zoom-in; }
+.thumbnails { display: flex; gap: var(--space-sm); margin-top: var(--space-sm); }
+.thumb { width: 60px; height: 60px; border-radius: var(--radius-sm); cursor: pointer; overflow: hidden; border: 1px solid var(--border); transition: border var(--transition-fast); }
+.thumb.active { border: 2px solid var(--jd-red); }
+
+/* Fullscreen */
+.fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.95); z-index: 9999; display: flex; align-items: center; justify-content: center; animation: fadeIn .2s; }
+.fs-close { position: absolute; top: var(--space-lg); right: var(--space-lg); z-index: 2; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.2); color: #fff; border: none; font-size: var(--font-lg); cursor: pointer; }
+.fs-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.15); color: #fff; border: none; font-size: var(--font-xxl); cursor: pointer; transition: background var(--transition); }
+.fs-nav:hover { background: rgba(255,255,255,.3); }
+.fs-nav--prev { left: var(--space-lg); }
+.fs-nav--next { right: var(--space-lg); }
+.fs-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.fs-placeholder { font-size: 120px; }
+.fs-dots { position: absolute; bottom: var(--space-xl); left: 50%; transform: translateX(-50%); display: flex; gap: var(--space-xs); }
+.fs-dot { width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer; background: rgba(255,255,255,.4); }
+.fs-dot.active { background: var(--jd-red); }
+
+/* Info */
+.pdp-info { flex: 1; }
+.pdp-name { font-size: var(--font-title); margin-bottom: var(--space-sm); display: flex; align-items: center; }
+.jd-tag { font-size: var(--font-xs); background: var(--jd-red); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: var(--space-sm); font-weight: 400; }
+.pdp-desc { color: var(--jd-red); font-size: var(--font-base); margin-bottom: var(--space-sm); }
+.pdp-rating { margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
+.no-rating { color: var(--text-placeholder); font-size: var(--font-sm); }
+
+/* Price Box */
+.price-box { background: linear-gradient(135deg, var(--jd-red-light), var(--jd-red-bg)); padding: var(--space-xl); border-radius: var(--radius-md); margin-bottom: var(--space-lg); }
+.price-row { display: flex; align-items: baseline; gap: var(--space-md); flex-wrap: wrap; }
+.price-label { color: var(--text-tertiary); font-size: var(--font-base); }
+.price-value { color: var(--jd-red); font-size: 32px; font-weight: 700; }
+.stock-warn { padding: 2px 6px; background: #fff3cd; color: #856404; border-radius: 3px; font-size: var(--font-xs); }
+.stock-out { padding: 2px 6px; background: #f8d7da; color: #721c24; border-radius: 3px; font-size: var(--font-xs); }
+.alert-btn { background: none; border: 1px solid var(--jd-red); color: var(--jd-red); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm); padding: 2px 8px; white-space: nowrap; }
+.alert-btn.set { background: var(--jd-red); color: #fff; }
+.meta-row { display: flex; gap: var(--space-xxl); margin-top: var(--space-md); font-size: var(--font-base); color: var(--text-secondary); }
+.text-red { color: var(--jd-red); }
+.text-blue { color: var(--blue); }
+
+/* SKU */
+.sku-section { margin-bottom: var(--space-lg); }
+.sku-label { font-size: var(--font-base); color: var(--text-secondary); margin-bottom: var(--space-sm); }
+.sku-grid { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.sku-item { padding: var(--space-sm) var(--space-lg); border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-base); transition: all var(--transition); font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); color: var(--text-primary); background: var(--bg-white); }
+.sku-item.selected { border: 2px solid var(--jd-red); color: var(--jd-red); background: var(--jd-red-light); }
+.sku-color { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border); display: inline-block; flex-shrink: 0; }
+.sku-price { font-size: var(--font-xs); color: var(--text-tertiary); }
+
+/* Quantity */
+.qty-row { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-xxl); }
+.qty-label { font-size: var(--font-base); color: var(--text-secondary); }
+.qty-btn { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--bg-white); cursor: pointer; font-size: var(--font-lg); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+.qty-btn:hover { background: var(--bg-hover); }
+.qty-val { width: 44px; text-align: center; font-size: 15px; }
+
+/* Actions */
+.action-row { display: flex; gap: var(--space-md); }
+.icon-btn { width: 48px; height: 48px; border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-xl); background: var(--bg-white); transition: all var(--transition-fast); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; }
+.icon-btn:hover { background: var(--bg-hover); }
+.icon-btn.active { color: var(--jd-red); }
+
+/* Sections */
+.pdp-section { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); }
+.section-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
+
+/* Reviews */
+.review-item { padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); }
+.review-header { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); }
+.review-user { display: flex; align-items: center; gap: var(--space-sm); }
+.review-username { font-weight: 600; font-size: var(--font-md); }
+.review-stars { color: var(--orange); font-size: var(--font-md); }
+.review-date { color: var(--text-tertiary); font-size: var(--font-sm); }
+.review-content { font-size: var(--font-md); color: var(--text-primary); line-height: 1.6; }
+
+/* Specs */
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; font-size: var(--font-base); }
+.spec-row { display: flex; border-bottom: 1px solid var(--border-light); padding: var(--space-md) 0; }
+.spec-label { color: var(--text-tertiary); width: 100px; flex-shrink: 0; }
+
+/* Related */
+.related-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); }
+.related-card { background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform var(--transition); }
+.related-card:hover { transform: translateY(-4px); }
+.related-info { padding: var(--space-sm) var(--space-md); }
+.related-name { font-size: var(--font-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: var(--space-xs); color: var(--text-primary); }
+.related-price { color: var(--jd-red); font-size: var(--font-lg); font-weight: 700; }
+
+.empty-text { text-align: center; padding: 30px; color: var(--text-tertiary); }
+
+/* Alert Modal */
+.alert-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); width: 360px; max-width: 90vw; }
+.alert-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-lg); }
+.alert-desc { color: var(--text-secondary); font-size: var(--font-base); margin-bottom: var(--space-md); }
+.alert-input-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-lg); }
+.alert-input-label { font-size: var(--font-base); color: var(--text-secondary); }
+.alert-input { flex: 1; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); background: var(--bg-white); color: var(--text-primary); }
+.alert-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
+
+/* Floating Bar */
+.floating-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 150; background: var(--bg-white); box-shadow: var(--shadow-md); padding: var(--space-sm) var(--space-xxl); align-items: center; gap: var(--space-xl); animation: slideDown .3s ease-out; }
+.floating-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.floating-price { color: var(--jd-red); font-size: var(--font-title); font-weight: 700; white-space: nowrap; }
+
+/* Mobile Bar */
+.mobile-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-white); border-top: 1px solid var(--border-light); padding: var(--space-md) var(--space-lg); z-index: 200; align-items: center; gap: var(--space-md); box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+.mobile-bar-price { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; white-space: nowrap; }
+
+.flex-1 { flex: 1; }
+
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes cartBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-.cart-bounce { animation: cartBounce .3s ease; }</style>
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (min-width: 769px) { .floating-bar { display: flex; } }
+@media (max-width: 768px) {
+  .pdp-main { flex-direction: column; padding: var(--space-md); }
+  .gallery { width: 100%; }
+  .related-grid { grid-template-columns: repeat(2, 1fr); }
+  .pdp-section { padding: var(--space-md); }
+  .mobile-bar { display: flex; }
+  .floating-bar { display: none; }
+}
+</style>

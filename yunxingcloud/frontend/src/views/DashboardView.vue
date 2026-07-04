@@ -4,7 +4,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 
 let _es: EventSource | null = null
 let _timer: ReturnType<typeof setInterval> | null = null
-onBeforeUnmount(() => { _es?.close(); if (_timer) clearInterval(_timer) })
+onBeforeUnmount(() => { _es?.close(); if (_timer) clearInterval(_timer); if (orderPollTimer) clearInterval(orderPollTimer) })
 import { useRouter } from 'vue-router'
 import { fetchDashboard, fetchRecentNotices, fetchRecentLogs } from '@/api/stats'
 import { fetchSystemInfo } from '@/api/system'
@@ -26,6 +26,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 const liveStatsStore = useLiveStatsStore()
 const stats = ref({ userCount: 0, menuCount: 0, operLogCount: 0, jobCount: 0, deptCount: 0, roleCount: 0, configCount: 0, noticeCount: 0, todayLoginCount: 0, todayLoginFailCount: 0, weeklyOps: [], bizTypeDist: [] })
+const bizStats = ref({ todayOrders: 0, todayRevenue: 0, pendingPay: 0, pendingShip: 0, lowStock: 0, newUsers: 0, totalProducts: 0 })
+const newOrderAlert = ref(false); const newOrderCount = ref(0); let orderPollTimer: any = null
+let lastOrderCount = 0
 const greeting = computed(() => {
   const h = new Date().getHours()
   const name = authStore.username || ''
@@ -99,11 +102,41 @@ async function refreshDashboard() {
       stats.value.deptCount = Array.isArray(d.data) ? d.data.length : 0
       stats.value.roleCount = Array.isArray(r.data) ? r.data.length : 0
     } catch { /* ignore */ }
+    try {
+      const [s, o, inv] = await Promise.all([
+        import('@/api/analytics').then(m => m.fetchSalesOverview().catch(()=>({data:{}}))),
+        import('@/api/order').then(m => m.fetchOrders().catch(()=>({data:[]}))),
+        import('@/api/inventory').then(m => m.fetchInventory().catch(()=>({data:[]}))),
+      ])
+      bizStats.value.todayOrders = s.data?.todayOrders || 0
+      bizStats.value.todayRevenue = s.data?.todayRevenue || 0
+      const orders = o.data || []
+      bizStats.value.pendingPay = orders.filter((x:any) => x.status === '0').length
+      bizStats.value.pendingShip = orders.filter((x:any) => x.status === '1').length
+      const invData = inv.data || []
+      bizStats.value.lowStock = invData.filter((x:any) => x.quantity <= (x.minQuantity || 5)).length
+      bizStats.value.totalProducts = invData.length
+      bizStats.value.newUsers = s.data?.newUsers || 0
+    } catch { /* ignore */ }
     updateTimestamp()
   } catch { /* ignore */ }
 }
 
+function pollNewOrders() {
+  import('@/api/order').then(m => m.fetchOrders().then(r => {
+    const orders = r.data || []
+    const count = orders.length
+    if (lastOrderCount > 0 && count > lastOrderCount) {
+      newOrderCount.value = count - lastOrderCount
+      newOrderAlert.value = true
+      setTimeout(() => { newOrderAlert.value = false }, 5000)
+    }
+    lastOrderCount = count
+  }).catch(() => {}))
+}
 onMounted(async () => {
+  pollNewOrders()
+  orderPollTimer = setInterval(pollNewOrders, 30000)
   try {
     const res = await fetchDashboard()
     stats.value = res.data
@@ -162,25 +195,51 @@ onMounted(async () => {
         </n-space>
       </div>
 
+      <div v-if="newOrderAlert" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:1px solid #f10215;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;animation:fadeIn .3s">
+        <span>🔔 <b>{{ newOrderCount }} 笔新订单</b>，请及时处理</span>
+        <n-button size="tiny" @click="newOrderAlert=false;router.push('/orders')" type="error">查看订单</n-button>
+      </div>
+      <!-- 业务 KPI -->
+      <n-grid cols="6" x-gap="12" y-gap="12" responsive="screen" style="margin-bottom:12px">
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #18a058"><n-statistic label="今日订单"><template #prefix>📦</template>{{ bizStats.todayOrders }}</n-statistic></n-card>
+        </n-grid-item>
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #2080f0"><n-statistic label="今日营收"><template #prefix>💰</template><template #suffix>元</template>{{ ((bizStats.todayRevenue || 0)/100).toFixed(0) }}</n-statistic></n-card>
+        </n-grid-item>
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #f0a020;cursor:pointer" @click="router.push('/orders')"><n-statistic label="待处理"><template #prefix>⏳</template>{{ bizStats.pendingPay + bizStats.pendingShip }}<template #suffix><span style="font-size:11px;color:#999">待付{{bizStats.pendingPay}}/待发{{bizStats.pendingShip}}</span></template></n-statistic></n-card>
+        </n-grid-item>
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #d03050;cursor:pointer" @click="router.push('/inventory')"><n-statistic label="库存预警"><template #prefix>⚠️</template>{{ bizStats.lowStock }}<template #suffix><span style="font-size:11px;color:#999">/{{bizStats.totalProducts}}件</span></template></n-statistic></n-card>
+        </n-grid-item>
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #7c3aed;cursor:pointer" @click="router.push('/products')"><n-statistic label="商品总数"><template #prefix>🏷</template>{{ bizStats.totalProducts }}</n-statistic></n-card>
+        </n-grid-item>
+        <n-grid-item span="6 m:3 l:2">
+          <n-card size="small" style="border-left:3px solid #667eea;cursor:pointer" @click="router.push('/users')"><n-statistic label="新增用户"><template #prefix>👤</template>{{ bizStats.newUsers }}</n-statistic></n-card>
+        </n-grid-item>
+      </n-grid>
+
       <!-- 核心统计卡片 -->
       <n-grid cols="8" x-gap="12" y-gap="12" responsive="screen" item-responsive>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/users')"><n-statistic :label="t('dashboard.users')"><template #prefix>👥</template>{{ stats.userCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #667eea" @click="router.push('/users')"><n-statistic :label="t('dashboard.users')"><template #prefix><span style="background:#667eea15;padding:4px 8px;border-radius:6px;margin-right:8px">👥</span></template>{{ stats.userCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/roles')"><n-statistic :label="t('dashboard.roles')"><template #prefix>🛡</template>{{ stats.roleCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #f0a020" @click="router.push('/roles')"><n-statistic :label="t('dashboard.roles')"><template #prefix><span style="background:#f0a02015;padding:4px 8px;border-radius:6px;margin-right:8px">🛡</span></template>{{ stats.roleCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/departments')"><n-statistic :label="t('dashboard.departments')"><template #prefix>🏢</template>{{ stats.deptCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #18a058" @click="router.push('/departments')"><n-statistic :label="t('dashboard.departments')"><template #prefix><span style="background:#18a05815;padding:4px 8px;border-radius:6px;margin-right:8px">🏢</span></template>{{ stats.deptCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/posts')"><n-statistic :label="t('dashboard.posts')"><template #prefix>👔</template>{{ stats.jobCount > 0 ? t('common.enabled') : '-' }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #2080f0" @click="router.push('/posts')"><n-statistic :label="t('dashboard.posts')"><template #prefix><span style="background:#2080f015;padding:4px 8px;border-radius:6px;margin-right:8px">👔</span></template>{{ stats.jobCount > 0 ? t('common.enabled') : '-' }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/menus')"><n-statistic :label="t('dashboard.menus')"><template #prefix>📋</template>{{ stats.menuCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #d03050" @click="router.push('/menus')"><n-statistic :label="t('dashboard.menus')"><template #prefix><span style="background:#d0305015;padding:4px 8px;border-radius:6px;margin-right:8px">📋</span></template>{{ stats.menuCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/operlog')"><n-statistic :label="t('dashboard.operlogs')"><template #prefix>📊</template>{{ stats.operLogCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #7c3aed" @click="router.push('/operlog')"><n-statistic :label="t('dashboard.operlogs')"><template #prefix><span style="background:#7c3aed15;padding:4px 8px;border-radius:6px;margin-right:8px">📊</span></template>{{ stats.operLogCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
           <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/config')"><n-statistic :label="t('dashboard.configs')"><template #prefix>⚙</template>{{ stats.configCount || 0 }}</n-statistic></n-card>

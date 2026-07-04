@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getBanners, getHotProducts, getNewProducts, getCategories, getRecommend } from '@/api/product'
+import { getHomeData } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import { formatPrice, formatCount } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
+import LazyImage from '@/components/LazyImage.vue'
+import SkeletonBox from '@/components/SkeletonBox.vue'
+import JdEmpty from '@/components/JdEmpty.vue'
+import JdButton from '@/components/JdButton.vue'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
 const { items: recentItems } = useRecentlyViewed()
+
 const banners = ref<any[]>([])
 const hotProducts = ref<any[]>([])
 const newProducts = ref<any[]>([])
@@ -20,189 +26,333 @@ const categories = ref<any[]>([])
 const recommended = ref<any[]>([])
 const activeTab = ref<'hot' | 'new' | 'flash'>('hot')
 const currentBanner = ref(0)
-let bannerTimer: any = null
-
-async function loadData() {
-  try { const r = await getBanners(); banners.value = r.data || [] } catch {}
-  try { const r = await getHotProducts(); hotProducts.value = r.data || [] } catch {}
-  try { const r = await getNewProducts(); newProducts.value = r.data || [] } catch {}
-  try { const r = await getCategories(); categories.value = r.data || [] } catch {}
-  try { const r = await getRecommend(); recommended.value = r.data || [] } catch {}
-}
-
-const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
+const loading = ref(true)
+const loadError = ref(false)
+let bannerTimer: ReturnType<typeof setInterval> | null = null
 
 const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
 const flashPrice = (price: number) => Math.floor(price * 0.7)
 
-onMounted(async () => {
-  await loadData()
+async function loadData() {
+  loading.value = true
+  loadError.value = false
+  try {
+    const home = await getHomeData()
+    const d = home.data
+    banners.value = d.banners || []
+    hotProducts.value = d.hotProducts || []
+    newProducts.value = d.newProducts || []
+    categories.value = d.categories || []
+    recommended.value = d.recommended || []
+  } catch { loadError.value = true }
+  loading.value = false
+}
+
+const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
+
+function startBanner() {
   bannerTimer = setInterval(() => {
     if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length
   }, 4000)
-})
+}
 
-onUnmounted(() => {
-  clearInterval(bannerTimer)
-})
+onMounted(async () => { await loadData(); startBanner() })
+onUnmounted(() => { if (bannerTimer) clearInterval(bannerTimer) })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
-function goProducts(query: Record<string, any>) { router.push({ path: '/products', query }) }
-async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') } }
+function goProducts(query: Record<string, unknown>) { router.push({ path: '/products', query }) }
+
+async function quickAdd(e: Event, p: any) {
+  e.stopPropagation()
+  try {
+    await addToCart({ productId: p.id, quantity: 1 })
+    toast.success('已加入购物车')
+  } catch { toast.error('添加失败') }
+}
+
+function productImage(p: any): string {
+  return p.imageUrl || (p.images?.length ? p.images[0] : '')
+}
 </script>
 
 <template>
   <div>
-    <div v-if="pulling" class="pull-indicator" style="text-align:center;overflow:hidden;transition:height .2s" :style="{height:pullDistance+'px'}">
-      <span v-if="!refreshing" style="font-size:13px;color:#999">↓ {{ t('common.loading') }}</span>
-      <span v-else style="font-size:13px;color:#999">⏳ {{ t('common.loading') }}</span>
+    <!-- Pull to refresh -->
+    <div v-if="pulling" class="pull-indicator" :style="{ height: pullDistance + 'px' }">
+      <span>{{ refreshing ? '⏳ 刷新中...' : '↓ 下拉刷新' }}</span>
     </div>
-    <div v-if="banners.length" style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:24px;height:360px"
-         @mouseenter="clearInterval(bannerTimer)" @mouseleave="bannerTimer = setInterval(() => { if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length }, 4000)">
-      <div v-for="(b, i) in banners" :key="b.id" :style="{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'linear-gradient(135deg,'+(i%2?'#d4000f':'#f10215')+','+(i%2?'#ff6b6b':'#f90')+')',display:'flex',alignItems:'center',justifyContent:'center',opacity:i===currentBanner?1:0,transition:'opacity .6s'}">
-        <div style="text-align:center;color:#fff">
-          <h2 style="font-size:42px;margin-bottom:16px">{{ b.title }}</h2>
-          <p style="font-size:20px;opacity:.9">{{ t('product.hotRecommend') }}</p>
+
+    <!-- Error -->
+    <div v-if="loadError" class="error-state">
+      <JdEmpty icon="🔌" title="加载失败" description="请检查网络后重试">
+        <JdButton @click="loadData">重新加载</JdButton>
+      </JdEmpty>
+    </div>
+
+    <!-- Skeleton -->
+    <SkeletonBox v-if="loading && !loadError" variant="card" :columns="4" :count="4" height="360px" style="margin-bottom:24px" />
+
+    <template v-if="!loading && !loadError">
+      <!-- Banners -->
+      <div v-if="banners.length" class="banner-wrapper"
+           @mouseenter="bannerTimer && clearInterval(bannerTimer)"
+           @mouseleave="startBanner">
+        <div v-for="(b, i) in banners" :key="b.id" class="banner-slide" :class="{ active: i === currentBanner }"
+             :style="{ background: `linear-gradient(135deg, ${i % 2 ? '#d4000f' : '#f10215'}, ${i % 2 ? '#ff6b6b' : '#f90'})` }">
+          <div class="banner-content">
+            <h2 class="banner-title">{{ b.title }}</h2>
+            <p class="banner-subtitle">{{ b.subtitle || t('product.hotRecommend') }}</p>
+          </div>
+        </div>
+        <div class="banner-dots">
+          <span v-for="(b, i) in banners" :key="b.id" class="banner-dot" :class="{ active: i === currentBanner }"
+                @click="currentBanner = i" />
         </div>
       </div>
-      <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px">
-        <span v-for="(b, i) in banners" :key="b.id" @click="currentBanner=i"
-              style="width:10px;height:10px;border-radius:50%;cursor:pointer;transition:all .3s"
-              :style="{background:i===currentBanner?'#fff':'rgba(255,255,255,.5)',transform:i===currentBanner?'scale(1.3)':''}"></span>
+
+      <!-- Categories -->
+      <div v-if="categories.length" class="categories">
+        <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" @click="goProducts({ categoryId: cat.id })">
+          <div class="cat-icon">{{ cat.icon || '📁' }}</div>
+          <div class="cat-name">{{ cat.name }}</div>
+        </div>
       </div>
-    </div>
-    <div v-if="categories.length" class="cat-scroll" style="display:flex;gap:16px;justify-content:center;margin-bottom:20px;overflow-x:auto;padding:4px 0;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch">
-      <div v-for="cat in categories.slice(0, 10)" :key="cat.id"
-           @click="goProducts({ categoryId: cat.id })"
-           style="text-align:center;cursor:pointer;flex-shrink:0;width:72px;transition:transform .2s"
-           @mouseenter="(e:any) => e.target.style.transform='scale(1.08)'"
-           @mouseleave="(e:any) => e.target.style.transform=''">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#fff5f5,#ffe0e0);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 2px 6px rgba(241,2,21,.08)">{{ cat.icon || '📁' }}</div>
-        <div style="font-size:11px;color:#333;white-space:nowrap">{{ cat.name }}</div>
-      </div>
-    </div>
-    <div v-if="hotProducts.length >= 3" style="background:linear-gradient(135deg,#fff5f5,#fff);border:2px solid #f10215;border-radius:12px;padding:20px 24px;margin-bottom:24px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:22px;font-weight:800;color:#f10215">⏰ {{ t('product.flashSale') }}</span>
-          <div style="display:flex;align-items:center;gap:4px;font-size:16px;font-weight:700;color:#333">
+
+      <!-- Flash Sale -->
+      <section v-if="hotProducts.length >= 3" class="flash-section">
+        <div class="section-header">
+          <div class="flex items-center gap-md">
+            <span class="flash-title">⏰ {{ t('product.flashSale') }}</span>
             <CountdownTimer :end-time="flashEnd" label="" />
           </div>
+          <span class="section-more" @click="goProducts({})">{{ t('common.allProducts') }} &gt;</span>
         </div>
-        <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
-      </div>
-      <div class="flash-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-        <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-'+p.id" @click="goDetail(p.id)"
-             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;text-align:center;transition:transform .3s"
-             @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'"
-             @mouseleave="(e:any) => e.target.style.transform=''">
-          <div style="height:140px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative">
-            📦
-            <span style="position:absolute;top:6px;right:6px;background:#f10215;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">7{{ t('common.discount', '折') }}</span>
+        <div class="flash-grid">
+          <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-' + p.id" class="flash-item" @click="goDetail(p.id)">
+            <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
+            <span class="discount-badge">7折</span>
+            <div class="flash-item-body">
+              <h5 class="item-name">{{ p.name }}</h5>
+              <div class="flex-center gap-sm">
+                <span class="flash-price">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
+                <span class="original-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+              </div>
+            </div>
           </div>
-          <div style="padding:8px 12px 12px">
-            <h5 style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">{{ p.name }}</h5>
-            <div style="display:flex;align-items:baseline;justify-content:center;gap:6px">
-              <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
-              <span style="color:#999;font-size:11px;text-decoration:line-through">¥{{ (p.price / 100).toFixed(2) }}</span>
+        </div>
+      </section>
+
+      <!-- Tab Products -->
+      <div class="section-header">
+        <div class="tab-group">
+          <span class="tab-item" :class="{ active: activeTab === 'hot' }" @click="activeTab = 'hot'">
+            {{ t('product.hotRecommend') }}
+          </span>
+          <span class="tab-item" :class="{ active: activeTab === 'new' }" @click="activeTab = 'new'">
+            {{ t('product.newArrival') }}
+          </span>
+        </div>
+        <span class="section-more" @click="goProducts({})">{{ t('common.allProducts') }} &gt;</span>
+      </div>
+
+      <!-- Product Grid -->
+      <div class="product-grid">
+        <div v-for="p in (activeTab === 'hot' ? hotProducts : newProducts)" :key="p.id" class="product-card-home" @click="goDetail(p.id)">
+          <div class="product-img-wrap">
+            <LazyImage :src="productImage(p)" :alt="p.name" height="200px" />
+            <span v-if="activeTab === 'new' || p.isNew" class="tag-new">新品</span>
+            <span v-else class="tag-hot">热卖</span>
+          </div>
+          <div class="product-info">
+            <h4 class="product-name">{{ p.name }}</h4>
+            <div class="product-bottom">
+              <div>
+                <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span v-if="p.sales" class="product-sales">🔥 {{ formatCount(p.sales) }}人已购</span>
+              </div>
+              <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="display:flex;gap:24px">
-        <span @click="activeTab='hot'"
-              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='hot'?'#f10215':'#999',borderBottom:activeTab==='hot'?'3px solid #f10215':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.hotRecommend') }}</span>
-        <span @click="activeTab='new'"
-              :style="{fontSize:'20px',fontWeight:'700',cursor:'pointer',color:activeTab==='new'?'#f10215':'#999',borderBottom:activeTab==='new'?'3px solid #f10215':'3px solid transparent',paddingBottom:'4px'}">{{ t('product.newArrival') }}</span>
-      </div>
-      <span @click="goProducts({})" style="font-size:13px;color:#999;cursor:pointer">{{ t('common.allProducts') }} &gt;</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-      <div v-for="p in (activeTab==='hot'?hotProducts:newProducts)" :key="p.id"
-           @click="goDetail(p.id)"
-           style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .3s,transform .3s"
-           @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
-           @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }"
-           :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
-        <div style="height:200px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
-          📦
-          <span v-if="activeTab==='new' || p.isNew" style="position:absolute;top:6px;left:6px;background:#4caf50;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">新品</span>
-          <span v-else-if="activeTab==='hot' || p.isHot" style="position:absolute;top:6px;left:6px;background:#f10215;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;z-index:1">热卖</span>
+
+      <!-- Empty -->
+      <JdEmpty v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length"
+               icon="🛍️" :title="t('common.noResults')" />
+
+      <!-- Recently Viewed -->
+      <section v-if="recentItems.length" class="section">
+        <div class="section-header">
+          <span class="section-title">🕐 最近浏览</span>
+          <span class="section-more" @click="router.push('/recent')">查看全部 &gt;</span>
         </div>
-        <div style="padding:12px 16px">
-          <h4 style="font-size:14px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <span style="color:#f10215;font-size:20px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <span style="color:#999;font-size:11px;margin-left:4px">{{ (p.sales || 0) > 1000 ? '🔥 ' + (p.sales/1000).toFixed(1) + 'k人已购' : (p.sales || 0) > 0 ? (p.sales || 0) + '人已购' : '' }}</span>
-            </div>
-            <button @click="(e: Event) => quickAdd(e, p)"
-                    style="width:30px;height:30px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0"
-                    :style="{background: (p as any)._added ? '#f10215' : '#fff', color: (p as any)._added ? '#fff' : '#f10215'}"
-                    @mouseenter="(e:any) => { if(!(p as any)._added) { e.target.style.background='#f10215'; e.target.style.color='#fff' } }"
-                    @mouseleave="(e:any) => { if(!(p as any)._added) { e.target.style.background='#fff'; e.target.style.color='#f10215' } }">
-              {{ (p as any)._added ? '✓' : '+' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length" style="text-align:center;padding:60px;color:#999">
-      <p style="font-size:48px;margin-bottom:16px">🛍️</p>
-      <p>{{ t('common.noResults') }}</p>
-    </div>
-    <div v-if="recentItems.length" style="margin-top:32px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <span style="font-size:20px;font-weight:700;color:#333">🕐 最近浏览</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-        <div v-for="p in recentItems.slice(0, 4)" :key="'rv-'+p.id"
-             @click="goDetail(p.id)"
-             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .3s,transform .3s"
-             @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
-             @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }">
-          <div style="height:200px;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);display:flex;align-items:center;justify-content:center;font-size:56px">📦</div>
-          <div style="padding:12px 16px">
-            <h4 style="font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-            <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-            <div style="font-size:11px;color:#aaa;margin-top:2px">{{ new Date(p.viewedAt).toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="recommended.length" style="margin-top:32px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <span style="font-size:20px;font-weight:700;color:#333">🤖 为你推荐</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-        <div v-for="p in recommended.slice(0, 8)" :key="'rec-'+p.id"
-             @click="goDetail(p.id)"
-             style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .3s,transform .3s"
-             @mouseenter="(e:any) => { e.target.style.boxShadow='0 4px 20px rgba(0,0,0,.12)'; e.target.style.transform='translateY(-4px)' }"
-             @mouseleave="(e:any) => { e.target.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'; e.target.style.transform='' }"
-             :style="{boxShadow:'0 2px 8px rgba(0,0,0,.06)'}">
-          <div style="height:200px;background:linear-gradient(135deg,#f8f0ff,#e8e0ff);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative">
-            🤖
-          </div>
-          <div style="padding:12px 16px">
-            <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <span style="color:#f10215;font-size:18px;font-weight:700">¥{{ (p.price / 100).toFixed(2) }}</span>
-              <button @click="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+        <div class="product-grid">
+          <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-home" @click="goDetail(p.id)">
+            <LazyImage :src="productImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
+            <div class="product-info">
+              <h4 class="product-name">{{ p.name }}</h4>
+              <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <div class="viewed-time">{{ new Date(p.viewedAt).toLocaleString('zh-CN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) }}</div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <!-- Recommended -->
+      <section v-if="recommended.length" class="section">
+        <div class="section-header">
+          <span class="section-title">🤖 为你推荐</span>
+        </div>
+        <div class="product-grid">
+          <div v-for="p in recommended.slice(0, 8)" :key="'rec-' + p.id" class="product-card-home" @click="goDetail(p.id)">
+            <LazyImage :src="productImage(p)" :alt="p.name" height="200px" bg="linear-gradient(135deg,#f8f0ff,#e8e0ff)" />
+            <div class="product-info">
+              <h4 class="product-name">{{ p.name }}</h4>
+              <div class="product-bottom">
+                <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
   </div>
 </template>
+
 <style scoped>
-.cat-scroll::-webkit-scrollbar { display: none; }
+/* Pull */
+.pull-indicator { text-align: center; overflow: hidden; transition: height .2s; font-size: 13px; color: var(--text-tertiary); }
+
+/* Error */
+.error-state { padding: 80px var(--space-xl); }
+
+/* Banners */
+.banner-wrapper { position: relative; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-xxl); height: 360px; }
+.banner-slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .6s;
+}
+.banner-slide.active { opacity: 1; }
+.banner-content { text-align: center; color: #fff; }
+.banner-title { font-size: 42px; margin-bottom: var(--space-lg); }
+.banner-subtitle { font-size: var(--font-xl); opacity: .9; }
+.banner-dots {
+  position: absolute; bottom: var(--space-lg); left: 50%; transform: translateX(-50%);
+  display: flex; gap: var(--space-sm);
+}
+.banner-dot {
+  width: 10px; height: 10px; border-radius: 50%; cursor: pointer;
+  background: rgba(255,255,255,.5); transition: all .3s;
+}
+.banner-dot.active { background: #fff; transform: scale(1.3); }
+
+/* Categories */
+.categories {
+  display: flex; gap: var(--space-lg); justify-content: center; margin-bottom: var(--space-xl);
+  overflow-x: auto; padding: var(--space-xs) 0; -webkit-overflow-scrolling: touch;
+}
+.categories::-webkit-scrollbar { display: none; }
+.cat-item { text-align: center; cursor: pointer; flex-shrink: 0; width: 72px; transition: transform var(--transition); }
+.cat-item:hover { transform: scale(1.08); }
+.cat-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--jd-red-light), #ffe0e0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin: 0 auto 6px;
+  box-shadow: 0 2px 6px rgba(241,2,21,.08);
+}
+.cat-name { font-size: var(--font-xs); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Flash Sale */
+.flash-section {
+  background: linear-gradient(135deg, var(--jd-red-light), var(--bg-white));
+  border: 2px solid var(--jd-red); border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-xxl); margin-bottom: var(--space-xxl);
+}
+.flash-title { font-size: var(--font-title); font-weight: 800; color: var(--jd-red); }
+.flash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); }
+.flash-item {
+  background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden;
+  cursor: pointer; text-align: center; transition: transform var(--transition); position: relative;
+}
+.flash-item:hover { transform: translateY(-4px); }
+.flash-item-body { padding: var(--space-sm) var(--space-md) var(--space-md); }
+.discount-badge {
+  position: absolute; top: 6px; right: 6px; background: var(--jd-red); color: #fff;
+  font-size: 10px; padding: 2px 8px; border-radius: var(--radius-round); z-index: 1; font-weight: 700;
+}
+.flash-price { color: var(--jd-red); font-size: 18px; font-weight: 700; }
+.original-price { color: var(--text-tertiary); font-size: var(--font-xs); text-decoration: line-through; }
+
+/* Section */
+.section { margin-top: var(--space-xxxl); }
+.section-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);
+}
+.section-title { font-size: var(--font-xl); font-weight: 700; color: var(--text-primary); }
+.section-more { font-size: var(--font-base); color: var(--text-tertiary); cursor: pointer; }
+.section-more:hover { color: var(--jd-red); }
+
+/* Tabs */
+.tab-group { display: flex; gap: var(--space-xxl); }
+.tab-item {
+  font-size: var(--font-xl); font-weight: 700; cursor: pointer;
+  color: var(--text-tertiary); padding-bottom: var(--space-xs);
+  border-bottom: 3px solid transparent; transition: all var(--transition-fast);
+}
+.tab-item.active { color: var(--jd-red); border-bottom-color: var(--jd-red); }
+
+/* Product Grid */
+.product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+
+.product-card-home {
+  background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden;
+  cursor: pointer; box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.product-card-home:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-4px); }
+
+.product-img-wrap { position: relative; }
+.tag-new {
+  position: absolute; top: 6px; left: 6px; background: var(--green); color: #fff;
+  font-size: 10px; padding: 1px 6px; border-radius: var(--radius-sm); z-index: 1; font-weight: 700;
+}
+.tag-hot {
+  position: absolute; top: 6px; left: 6px; background: var(--jd-red); color: #fff;
+  font-size: 10px; padding: 1px 6px; border-radius: var(--radius-sm); z-index: 1; font-weight: 700;
+}
+
+.product-info { padding: var(--space-md) var(--space-lg); }
+.product-name {
+  font-size: var(--font-md); color: var(--text-primary); margin-bottom: var(--space-sm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.product-bottom { display: flex; align-items: center; justify-content: space-between; }
+.product-price { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; }
+.product-sales { color: var(--text-tertiary); font-size: var(--font-xs); margin-left: var(--space-xs); }
+.viewed-time { font-size: var(--font-xs); color: var(--text-placeholder); margin-top: 2px; }
+
+.quick-add-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--jd-red);
+  background: var(--bg-white); color: var(--jd-red); cursor: pointer;
+  font-size: var(--font-lg); display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition-fast); flex-shrink: 0; font-weight: 700; line-height: 1;
+}
+.quick-add-btn:hover { background: var(--jd-red); color: #fff; }
+
+.item-name {
+  font-size: var(--font-base); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; margin-bottom: 6px;
+}
+
 @media (max-width: 768px) {
-  .flash-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .product-card-img { height: 140px !important; }
+  .banner-wrapper { height: 200px; border-radius: var(--radius-md); }
+  .banner-title { font-size: var(--font-xxl); }
+  .banner-subtitle { font-size: var(--font-md); }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
+  .flash-grid { grid-template-columns: repeat(2, 1fr); }
+  .product-price { font-size: var(--font-lg); }
 }
 </style>

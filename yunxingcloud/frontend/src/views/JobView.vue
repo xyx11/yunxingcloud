@@ -5,7 +5,7 @@ import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
 
 import {
-  NCard, NDataTable, NButton, NModal, NForm, NFormItem,
+  NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag,
 } from 'naive-ui'
 import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
@@ -161,47 +161,30 @@ onMounted(loadJobs)
         :row-key="(row: SysJob) => row.id"
       />
 
-      <n-modal v-model:show="showModal" :title="editing ? t('job.edit') : t('job.add')" preset="card" display-directive="show" style="max-width:560px;width:95%">
-        <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
-          <n-form-item :label="t('job.name')">
-            <n-input v-model:value="form.jobName" />
-          </n-form-item>
-          <n-form-item :label="t('job.group')">
-            <n-input v-model:value="form.jobGroup" />
-          </n-form-item>
-          <n-form-item :label="t('job.target')">
-            <n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" />
-          </n-form-item>
-          <n-form-item :label="t('job.cron')">
-            <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
-            <n-space style="margin-top:4px">
-              <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">{{ t('job.cron10s') }}</n-button>
-              <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">{{ t('job.cron30s') }}</n-button>
-              <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">{{ t('job.cron1m') }}</n-button>
-              <n-button size="tiny" @click="form.cronExpression='0 0/30 * * * ?'">{{ t('job.cron30m') }}</n-button>
-              <n-button size="tiny" @click="form.cronExpression='0 0 8 * * ?'">{{ t('job.cron8h') }}</n-button>
-            </n-space>
-          </n-form-item>
-          <n-form-item :label="t('job.status')">
-            <n-select v-model:value="form.status" :options="statusOptions" />
-          </n-form-item>
-          <n-form-item :label="t('job.concurrentLabel')">
-            <n-select v-model:value="form.concurrent" :options="concurrentOptions" />
-          </n-form-item>
-          <n-form-item :label="t('job.misfireLabel')">
-            <n-select v-model:value="form.misfirePolicy" :options="misfireOptions" />
-          </n-form-item>
-          <n-form-item :label="t('job.remark')">
-            <n-input v-model:value="form.remark" type="textarea" />
-          </n-form-item>
-        </n-form>
-        <template #footer>
-          <n-space justify="end">
-            <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="saveJob">{{ t('common.save') }}</n-button>
-          </n-space>
-        </template>
-      </n-modal>
+      <n-drawer v-model:show="showModal" :width="460" placement="right">
+        <n-drawer-content :title="editing ? t('job.edit') : t('job.add')" closable>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveJob">{{ t('common.save') }}</n-button></n-space></template>
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80" size="small">
+            <n-form-item :label="t('job.name')"><n-input v-model:value="form.jobName" /></n-form-item>
+            <n-form-item :label="t('job.group')"><n-input v-model:value="form.jobGroup" /></n-form-item>
+            <n-form-item :label="t('job.target')"><n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" /></n-form-item>
+            <n-form-item :label="t('job.cron')">
+              <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
+              <n-space style="margin-top:4px">
+                <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">{{ t('job.cron10s') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">{{ t('job.cron30s') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">{{ t('job.cron1m') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0/30 * * * ?'">{{ t('job.cron30m') }}</n-button>
+                <n-button size="tiny" @click="form.cronExpression='0 0 8 * * ?'">{{ t('job.cron8h') }}</n-button>
+              </n-space>
+            </n-form-item>
+            <n-form-item :label="t('job.status')"><n-select v-model:value="form.status" :options="statusOptions" /></n-form-item>
+            <n-form-item :label="t('job.concurrentLabel')"><n-select v-model:value="form.concurrent" :options="concurrentOptions" /></n-form-item>
+            <n-form-item :label="t('job.misfireLabel')"><n-select v-model:value="form.misfirePolicy" :options="misfireOptions" /></n-form-item>
+            <n-form-item :label="t('job.remark')"><n-input v-model:value="form.remark" type="textarea" /></n-form-item>
+          </n-form>
+        </n-drawer-content>
+      </n-drawer>
 
       <!-- 执行日志弹窗 -->
       <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" preset="card" display-directive="show" style="max-width:700px;width:95%">

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue'
+import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 
 const props = defineProps<{ modelValue?: string; multiple?: boolean }>()
 const emit = defineEmits(['update:modelValue'])
-const toast = inject<any>('toast')
+const toast = inject(ToastInjectionKey)!
 const uploading = ref(false)
 const previewUrls = ref<string[]>(props.modelValue ? JSON.parse(props.modelValue || '[]') : [])
 

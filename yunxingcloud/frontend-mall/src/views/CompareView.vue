@@ -2,7 +2,10 @@
 import { useCompare } from '@/composables/useCompare'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
+import LazyImage from '@/components/LazyImage.vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/locales'
+const { t } = useI18n()
 
 const { items, remove, clear } = useCompare()
 const toast = useToast()
@@ -26,7 +29,7 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div v-for="p in items" :key="p.id" style="text-align:center;position:relative">
         <button @click="remove(p.id)" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#f44336;color:#fff;border:none;cursor:pointer;font-size:11px;line-height:20px">✕</button>
-        <div style="height:100px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:8px">📦</div>
+        <LazyImage :src="p.imageUrl || ''" :alt="p.name" height="100px" rounded="8px" />
         <h4 style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">{{ p.name }}</h4>
         <span style="color:#f10215;font-size:16px;font-weight:700">¥{{ (p.price/100).toFixed(2) }}</span>
         <div style="font-size:11px;color:#999">销量 {{ p.sales || 0 }}</div>

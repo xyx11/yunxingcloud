@@ -120,7 +120,7 @@ function handleSocialLogin(provider: string) {
         </n-form-item>
 
         <n-form-item path="password">
-          <n-input v-model:value="model.password" type="password" :placeholder="t('login.password')" size="large" show-password-on="click">
+          <n-input v-model:value="model.password" type="password" :placeholder="t('login.password')" size="large" show-password-on="click" @keyup.enter="handleLogin">
             <template #prefix>🔒</template>
           </n-input>
         </n-form-item>

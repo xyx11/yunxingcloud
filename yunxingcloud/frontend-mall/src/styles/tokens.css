@@ -1,0 +1,105 @@
+/* ===== YXCLOUD Design Tokens ===== */
+
+:root {
+  /* Brand */
+  --jd-red: #f10215;
+  --jd-red-dark: #d4000f;
+  --jd-red-light: #fff5f5;
+  --jd-red-bg: rgba(241, 2, 21, .08);
+  --jd-orange: #ff6600;
+
+  /* Text */
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-tertiary: #999;
+  --text-placeholder: #bbb;
+  --text-white: #fff;
+
+  /* Background */
+  --bg-page: #f5f5f5;
+  --bg-white: #fff;
+  --bg-hover: #fafafa;
+  --bg-overlay: rgba(0, 0, 0, .5);
+
+  /* Border */
+  --border-light: #f0f0f0;
+  --border: #e0e0e0;
+  --border-dark: #ccc;
+
+  /* Status */
+  --green: #52c41a;
+  --green-bg: #f0faf0;
+  --blue: #1677ff;
+  --blue-bg: #f0f7ff;
+  --orange: #ff9800;
+  --orange-bg: #fff8f0;
+  --red-status: #ff4d4f;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 999px;
+
+  /* Font */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-base: 13px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-xxl: 24px;
+  --font-title: 22px;
+  --font-h1: 28px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-xxl: 24px;
+  --space-xxxl: 32px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, .06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, .08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, .1);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, .12);
+  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, .12);
+
+  /* Transition */
+  --transition-fast: .15s ease;
+  --transition: .25s ease;
+  --transition-slow: .4s ease;
+
+  /* Layout */
+  --max-width: 1200px;
+  --header-height: 56px;
+  --nav-height: 42px;
+}
+
+/* ===== Dark Theme ===== */
+[data-theme="dark"] {
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-tertiary: #656d76;
+  --bg-page: #0d1117;
+  --bg-white: #161b22;
+  --bg-hover: #1c2129;
+  --bg-overlay: rgba(0, 0, 0, .7);
+  --border-light: #21262d;
+  --border: #30363d;
+  --border-dark: #484f58;
+  --jd-red-light: rgba(248, 81, 73, .12);
+  --jd-red-bg: rgba(248, 81, 73, .08);
+  --green-bg: rgba(63, 185, 80, .12);
+  --blue-bg: rgba(88, 166, 255, .12);
+  --orange-bg: rgba(219, 109, 40, .12);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, .2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, .25);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, .3);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, .4);
+  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, .3);
+}

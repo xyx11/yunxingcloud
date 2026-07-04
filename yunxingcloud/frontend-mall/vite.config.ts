@@ -13,22 +13,21 @@ export default defineConfig({
       '/api': { target: 'http://localhost:8090', changeOrigin: true },
     },
   },
-  base: '/mall/',
+  base: '/',
   build: {
     outDir: 'dist',
     target: 'es2020',
     cssCodeSplit: true,
     cssMinify: true,
-    minify: 'terser',
-    terserOptions: { compress: { drop_console: true, drop_debugger: true } },
+    minify: 'esbuild',
     chunkSizeWarningLimit: 500,
     reportCompressedSize: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-vue': ['vue', 'vue-router', 'pinia'],
-          'vendor-ui': ['naive-ui'],
-          'vendor-axios': ['axios'],
+        manualChunks(id: string) {
+          if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) return 'vendor-vue'
+          if (id.includes('node_modules/naive-ui')) return 'vendor-ui'
+          if (id.includes('node_modules/axios')) return 'vendor-axios'
         },
       },
     },

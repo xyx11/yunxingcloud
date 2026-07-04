@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
+import LazyImage from '@/components/LazyImage.vue'
 import { getFavorites, removeFavorite } from '@/api/order'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
@@ -46,7 +47,7 @@ onMounted(load)
            @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''">
         <button @click.stop="unfav(p.productId || p.id)" style="position:absolute;top:8px;right:8px;z-index:2;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.9);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s"
                 @mouseenter="(e:any) => e.target.style.transform='scale(1.2)'" @mouseleave="(e:any) => e.target.style.transform=''">❤️</button>
-        <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px">📦</div>
+        <LazyImage :src="p.imageUrl || ''" :alt="p.productName || p.name" height="180px" />
         <div style="padding:12px">
           <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.productName || p.name || '商品' }}</h4>
           <div style="display:flex;align-items:center;justify-content:space-between">

@@ -10,6 +10,28 @@ const DashboardView = () => import('@/views/DashboardView.vue')
 const ConsentView = () => import('@/views/ConsentView.vue')
 const RegisterView = () => import('@/views/RegisterView.vue')
 const ForgotPasswordView = () => import('@/views/ForgotPasswordView.vue')
+const ReviewManageView = () => import('@/views/ReviewManageView.vue')
+const BannerView = () => import('@/views/BannerView.vue')
+const ProductImportView = () => import('@/views/ProductImportView.vue')
+const SkuManageView = () => import('@/views/SkuManageView.vue')
+const ShipmentView = () => import('@/views/ShipmentView.vue')
+const BrandView = () => import('@/views/BrandView.vue')
+const CategoryManageView = () => import('@/views/CategoryManageView.vue')
+const CouponView = () => import('@/views/CouponView.vue')
+const AnalyticsView = () => import('@/views/AnalyticsView.vue')
+const MediaLibraryView = () => import('@/views/MediaLibraryView.vue')
+const SysLogView = () => import('@/views/SysLogView.vue')
+const InvoiceAdminView = () => import('@/views/InvoiceAdminView.vue')
+const EmailTemplateView = () => import('@/views/EmailTemplateView.vue')
+const ExportCenterView = () => import('@/views/ExportCenterView.vue')
+const ActivityLogView = () => import('@/views/ActivityLogView.vue')
+const BundleView = () => import('@/views/BundleView.vue')
+const SeoManageView = () => import('@/views/SeoManageView.vue')
+const ChatAdminView = () => import('@/views/ChatAdminView.vue')
+const PointsAdminView = () => import('@/views/PointsAdminView.vue')
+const RecommendConfigView = () => import('@/views/RecommendConfigView.vue')
+const AuditView = () => import('@/views/AuditView.vue')
+const SystemConfigView = () => import('@/views/SystemConfigView.vue')
 const ResetPasswordView = () => import('@/views/ResetPasswordView.vue')
 const DepartmentView = () => import('@/views/DepartmentView.vue')
 const RoleView = () => import('@/views/RoleView.vue')
@@ -57,7 +79,7 @@ const NotFoundView = () => import('@/views/NotFoundView.vue')
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/admin/'),
   routes: [
     { path: '/login', name: 'Login', component: LoginView, meta: { title: '登录' } },
     { path: '/register', name: 'Register', component: RegisterView, meta: { title: '注册' } },
@@ -107,6 +129,28 @@ const router = createRouter({
         { path: 'register-approval', name: 'RegisterApproval', component: RegisterApprovalView, meta: { title: '注册审核' } },
         { path: 'oauth2-clients', name: 'OAuth2Clients', component: OAuth2ClientView, meta: { title: 'OAuth2客户端' } },
         { path: 'profile', name: 'Profile', component: ProfileView, meta: { title: '个人中心' } },
+        { path: 'reviews', name: 'Reviews', component: ReviewManageView, meta: { title: '评价管理' } },
+        { path: 'banners', name: 'Banners', component: BannerView, meta: { title: 'Banner管理' } },
+        { path: 'products/import', name: 'ProductImport', component: ProductImportView, meta: { title: '批量导入' } },
+        { path: 'skus', name: 'Skus', component: SkuManageView, meta: { title: 'SKU管理' } },
+        { path: 'shipments', name: 'Shipments', component: ShipmentView, meta: { title: '物流管理' } },
+        { path: 'brands', name: 'Brands', component: BrandView, meta: { title: '品牌管理' } },
+        { path: 'categories', name: 'Categories', component: CategoryManageView, meta: { title: '分类管理' } },
+        { path: 'coupons', name: 'Coupons', component: CouponView, meta: { title: '优惠券管理' } },
+        { path: 'analytics', name: 'Analytics', component: AnalyticsView, meta: { title: '销售分析' } },
+        { path: 'media-library', name: 'MediaLibrary', component: MediaLibraryView, meta: { title: '媒体库' } },
+        { path: 'system-logs', name: 'SysLogs', component: SysLogView, meta: { title: '系统日志' } },
+        { path: 'invoices', name: 'Invoices', component: InvoiceAdminView, meta: { title: '发票管理' } },
+        { path: 'email-templates', name: 'EmailTemplates', component: EmailTemplateView, meta: { title: '邮件模板' } },
+        { path: 'export-center', name: 'ExportCenter', component: ExportCenterView, meta: { title: '导出中心' } },
+        { path: 'activity-logs', name: 'ActivityLogs', component: ActivityLogView, meta: { title: '活动日志' } },
+        { path: 'bundles', name: 'Bundles', component: BundleView, meta: { title: '捆绑套餐' } },
+        { path: 'seo', name: 'Seo', component: SeoManageView, meta: { title: 'SEO管理' } },
+        { path: 'chat-admin', name: 'ChatAdmin', component: ChatAdminView, meta: { title: '客服会话' } },
+        { path: 'points-admin', name: 'PointsAdmin', component: PointsAdminView, meta: { title: '积分管理' } },
+        { path: 'recommend-config', name: 'RecommendConfig', component: RecommendConfigView, meta: { title: '推荐配置' } },
+        { path: 'audit', name: 'Audit', component: AuditView, meta: { title: '审计日志' } },
+        { path: 'system-config', name: 'SystemConfig', component: SystemConfigView, meta: { title: '系统配置' } },
       ],
     },
     { path: '/screen', name: 'DataScreen', component: DataScreenView, meta: { title: '数据大屏' } },

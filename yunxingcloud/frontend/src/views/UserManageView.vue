@@ -4,8 +4,9 @@ import { ref, onMounted, h, computed } from 'vue'
 import { fetchUsers, fetchDepartments, fetchRoles, fetchPosts, fetchUserSourceDict, createUser, updateUserProfile, batchDeleteUsers, toggleUser, setUserDepartment, setUserPost, setUserRoles, resetUserPassword, type UserInfo, type Dept, type Role, type Post } from '@/api/user'
 import { useNotify } from '@/composables/useNotify'
 
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NSelect, NSpace, NTag, NInput, NSwitch, NDropdown, NPopover, NCheckbox, type FormRules, type FormInst } from 'naive-ui'
+import { NCard, NDataTable, NButton, NModal, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace, NTag, NInput, NSwitch, NDropdown, NPopover, NCheckbox, NTabs, NTabPane, NDivider, type FormRules, type FormInst } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
+import request from '@/api/request'
 
 const { t } = useI18n()
 const users = ref<UserInfo[]>([])
@@ -18,6 +19,7 @@ const searchKeyword = ref('')
 const filterDept = ref<number | null>(null)
 const filterRole = ref<string>('')
 const filterStatus = ref<string>('')
+const filterDateFrom = ref(''); const filterDateTo = ref('')
 const showSearch = ref(true)
 const loading = ref(false)
 const checkedRowKeys = ref<number[]>([])
@@ -46,6 +48,21 @@ const editForm = ref({ nickname: '', email: '' })
 const saving = ref(false)
 const showDetailModal = ref(false)
 const detailUser = ref<UserInfo | null>(null)
+const custOrders = ref<any[]>([]); const custAddresses = ref<any[]>([]); const custCoupons = ref<any[]>([])
+const custLoading = ref(false)
+
+async function openCustDetail(user: UserInfo) {
+  detailUser.value = user; showDetailModal.value = true; custLoading.value = true
+  try {
+    const [o, a, c] = await Promise.all([
+      request.get('/api/orders?username=' + encodeURIComponent(user.username)).catch(()=>({data:[]})),
+      request.get('/api/addresses/' + user.username).catch(()=>({data:[]})),
+      request.get('/api/coupons/my/' + user.username).catch(()=>({data:[]})),
+    ])
+    custOrders.value = o.data || []; custAddresses.value = a.data || []; custCoupons.value = c.data || []
+  } catch { custOrders.value = []; custAddresses.value = []; custCoupons.value = [] }
+  custLoading.value = false
+}
 
 function getPostName(user: UserInfo | null) { return user ? (posts.value.find(p => p.id === user.postId)?.postName || '-') : '-' }
 
@@ -83,7 +100,7 @@ const actionOptions = (row: UserInfo) => [
 
 function handleAction(key: string, row: UserInfo) {
   switch (key) {
-    case 'detail': detailUser.value = row; showDetailModal.value = true; break
+    case 'detail': openCustDetail(row); break
     case 'edit': selectedUser.value = row; editForm.value = { nickname: row.nickname, email: row.email }; showEditModal.value = true; break
     case 'dept': selectedUser.value = row; selectedDeptId.value = row.departmentId || null; showDeptModal.value = true; break
     case 'post': selectedUser.value = row; selectedPostId.value = row.postId || null; showPostModal.value = true; break
@@ -171,6 +188,12 @@ async function savePost() { if (!selectedUser.value) return; await setUserPost(s
 async function saveRoles() { if (!selectedUser.value) return; await setUserRoles(selectedUser.value.id, selectedRoleIds.value); showRoleModal.value = false; await loadData(); notify.success(t('user.roleAssigned')) }
 async function resetPwd() { if (!selectedUser.value) return; await resetUserPassword(selectedUser.value.id); showPwdModal.value = false; notify.success(t('user.pwdResetSuccess')) }
 
+function exportCSV() {
+  const head = ['用户名','昵称','邮箱','手机','部门','角色','状态','创建时间']
+  const rows = allUsers.value.map((u:any) => [u.username||'',u.nickname||'',u.email||'',u.phone||'',u.deptName||'',u.roleNames||'',u.status==='0'?'正常':'禁用',u.createdAt||''])
+  const csv = [head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')
+  const blob = new Blob(['﻿'+csv],{type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='users.csv'; a.click()
+}
 onMounted(loadData)
 </script>
 
@@ -190,12 +213,14 @@ onMounted(loadData)
             <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="max-width:120px;width:95%" @update:value="searchData" />
             <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="max-width:110px;width:95%" @update:value="searchData" />
             <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="max-width:100px;width:95%" @update:value="searchData" />
+            <input type="date" v-model="filterDateFrom" @change="searchData" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
+            <input type="date" v-model="filterDateTo" @change="searchData" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
             <n-button type="primary" size="small" @click="searchData">{{ t('common.search') }}</n-button>
-            <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; searchData()">{{ t('common.reset') }}</n-button>
+            <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; filterDateFrom = ''; filterDateTo = ''; searchData()">{{ t('common.reset') }}</n-button>
           </template>
         </n-space>
         <n-space>
-          <n-button size="small" @click="loadData" secondary>{{ t('common.refresh') }}</n-button>
+          <n-space><n-button size="small" @click="exportCSV">{{ t('operlog.exportCsv') }}</n-button><n-button size="small" @click="loadData" secondary>{{ t('common.refresh') }}</n-button></n-space>
           <n-popover trigger="click" placement="bottom-end" :width="180">
             <template #trigger>
               <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
@@ -280,20 +305,56 @@ onMounted(loadData)
         <template #footer><n-space justify="end"><n-button @click="showPwdModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="resetPwd">{{ t('user.confirmReset') }}</n-button></n-space></template>
       </n-modal>
 
-      <!-- 用户详情 -->
-      <n-modal v-model:show="showDetailModal" :title="t('user.userDetail')" preset="card" display-directive="show" style="max-width:560px;width:95%">
-        <div v-if="detailUser" style="line-height:2">
-          <p><strong>{{ t('user.username') }}：</strong>{{ detailUser.username }}</p>
-          <p><strong>{{ t('user.nickname') }}：</strong>{{ detailUser.nickname || '-' }}</p>
-          <p><strong>{{ t('user.email') }}：</strong>{{ detailUser.email || '-' }}</p>
-          <p><strong>{{ t('user.source') }}：</strong>{{ dictLabel('sys_user_source', detailUser.registerSource) }}</p>
-          <p><strong>{{ t('user.dept') }}：</strong>{{ detailUser.departmentName || '-' }}</p>
-          <p><strong>{{ t('user.post') }}：</strong>{{ getPostName(detailUser) }}</p>
-          <p><strong>{{ t('user.role') }}：</strong>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</p>
-          <p><strong>{{ t('user.enabled') }}：</strong><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></p>
-          <p><strong>{{ t('user.lastLogin') }}：</strong>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</p>
-        </div>
-      </n-modal>
+      <!-- 用户详情 Drawer -->
+      <n-drawer v-model:show="showDetailModal" :width="520" placement="right">
+        <n-drawer-content :title="'客户: ' + (detailUser?.username || '')" closable>
+          <template v-if="detailUser">
+            <n-tabs type="line" size="small" :default-value="'info'">
+              <n-tab-pane name="info" tab="基本信息">
+                <n-form label-placement="left" label-width="70" size="small">
+                  <n-form-item :label="t('user.username')"><span>{{ detailUser.username }}</span></n-form-item>
+                  <n-form-item :label="t('user.nickname')"><span>{{ detailUser.nickname || '-' }}</span></n-form-item>
+                  <n-form-item :label="t('user.email')"><span>{{ detailUser.email || '-' }}</span></n-form-item>
+                  <n-form-item :label="t('user.dept')"><span>{{ detailUser.departmentName || '-' }}</span></n-form-item>
+                  <n-form-item :label="t('user.post')"><span>{{ getPostName(detailUser) }}</span></n-form-item>
+                  <n-form-item :label="t('user.role')"><span>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</span></n-form-item>
+                  <n-form-item :label="t('user.enabled')"><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></n-form-item>
+                  <n-form-item label="最后登录"><span>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</span></n-form-item>
+                </n-form>
+              </n-tab-pane>
+              <n-tab-pane name="orders" tab="订单">
+                <div v-if="custOrders.length" style="max-height:40vh;overflow:auto">
+                  <div v-for="o in custOrders.slice(0,10)" :key="o.id" style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #f0f0f0;font-size:13px">
+                    <span style="color:#999">{{ o.orderNo }}</span>
+                    <span>¥{{ ((o.totalAmount||0)/100).toFixed(2) }}</span>
+                    <n-tag size="tiny" :type="o.status==='3'?'success':o.status==='4'?'default':'info'">{{ ['待付','已付','已发','完成','取消'][Number(o.status)]||o.status }}</n-tag>
+                  </div>
+                </div>
+                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无订单</div>
+              </n-tab-pane>
+              <n-tab-pane name="addr" tab="地址">
+                <div v-if="custAddresses.length" style="max-height:40vh;overflow:auto">
+                  <div v-for="a in custAddresses" :key="a.id" style="padding:8px;margin-bottom:8px;background:#f9f9f9;border-radius:6px;font-size:13px">
+                    <div style="font-weight:600">{{ a.name }} {{ a.phone }}</div>
+                    <div style="color:#666">{{ a.province }}{{ a.city }}{{ a.district }} {{ a.detail }}</div>
+                    <n-tag v-if="a.isDefault" size="tiny" type="success">默认</n-tag>
+                  </div>
+                </div>
+                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无地址</div>
+              </n-tab-pane>
+              <n-tab-pane name="coupon" tab="优惠券">
+                <div v-if="custCoupons.length" style="max-height:40vh;overflow:auto">
+                  <div v-for="c in custCoupons.slice(0,10)" :key="c.id" style="padding:8px;margin-bottom:8px;background:#fef9e7;border-radius:6px;font-size:13px;display:flex;justify-content:space-between">
+                    <span>券ID: {{ c.couponId }}</span>
+                    <n-tag size="tiny" :type="c.status==='0'?'warning':'default'">{{ c.status==='0'?'未使用':c.status==='1'?'已使用':'已过期' }}</n-tag>
+                  </div>
+                </div>
+                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无优惠券</div>
+              </n-tab-pane>
+            </n-tabs>
+          </template>
+        </n-drawer-content>
+      </n-drawer>
     </n-card>
   </div>
 </template>

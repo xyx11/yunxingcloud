@@ -3,10 +3,12 @@ import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/locales'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const records = ref<any[]>([])
 const loading = ref(true)
 const showForm = ref(false)
@@ -14,17 +16,23 @@ const submitting = ref(false)
 const form = ref({ orderNo: '', type: 'refund', reason: '', amount: '', description: '' })
 
 const types = [
-  { value: 'refund', label: '仅退款', icon: '💰', desc: '未收到货或与商家协商退款' },
-  { value: 'return', label: '退货退款', icon: '📦', desc: '已收到货，需要退货并退款' },
-  { value: 'exchange', label: '换货', icon: '🔄', desc: '商品有问题，需要更换' },
+  { value: 'refund', label: () => t('afterSale.refundOnly'), icon: '💰', desc: () => t('afterSale.refundDesc') },
+  { value: 'return', label: () => t('afterSale.returnRefund'), icon: '📦', desc: () => t('afterSale.returnDesc') },
+  { value: 'exchange', label: () => t('afterSale.exchange'), icon: '🔄', desc: () => t('afterSale.exchangeDesc') },
 ]
 
+const typeLabels: Record<string, () => string> = {
+  refund: () => t('afterSale.refundOnly'),
+  return: () => t('afterSale.returnRefund'),
+  exchange: () => t('afterSale.exchange'),
+}
+
 const statusMap: Record<string, { label: string; color: string }> = {
-  '0': { label: '待审核', color: '#ff9800' },
-  '1': { label: '已通过', color: '#4caf50' },
-  '2': { label: '已拒绝', color: '#f44336' },
-  '3': { label: '退款中', color: '#1677ff' },
-  '4': { label: '已完成', color: '#4caf50' },
+  '0': { label: t('afterSale.statusPending'), color: '#ff9800' },
+  '1': { label: t('afterSale.statusApproved'), color: '#4caf50' },
+  '2': { label: t('afterSale.statusRejected'), color: '#f44336' },
+  '3': { label: t('afterSale.statusRefunding'), color: '#1677ff' },
+  '4': { label: t('afterSale.statusCompleted'), color: '#4caf50' },
 }
 
 onMounted(async () => {
@@ -33,10 +41,10 @@ onMounted(async () => {
 })
 
 async function submit() {
-  if (!form.value.orderNo || !form.value.reason) { toast.error('请填写完整信息'); return }
+  if (!form.value.orderNo || !form.value.reason) { toast.error(t('afterSale.fillComplete')); return }
   submitting.value = true
-  try { await request.post('/after-sale', form.value); toast.success('售后申请已提交'); showForm.value = false; records.value.unshift({ ...form.value, status: '0', createdAt: new Date().toISOString() }) }
-  catch { toast.error('提交失败') }
+  try { await request.post('/after-sale', form.value); toast.success(t('afterSale.submitSuccess')); showForm.value = false; records.value.unshift({ ...form.value, status: '0', createdAt: new Date().toISOString() }) }
+  catch { toast.error(t('afterSale.submitFail')) }
   finally { submitting.value = false }
 }
 </script>
@@ -44,29 +52,29 @@ async function submit() {
 <template>
   <div style="max-width:700px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2 style="font-size:20px;font-weight:700">🛡️ 售后申请</h2>
-      <button @click="showForm=true" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ 新建申请</button>
+      <h2 style="font-size:20px;font-weight:700">🛡️ {{ t('afterSale.title') }}</h2>
+      <button @click="showForm=true" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ {{ t('afterSale.newRequest') }}</button>
     </div>
 
     <div v-if="showForm" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
       <div style="margin-bottom:16px">
-        <label style="font-size:13px;color:#666;margin-bottom:8px;display:block">售后类型</label>
+        <label style="font-size:13px;color:#666;margin-bottom:8px;display:block">{{ t('afterSale.type') }}</label>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-          <div v-for="t in types" :key="t.value" @click="form.type=t.value"
+          <div v-for="tp in types" :key="tp.value" @click="form.type=tp.value"
                style="padding:12px;border-radius:8px;cursor:pointer;text-align:center;transition:all .2s"
-               :style="{border:form.type===t.value?'2px solid #f10215':'1px solid #eee',background:form.type===t.value?'#fff5f5':'#fff'}">
-            <div style="font-size:24px;margin-bottom:4px">{{ t.icon }}</div>
-            <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ t.label }}</div>
-            <div style="font-size:10px;color:#999">{{ t.desc }}</div>
+               :style="{border:form.type===tp.value?'2px solid #f10215':'1px solid #eee',background:form.type===tp.value?'#fff5f5':'#fff'}">
+            <div style="font-size:24px;margin-bottom:4px">{{ tp.icon }}</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ tp.label() }}</div>
+            <div style="font-size:10px;color:#999">{{ tp.desc() }}</div>
           </div>
         </div>
       </div>
-      <input v-model="form.orderNo" placeholder="订单号" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
-      <input v-model="form.amount" placeholder="退款金额 (¥)" type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
-      <textarea v-model="form.reason" placeholder="请描述售后原因..." style="width:100%;height:80px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
+      <input v-model="form.orderNo" :placeholder="t('afterSale.orderNo')" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
+      <input v-model="form.amount" :placeholder="t('afterSale.amount') + ' (¥)'" type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
+      <textarea v-model="form.reason" :placeholder="t('afterSale.reason')" style="width:100%;height:80px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button @click="showForm=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">取消</button>
-        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting?'提交中...':'提交申请' }}</button>
+        <button @click="showForm=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">{{ t('common.cancel') }}</button>
+        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting ? t('afterSale.submitting') : t('afterSale.submitRequest') }}</button>
       </div>
     </div>
 
@@ -79,8 +87,8 @@ async function submit() {
       <div v-for="r in records" :key="r.id || r.orderNo" style="background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
           <div>
-            <span style="font-size:13px;color:#999">订单 {{ r.orderNo }}</span>
-            <span style="margin-left:12px;font-size:13px;font-weight:600">{{ ({refund:'仅退款',return:'退货退款',exchange:'换货'} as any)[r.type] }}</span>
+            <span style="font-size:13px;color:#999">{{ t('afterSale.orderPrefix') }} {{ r.orderNo }}</span>
+            <span style="margin-left:12px;font-size:13px;font-weight:600">{{ typeLabels[r.type]?.() || r.type }}</span>
           </div>
           <span style="padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff" :style="{background:statusMap[r.status]?.color}">{{ statusMap[r.status]?.label }}</span>
         </div>
@@ -90,7 +98,7 @@ async function submit() {
       </div>
     </div>
     <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-      <p style="font-size:48px;margin-bottom:12px">🛡️</p><p>暂无售后记录</p>
+      <p style="font-size:48px;margin-bottom:12px">🛡️</p><p>{{ t('afterSale.noRecords') }}</p>
     </div>
   </div>
 </template>

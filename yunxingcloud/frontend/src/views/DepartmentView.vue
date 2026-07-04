@@ -19,6 +19,7 @@ const showModal = ref(false)
 const editing = ref<Dept | null>(null)
 const form = ref({ name: '', parentId: null as number | null, sortOrder: 0 })
 const deptSearch = ref("")
+function doSearch() { deptSearch.value = deptSearch.value }
 const flatDepts = computed(() => { const r: {label:string,value:number}[] = []; function walk(ds: Dept[]) { ds.forEach(d => { r.push({label:d.name,value:d.id}); if(d.children) walk(d.children) }) }; walk(depts.value); return r })
 function filterTree(list: Dept[], kw: string): Dept[] {
   if (!kw) return list
@@ -112,8 +113,8 @@ onMounted(loadDepts)
       </template>
       <n-space style="margin-bottom:12px" justify="space-between">
         <n-space>
-          <n-input v-model:value="deptSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
-          <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+          <n-input v-model:value="deptSearch" @keyup.enter="doSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
+          <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
         <n-space>

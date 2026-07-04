@@ -15,7 +15,9 @@ const errorMessage = ref('')
 
 onErrorCaptured((err, _instance, info) => {
   console.error(`[ErrorBoundary] ${info}:`, err)
-  errorMessage.value = err instanceof Error ? err.message : String(err)
+  const msg = err instanceof Error ? err.message : String(err)
+  const stack = err instanceof Error ? (err.stack || '').substring(0, 500) : ''
+  errorMessage.value = msg + (stack ? '\n' + stack : '')
   hasError.value = true
   return false
 })

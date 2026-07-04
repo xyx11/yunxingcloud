@@ -98,6 +98,9 @@ async function delPost(id: number) {
   await deletePost(id)
   await loadPosts()
 }
+async function batchDeletePosts(ids: number[]) {
+  try { for (const id of ids) await deletePost(id); loadPosts(); notify.success(t('common.deleted')) } catch { notify.error(t('common.saveFailed')) }
+}
 
 onMounted(loadPosts)
 </script>
@@ -116,6 +119,7 @@ onMounted(loadPosts)
     @add="addPost"
     @save="savePost"
     @refresh="loadPosts"
+    @batch-delete="batchDeletePosts"
     @search="() => {}"
   >
     <template #form>

@@ -22,6 +22,8 @@ export const getProductById = (id: number) => request.get(`/products/${id}`)
 export const getProductSkus = (id: number) => request.get(`/products/${id}/skus`)
 export const getProductReviews = (id: number) => request.get(`/products/${id}/reviews`)
 export const getRelatedProducts = (id: number) => request.get(`/products/${id}/related`)
+/** Aggregated: product + skus + reviews + related in one request */
+export const getProductDetail = (id: number) => request.get(`/products/${id}/detail`)
 
 // Categories
 export const getCategories = () => request.get('/categories')
@@ -31,6 +33,8 @@ export const getBrands = () => request.get('/brands')
 
 // Banners
 export const getBanners = () => request.get('/banners')
+/** Aggregated: banners + hotProducts + newProducts + categories */
+export const getHomeData = () => request.get('/home')
 
 // Recommendations
 export const getRecommend = () => request.get('/recommend/hot')

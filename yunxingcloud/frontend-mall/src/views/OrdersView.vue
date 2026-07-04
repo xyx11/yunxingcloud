@@ -3,10 +3,12 @@ import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getOrders, cancelOrder } from '@/api/order'
 import { useI18n } from '@/locales'
+import { ToastInjectionKey } from '@/composables/useToast'
+import SkeletonBox from '@/components/SkeletonBox.vue'
 
 const router = useRouter()
 const { t } = useI18n()
-const toast = inject<any>('toast')
+const toast = inject(ToastInjectionKey)!
 const orders = ref<any[]>([])
 const loading = ref(false)
 const activeTab = ref('all')
@@ -48,7 +50,8 @@ onMounted(load)
     </div>
     <div v-if="loading" style="display:flex;flex-direction:column;gap:12px">
       <div v-for="i in 3" :key="i" style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-        <div style="height:18px;width:50%;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:12px"></div>
+        <SkeletonBox height="18px" width="50%" :count="1" />
+        <SkeletonBox height="14px" width="30%" :count="1" style="margin-top:8px" />
       </div>
     </div>
     <div v-else-if="filteredOrders().length">
@@ -76,4 +79,3 @@ onMounted(load)
     </div>
   </div>
 </template>
-<style scoped>@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }</style>

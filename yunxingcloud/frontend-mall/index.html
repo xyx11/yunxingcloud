@@ -7,8 +7,8 @@
   <meta name="description" content="YXCLOUD 商城是您的一站式购物平台，提供海量商品、限时秒杀、拼团优惠。支持微信/支付宝支付，全国包邮。"/>
   <meta name="keywords" content="YXCLOUD,商城,购物,秒杀,拼团,优惠券,微信支付,支付宝"/>
   <meta name="theme-color" content="#e4393c"/>
-  <link rel="manifest" href="/mall/manifest.json"/>
-  <link rel="icon" type="image/svg+xml" href="/mall/favicon.svg"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 
   <!-- Open Graph -->
   <meta property="og:title" content="YXCLOUD 商城 — 品质生活，一站购齐"/>
@@ -16,13 +16,12 @@
   <meta property="og:type" content="website"/>
   <meta property="og:site_name" content="YXCLOUD 商城"/>
 
-  <!-- Preconnect -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="dns-prefetch" href="//www.yunxingcloud.com"/>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
     body{margin:0;padding:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji';background:#f5f5f5;color:#333;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+    #nprogress-bar{position:fixed;top:0;left:0;width:0%;height:2px;background:#f10215;z-index:9999;box-shadow:0 0 4px rgba(241,2,21,.4);transition:none;pointer-events:none}
   </style>
 
   <!-- JSON-LD Structured Data -->
@@ -43,6 +42,7 @@
 </head>
 <body>
   <div id="app"></div>
+  <div id="nprogress-bar"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

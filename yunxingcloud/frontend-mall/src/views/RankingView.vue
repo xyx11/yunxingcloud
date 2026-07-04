@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/locales'
+const { t } = useI18n()
+import LazyImage from '@/components/LazyImage.vue'
 import request from '@/api/request'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
@@ -52,7 +55,7 @@ const medalColor = (i: number) => ['#ff6b00','#999','#b87333'][i] || '#666'
         <span style="font-size:22px;font-weight:800;width:32px;text-align:center;flex-shrink:0" :style="{color:medalColor(i)}">
           {{ i < 3 ? ['🥇','🥈','🥉'][i] : i + 1 }}
         </span>
-        <div style="width:60px;height:60px;background:linear-gradient(135deg,#f8f8f8,#eee);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">📦</div>
+        <LazyImage :src="p.imageUrl || ''" alt="" height="60px" width="60px" rounded="6px" />
         <div style="flex:1">
           <div style="font-weight:600;font-size:15px;margin-bottom:2px">{{ p.name }}</div>
           <div style="color:#999;font-size:12px">已售 {{ (p.sales || 0).toLocaleString() }} 件</div>

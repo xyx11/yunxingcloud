@@ -1,37 +1,52 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NColorPicker, NSpace, NTag } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NInputNumber, NColorPicker, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchTags, createTag, type Tag } from '@/api/tag'
 import { useNotify } from '@/composables/useNotify'
+import request from '@/api/request'
 
 const notify = useNotify()
 const items = ref<Tag[]>([])
-const showModal = ref(false)
+const showModal = ref(false); const editingId = ref<number|null>(null)
 const form = ref<Tag>({ name:'', color:'#e4393c', sortOrder:0 })
 
 const columns: DataTableColumns<Tag> = [
   { title: '名称', key: 'name', width: 120 },
   { title: '颜色', key: 'color', width: 80, render(r:any){ return h(NTag,{size:'small',style:{background:r.color,color:'#fff',border:'none'}},{default:()=>r.name}) } },
   { title: '排序', key: 'sortOrder', width: 60 },
+  { title: '操作', key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
+    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>'编辑'}),
+    h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>'确认删除？'})
+  ]})}}
 ]
 
 async function load() { const r = await fetchTags(); items.value = r.data }
-async function save() { await createTag(form.value); showModal.value=false; notify.success('创建成功'); load() }
+async function save() {
+  if (editingId.value) { await request.put(`/api/tags/${editingId.value}`, form.value) }
+  else { await createTag(form.value) }
+  showModal.value=false; editingId.value=null; notify.success('保存成功'); load()
+}
+async function del(id:number) { try{await request.delete(`/api/tags/${id}`);notify.success('已删除');load()}catch{notify.error('删除失败')} }
+function add() { editingId.value=null; form.value={name:'',color:'#e4393c',sortOrder:0}; showModal.value=true }
 onMounted(load)
 </script>
 <template>
   <n-card title="标签管理">
-    <n-space vertical><n-button type="primary" @click="showModal=true">新建标签</n-button>
+    <n-space vertical><n-button type="primary" @click="add">新建标签</n-button>
       <n-dataTable :columns="columns" :data="items" :pagination="false" />
     </n-space>
-    <n-modal v-model:show="showModal" title="新建标签" preset="card" style="max-width:300px">
-      <n-form :model="form">
-        <n-form-item label="名称"><n-input v-model:value="form.name" /></n-form-item>
-        <n-form-item label="颜色"><n-color-picker v-model:value="form.color" /></n-form-item>
-        <n-form-item label="排序"><n-input-number v-model:value="form.sortOrder" :min="0" /></n-form-item>
-      </n-form>
-      <template #footer><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></template>
-    </n-modal>
+    <n-drawer v-model:show="showModal" :width="340" placement="right">
+      <n-drawer-content :title="editingId?'编辑标签':'新建标签'" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
+        <n-form :model="form" label-placement="left" label-width="60" size="small">
+          <n-form-item label="名称"><n-input v-model:value="form.name" /></n-form-item>
+          <n-form-item label="颜色"><n-color-picker v-model:value="form.color" /></n-form-item>
+          <n-form-item label="排序"><n-input-number v-model:value="form.sortOrder" :min="0" /></n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
   </n-card>
 </template>

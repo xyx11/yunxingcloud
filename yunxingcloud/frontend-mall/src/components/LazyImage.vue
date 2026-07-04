@@ -1,22 +1,92 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
-const props = withDefaults(defineProps<{ src: string; alt?: string; placeholder?: string }>(), { placeholder: '📦' })
+const props = withDefaults(defineProps<{
+  src?: string
+  alt?: string
+  width?: number
+  height?: number
+  rounded?: string
+  bg?: string
+}>(), {
+  src: '',
+  alt: '',
+  rounded: '0',
+  bg: 'var(--border-light)',
+})
+
 const loaded = ref(false)
+const error = ref(false)
+const inView = ref(false)
 const el = ref<HTMLElement>()
+let observer: IntersectionObserver | null = null
+
+const hasSrc = () => props.src && props.src.length > 0
 
 onMounted(() => {
-  if (!el.value) return
-  const observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting) { loaded.value = true; observer.disconnect() }
-  }, { rootMargin: '200px' })
+  if (!el.value || !hasSrc()) return
+  observer = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting) {
+      inView.value = true
+    }
+  }, { rootMargin: '300px' })
   observer.observe(el.value)
 })
+
+onUnmounted(() => { observer?.disconnect() })
+
+watch(() => props.src, () => {
+  loaded.value = false
+  error.value = false
+})
+
+function onError() { error.value = true }
+function onLoad() { loaded.value = true }
 </script>
 
 <template>
-  <div ref="el" :style="{background:'linear-gradient(135deg,#f8f8f8,#eee)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'48px',minHeight:'100px'}">
-    <img v-if="loaded && src && src !== '📦'" :src="src" :alt="alt" style="width:100%;height:100%;object-fit:cover" @load="(e:any) => e.target.style.opacity='1'" :style="{opacity:0,transition:'opacity .3s'}" />
-    <span v-else>{{ placeholder }}</span>
+  <div
+    ref="el"
+    class="lazy-image"
+    :style="{ background: bg, borderRadius: rounded }"
+  >
+    <img
+      v-if="hasSrc() && inView"
+      :src="src"
+      :alt="alt"
+      loading="lazy"
+      :width="width"
+      :height="height"
+      @load="onLoad"
+      @error="onError"
+      :class="{ 'img-loaded': loaded }"
+    />
+    <span v-if="!loaded && !error" class="lazy-placeholder">📦</span>
+    <span v-if="error" class="lazy-error">🖼️</span>
   </div>
 </template>
+
+<style scoped>
+.lazy-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.lazy-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.lazy-image img.img-loaded { opacity: 1; }
+
+.lazy-placeholder,
+.lazy-error {
+  position: absolute;
+  font-size: 32px;
+  pointer-events: none;
+}
+</style>

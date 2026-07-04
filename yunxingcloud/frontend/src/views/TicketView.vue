@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm, NSelect } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm, NSelect } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchTickets, createTicket, updateTicket, deleteTicket, assignTicket, updateTicketStatus, type SysTicket } from '@/api/ticket'
 import { useNotify } from '@/composables/useNotify'
@@ -46,7 +46,7 @@ const statusOptions = [
 
 const priorityColor: Record<string, string> = { low: 'default', medium: 'info', high: 'warning', emergency: 'error' }
 const statusColor: Record<string, string> = { '0': 'warning', '1': 'info', '2': 'success', '3': 'default' }
-const typeLabel: Record<string, string> = { fault: '故障', request: '需求', consult: '咨询', other: '其他' }
+const typeLabel: Record<string, string> = { fault: t('ticket.types.fault'), request: t('ticket.types.request'), consult: t('ticket.types.consult'), other: t('ticket.types.other') }
 
 const filteredItems = computed(() => {
   if (!searchKeyword.value) return items.value
@@ -76,18 +76,18 @@ const columns: DataTableColumns<SysTicket> = [
   },
   { title: t('ticket.applicant'), key: 'applicant', width: 100 },
   { title: t('ticket.assignee'), key: 'assignee', width: 100 },
-  { title: 'Created', key: 'createdAt', width: 160, render(row: SysTicket) { return row.createdAt?.substring(0, 16) } },
+  { title: t('common.createdAt'), key: 'createdAt', width: 160, render(row: SysTicket) { return row.createdAt?.substring(0, 16) } },
   {
     title: t('ticket.actions'), key: 'actions', width: 260,
     render(row: SysTicket) {
       return h(NSpace, { size: 'small' }, {
         default: () => [
-          h(NButton, { size: 'small', onClick: () => editTicket(row) }, { default: () => 'Edit' }),
+          h(NButton, { size: 'small', onClick: () => editTicket(row) }, { default: () => t('common.edit') }),
           h(NButton, { size: 'small', onClick: () => openAssign(row) }, { default: () => t('ticket.assign') }),
           h(NButton, { size: 'small', onClick: () => openStatus(row) }, { default: () => t('ticket.updateStatus') }),
           h(NPopconfirm, { onPositiveClick: () => delTicket(row.id) }, {
-            trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => 'Delete' }),
-            default: () => 'Confirm delete?',
+            trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => t('common.delete') }),
+            default: () => t('common.confirmDelete'),
           }),
         ],
       })
@@ -127,12 +127,11 @@ async function saveTicket() {
     }
     showModal.value = false
     load()
-  } finally { saving.value = false }
+  } catch { notify.error(t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delTicket(id: number) {
-  await deleteTicket(id)
-  load()
+  try { await deleteTicket(id); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.saveFailed')) }
 }
 
 function openAssign(row: SysTicket) {
@@ -141,11 +140,12 @@ function openAssign(row: SysTicket) {
   showAssignModal.value = true
 }
 
+const submitting = ref(false)
 async function doAssign() {
   if (!assignTarget.value) return
-  await assignTicket(assignTarget.value.id, assignee.value)
-  showAssignModal.value = false
-  load()
+  submitting.value = true
+  try { await assignTicket(assignTarget.value.id, assignee.value); showAssignModal.value = false; notify.success(t('ticket.updateSuccess')); load() }
+  catch { notify.error(t('common.saveFailed')) } finally { submitting.value = false }
 }
 
 function openStatus(row: SysTicket) {
@@ -156,11 +156,13 @@ function openStatus(row: SysTicket) {
 
 async function doStatus() {
   if (!statusTarget.value) return
-  await updateTicketStatus(statusTarget.value.id, newStatus.value)
-  showStatusModal.value = false
-  load()
+  submitting.value = true
+  try { await updateTicketStatus(statusTarget.value.id, newStatus.value); showStatusModal.value = false; notify.success(t('ticket.updateSuccess')); load() }
+  catch { notify.error(t('common.saveFailed')) } finally { submitting.value = false }
 }
 
+const checkedRowKeys = ref<number[]>([])
+async function batchDelete() { if(!checkedRowKeys.value.length)return; try{for(const id of checkedRowKeys.value)await deleteTicket(id);checkedRowKeys.value=[];load();notify.success(t('common.deleted'))}catch{notify.error(t('common.saveFailed'))} }
 onMounted(load)
 </script>
 
@@ -169,63 +171,33 @@ onMounted(load)
     <n-space vertical>
       <n-space justify="space-between">
         <n-input v-model:value="searchKeyword" :placeholder="t('ticket.searchPlaceholder')" clearable style="width: 240px" />
-        <n-button type="primary" @click="addTicket">{{ t('ticket.add') }}</n-button>
+        <n-space><n-button v-if="checkedRowKeys.length" type="error" size="small" @click="batchDelete">{{ t('common.batchDelete') }} ({{ checkedRowKeys.length }})</n-button><n-button type="primary" @click="addTicket">{{ t('ticket.add') }}</n-button></n-space>
       </n-space>
-      <n-dataTable :columns="columns" :data="filteredItems" :loading="loading" :row-key="(r: SysTicket) => r.id" :pagination="{ pageSize: 10 }" />
+      <n-dataTable :columns="columns" :data="filteredItems" :loading="loading" :row-key="(r: SysTicket) => r.id" v-model:checked-row-keys="checkedRowKeys" :pagination="{ pageSize: 10 }" />
     </n-space>
 
-    <!-- Edit/Create Modal -->
-    <n-modal v-model:show="showModal" :title="editingId ? t('ticket.edit') : t('ticket.add')" preset="card" style="max-width:600px">
-      <n-form :model="form">
-        <n-form-item :label="t('ticket.title')" path="title">
-          <n-input v-model:value="form.title" />
-        </n-form-item>
-        <n-form-item :label="t('ticket.content')">
-          <n-input v-model:value="form.content" type="textarea" :autosize="{ minRows: 3, maxRows: 8 }" />
-        </n-form-item>
-        <n-form-item :label="t('ticket.type')">
-          <n-select v-model:value="form.type" :options="typeOptions" />
-        </n-form-item>
-        <n-form-item :label="t('ticket.priority')">
-          <n-select v-model:value="form.priority" :options="priorityOptions" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-space justify="end">
-          <n-button @click="showModal = false">Cancel</n-button>
-          <n-button type="primary" :loading="saving" @click="saveTicket">Save</n-button>
-        </n-space>
-      </template>
-    </n-modal>
-
-    <!-- Assign Modal -->
-    <n-modal v-model:show="showAssignModal" :title="t('ticket.assign')" preset="card" style="max-width:400px">
-      <n-form>
-        <n-form-item :label="t('ticket.assignee')">
-          <n-input v-model:value="assignee" :placeholder="t('ticket.assignPlaceholder')" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-space justify="end">
-          <n-button @click="showAssignModal = false">Cancel</n-button>
-          <n-button type="primary" @click="doAssign">Confirm</n-button>
-        </n-space>
-      </template>
-    </n-modal>
-
-    <!-- Status Modal -->
-    <n-modal v-model:show="showStatusModal" :title="t('ticket.updateStatus')" preset="card" style="max-width:400px">
-      <n-form>
-        <n-form-item :label="t('ticket.status')">
-          <n-select v-model:value="newStatus" :options="statusOptions" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-space justify="end">
-          <n-button @click="showStatusModal = false">Cancel</n-button>
-          <n-button type="primary" @click="doStatus">Confirm</n-button>
-        </n-space>
-      </template>
-    </n-modal>
+    <n-drawer v-model:show="showModal" :width="460" placement="right">
+      <n-drawer-content :title="editingId ? t('ticket.edit') : t('ticket.add')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal = false">Cancel</n-button><n-button type="primary" :loading="saving" @click="saveTicket">Save</n-button></n-space></template>
+        <n-form :model="form" label-placement="left" label-width="80" size="small">
+          <n-form-item :label="t('ticket.title')" path="title"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item :label="t('ticket.content')"><n-input v-model:value="form.content" type="textarea" :autosize="{ minRows: 3, maxRows: 8 }" /></n-form-item>
+          <n-form-item :label="t('ticket.type')"><n-select v-model:value="form.type" :options="typeOptions" /></n-form-item>
+          <n-form-item :label="t('ticket.priority')"><n-select v-model:value="form.priority" :options="priorityOptions" /></n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
+    <n-drawer v-model:show="showAssignModal" :width="380" placement="right">
+      <n-drawer-content :title="t('ticket.assign')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showAssignModal = false">Cancel</n-button><n-button type="primary" :loading="submitting" @click="doAssign">Confirm</n-button></n-space></template>
+        <n-form label-placement="left" label-width="80" size="small"><n-form-item :label="t('ticket.assignee')"><n-input v-model:value="assignee" :placeholder="t('ticket.assignPlaceholder')" /></n-form-item></n-form>
+      </n-drawer-content>
+    </n-drawer>
+    <n-drawer v-model:show="showStatusModal" :width="360" placement="right">
+      <n-drawer-content :title="t('ticket.updateStatus')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showStatusModal = false">Cancel</n-button><n-button type="primary" :loading="submitting" @click="doStatus">Confirm</n-button></n-space></template>
+        <n-form label-placement="left" label-width="80" size="small"><n-form-item :label="t('ticket.status')"><n-select v-model:value="newStatus" :options="statusOptions" /></n-form-item></n-form>
+      </n-drawer-content>
+    </n-drawer>
   </n-card>
 </template>

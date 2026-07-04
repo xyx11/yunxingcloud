@@ -6,6 +6,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/admin/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -42,6 +43,12 @@ export default defineConfig({
           }
           if (id.includes('axios') || id.includes('js-cookie')) {
             return 'vendor-utils';
+          }
+          if (id.includes('wangeditor')) {
+            return 'vendor-wangeditor';
+          }
+          if (id.includes('xlsx') || id.includes('jszip')) {
+            return 'vendor-xlsx';
           }
         },
       },

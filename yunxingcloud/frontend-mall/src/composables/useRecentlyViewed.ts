@@ -28,6 +28,7 @@ export function useRecentlyViewed() {
   if (!items.value.length) load()
 
   function add(product: { id: number; name: string; price: number; imageUrl?: string }) {
+    if (!product.id) return
     items.value = [
       { ...product, viewedAt: Date.now() },
       ...items.value.filter(p => p.id !== product.id)

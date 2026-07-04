@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { NCard, NDataTable, NButton, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import request from '@/api/request'

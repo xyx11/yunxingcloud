@@ -23,14 +23,21 @@ import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import { useI18n } from 'vue-i18n'
 import { switchLocale } from '@/locales'
 
+const router = useRouter()
+const route = useRoute()
+
+const routeLoading = ref(false)
+router.beforeEach(() => { routeLoading.value = true })
+router.afterEach(() => { setTimeout(() => routeLoading.value = false, 200) })
+
 const authStore = useAuthStore()
 const liveStatsStore = useLiveStatsStore()
 const tagsViewStore = useTagsViewStore()
-const router = useRouter()
-const route = useRoute()
 const { t, locale } = useI18n()
 
 const collapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true' ? true : window.innerWidth < 768)
+const collapsedGroups = ref<Set<string>>(new Set())
+function toggleGroup(key: string) { if (collapsedGroups.value.has(key)) collapsedGroups.value.delete(key); else collapsedGroups.value.add(key) }
 const isMobile = ref(window.innerWidth < 768)
 const mobileOverlay = ref(false)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
@@ -205,6 +212,19 @@ const breadcrumbs = computed(() => {
     dict: t('nav.dict'), notices: t('nav.notice'), posts: t('nav.posts'), tickets: t('nav.tickets'), payments: t('nav.payments'), orders: t('nav.orders'), products: t('nav.products'), inventory: t('nav.inventory'), warehouses: t('nav.warehouses'), loginlog: t('nav.loginlog'),
     online: t('nav.online'), backup: t('nav.backup'),
     approval: t('nav.approval'), 'register-approval': t('nav.registerApproval'),
+    brands: t('nav.brands'), categories: t('nav.categories'), coupons: t('nav.coupons'),
+    analytics: t('nav.analytics'), skus: t('nav.skus'), shipments: t('nav.shipments'),
+    banners: t('nav.banners'), reviews: t('nav.reviews'), 'media-library': t('nav.mediaLibrary'),
+    'export-center': t('nav.exportCenter'), 'email-templates': t('nav.emailTemplates'),
+    invoices: t('nav.invoices'), seo: t('nav.seo'), audit: t('nav.audit'),
+    'system-logs': t('nav.systemLogs'), 'system-config': t('nav.systemConfig'),
+    'chat-admin': t('nav.chatAdmin'), 'points-admin': t('nav.pointsAdmin'),
+    'recommend-config': t('nav.recommendConfig'), bundles: t('nav.bundles'),
+    'activity-logs': t('nav.activityLogs'), giftcards: t('nav.giftcards'),
+    notifications: t('nav.notifications'), articles: t('nav.articles'),
+    aftersale: t('nav.aftersale'), flashsale: t('nav.flashsale'), groupbuy: t('nav.groupbuy'),
+    'member-tiers': t('nav.memberTiers'), feedback: t('nav.feedback'), tags: t('nav.tags'),
+    campaigns: t('nav.campaigns'), suppliers: t('nav.suppliers'),
   }
   for (const p of parts) {
     items.push({ label: map[p] || p, path: `/${p}` })
@@ -214,22 +234,14 @@ const breadcrumbs = computed(() => {
 
 const pageTitle = computed(() => {
   const p = route.path.split('/')[1]
-  const map: Record<string, string> = {
-    '': t('nav.dashboard'), departments: t('nav.departments'), roles: t('nav.roles'), users: t('nav.users'),
-    menus: t('nav.menus'), operlog: t('nav.operlog'), job: t('nav.jobs'),
-    config: t('nav.config'), generator: t('nav.generator'), monitor: t('nav.monitor'),
-    swagger: t('nav.swagger'), maintenance: t('nav.maintenance'), profile: t('nav.profile'),
-    dict: t('nav.dict'), notices: t('nav.notice'), posts: t('nav.posts'), tickets: t('nav.tickets'), payments: t('nav.payments'), orders: t('nav.orders'), products: t('nav.products'), inventory: t('nav.inventory'), warehouses: t('nav.warehouses'), loginlog: t('nav.loginlog'),
-    online: t('nav.online'), backup: t('nav.backup'),
-    approval: t('nav.approval'), 'register-approval': t('nav.registerApproval'),
-  }
-  return map[p] || ''
+  return breadcrumbs.value[breadcrumbs.value.length - 1]?.label || ''
 })
 
 watch(() => route.path, (path) => {
   currentKey.value = path.split('/')[1] || 'home'
   const name = path.split('/').filter(Boolean).pop() || 'home'
   const title = pageTitle.value || name
+  document.title = title ? `${title} - YXCLOUD` : 'YXCLOUD 管理后台'
   if (path !== '/login') tagsViewStore.addTag({ path, name, title })
 }, { immediate: true })
 
@@ -279,34 +291,44 @@ onMounted(async () => {
       { label: t('nav.products'), key: 'products', icon: menuIcons.products },
       { label: t('nav.inventory'), key: 'inventory', icon: menuIcons.inventory },
       { label: t('nav.warehouses'), key: 'warehouses', icon: menuIcons.warehouses },
-      { label: t('nav.groupbuy'), key: 'groupbuy', icon: menuIcons.groupbuy },
-      { label: t('nav.flashsale'), key: 'flashsale', icon: menuIcons.flashsale },
-      { label: t('nav.aftersale'), key: 'aftersale', icon: menuIcons.aftersale },
-      { label: t('nav.articles'), key: 'articles', icon: menuIcons.articles },
-      { label: t('nav.notifications'), key: 'notifications', icon: menuIcons.notifications },
-      { label: t('nav.giftcards'), key: 'giftcards', icon: menuIcons.giftcards },
+      { label: '品牌管理', key: 'brands', icon: menuIcons.products },
+      { label: '分类管理', key: 'categories', icon: menuIcons.products },
+      { label: '优惠券', key: 'coupons', icon: menuIcons.giftcards },
+      { label: '销售分析', key: 'analytics', icon: menuIcons.monitor },
+      { label: 'SKU管理', key: 'skus', icon: menuIcons.products },
+      { label: '物流发货', key: 'shipments', icon: menuIcons.tickets },
+      { label: 'Banner', key: 'banners', icon: menuIcons.swagger },
+      { label: '批量导入', key: 'products/import', icon: menuIcons.products },
+      { label: '评价管理', key: 'reviews', icon: menuIcons.notice },
+      { label: '媒体库', key: 'media-library', icon: menuIcons.swagger },
+      { label: '导出中心', key: 'export-center', icon: menuIcons.generator },
+      { label: '邮件模板', key: 'email-templates', icon: menuIcons.config },
+      { label: '发票管理', key: 'invoices', icon: menuIcons.tickets },
+      { label: 'SEO管理', key: 'seo', icon: menuIcons.config },
+      { label: '审计日志', key: 'audit', icon: menuIcons.operlog },
       { label: t('nav.loginlog'), key: 'loginlog', icon: menuIcons.loginlog },
       { label: t('nav.online'), key: 'online', icon: menuIcons.online },
       { label: t('nav.backup'), key: 'backup', icon: menuIcons.backup },
-      { label: t('nav.registerApproval'), key: 'register-approval', icon: menuIcons['register-approval'] },
     ]
   }
 })
 
 function convertMenus(menus: any[]): MenuOption[] {
+  if (!Array.isArray(menus)) menus = []
   const result: MenuOption[] = [{ label: t('nav.home'), key: 'home', icon: menuIcons.home }]
   function walk(list: any[]): MenuOption[] {
+    if (!Array.isArray(list)) return []
     return list
-      .filter((m: any) => m.menuType !== 'F' && m.visible)
+      .filter((m: any) => m && m.menuType !== 'F' && m.visible !== false)
       .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0))
       .map((m: any) => ({
-        label: m.name,
+        label: m.name || '',
         key: m.path ? m.path.replace(/\//g, '') : `menu-${m.id}`,
         icon: menuIcons[m.path ? m.path.replace(/\//g, '') : ''] || undefined,
-        children: m.children ? walk(m.children) : undefined,
+        children: Array.isArray(m.children) && m.children.length ? walk(m.children) : undefined,
       })).map((opt: any) => {
         if (!opt.children && opt.key !== 'home') {
-          opt.click = () => { console.log('[click]', opt.key); router.push('/' + opt.key).catch(() => {}); }
+          opt.click = () => { router.push('/' + opt.key).catch(() => {}) }
         }
         return opt
       })
@@ -357,6 +379,7 @@ useKeyboard({
   'Ctrl+u': () => router.push('/users'),
   'Ctrl+r': () => router.push('/roles'),
   'Ctrl+m': () => router.push('/menus'),
+  '/': (e: KeyboardEvent) => { if (document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); const inp = document.querySelector<HTMLInputElement>('.search-input input, [placeholder*="搜索"]'); inp?.focus() } },
 })
 </script>
 
@@ -369,13 +392,18 @@ useKeyboard({
       :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
     >
       <div class="logo">
-        <span v-if="!collapsed">yunxingcloud</span>
-        <span v-else style="font-size:16px;">YC</span>
+        <span v-if="!collapsed" style="font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#f10215,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">YXCLOUD</span>
+        <span v-else style="font-size:16px;font-weight:800;color:#f10215">YC</span>
+        <span v-if="!collapsed" style="font-size:10px;color:#999;display:block;margin-top:2px">管理后台 v2.4</span>
       </div>
-      <div class="custom-menu" :class="{ collapsed }">
+      <div class="custom-menu" :class="{ collapsed }" style="overflow-y:auto;max-height:calc(100vh - 110px);padding-right:4px">
         <template v-for="item in menuOptions" :key="item.key">
           <template v-if="item.children">
-            <div v-show="!collapsed" class="menu-group-title">{{ item.label }}</div>
+            <div v-show="!collapsed" class="menu-group-title" @click="toggleGroup(item.key)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+              <span>{{ item.label }}</span>
+              <span style="font-size:10px;transition:transform .2s" :style="{transform: collapsedGroups.has(item.key)?'rotate(-90deg)':'rotate(0)'}">▼</span>
+            </div>
+            <div v-show="!collapsed && !collapsedGroups.has(item.key)">
             <div
               v-for="child in item.children"
               :key="child.key"
@@ -384,6 +412,7 @@ useKeyboard({
             >
               <span v-if="child.icon" class="menu-icon"><component :is="child.icon" /></span>
               <span v-show="!collapsed" class="menu-label">{{ child.label }}</span>
+            </div>
             </div>
           </template>
         </template>
@@ -502,6 +531,7 @@ useKeyboard({
         </n-dropdown>
         <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="ctxMenuDropdownOptions" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
       </div>
+      <div v-if="routeLoading" style="position:fixed;top:0;left:0;right:0;z-index:9999;height:2px;background:linear-gradient(90deg,#667eea,#764ba2);animation:loadingBar 0.6s ease-out;transition:opacity 0.2s"></div>
       <n-layout-content :style="{ padding:'20px', background: isDark ? '#101014' : '#f0f2f5', minHeight:'calc(100vh - 96px)' }" class="content-area">
         <router-view v-slot="{ Component, route: currentRoute }">
           <transition name="page" mode="out-in">
@@ -529,6 +559,10 @@ useKeyboard({
   font-size:16px;color:rgba(0,0,0,0.04);user-select:none;
   transform:rotate(-20deg) scale(1.5);white-space:nowrap;overflow:hidden;
 }
+.page-enter-active, .page-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; transform: translateY(-8px); }
+@keyframes loadingBar { 0% { width:0; opacity:1 } 70% { width:70%; opacity:1 } 100% { width:90%; opacity:0 } }
 </style>
 
 <style scoped>

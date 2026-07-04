@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from '@/locales'
 
+const { t } = useI18n()
 const props = defineProps<{ reviews: any[] }>()
 
 const total = computed(() => props.reviews.length)
@@ -18,11 +20,11 @@ const distribution = computed(() => {
     <div style="text-align:center;flex-shrink:0">
       <div style="font-size:36px;font-weight:700;color:#e4393c;line-height:1">{{ avg }}</div>
       <div style="color:#f90;font-size:14px">{{ '★'.repeat(Math.round(Number(avg))) }}</div>
-      <div style="color:#999;font-size:11px">{{ total }} 条评价</div>
+      <div style="color:#999;font-size:11px">{{ t('product.reviewCount', { n: total }) }}</div>
     </div>
     <div style="flex:1">
       <div v-for="[star, count] in distribution" :key="star" style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-        <span style="font-size:11px;color:#666;width:24px;text-align:right">{{ star }}星</span>
+        <span style="font-size:11px;color:#666;width:24px;text-align:right">{{ t('product.starLabel', { n: star }) }}</span>
         <div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
           <div style="height:100%;background:linear-gradient(90deg,#f90,#ffc107);border-radius:3px;transition:width .6s" :style="{width:(count/Math.max(1,total)*100)+'%'}"></div>
         </div>

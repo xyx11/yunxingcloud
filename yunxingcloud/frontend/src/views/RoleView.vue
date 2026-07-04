@@ -6,7 +6,7 @@ import { fetchSysRoles, createRole, updateRole, deleteRole } from '@/api/role'
 import { fetchMenuTree } from '@/api/menu'
 import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTree, NSwitch, NPopover, NCheckbox } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTree, NSwitch, NPopover, NCheckbox } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
 import type { DataTableColumns, TreeOption } from 'naive-ui'
 
@@ -21,6 +21,12 @@ const saving = ref(false)
 const showModal = ref(false)
 const editing = ref<Role | null>(null)
 const roleSearch = ref('')
+function doSearch() { roleSearch.value = roleSearch.value }
+const checkedRowKeys = ref<number[]>([])
+async function batchDelete() {
+  if (!checkedRowKeys.value.length) return
+  try { for (const id of checkedRowKeys.value) await deleteRole(id); checkedRowKeys.value = []; loadRoles(); notify.success(t('common.deleted')) } catch { notify.error(t('common.saveFailed')) }
+}
 const form = ref({ name: '', code: '', description: '', permissions: '' })
 const menuTree = ref<TreeOption[]>([])
 const checkedPerms = ref<string[]>([])
@@ -127,12 +133,15 @@ onMounted(loadAll)
   <div style="padding:20px">
     <n-card :title="t('nav.roles')">
       <template #header-extra>
-        <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+        <n-space>
+          <n-button v-if="checkedRowKeys.length" type="error" size="small" @click="batchDelete">{{ t('common.batchDelete') }} ({{ checkedRowKeys.length }})</n-button>
+          <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
+        </n-space>
       </template>
       <n-space style="margin-bottom:12px" justify="space-between">
         <n-space>
-          <n-input v-model:value="roleSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
-          <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
+          <n-input v-model:value="roleSearch" @keyup.enter="doSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
+          <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="roleSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
         <n-space>
@@ -154,25 +163,27 @@ onMounted(loadAll)
           </n-popover>
         </n-space>
       </n-space>
-      <n-data-table :columns="visibleColumns" :data="filteredRoles" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row:Role)=>row.id" />
+      <n-data-table :columns="visibleColumns" :data="filteredRoles" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row:Role)=>row.id" v-model:checked-row-keys="checkedRowKeys" />
 
-      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:560px;width:95%" preset="card" display-directive="show">
-        <n-form label-placement="left" label-width="80">
-          <n-form-item :label="t('role.name')"><n-input v-model:value="form.name" :placeholder="t('role.name')" /></n-form-item>
-          <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>
-          <n-form-item :label="t('role.desc')"><n-input v-model:value="form.description" :placeholder="t('role.desc')" /></n-form-item>
-          <n-form-item :label="t('role.perms')">
-            <n-space style="margin-bottom:4px">
-              <n-button size="tiny" @click="selectAllPerms">{{ t('common.selectAll') }}</n-button>
-              <n-button size="tiny" @click="deselectAllPerms">{{ t('common.deselectAll') }}</n-button>
-            </n-space>
-            <div style="max-height:280px;overflow-y:auto;border:1px solid var(--n-border-color, #e8e8e8);border-radius:4px;padding:8px">
-              <n-tree :data="permNodes" checkable :checked-keys="checkedPerms" @update:checked-keys="(ks:string[])=>checkedPerms=ks" default-expand-all block-line />
-            </div>
-          </n-form-item>
-        </n-form>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveRole">{{ t('common.save') }}</n-button></n-space></template>
-      </n-modal>
+      <n-drawer v-model:show="showModal" :width="500" placement="right">
+        <n-drawer-content :title="editing ? t('common.edit') : t('common.add')" closable>
+          <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveRole">{{ t('common.save') }}</n-button></n-space></template>
+          <n-form label-placement="left" label-width="80" size="small">
+            <n-form-item :label="t('role.name')"><n-input v-model:value="form.name" :placeholder="t('role.name')" /></n-form-item>
+            <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>
+            <n-form-item :label="t('role.desc')"><n-input v-model:value="form.description" :placeholder="t('role.desc')" /></n-form-item>
+            <n-form-item :label="t('role.perms')">
+              <n-space style="margin-bottom:4px">
+                <n-button size="tiny" @click="selectAllPerms">{{ t('common.selectAll') }}</n-button>
+                <n-button size="tiny" @click="deselectAllPerms">{{ t('common.deselectAll') }}</n-button>
+              </n-space>
+              <div style="max-height:50vh;overflow-y:auto;border:1px solid var(--n-border-color, #e8e8e8);border-radius:4px;padding:8px">
+                <n-tree :data="permNodes" checkable :checked-keys="checkedPerms" @update:checked-keys="(ks:string[])=>checkedPerms=ks" default-expand-all block-line />
+              </div>
+            </n-form-item>
+          </n-form>
+        </n-drawer-content>
+      </n-drawer>
     </n-card>
   </div>
 </template>

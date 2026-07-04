@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSpace, NTag, NInputNumber } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace, NTag, NInputNumber } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchOrders, createOrder, payOrder, refundOrder, fetchRecords, type PaymentOrder } from '@/api/payment'
 import { useNotify } from '@/composables/useNotify'
@@ -10,6 +10,9 @@ const { t } = useI18n()
 const notify = useNotify()
 
 const loading = ref(false)
+const saving = ref(false)
+const paying = ref<Set<number>>(new Set())
+const refunding = ref(false)
 const items = ref<PaymentOrder[]>([])
 const records = ref<any[]>([])
 const showModal = ref(false)
@@ -52,7 +55,7 @@ const columns = computed<DataTableColumns<PaymentOrder>>(() => [
         h(NButton, { size: 'small', onClick: () => viewRecords(row) }, { default: () => t('payment.records') }),
       ]
       if (row.status === '0' || row.status === '1') {
-        btns.push(h(NButton, { size: 'small', type: 'primary', onClick: () => doPay(row) }, { default: () => t('payment.pay') }))
+        btns.push(h(NButton, { size: 'small', type: 'primary', loading: paying.value.has(row.id), disabled: paying.value.has(row.id), onClick: () => doPay(row) }, { default: () => t('payment.pay') }))
       }
       if (row.status === '2') {
         btns.push(h(NButton, { size: 'small', type: 'warning', onClick: () => openRefund(row) }, { default: () => t('payment.refund') }))
@@ -68,16 +71,19 @@ async function load() {
 }
 
 async function saveOrder() {
-  await createOrder(form.value)
-  showModal.value = false
-  notify.success(t('common.createSuccess'))
-  load()
+  if (!form.value.title) { notify.error(t('validate.required')); return }
+  saving.value = true
+  try { await createOrder(form.value); showModal.value = false; notify.success(t('common.createSuccess')); load() }
+  catch { notify.error(t('common.saveFailed')) }
+  finally { saving.value = false }
 }
 
 async function doPay(row: PaymentOrder) {
-  await payOrder(row.id)
-  notify.success(t('payment.paySuccess'))
-  load()
+  if (paying.value.has(row.id)) return
+  paying.value.add(row.id)
+  try { await payOrder(row.id); notify.success(t('payment.paySuccess')); load() }
+  catch { notify.error(t('payment.payFailed')) }
+  finally { paying.value.delete(row.id) }
 }
 
 async function openRefund(row: PaymentOrder) {
@@ -87,11 +93,11 @@ async function openRefund(row: PaymentOrder) {
 }
 
 async function doRefund() {
-  if (!targetOrder.value) return
-  await refundOrder(targetOrder.value.id, refundForm.value.refundAmount, refundForm.value.reason)
-  showRefund.value = false
-  notify.success(t('payment.refundSuccess'))
-  load()
+  if (!targetOrder.value || !refundForm.value.refundAmount) return
+  refunding.value = true
+  try { await refundOrder(targetOrder.value.id, refundForm.value.refundAmount, refundForm.value.reason); showRefund.value = false; notify.success(t('payment.refundSuccess')); load() }
+  catch { notify.error(t('payment.refundFailed')) }
+  finally { refunding.value = false }
 }
 
 async function viewRecords(row: PaymentOrder) {
@@ -109,6 +115,7 @@ const recordColumns = computed(() => [
   { title: t('payment.time'), key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
 ])
 
+function exportCSV() { const h=['订单号','标题','金额','渠道','状态','交易号','时间']; const r=items.value.map((i:any)=>[i.orderNo||'',i.title||'',(i.amount/100).toFixed(2),i.channel||'',i.status||'',i.tradeNo||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='payments.csv'; a.click() }
 onMounted(load)
 </script>
 
@@ -117,47 +124,31 @@ onMounted(load)
     <n-space vertical>
       <n-space justify="space-between">
         <n-input v-model:value="searchKeyword" :placeholder="t('payment.searchPlaceholder')" clearable style="width: 240px" />
-        <n-button type="primary" @click="showModal = true">{{ t('payment.createOrder') }}</n-button>
+        <n-space><n-button size="small" @click="exportCSV">{{ t('operlog.exportCsv') }}</n-button><n-button type="primary" @click="showModal = true">{{ t('payment.createOrder') }}</n-button></n-space>
       </n-space>
       <n-dataTable :columns="columns" :data="filteredItems" :loading="loading" :row-key="(r: PaymentOrder) => r.id" :pagination="{ pageSize: 10 }" />
     </n-space>
 
-    <n-modal v-model:show="showModal" :title="t('payment.createOrder')" preset="card" style="max-width:500px">
-      <n-form :model="form">
-        <n-form-item :label="t('payment.title')">
-          <n-input v-model:value="form.title" />
-        </n-form-item>
-        <n-form-item :label="t('payment.amount') + '(¥)'">
-          <n-input-number v-model:value="form.amount" :min="0.01" :step="1" />
-        </n-form-item>
-        <n-form-item :label="t('payment.channel')">
-          <n-select v-model:value="form.channel" :options="channelOptions" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-space justify="end">
-          <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-          <n-button type="primary" @click="saveOrder">{{ t('common.submit') }}</n-button>
-        </n-space>
-      </template>
-    </n-modal>
+    <n-drawer v-model:show="showModal" :width="400" placement="right">
+      <n-drawer-content :title="t('payment.createOrder')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveOrder">{{ t('common.submit') }}</n-button></n-space></template>
+        <n-form :model="form" label-placement="left" label-width="80" size="small">
+          <n-form-item :label="t('payment.title')"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item :label="t('payment.amount') + '(¥)'"><n-input-number v-model:value="form.amount" :min="0.01" :step="1" /></n-form-item>
+          <n-form-item :label="t('payment.channel')"><n-select v-model:value="form.channel" :options="channelOptions" /></n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
 
-    <n-modal v-model:show="showRefund" :title="t('payment.refund')" preset="card" style="max-width:400px">
-      <n-form :model="refundForm">
-        <n-form-item :label="t('payment.refundAmount')">
-          <n-input-number v-model:value="refundForm.refundAmount" :min="1" />
-        </n-form-item>
-        <n-form-item :label="t('payment.reason')">
-          <n-input v-model:value="refundForm.reason" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <n-space justify="end">
-          <n-button @click="showRefund = false">{{ t('common.cancel') }}</n-button>
-          <n-button type="primary" @click="doRefund">{{ t('payment.confirmRefund') }}</n-button>
-        </n-space>
-      </template>
-    </n-modal>
+    <n-drawer v-model:show="showRefund" :width="380" placement="right">
+      <n-drawer-content :title="t('payment.refund')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showRefund = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="refunding" @click="doRefund">{{ t('payment.confirmRefund') }}</n-button></n-space></template>
+        <n-form :model="refundForm" label-placement="left" label-width="80" size="small">
+          <n-form-item :label="t('payment.refundAmount')"><n-input-number v-model:value="refundForm.refundAmount" :min="1" /></n-form-item>
+          <n-form-item :label="t('payment.reason')"><n-input v-model:value="refundForm.reason" /></n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
 
     <n-modal v-model:show="showRecords" :title="t('payment.payRecords')" preset="card" style="max-width:700px">
       <n-dataTable :columns="recordColumns" :data="records" :pagination="{ pageSize: 5 }" size="small" />

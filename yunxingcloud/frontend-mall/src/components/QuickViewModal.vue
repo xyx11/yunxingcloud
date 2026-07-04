@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import ProductRating from './ProductRating.vue'
+import LazyImage from './LazyImage.vue'
 
 const props = defineProps<{ product: any; show: boolean }>()
 const emit = defineEmits(['close'])
@@ -26,10 +27,9 @@ function goDetail() { router.push(`/product/${props.product.id}`); emit('close')
   <Teleport to="body">
     <div v-if="show" @click.self="emit('close')" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:500;animation:fadeIn .2s">
       <div v-if="product" style="background:#fff;border-radius:16px;overflow:hidden;width:700px;max-width:95vw;max-height:90vh;display:flex;animation:slideUp .3s ease-out" @click.stop>
-        <div style="width:320px;flex-shrink:0;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:80px;position:relative;min-height:360px">
-          <img v-if="product.imageUrl" :src="product.imageUrl" style="width:100%;height:100%;object-fit:cover" />
-          <span v-else>📦</span>
-          <button @click="emit('close')" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>
+        <div style="width:320px;flex-shrink:0;position:relative;min-height:360px">
+          <LazyImage :src="product.imageUrl || ''" :alt="product.name" height="100%" />
+          <button @click="emit('close')" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:1">✕</button>
         </div>
         <div style="flex:1;padding:28px;display:flex;flex-direction:column;overflow-y:auto">
           <h2 style="font-size:18px;font-weight:700;margin-bottom:8px">{{ product.name }}</h2>

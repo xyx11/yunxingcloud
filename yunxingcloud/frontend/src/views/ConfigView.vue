@@ -4,7 +4,7 @@ import { fetchConfigs, createConfig, updateConfig, deleteConfig, refreshFeatureF
 import { useNotify } from '@/composables/useNotify'
 
 import {
-  NCard, NDataTable, NButton, NModal, NForm, NFormItem,
+  NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem,
   NInput, NSelect, NSpace, NPopconfirm, NTag, NPopover, NCheckbox,
   
 } from 'naive-ui'
@@ -159,28 +159,17 @@ onMounted(loadConfigs)
         :row-key="(row: SysConfig) => row.id"
       />
 
-      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" preset="card" display-directive="show" style="max-width:480px;width:95%">
-        <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
-          <n-form-item :label="t('config.nameLabel')">
-            <n-input v-model:value="form.name" />
-          </n-form-item>
-          <n-form-item :label="t('config.keyLabel')">
-            <n-input v-model:value="form.configKey" :disabled="!!editing" />
-          </n-form-item>
-          <n-form-item :label="t('config.valueLabel')">
-            <n-input v-model:value="form.configValue" />
-          </n-form-item>
-          <n-form-item :label="t('config.builtin')">
-            <n-select v-model:value="form.configType" :options="typeOptions" />
-          </n-form-item>
-        </n-form>
-        <template #footer>
-          <n-space justify="end">
-            <n-button @click="showModal = false">{{ t('common.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="saveConfig">{{ t('common.save') }}</n-button>
-          </n-space>
-        </template>
-      </n-modal>
+      <n-drawer v-model:show="showModal" :width="420" placement="right">
+        <n-drawer-content :title="editing ? t('common.edit') : t('common.add')" closable>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveConfig">{{ t('common.save') }}</n-button></n-space></template>
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80" size="small">
+            <n-form-item :label="t('config.nameLabel')"><n-input v-model:value="form.name" /></n-form-item>
+            <n-form-item :label="t('config.keyLabel')"><n-input v-model:value="form.configKey" :disabled="!!editing" /></n-form-item>
+            <n-form-item :label="t('config.valueLabel')"><n-input v-model:value="form.configValue" /></n-form-item>
+            <n-form-item :label="t('config.builtin')"><n-select v-model:value="form.configType" :options="typeOptions" /></n-form-item>
+          </n-form>
+        </n-drawer-content>
+      </n-drawer>
     </n-card>
   </div>
 </template>

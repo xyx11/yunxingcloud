@@ -25,6 +25,10 @@ export function useNotification() {
   }
 
   function unsubscribe() {
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => sub?.unsubscribe())
+      .catch(() => {})
     localStorage.removeItem('mall_push_subscribed')
     subscribed.value = false
   }

@@ -15,10 +15,12 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@wangeditor/editor": "^5.1.23",
     "axios": "^1.7.0",
     "echarts": "^6.1.0",
     "js-cookie": "^3.0.5",
     "jsencrypt": "^3.3.2",
+    "jszip": "^3.10.1",
     "naive-ui": "^2.38.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",

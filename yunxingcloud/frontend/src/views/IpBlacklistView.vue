@@ -4,7 +4,7 @@ import { ref, onMounted, h } from 'vue'
 import { fetchIpBlacklist, blockIp, unblockIp } from '@/api/ipblacklist'
 import { useNotify } from '@/composables/useNotify'
 
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSpace, NPopconfirm } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NPopconfirm } from 'naive-ui'
 import type { FormRules, FormInst } from 'naive-ui'
 
 const { t } = useI18n()
@@ -54,13 +54,15 @@ onMounted(loadItems)
       </template>
       <n-dataTable :columns="columns" :data="items" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10 }" :row-key="(row: IpItem) => row.id" />
 
-      <n-modal v-model:show="showModal" :title="t('ipBlacklist.blockIp')" preset="card" display-directive="show" style="max-width:400px;width:95%">
-        <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80">
-          <n-form-item path="ip" :label="t('ipBlacklist.ip')"><n-input v-model:value="form.ip" placeholder="192.168.1.100" /></n-form-item>
-          <n-form-item :label="t('ipBlacklist.reason')"><n-input v-model:value="form.reason" :placeholder="t('ipBlacklist.reason')" /></n-form-item>
-        </n-form>
-        <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveItem">{{ t('common.ok') }}</n-button></n-space></template>
-      </n-modal>
+      <n-drawer v-model:show="showModal" :width="380" placement="right">
+        <n-drawer-content :title="t('ipBlacklist.blockIp')" closable>
+          <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="saveItem">{{ t('common.ok') }}</n-button></n-space></template>
+          <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80" size="small">
+            <n-form-item path="ip" :label="t('ipBlacklist.ip')"><n-input v-model:value="form.ip" placeholder="192.168.1.100" /></n-form-item>
+            <n-form-item :label="t('ipBlacklist.reason')"><n-input v-model:value="form.reason" :placeholder="t('ipBlacklist.reason')" /></n-form-item>
+          </n-form>
+        </n-drawer-content>
+      </n-drawer>
     </n-card>
   </div>
 </template>

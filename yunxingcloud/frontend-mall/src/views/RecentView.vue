@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/locales'
+const { t } = useI18n()
+import LazyImage from '@/components/LazyImage.vue'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
@@ -22,7 +25,7 @@ async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await add
       <div v-for="p in items" :key="p.id" @click="goDetail(p.id)"
            style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s;box-shadow:0 2px 8px rgba(0,0,0,.06)"
            @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''">
-        <div style="height:180px;background:linear-gradient(135deg,#f8f8f8,#eee);display:flex;align-items:center;justify-content:center;font-size:48px">📦</div>
+        <LazyImage :src="p.imageUrl || ''" :alt="p.name" height="180px" />
         <div style="padding:12px">
           <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</h4>
           <div style="display:flex;align-items:center;justify-content:space-between">

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h } from 'vue'
 import { fetchGeneratorTables, fetchGeneratorTableColumns, generateCode as genCodeApi } from '@/api/generator'
 import { useNotify } from '@/composables/useNotify'
+import JSZip from 'jszip'
 
 import {
   NCard, NDataTable, NButton, NInput, NModal, NSpace, NTag, NCode, NSpin,
@@ -74,6 +75,15 @@ function copyCode() {
   const code = generatedCode.value[activeCodeTab.value] || ''
   navigator.clipboard.writeText(code).then(() => notify.success(t('generator.copiedToClipboard')))
 }
+async function downloadZip() {
+  const zip = new JSZip()
+  for (const [name, code] of Object.entries(generatedCode.value)) {
+    zip.file(name.replace('/','_') + '.java', code as string)
+  }
+  const blob = await zip.generateAsync({type:'blob'})
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${selectedTable.value || 'generated'}.zip`; a.click()
+  notify.success(t('generator.exportSuccess'))
+}
 
 async function loadTables() {
   loading.value = true
@@ -139,7 +149,7 @@ onMounted(loadTables)
                 {{ tab.label }}
               </n-button>
             </n-space>
-            <n-button size="small" @click="copyCode">{{ t('generator.copyCode') }}</n-button>
+            <n-space><n-button size="small" @click="copyCode">{{ t('generator.copyCode') }}</n-button><n-button size="small" type="primary" @click="downloadZip">📥 ZIP</n-button></n-space>
           </n-space>
         </n-space>
         <n-spin :show="!!generatingTable">
