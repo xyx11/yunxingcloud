@@ -53,7 +53,8 @@ onUnmounted(() => {
     <AppHeader :key="'header'" :cart-count="cartCount" />
 
     <!-- Main Content -->
-    <main class="main-content" role="main">
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    <main id="main-content" class="main-content" role="main" tabindex="-1">
       <router-view v-slot="{ Component }">
         <Transition name="page-fade" mode="out-in">
           <component :is="Component" />
@@ -116,6 +117,9 @@ onUnmounted(() => {
 .page-fade-leave-active { transition: opacity .15s ease, transform .15s ease; }
 .page-fade-enter-from { opacity: 0; transform: translateY(12px); }
 .page-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+
+.skip-link { position: absolute; top: -100px; left: 0; background: var(--jd-red); color: #fff; padding: 8px 16px; z-index: 10000; border-radius: 0 0 var(--radius-sm) 0; text-decoration: none; font-size: var(--font-sm); }
+.skip-link:focus { top: 0; }
 
 [data-theme="dark"] input,
 [data-theme="dark"] textarea,

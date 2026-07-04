@@ -6,7 +6,7 @@ import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 
 const { t } = useI18n()
-const cardNo = ref(''); const card = ref<any>(null); const msg = ref('')
+const cardNo = ref(''); const card = ref<{amount:number,balance:number,status:string} | null>(null); const msg = ref('')
 const loading = ref(false)
 
 const statusMap: Record<string, string> = { '0': t('giftCard.statusInactive'), '1': t('giftCard.statusActive'), '2': t('giftCard.statusUsed'), '3': t('giftCard.statusExpired') }

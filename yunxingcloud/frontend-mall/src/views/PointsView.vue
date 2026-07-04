@@ -4,7 +4,7 @@ import request from '@/api/request'
 import { useI18n } from '@/locales'
 
 const { t } = useI18n()
-const account = ref<any>(null)
+const account = ref<{balance:number,totalEarned:number,totalSpent:number} | null>(null)
 const records = ref<any[]>([])
 const loading = ref(true)
 

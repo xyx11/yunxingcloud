@@ -5,12 +5,13 @@ import { getOrderById, payOrder } from '@/api/order'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
 import JdButton from '@/components/JdButton.vue'
+import type { OrderHead } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const toast = inject(ToastInjectionKey)!
 const { t } = useI18n()
-const order = ref<any>(null)
+const order = ref<OrderHead | null>(null)
 const selectedChannel = ref<'wechat' | 'alipay'>('wechat')
 const paying = ref(false)
 const polling = ref(false)

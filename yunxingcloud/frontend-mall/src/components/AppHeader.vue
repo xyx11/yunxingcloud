@@ -84,7 +84,7 @@ defineProps<{ cartCount?: number }>()
 
   <!-- Main Header -->
   <header class="main-header">
-    <h1 class="logo" @click="router.push('/')">YXCLOUD</h1>
+    <h1 class="logo" @click="router.push('/')" role="button" tabindex="0" aria-label="YXCLOUD 商城首页" @keydown.enter="router.push('/')">YXCLOUD</h1>
 
     <!-- Search Box -->
     <div class="search-box" role="search">

@@ -1,12 +1,25 @@
 {
   "name": "YXCLOUD 商城",
   "short_name": "YXCLOUD",
-  "description": "品质生活，一站购齐",
+  "description": "品质生活，一站购齐 - 海量商品、限时秒杀、拼团优惠",
   "start_url": "/mall/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#f10215",
+  "categories": ["shopping"],
+  "shortcuts": [
+    { "name": "搜索商品", "url": "/mall/search", "icons": [{ "src": "/mall/favicon.svg", "sizes": "any" }] },
+    { "name": "购物车", "url": "/mall/cart", "icons": [{ "src": "/mall/favicon.svg", "sizes": "any" }] },
+    { "name": "我的订单", "url": "/mall/orders", "icons": [{ "src": "/mall/favicon.svg", "sizes": "any" }] }
+  ],
+  "screenshots": [
+    { "src": "/mall/screenshot-home.png", "sizes": "1170x2532", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/mall/screenshot-products.png", "sizes": "1170x2532", "type": "image/png", "form_factor": "narrow" }
+  ],
   "icons": [
-    { "src": "/mall/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/mall/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/mall/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/mall/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

@@ -8,6 +8,7 @@ import { ToastInjectionKey } from '@/composables/useToast'
 import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
+import type { Address, Coupon } from '@/types'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -16,9 +17,9 @@ const items = ref<any[]>([])
 const addresses = ref<any[]>([])
 const loading = ref(true)
 const total = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
-const selectedAddr = ref<any>(null)
+const selectedAddr = ref<Address | null>(null)
 const receiver = ref({ name: '', phone: '', address: '' })
-const selectedCoupon = ref<any>(null)
+const selectedCoupon = ref<Coupon | null>(null)
 const couponApplied = ref(false)
 const myCoupons = ref<any[]>([])
 const showCoupons = ref(false)

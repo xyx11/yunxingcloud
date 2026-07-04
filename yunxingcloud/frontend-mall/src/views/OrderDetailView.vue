@@ -8,14 +8,15 @@ import { useI18n } from '@/locales'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import type { OrderHead } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
-const order = ref<any>(null)
+const order = ref<OrderHead | null>(null)
 const lines = ref<any[]>([])
-const shipment = ref<any>(null)
+const shipment = ref<{carrier:string,trackingNo:string} | null>(null)
 const reviewForm = ref({ productId: 0, rating: 5, content: '' })
 const showReview = ref(false)
 const loading = ref(true)

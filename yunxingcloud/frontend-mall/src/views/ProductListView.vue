@@ -11,6 +11,7 @@ import QuickViewModal from '@/components/QuickViewModal.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import type { Product } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,7 +28,7 @@ const categories = ref<any[]>([])
 const brands = ref<any[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
-const quickViewProduct = ref<any>(null)
+const quickViewProduct = ref<Product | null>(null)
 
 const filters = ref({ categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' })
 const priceRanges = [

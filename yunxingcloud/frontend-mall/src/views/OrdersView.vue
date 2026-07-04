@@ -7,6 +7,7 @@ import { ToastInjectionKey } from '@/composables/useToast'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import JdEmpty from '@/components/JdEmpty.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -52,7 +53,7 @@ onMounted(load)
     <div v-if="loading" class="orders-list">
       <div v-for="i in 3" :key="i" class="sk-card">
         <SkeletonBox height="18px" width="50%" :count="1" />
-        <SkeletonBox height="14px" width="30%" :count="1" style="margin-top:8px" />
+        <div class="sk-spacer"><SkeletonBox height="14px" width="30%" :count="1" /></div>
       </div>
     </div>
 
@@ -79,10 +80,9 @@ onMounted(load)
       </div>
     </div>
 
-    <div v-else class="empty-state">
-      <p class="empty-icon">📋</p><p class="empty-text">{{ t('common.noOrders') }}</p>
+    <JdEmpty v-else icon="📋" :title="t('common.noOrders')">
       <JdButton @click="router.push('/')">{{ t('common.goShopping') }}</JdButton>
-    </div>
+    </JdEmpty>
   </div>
 </template>
 
@@ -107,7 +107,5 @@ onMounted(load)
 .order-amount { font-size: var(--font-xl); color: var(--jd-red); font-weight: 700; }
 .order-actions { margin-top: var(--space-md); display: flex; justify-content: flex-end; gap: var(--space-sm); }
 
-.empty-state { background: var(--bg-white); border-radius: var(--radius-lg); padding: 60px; text-align: center; color: var(--text-tertiary); box-shadow: var(--shadow-sm); }
-.empty-icon { font-size: 48px; margin-bottom: var(--space-lg); }
-.empty-text { font-size: var(--font-lg); margin-bottom: var(--space-lg); }
+.sk-spacer { margin-top: var(--space-sm); }
 </style>

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderById } from '@/api/order'
 import { useI18n } from '@/locales'
+import type { OrderHead } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,7 +11,7 @@ const { t } = useI18n()
 const orderNo = ref('')
 const orderId = ref('')
 const status = ref<'success' | 'fail'>('success')
-const orderInfo = ref<any>(null)
+const orderInfo = ref<OrderHead | null>(null)
 
 onMounted(async () => {
   orderId.value = (route.params.id as string) || ''

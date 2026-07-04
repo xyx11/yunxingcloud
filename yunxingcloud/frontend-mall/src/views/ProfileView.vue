@@ -5,6 +5,7 @@ import { getAddresses, createAddress, updateAddress, deleteAddress, setDefaultAd
 import { changePassword } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
+import type { Address } from '@/types'
 import { ToastInjectionKey } from '@/composables/useToast'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -21,7 +22,7 @@ const addresses = ref<any[]>([])
 const coupons = ref<any[]>([])
 const favorites = ref<any[]>([])
 const shareCopied = ref(false)
-const editAddr = ref<any>(null)
+const editAddr = ref<Address | null>(null)
 const showAddrForm = ref(false)
 const loading = ref(true)
 
