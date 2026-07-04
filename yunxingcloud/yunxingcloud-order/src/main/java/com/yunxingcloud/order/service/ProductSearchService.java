@@ -10,14 +10,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 商品全文搜索 (JPA Criteria + SQL LIKE — 轻量替代 Hibernate Search)
- * 生产环境可用 Hibernate Search + Elasticsearch 替代
+ * 商品全文搜索
+ * - Elasticsearch 模式（默认）：中文分词 + 高性能搜索
+ * - JPA Criteria + SQL LIKE 模式（回退）：无需 ES 即可运行
  */
 @Service
 public class ProductSearchService {
 
     @PersistenceContext
     private EntityManager em;
+
+    private final com.yunxingcloud.order.repository.es.ProductSearchRepository esRepo;
+    private final org.springframework.data.elasticsearch.core.ElasticsearchOperations esOps;
+    private final boolean esAvailable;
+
+    public ProductSearchService(
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            com.yunxingcloud.order.repository.es.ProductSearchRepository esRepo,
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            org.springframework.data.elasticsearch.core.ElasticsearchOperations esOps) {
+        this.esRepo = esRepo;
+        this.esOps = esOps;
+        this.esAvailable = esRepo != null && esOps != null;
+    }
+
+    /**
+     * Elasticsearch search with automatic fallback to JPA LIKE
+     */
+    public List<Product> searchWithES(String keyword, Long categoryId, Long brandId,
+                                       Integer minPrice, Integer maxPrice,
+                                       String sort, int page, int size) {
+        if (esAvailable && keyword != null && !keyword.isBlank()) {
+            try {
+                var products = esOps.search(
+                    new org.springframework.data.elasticsearch.core.query.CriteriaQuery(
+                        buildESCriteria(keyword, categoryId, brandId, minPrice, maxPrice))
+                        .setPageable(org.springframework.data.domain.PageRequest.of(page, size)),
+                    com.yunxingcloud.order.document.ProductDocument.class
+                );
+                if (products.hasSearchHits()) {
+                    List<Long> ids = products.getSearchHits().stream()
+                            .map(h -> h.getContent().getId()).toList();
+                    return em.createQuery(
+                            "SELECT p FROM Product p WHERE p.id IN :ids", Product.class)
+                            .setParameter("ids", ids)
+                            .getResultList();
+                }
+                return List.of();
+            } catch (Exception e) {
+                log.warn("ES search failed, falling back to JPA: {}", e.getMessage());
+            }
+        }
+        return search(keyword, categoryId, brandId, minPrice, maxPrice, sort, page, size);
+    }
+
+    private org.springframework.data.elasticsearch.core.query.Criteria buildESCriteria(
+            String keyword, Long categoryId, Long brandId, Integer minPrice, Integer maxPrice) {
+        var criteria = new org.springframework.data.elasticsearch.core.query.Criteria("name").contains(keyword)
+                .or(new org.springframework.data.elasticsearch.core.query.Criteria("description").contains(keyword));
+        return criteria;
+    }
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProductSearchService.class);
 
     public List<Product> search(String keyword, Long categoryId, Long brandId,
                                  Integer minPrice, Integer maxPrice,

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS product_category (
     icon VARCHAR(200),
     status CHAR(1) DEFAULT '0',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 品牌
 CREATE TABLE IF NOT EXISTS product_brand (
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS product_brand (
     description VARCHAR(500),
     status CHAR(1) DEFAULT '0',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 商品增加分类/品牌字段
 ALTER TABLE product ADD COLUMN IF NOT EXISTS category_id BIGINT AFTER stock;
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS product_sku (
     stock INT DEFAULT 0,
     sku_code VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_sku_product ON product_sku(product_id);
 
 -- 商品评价
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS product_review (
     images TEXT,
     order_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_review_product ON product_review(product_id);
 
 -- 优惠券
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS coupon (
     end_time TIMESTAMP NULL,
     status CHAR(1) DEFAULT '0',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS coupon_user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS coupon_user (
     used_order_id BIGINT,
     used_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_coupon_user ON coupon_user(username);
 
 -- 物流发货
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS order_shipment (
     shipped_at TIMESTAMP NULL,
     delivered_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_shipment_order ON order_shipment(order_id);
 
 -- 用户地址
@@ -100,5 +100,5 @@ CREATE TABLE IF NOT EXISTS user_address (
     detail VARCHAR(300),
     is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_addr_user ON user_address(username);

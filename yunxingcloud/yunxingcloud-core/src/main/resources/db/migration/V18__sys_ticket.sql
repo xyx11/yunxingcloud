@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS sys_ticket (
     assignee VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_ticket_applicant ON sys_ticket(applicant);
 CREATE INDEX idx_ticket_assignee ON sys_ticket(assignee);
 CREATE INDEX idx_ticket_status ON sys_ticket(status);

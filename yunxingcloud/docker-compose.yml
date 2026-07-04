@@ -70,6 +70,27 @@ services:
       timeout: 3s
       retries: 5
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: yunxingcloud-es
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: false
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - yunxingcloud
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   usercenter:
     build:
       context: .
@@ -102,6 +123,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
+        redis:
+          condition: service_healthy
         condition: service_healthy
 
   core:
@@ -207,6 +230,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
+        redis:
+          condition: service_healthy
         condition: service_healthy
 
   order:
@@ -239,6 +264,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
+        redis:
+          condition: service_healthy
         condition: service_healthy
 
   inventory:
@@ -271,12 +298,15 @@ services:
       nacos:
         condition: service_healthy
       mysql:
+        redis:
+          condition: service_healthy
         condition: service_healthy
 
 volumes:
   nacos_data:
   mysql_data:
   redis_data:
+  es_data:
   upload_data:
   log_data:
 

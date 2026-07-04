@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS sys_approval (
     remark VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_approval_applicant ON sys_approval(applicant);
 CREATE INDEX idx_approval_approver ON sys_approval(approver);

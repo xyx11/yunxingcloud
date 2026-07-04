@@ -3,6 +3,12 @@ spring:
     name: yunxingcloud-order
   messages:
     basename: i18n/messages
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+    username: ${ES_USERNAME:}
+    password: ${ES_PASSWORD:}
+    connection-timeout: 5s
+    socket-timeout: 10s
     encoding: UTF-8
     fallback-to-system-locale: false
   datasource:

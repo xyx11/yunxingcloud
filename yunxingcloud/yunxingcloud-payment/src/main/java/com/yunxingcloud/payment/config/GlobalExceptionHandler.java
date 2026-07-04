@@ -42,6 +42,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", "Malformed request body"));
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException e) {
+        log.warn("数据完整性冲突: {}", e.getMessage());
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "数据冲突"));
+    }
+
+    @ExceptionHandler(org.springframework.transaction.TransactionException.class)
+    public ResponseEntity<?> handleTransaction(org.springframework.transaction.TransactionException e) {
+        log.error("事务异常: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("success", false, "message", "服务暂时不可用"));
+    }
+
+    @ExceptionHandler(com.alibaba.csp.sentinel.slots.block.BlockException.class)
+    public ResponseEntity<?> handleBlock(com.alibaba.csp.sentinel.slots.block.BlockException e) {
+        log.warn("Sentinel 流控/降级: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("success", false, "message", "请求过于频繁"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
         log.error("未处理异常: {}", e.getMessage(), e);

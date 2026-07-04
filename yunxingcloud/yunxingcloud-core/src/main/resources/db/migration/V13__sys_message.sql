@@ -6,6 +6,6 @@ CREATE TABLE IF NOT EXISTS sys_message (
     content TEXT,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_msg_to ON sys_message(to_user);
 CREATE INDEX idx_msg_from ON sys_message(from_user);

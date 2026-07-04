@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS sys_post (
     status CHAR(1) DEFAULT '0',
     remark VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

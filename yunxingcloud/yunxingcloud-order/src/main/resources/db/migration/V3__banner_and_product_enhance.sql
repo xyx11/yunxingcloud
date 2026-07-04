@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS banner (
     sort_order INT DEFAULT 0,
     status CHAR(1) DEFAULT '0' COMMENT '0=启用 1=禁用',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 用户收藏
 CREATE TABLE IF NOT EXISTS user_favorite (
@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS user_favorite (
     username VARCHAR(100) NOT NULL,
     product_id BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX idx_fav_user ON user_favorite(username);
 CREATE UNIQUE INDEX idx_fav_unique ON user_favorite(username, product_id);
