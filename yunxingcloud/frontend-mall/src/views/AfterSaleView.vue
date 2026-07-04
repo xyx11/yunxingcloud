@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import JdButton from '@/components/JdButton.vue'
+import JdBadge from '@/components/JdBadge.vue'
+import JdEmpty from '@/components/JdEmpty.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,12 +30,20 @@ const typeLabels: Record<string, () => string> = {
   exchange: () => t('afterSale.exchange'),
 }
 
-const statusMap: Record<string, { label: string; color: string }> = {
-  '0': { label: t('afterSale.statusPending'), color: '#ff9800' },
-  '1': { label: t('afterSale.statusApproved'), color: '#4caf50' },
-  '2': { label: t('afterSale.statusRejected'), color: '#f44336' },
-  '3': { label: t('afterSale.statusRefunding'), color: '#1677ff' },
-  '4': { label: t('afterSale.statusCompleted'), color: '#4caf50' },
+const statusMap: Record<string, { label: string }> = {
+  '0': { label: t('afterSale.statusPending') },
+  '1': { label: t('afterSale.statusApproved') },
+  '2': { label: t('afterSale.statusRejected') },
+  '3': { label: t('afterSale.statusRefunding') },
+  '4': { label: t('afterSale.statusCompleted') },
+}
+
+const badgeTypeMap: Record<string, 'orange' | 'green' | 'red' | 'blue'> = {
+  '0': 'orange',
+  '1': 'green',
+  '2': 'red',
+  '3': 'blue',
+  '4': 'green',
 }
 
 onMounted(async () => {
@@ -50,56 +61,82 @@ async function submit() {
 </script>
 
 <template>
-  <div style="max-width:700px;margin:0 auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2 style="font-size:20px;font-weight:700">🛡️ {{ t('afterSale.title') }}</h2>
-      <button @click="showForm=true" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">+ {{ t('afterSale.newRequest') }}</button>
+  <div class="after-sale-page">
+    <div class="after-sale-header">
+      <h2 class="after-sale-title">🛡️ {{ t('afterSale.title') }}</h2>
+      <JdButton type="primary" @click="showForm=true">+ {{ t('afterSale.newRequest') }}</JdButton>
     </div>
 
-    <div v-if="showForm" style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
-      <div style="margin-bottom:16px">
-        <label style="font-size:13px;color:#666;margin-bottom:8px;display:block">{{ t('afterSale.type') }}</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    <div v-if="showForm" class="after-sale-form">
+      <div class="after-sale-form-group">
+        <label class="after-sale-label">{{ t('afterSale.type') }}</label>
+        <div class="after-sale-type-grid">
           <div v-for="tp in types" :key="tp.value" @click="form.type=tp.value"
-               style="padding:12px;border-radius:8px;cursor:pointer;text-align:center;transition:all .2s"
-               :style="{border:form.type===tp.value?'2px solid #f10215':'1px solid #eee',background:form.type===tp.value?'#fff5f5':'#fff'}">
-            <div style="font-size:24px;margin-bottom:4px">{{ tp.icon }}</div>
-            <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ tp.label() }}</div>
-            <div style="font-size:10px;color:#999">{{ tp.desc() }}</div>
+               class="after-sale-type-item" :class="{ active: form.type === tp.value }">
+            <div class="after-sale-type-icon">{{ tp.icon }}</div>
+            <div class="after-sale-type-name">{{ tp.label() }}</div>
+            <div class="after-sale-type-desc">{{ tp.desc() }}</div>
           </div>
         </div>
       </div>
-      <input v-model="form.orderNo" :placeholder="t('afterSale.orderNo')" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
-      <input v-model="form.amount" :placeholder="t('afterSale.amount') + ' (¥)'" type="number" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;margin-bottom:12px" />
-      <textarea v-model="form.reason" :placeholder="t('afterSale.reason')" style="width:100%;height:80px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button @click="showForm=false" style="padding:8px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">{{ t('common.cancel') }}</button>
-        <button @click="submit" :disabled="submitting" style="padding:8px 20px;background:#f10215;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">{{ submitting ? t('afterSale.submitting') : t('afterSale.submitRequest') }}</button>
+      <input v-model="form.orderNo" :placeholder="t('afterSale.orderNo')" class="after-sale-input" />
+      <input v-model="form.amount" :placeholder="t('afterSale.amount') + ' (¥)'" type="number" class="after-sale-input" />
+      <textarea v-model="form.reason" :placeholder="t('afterSale.reason')" class="after-sale-textarea"></textarea>
+      <div class="after-sale-form-actions">
+        <JdButton type="ghost" @click="showForm=false">{{ t('common.cancel') }}</JdButton>
+        <JdButton type="primary" :loading="submitting" @click="submit">{{ submitting ? t('afterSale.submitting') : t('afterSale.submitRequest') }}</JdButton>
       </div>
     </div>
 
-    <div v-if="loading" style="display:flex;flex-direction:column;gap:12px">
-      <div v-for="i in 3" :key="i" style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);height:80px">
-        <div style="height:16px;width:50%;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:12px"></div>
+    <div v-if="loading" class="after-sale-skeleton">
+      <div v-for="i in 3" :key="i" class="skeleton-card">
+        <div class="skeleton-line" />
       </div>
     </div>
     <div v-else-if="records.length">
-      <div v-for="r in records" :key="r.id || r.orderNo" style="background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+      <div v-for="r in records" :key="r.id || r.orderNo" class="after-sale-card">
+        <div class="after-sale-card-top">
           <div>
-            <span style="font-size:13px;color:#999">{{ t('afterSale.orderPrefix') }} {{ r.orderNo }}</span>
-            <span style="margin-left:12px;font-size:13px;font-weight:600">{{ typeLabels[r.type]?.() || r.type }}</span>
+            <span class="after-sale-card-order">{{ t('afterSale.orderPrefix') }} {{ r.orderNo }}</span>
+            <span class="after-sale-card-type">{{ typeLabels[r.type]?.() || r.type }}</span>
           </div>
-          <span style="padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff" :style="{background:statusMap[r.status]?.color}">{{ statusMap[r.status]?.label }}</span>
+          <JdBadge :type="badgeTypeMap[r.status] || 'gray'">{{ statusMap[r.status]?.label }}</JdBadge>
         </div>
-        <div style="color:#666;font-size:13px">{{ r.reason }}</div>
-        <div v-if="r.amount" style="color:#f10215;font-weight:700;margin-top:4px">¥{{ (Number(r.amount)/100).toFixed(2) }}</div>
-        <div style="color:#aaa;font-size:11px;margin-top:6px">{{ r.createdAt?.substring(0,16) }}</div>
+        <div class="after-sale-card-reason">{{ r.reason }}</div>
+        <div v-if="r.amount" class="after-sale-card-amount">¥{{ (Number(r.amount)/100).toFixed(2) }}</div>
+        <div class="after-sale-card-time">{{ r.createdAt?.substring(0,16) }}</div>
       </div>
     </div>
-    <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-      <p style="font-size:48px;margin-bottom:12px">🛡️</p><p>{{ t('afterSale.noRecords') }}</p>
-    </div>
+    <JdEmpty v-else icon="🛡️" :title="t('afterSale.noRecords')" />
   </div>
 </template>
-<style scoped>@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }</style>
+
+<style scoped>
+.after-sale-page { max-width: 700px; margin: 0 auto; }
+.after-sale-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
+.after-sale-title { font-size: var(--font-xl); font-weight: 700; }
+.after-sale-form { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-md); margin-bottom: var(--space-lg); }
+.after-sale-form-group { margin-bottom: var(--space-lg); }
+.after-sale-label { font-size: var(--font-base); color: var(--text-secondary); margin-bottom: var(--space-sm); display: block; }
+.after-sale-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); }
+.after-sale-type-item { padding: var(--space-md); border-radius: var(--radius-sm); cursor: pointer; text-align: center; transition: all var(--transition-fast); border: 1px solid var(--border-light); background: var(--bg-white); }
+.after-sale-type-item.active { border: 2px solid var(--jd-red); background: var(--jd-red-light); }
+.after-sale-type-icon { font-size: var(--font-xxl); margin-bottom: var(--space-xs); }
+.after-sale-type-name { font-size: var(--font-base); font-weight: 600; margin-bottom: 2px; }
+.after-sale-type-desc { font-size: var(--font-xs); color: var(--text-tertiary); }
+.after-sale-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); box-sizing: border-box; margin-bottom: var(--space-md); }
+.after-sale-textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-md); }
+.after-sale-form-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
+.after-sale-skeleton { display: flex; flex-direction: column; gap: var(--space-md); }
+.skeleton-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); box-shadow: var(--shadow-md); height: 80px; }
+.skeleton-line { height: 16px; width: 50%; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.after-sale-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-md); box-shadow: var(--shadow-md); }
+.after-sale-card-top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+.after-sale-card-order { font-size: var(--font-base); color: var(--text-tertiary); }
+.after-sale-card-type { margin-left: var(--space-md); font-size: var(--font-base); font-weight: 600; }
+.after-sale-card-reason { color: var(--text-secondary); font-size: var(--font-base); }
+.after-sale-card-amount { color: var(--jd-red); font-weight: 700; margin-top: var(--space-xs); }
+.after-sale-card-time { color: var(--text-placeholder); font-size: var(--font-xs); margin-top: var(--space-sm); }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+</style>

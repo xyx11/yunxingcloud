@@ -1,0 +1,30 @@
+/* ===== YXCLOUD 多级响应式断点系统 ===== */
+
+/* 超小屏: < 375px (iPhone SE 等) */
+@media (max-width: 374px) {
+  .product-grid { grid-template-columns: repeat(1, 1fr) !important; }
+  .main-header h1 { font-size: var(--font-md) !important; }
+  .header-actions { gap: var(--space-sm) !important; }
+}
+
+/* 小屏: 375px - 413px (iPhone 6/7/8/X/11/12/13/14) */
+@media (min-width: 375px) and (max-width: 413px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: var(--space-sm) !important; }
+  .main-content { padding: var(--space-sm) !important; }
+}
+
+/* 中屏: 414px - 767px (iPhone Plus/Max, 小安卓) */
+@media (min-width: 414px) and (max-width: 767px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: var(--space-md) !important; }
+}
+
+/* 平板: 768px - 1023px (iPad, 安卓平板竖屏) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .sidebar { display: none !important; }
+}
+
+/* 桌面: >= 1024px (iPad 横屏, 桌面) */
+@media (min-width: 1024px) {
+  .product-grid { grid-template-columns: repeat(4, 1fr) !important; }
+}

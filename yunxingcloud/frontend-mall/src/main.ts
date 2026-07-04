@@ -5,6 +5,7 @@ import App from './App.vue'
 import { useGlobalToast, ToastInjectionKey } from './composables/useToast'
 import './styles/reset.css'
 import './styles/utilities.css'
+import './styles/breakpoints.css'
 
 const app = createApp(App)
 app.use(createPinia())

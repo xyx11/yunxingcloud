@@ -5,6 +5,7 @@ import { useI18n } from '@/locales'
 const { t } = useI18n()
 import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
+import JdButton from '@/components/JdButton.vue'
 
 const route = useRoute()
 const toast = inject(ToastInjectionKey)!
@@ -18,52 +19,79 @@ onMounted(async () => {
   const orderId = route.query.orderId
   if (orderId) {
     loading.value = true
-    try {
-      const r = await request.get('/logistics/order/' + orderId)
-      traces.value = r.data?.traces || r.data || []
-      carrier.value = r.data?.carrier || ''
-      trackingNo.value = r.data?.trackingNo || ''
-    } catch {} finally { loading.value = false }
+    try { const r = await request.get('/logistics/order/' + orderId); traces.value = r.data?.traces || r.data || []; carrier.value = r.data?.carrier || ''; trackingNo.value = r.data?.trackingNo || '' } catch {} finally { loading.value = false }
   }
 })
 
 async function track() { if(!trackingNo.value.trim())return; loading.value=true; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{} finally{loading.value=false} }
 async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success('已复制'); setTimeout(() => copying.value = false, 1500) } catch {} }
 </script>
+
 <template>
-  <div style="max-width:600px;margin:0 auto">
-    <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-      <h2 style="font-size:20px;font-weight:700;margin-bottom:16px">物流追踪</h2>
-      <div style="display:flex;gap:8px;margin-bottom:20px">
-        <input v-model="trackingNo" placeholder="输入快递单号" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" />
-        <button @click="track" style="padding:10px 20px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer">查询</button>
+  <div class="log-page">
+    <div class="log-card">
+      <h2 class="log-title">物流追踪</h2>
+      <div class="log-search">
+        <input v-model="trackingNo" placeholder="输入快递单号" class="log-input" />
+        <JdButton @click="track">查询</JdButton>
       </div>
-      <div v-if="carrier || trackingNo" style="background:#f9f9f9;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+
+      <div v-if="carrier || trackingNo" class="log-info">
         <div>
-          <span style="font-size:13px;color:#666">快递公司：<b>{{ carrier || '未知' }}</b></span>
-          <span style="margin-left:16px;font-size:13px;color:#666">单号：<b>{{ trackingNo }}</b></span>
+          <span class="log-info-text">快递公司：<b>{{ carrier || '未知' }}</b></span>
+          <span class="log-info-text">单号：<b>{{ trackingNo }}</b></span>
         </div>
-        <button @click="copyNo" style="padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap"
-                :style="{background:copying?'#f10215':'#fff',color:copying?'#fff':'#666'}">{{ copying ? '✓ 已复制' : '复制单号' }}</button>
+        <JdButton type="ghost" size="sm" @click="copyNo">{{ copying ? '✓ 已复制' : '复制单号' }}</JdButton>
       </div>
-      <div v-if="loading" style="text-align:center;padding:40px 0">
-        <div style="width:48px;height:48px;border:3px solid #eee;border-top-color:#f10215;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
-        <span style="font-size:13px;color:#999">查询物流信息...</span>
-      </div>
-      <div v-else-if="traces.length">
-        <div v-for="(t,i) in traces" :key="t.id || i" style="display:flex;gap:16px;position:relative">
-          <div style="display:flex;flex-direction:column;align-items:center">
-            <div style="width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff" :style="{background:i===0?'#f10215':'#ddd'}">{{ i===0 ? '✓' : '' }}</div>
-            <div v-if="i<traces.length-1" style="width:2px;flex:1;min-height:30px" :style="{background:i===0?'#f10215':'#eee'}"></div>
+
+      <div v-if="loading" class="log-loading"><div class="spinner" /><span>查询物流信息...</span></div>
+
+      <div v-else-if="traces.length" class="log-timeline">
+        <div v-for="(trace, i) in traces" :key="trace.id || i" class="log-trace">
+          <div class="trace-dot-col">
+            <div class="trace-dot" :class="{ active: i === 0 }">{{ i === 0 ? '✓' : '' }}</div>
+            <div v-if="i < traces.length - 1" class="trace-line" :class="{ active: i === 0 }" />
           </div>
-          <div style="padding-bottom:24px;flex:1">
-            <div style="font-weight:600;font-size:14px" :style="{color:i===0?'#f10215':'#333'}">{{ t.status || t.description }}</div>
-            <div style="color:#999;font-size:12px;margin-top:2px">{{ t.location || '' }}<span v-if="t.traceTime"> · {{ t.traceTime?.substring(0,16) }}</span></div>
+          <div class="trace-body">
+            <div class="trace-status" :class="{ active: i === 0 }">{{ trace.status || trace.description }}</div>
+            <div class="trace-meta">{{ trace.location || '' }}<span v-if="trace.traceTime"> · {{ trace.traceTime?.substring(0, 16) }}</span></div>
           </div>
-          <div style="font-size:12px;color:#aaa;white-space:nowrap">{{ t.traceTime?.substring(11,16) }}</div>
+          <div class="trace-time">{{ trace.traceTime?.substring(11, 16) }}</div>
         </div>
       </div>
-      <div v-else style="text-align:center;color:#999;padding:40px">暂无物流信息</div>
+
+      <div v-else class="log-empty">暂无物流信息</div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.log-page { max-width: 600px; margin: 0 auto; }
+.log-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); }
+.log-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-lg); }
+.log-search { display: flex; gap: var(--space-sm); margin-bottom: var(--space-xl); }
+.log-input { flex: 1; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); background: var(--bg-white); color: var(--text-primary); }
+
+.log-info { background: var(--bg-hover); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: center; }
+.log-info-text { font-size: var(--font-base); color: var(--text-secondary); margin-right: var(--space-lg); }
+
+.log-loading { text-align: center; padding: 40px 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); font-size: var(--font-base); color: var(--text-tertiary); }
+.spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--jd-red); border-radius: 50%; animation: spin 1s linear infinite; }
+
+.log-timeline { display: flex; flex-direction: column; }
+.log-trace { display: flex; gap: var(--space-lg); position: relative; }
+.trace-dot-col { display: flex; flex-direction: column; align-items: center; }
+.trace-dot { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #fff; background: var(--border); }
+.trace-dot.active { background: var(--jd-red); }
+.trace-line { width: 2px; flex: 1; min-height: 30px; background: var(--border-light); }
+.trace-line.active { background: var(--jd-red); }
+.trace-body { padding-bottom: var(--space-xxl); flex: 1; }
+.trace-status { font-weight: 600; font-size: var(--font-md); color: var(--text-primary); }
+.trace-status.active { color: var(--jd-red); }
+.trace-meta { color: var(--text-tertiary); font-size: var(--font-sm); margin-top: 2px; }
+.trace-time { font-size: var(--font-sm); color: var(--text-placeholder); white-space: nowrap; }
+
+.log-empty { text-align: center; color: var(--text-tertiary); padding: 40px; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
