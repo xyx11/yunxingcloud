@@ -44,9 +44,9 @@ async function doTrack(no: string) {
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card title="物流发货管理"><template #header-extra><n-space><n-button size="small" @click="showTrack=true">单号追踪</n-button><n-button type="primary" size="small" @click="add">+ 录入发货</n-button></n-space></template>
-      <n-space style="margin-bottom:12px">
+      <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索快递..." size="small" clearable style="width:180px"/><n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small"/>
@@ -56,7 +56,7 @@ onMounted(load)
         <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="80" size="small">
           <n-form-item label="订单ID"><n-input v-model:value="form.orderId"/></n-form-item>
-          <n-form-item label="快递公司"><n-select v-model:value="form.carrier" :options="[{label:'顺丰速运',value:'顺丰速运'},{label:'中通快递',value:'中通快递'},{label:'圆通速递',value:'圆通速递'},{label:'韵达快递',value:'韵达快递'},{label:'EMS',value:'EMS'}]"/></n-form-item>
+          <n-form-item :label="t('order.carrier')"><n-select v-model:value="form.carrier" :options="[{label:'顺丰速运',value:'顺丰速运'},{label:'中通快递',value:'中通快递'},{label:'圆通速递',value:'圆通速递'},{label:'韵达快递',value:'韵达快递'},{label:'EMS',value:'EMS'}]"/></n-form-item>
           <n-form-item label="快递单号"><n-input v-model:value="form.trackingNo"/></n-form-item>
         </n-form>
       </n-drawer-content>

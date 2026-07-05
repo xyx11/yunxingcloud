@@ -26,9 +26,9 @@ async function load() { loading.value = true; try { const r = await request.get(
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card title="审计日志"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
-      <n-space style="margin-bottom:12px">
+      <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索实体/字段..." size="small" clearable style="width:180px" />
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any,i:number)=>i" :pagination="{pageSize:15}" size="small" />

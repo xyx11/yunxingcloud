@@ -4,8 +4,8 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 const props = withDefaults(defineProps<{
   src?: string
   alt?: string
-  width?: number
-  height?: number
+  width?: number | string
+  height?: number | string
   rounded?: string
   bg?: string
 }>(), {
@@ -38,6 +38,15 @@ onUnmounted(() => { observer?.disconnect() })
 watch(() => props.src, () => {
   loaded.value = false
   error.value = false
+  // 如果元素当前不在视口内，重置 inView 并重新 observe
+  if (el.value && observer && !inView.value) {
+    inView.value = false
+    observer.disconnect()
+    observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) inView.value = true
+    }, { rootMargin: '300px' })
+    observer.observe(el.value)
+  }
 })
 
 function onError() { error.value = true }

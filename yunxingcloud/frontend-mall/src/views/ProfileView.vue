@@ -42,20 +42,27 @@ async function copyShareLink() {
 
 onMounted(async () => { if (!auth.isLoggedIn) { router.push('/login'); return }; loadTab() })
 
+const tabCache: Record<string, boolean> = {}
+
 async function loadTab() {
+  const key = activeTab.value
+  if (tabCache[key]) { loading.value = false; return }
   loading.value = true
-  if (activeTab.value === 'addresses') { try { const r = await getAddresses(); addresses.value = r.data || [] } catch {} }
-  else if (activeTab.value === 'coupons') { try { const r = await getMyCoupons(); coupons.value = r.data || [] } catch {} }
-  else if (activeTab.value === 'favorites') { try { const r = await getFavorites(); favorites.value = r.data || [] } catch {} }
+  if (key === 'addresses') { try { const r = await getAddresses(); addresses.value = r.data || [] } catch {} }
+  else if (key === 'coupons') { try { const r = await getMyCoupons(); coupons.value = r.data || [] } catch {} }
+  else if (key === 'favorites') { try { const r = await getFavorites(); favorites.value = r.data || [] } catch {} }
+  tabCache[key] = true
   loading.value = false
 }
+
+function refreshTab() { tabCache[activeTab.value] = false; loadTab() }
 
 async function saveAddress() {
   try {
     if (editAddr.value) { await updateAddress(editAddr.value.id, addrForm.value) }
     else { await createAddress(addrForm.value) }
     toast.success(editAddr.value ? t('common.updated') : t('common.added'))
-    showAddrForm.value = false; editAddr.value = null; loadTab()
+    showAddrForm.value = false; editAddr.value = null; refreshTab()
   } catch {}
 }
 
@@ -65,7 +72,7 @@ function editAddress(addr: any) {
   showAddrForm.value = true
 }
 
-async function deleteAddressById(id: number) { if (!confirm(t('common.confirmDelete'))) return; await deleteAddress(id); toast.info(t('common.deleted')); loadTab() }
+async function deleteAddressById(id: number) { if (!confirm(t('common.confirmDelete'))) return; await deleteAddress(id); toast.info(t('common.deleted')); refreshTab() }
 
 async function changePwd() {
   if (!pwForm.value.oldPassword || !pwForm.value.newPassword) { toast.error(t('register.fillRequired')); return }
@@ -74,7 +81,7 @@ async function changePwd() {
   catch (e: any) { toast.error(e.response?.data?.message || t('common.updateFailed')) }
 }
 
-async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr.isDefault); loadTab() }
+async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr.isDefault); refreshTab() }
 </script>
 
 <template>
@@ -110,7 +117,7 @@ async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr
     <!-- Tabs -->
     <div class="tab-bar">
       <span v-for="tab in [{key:'addresses',label:t('profile.addresses')},{key:'favorites',label:t('profile.favorites')},{key:'coupons',label:t('profile.coupons')},{key:'password',label:t('profile.changePassword')}]"
-            :key="tab.key" class="tab" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key; loadTab()">
+            :key="tab.key" class="tab" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key as TabKey; loadTab()">
         {{ tab.label }}
       </span>
     </div>

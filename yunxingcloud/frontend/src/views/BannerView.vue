@@ -17,8 +17,8 @@ function handleUpload(options: UploadCustomRequestOptions) {
   const fd = new FormData(); fd.append('file', options.file.file!)
   request.post('/api/files/upload', fd).then(r => {
     form.value.imageUrl = r.data?.url || r.data || ''
-    options.onFinish(); notify.success('上传成功')
-  }).catch(() => { options.onError(); notify.error('上传失败') })
+    options.onFinish(); notify.success(t('common.uploadSuccess'))
+  }).catch(() => { options.onError(); notify.error(t('common.uploadFailed')) })
 }
 
 const columns: DataTableColumns<any> = [
@@ -31,7 +31,7 @@ const columns: DataTableColumns<any> = [
   { title:'操作', key:'act', width:120,
     render(r:any) { return h(NSpace,{size:'small'},{default:()=>[
       h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={title:r.title,imageUrl:r.imageUrl||'',linkUrl:r.linkUrl||'',sortOrder:r.sortOrder||0,status:r.status};showModal.value=true}},{default:()=>'编辑'}),
-      h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>'确认删除？'})
+      h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
     ]})}
   }
 ]
@@ -43,7 +43,7 @@ function add() { editingId.value=null; form.value={title:'',imageUrl:'',linkUrl:
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card title="Banner 管理">
       <template #header-extra><n-button type="primary" size="small" @click="add">+ 新增</n-button></template>
       <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
@@ -52,11 +52,11 @@ onMounted(load)
       <n-drawer-content :title="editingId?'编辑':'新增'" closable>
         <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="80" size="small">
-          <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item :label="t('common.title')"><n-input v-model:value="form.title" /></n-form-item>
           <n-form-item label="链接URL"><n-input v-model:value="form.linkUrl" placeholder="/products?categoryId=1" /></n-form-item>
-          <n-form-item label="排序"><n-input-number v-model:value="form.sortOrder" :min="0" /></n-form-item>
+          <n-form-item :label="t('common.sort')"><n-input-number v-model:value="form.sortOrder" :min="0" /></n-form-item>
           <n-form-item label="状态"><n-select v-model:value="form.status" :options="[{label:'启用',value:'0'},{label:'禁用',value:'1'}]" /></n-form-item>
-          <n-form-item label="图片">
+          <n-form-item :label="t('common.image')">
             <n-space vertical>
               <n-input v-model:value="form.imageUrl" placeholder="https://..." />
               <n-upload :custom-request="handleUpload" :show-file-list="false" accept="image/*"><n-button size="small" secondary>本地上传</n-button></n-upload>

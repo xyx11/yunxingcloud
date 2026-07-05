@@ -2,6 +2,7 @@
 import { ref, onMounted, h } from 'vue'
 import { NCard, NGrid, NGridItem, NStatistic, NDataTable, NSpace, NButton, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
+import { formatPrice } from '@/utils/format'
 import { fetchSalesOverview, fetchOrderTrend, fetchTopProducts, fetchRevenueOverview, fetchDailyRevenue } from '@/api/analytics'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -19,20 +20,20 @@ const loading = ref(false)
 const trendOption = ref({
   tooltip: { trigger: 'axis' },
   grid: { left: 50, right: 20, top: 10, bottom: 30 },
-  xAxis: { type: 'category', data: [] },
+  xAxis: { type: 'category', data: [] as any[] },
   yAxis: { type: 'value' },
   series: [
-    { name: '订单数', data: [], type: 'line', smooth: true, itemStyle: { color: '#667eea' }, areaStyle: { color: 'rgba(102,126,234,0.1)' } },
+    { name: '订单数', data: [] as any[], type: 'line', smooth: true, itemStyle: { color: '#667eea' }, areaStyle: { color: 'rgba(102,126,234,0.1)' } },
   ],
 })
 
 const revenueOption = ref({
   tooltip: { trigger: 'axis' },
   grid: { left: 60, right: 20, top: 10, bottom: 30 },
-  xAxis: { type: 'category', data: [] },
+  xAxis: { type: 'category', data: [] as string[] },
   yAxis: { type: 'value', axisLabel: { formatter: '¥{value}' } },
   series: [
-    { name: '营收', data: [], type: 'bar', itemStyle: { color: '#18a058', borderRadius: [3, 3, 0, 0] } },
+    { name: '营收', data: [] as number[], type: 'bar', itemStyle: { color: '#18a058', borderRadius: [3, 3, 0, 0] } },
   ],
 })
 
@@ -79,7 +80,7 @@ async function load() {
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-space vertical size="large">
       <n-grid cols="4" x-gap="12">
         <n-grid-item><n-card size="small"><n-statistic label="今日订单" :value="overview.todayOrders || 0" /></n-card></n-grid-item>
@@ -88,8 +89,8 @@ onMounted(load)
         <n-grid-item><n-card size="small"><n-statistic label="本月营收"><template #suffix>元</template>{{ ((overview.monthRevenue || 0) / 100).toFixed(2) }}</n-statistic></n-card></n-grid-item>
       </n-grid>
       <n-grid cols="2" x-gap="12">
-        <n-grid-item><n-card title="订单趋势" size="small"><v-chart :option="trendOption" style="height:240px" autoresize /></n-card></n-grid-item>
-        <n-grid-item><n-card title="日营收" size="small"><v-chart :option="revenueOption" style="height:240px" autoresize /></n-card></n-grid-item>
+        <n-grid-item><n-card title="订单趋势" size="small"><v-chart :option="trendOption" class="chart-height" autoresize /></n-card></n-grid-item>
+        <n-grid-item><n-card title="日营收" size="small"><v-chart :option="revenueOption" class="chart-height" autoresize /></n-card></n-grid-item>
       </n-grid>
       <n-card title="热销商品 TOP10" size="small">
         <n-dataTable :columns="topColumns" :data="topProducts" :loading="loading" :pagination="false" size="small" />

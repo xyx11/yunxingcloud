@@ -80,6 +80,8 @@ async function loadNotices() {
   loading.value = false
 }
 
+function doSearch() { /* reactive search */ }
+
 function addNotice() {
   editing.value = null
   form.value = { noticeTitle: '', noticeType: '1', noticeContent: '', status: '0', remark: '' }
@@ -115,12 +117,12 @@ onMounted(loadNotices)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.notice')">
       <template #header-extra>
         <n-space><n-button v-if="checkedRowKeys.length" type="error" size="small" @click="batchDelete">{{ t('common.batchDelete') }} ({{ checkedRowKeys.length }})</n-button><n-button type="primary" size="small" @click="addNotice"><template #icon>＋</template>{{ t('common.add') }}</n-button></n-space>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable style="width:180px" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>

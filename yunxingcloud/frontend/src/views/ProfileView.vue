@@ -37,7 +37,7 @@ const socialProviderSvgs: Record<string, string> = {
 
 async function loadSocialAccounts() {
   socialLoading.value = true
-  try { socialAccounts.value = await fetchSocialAccounts() } catch {}
+  try { socialAccounts.value = await fetchSocialAccounts() } catch(e) { console.error(e) }
   socialLoading.value = false
 }
 
@@ -108,9 +108,9 @@ async function handleUpload({ file }: any) {
 </script>
 
 <template>
-  <div style="padding:20px;max-width:800px;">
+  <div class="view-pad view-max-w">
     <n-card :title="t('profile.title')">
-      <n-space align="center" style="margin-bottom:16px">
+      <n-space align="center" class="mb-16">
         <div :style="{width:'64px',height:'64px',borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,#667eea,#764ba2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'28px',color:'#fff',fontWeight:600}">
           <img v-if="avatarUrl" :src="avatarUrl" style="width:100%;height:100%;object-fit:cover">
           <span v-else>{{ user?.username?.charAt(0)?.toUpperCase() }}</span>
@@ -134,7 +134,7 @@ async function handleUpload({ file }: any) {
       </n-descriptions>
     </n-card>
 
-    <n-card :title="t('profile.permissionList')" style="margin-top:16px">
+    <n-card :title="t('profile.permissionList')" class="mt-16">
       <n-space v-if="user?.authorities?.length">
         <n-tag
           v-for="p in user.authorities" :key="p"
@@ -143,25 +143,25 @@ async function handleUpload({ file }: any) {
           {{ p }}
         </n-tag>
       </n-space>
-      <span v-else style="color:#999;">{{ t('profile.noPermissions') }}</span>
+      <span v-else class="text-muted">{{ t('profile.noPermissions') }}</span>
     </n-card>
 
-    <n-card :title="t('profile.token')" style="margin-top:16px">
+    <n-card :title="t('profile.token')" class="mt-16">
       <n-space vertical>
         <n-space align="center">
-          <n-code v-if="showToken" :code="accessToken" language="text" style="max-width:600px" />
-          <span v-else style="color:#999;">{{ tokenPreview }}</span>
+          <n-code v-if="showToken" :code="accessToken" language="text" class="max-w-code" />
+          <span v-else class="text-muted">{{ tokenPreview }}</span>
           <n-button size="small" @click="showToken = !showToken">{{ showToken ? t('common.hide') : t('common.view') }}</n-button>
           <n-button size="small" @click="copyToken">{{ t('common.copy') }}</n-button>
         </n-space>
       </n-space>
     </n-card>
 
-    <n-card :title="t('profile.accountSecurity')" style="margin-top:16px">
+    <n-card :title="t('profile.accountSecurity')" class="mt-16">
       <n-button size="small" type="warning" @click="showPwdModal = true">{{ t('pwd.change') }}</n-button>
     </n-card>
 
-    <n-card title="第三方账号绑定" style="margin-top:16px">
+    <n-card title="第三方账号绑定" class="mt-16">
       <n-space vertical>
         <n-space v-if="socialAccounts.length">
           <n-tag
@@ -173,7 +173,7 @@ async function handleUpload({ file }: any) {
           </n-tag>
         </n-space>
         <span v-else style="color:#999;font-size:13px">暂未绑定第三方账号</span>
-        <n-space style="margin-top:8px">
+        <n-space class="mt-8">
           <n-button v-for="p in ['wechat','qq','alipay']" :key="p" size="tiny" @click="bindSocial(p)" :style="{borderColor:socialProviderColors[p],color:socialProviderColors[p]}">
             <svg viewBox="0 0 24 24" width="14" height="14" :fill="socialProviderColors[p]" style="margin-right:4px;vertical-align:middle"><path :d="socialProviderSvgs[p]" /></svg>
             绑定{{ socialProviderNames[p] }}
@@ -182,7 +182,7 @@ async function handleUpload({ file }: any) {
       </n-space>
     </n-card>
 
-    <n-card :title="t('profile.quickActions')" style="margin-top:16px">
+    <n-card :title="t('profile.quickActions')" class="mt-16">
       <n-space>
         <n-button size="small" @click="router.push('/')">📊 {{ t('nav.dashboard') }}</n-button>
         <n-button size="small" @click="router.push('/swagger')">📄 {{ t('nav.swagger') }}</n-button>
@@ -191,7 +191,7 @@ async function handleUpload({ file }: any) {
         <n-button size="small" @click="router.push('/operlog')">📋 {{ t('nav.operlog') }}</n-button>
       </n-space>
     </n-card>
-    <n-card :title="t('profile.settings')" style="margin-top:16px">
+    <n-card :title="t('profile.settings')" class="mt-16">
       <n-space vertical>
         <n-space align="center">
           <span style="max-width:80px;width:95%">{{ t('profile.themeColor') }}</span>
@@ -199,7 +199,7 @@ async function handleUpload({ file }: any) {
         </n-space>
         <n-space align="center">
           <span style="max-width:80px;width:95%">{{ t('profile.pageSize') }}</span>
-          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+t('common.items'),value:n}))" size="small" style="max-width:100px;width:95%" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
+          <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+t('common.items'),value:n}))" size="small" class="filter-select-xs" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
         </n-space>
       </n-space>
     </n-card>

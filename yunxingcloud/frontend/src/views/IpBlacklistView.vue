@@ -47,7 +47,7 @@ onMounted(loadItems)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.ipBlacklist')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="showModal = true"><template #icon>＋</template>{{ t('ipBlacklist.blockIp') }}</n-button>

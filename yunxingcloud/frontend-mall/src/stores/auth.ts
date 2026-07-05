@@ -20,8 +20,10 @@ export const useAuthStore = defineStore('auth', () => {
     safeSet('user', JSON.stringify({ username }))
   }
 
-  async function register(username: string, password: string) {
-    await apiRegister({ username, password })
+  async function register(username: string, password: string, email?: string) {
+    const params: { username: string; password: string; email?: string } = { username, password }
+    if (email) params.email = email
+    await apiRegister(params)
   }
 
   function logout() {

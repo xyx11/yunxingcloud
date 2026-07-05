@@ -1,1 +1,0 @@
-import{r as t}from"./index-DL6HC9EI.js";async function s(){return t.get("/api/stats/dashboard")}async function n(){return t.get("/api/stats/recent-notices")}async function r(e){return t.get("/api/operlog",{params:e})}export{r as a,n as b,s as f};

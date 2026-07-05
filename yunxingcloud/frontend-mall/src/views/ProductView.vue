@@ -6,8 +6,10 @@ import { addToCart } from '@/api/cart'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
+import { useCartFly } from '@/composables/useCartFly'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
+import { formatPrice, formatRelativeTime } from '@/utils/format'
 import type { Product, Sku } from '@/types'
 import ProductRating from '@/components/ProductRating.vue'
 import ReviewSummary from '@/components/ReviewSummary.vue'
@@ -20,15 +22,25 @@ const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
+const { flyToCart } = useCartFly()
 const product = ref<Product | null>(null)
 const skus = ref<Sku[]>([])
 const reviews = ref<any[]>([])
+const reviewSort = ref<'newest' | 'highest' | 'lowest'>('newest')
+const reviewShow = ref(3)
+const sortedReviews = computed(() => {
+  const arr = [...reviews.value]
+  if (reviewSort.value === 'newest') arr.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+  else if (reviewSort.value === 'highest') arr.sort((a, b) => b.rating - a.rating)
+  else arr.sort((a, b) => a.rating - b.rating)
+  return arr.slice(0, reviewShow.value)
+})
+function showMoreReviews() { reviewShow.value = Math.min(reviewShow.value + 3, reviews.value.length) }
 const related = ref<any[]>([])
 const selectedSku = ref<Sku | null>(null)
 const qty = ref(1)
 const favorited = ref(false)
 const loading = ref(true)
-const addAnim = ref(false)
 const shareMenu = ref(false)
 const fullscreen = ref(false)
 const showFloatingBar = ref(false)
@@ -39,6 +51,7 @@ const showPriceAlert = ref(false)
 const alertSet = ref(false)
 const viewerCount = ref(Math.floor(Math.random() * 200) + 50)
 let viewerTimer: ReturnType<typeof setInterval> | null = null
+function onScroll() { showFloatingBar.value = window.scrollY > 500 }
 
 const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
 const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
@@ -67,7 +80,8 @@ onMounted(async () => {
     try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch {}
   }
 
-  window.addEventListener('scroll', () => { showFloatingBar.value = window.scrollY > 500 })
+  window.addEventListener('scroll', onScroll)
+  window.addEventListener('keydown', onFsKeydown)
 
   if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
   else if (product.value?.images) images.value = product.value.images
@@ -79,14 +93,15 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', () => {})
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('keydown', onFsKeydown)
   if (viewerTimer) clearInterval(viewerTimer)
 })
 
-async function onAddToCart() {
+async function onAddToCart(e?: MouseEvent) {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value) return
-  try { await addToCart(product.value.id, qty.value); toast.success(t('toast.addedToCart')); addAnim.value = true; setTimeout(() => addAnim.value = false, 600) } catch { toast.error(t('toast.addCartFail')) }
+  try { await addToCart(product.value.id, qty.value); toast.success(t('toast.addedToCart')); if (e) flyToCart(e) } catch { toast.error(t('toast.addCartFail')) }
 }
 async function buyNow() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
@@ -118,7 +133,7 @@ async function shareProduct() {
   const url = window.location.href
   const title = product.value?.name || ''
   if (navigator.share) { try { await navigator.share({ title, url }) } catch {} }
-  else { await navigator.clipboard.writeText(url); toast.success('链接已复制') }
+  else { await navigator.clipboard.writeText(url); toast.success(t('toast.copied')) }
   shareMenu.value = false
 }
 
@@ -133,6 +148,12 @@ function onTouchEnd(e: TouchEvent) {
     activeImage.value = dx < 0 ? Math.min(images.value.length - 1, activeImage.value + 1) : Math.max(0, activeImage.value - 1)
   }
 }
+function onFsKeydown(e: KeyboardEvent) {
+  if (!fullscreen.value) return
+  if (e.key === 'ArrowLeft') { activeImage.value = activeImage.value > 0 ? activeImage.value - 1 : images.value.length - 1 }
+  else if (e.key === 'ArrowRight') { activeImage.value = activeImage.value < images.value.length - 1 ? activeImage.value + 1 : 0 }
+  else if (e.key === 'Escape') { fullscreen.value = false }
+}
 
 const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff', '绿': '#4caf50', '黄': '#ffc107', '紫': '#9c27b0', '黑': '#333', '白': '#fff', '灰': '#999', '粉': '#e91e63', '金': '#ffc107', '银': '#ccc', '橙': '#ff9800' }
 </script>
@@ -141,8 +162,8 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <span @click="router.push('/')" class="crumb-link">首页</span><span>/</span>
-    <span v-if="product?.categoryId" @click="router.push('/products?categoryId=' + product.categoryId)" class="crumb-link">{{ (product as any).categoryName || '分类' }}</span><span v-if="product?.categoryId">/</span>
-    <span class="crumb-current">{{ product?.name || '商品详情' }}</span>
+    <span v-if="product?.categoryId" @click="router.push('/products?categoryId=' + product.categoryId)" class="crumb-link">{{ (product as any).categoryName || t('product.category') }}</span><span v-if="product?.categoryId">/</span>
+    <span class="crumb-current">{{ product?.name || t('product.detail') }}</span>
   </div>
 
   <!-- Skeleton -->
@@ -193,10 +214,10 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
       <div class="price-box">
         <div class="price-row">
           <span class="price-label">{{ t('product.price') }}</span>
-          <span class="price-value">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
+          <span class="price-value">{{ formatPrice(displayPrice() / 100, 2) }}</span>
           <span v-if="displayStock() > 0 && displayStock() <= 10" class="stock-warn">仅剩 {{ displayStock() }} 件</span>
           <span v-if="displayStock() === 0" class="stock-out">暂时缺货</span>
-          <button class="alert-btn" :class="{ set: alertSet }" @click="setPriceAlert">{{ alertSet ? '🔔 已设置' : '🔔 降价提醒' }}</button>
+          <button class="alert-btn" :class="{ set: alertSet }" @click="setPriceAlert">{{ alertSet ? t('product.alertSet') : t('product.priceAlert') }}</button>
         </div>
         <div class="meta-row">
           <span>{{ t('product.salesCount') }} <b class="text-red">{{ product.sales || 0 }}</b></span>
@@ -212,7 +233,7 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
           <span v-for="sku in skus" :key="sku.id" class="sku-item" :class="{ selected: selectedSku?.id === sku.id }" @click="selectedSku = sku">
             <span v-if="(sku as any).specs" class="sku-color" :style="{ background: SKU_COLORS[((sku as any).specs || '').match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''] || '#ddd' }" />
             {{ sku.name }}
-            <span class="sku-price">¥{{ (sku.price / 100).toFixed(2) }}</span>
+            <span class="sku-price">{{ formatPrice(sku.price / 100, 2) }}</span>
           </span>
         </div>
       </div>
@@ -227,7 +248,7 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 
       <!-- Actions -->
       <div class="action-row">
-        <JdButton type="outline" size="lg" class="flex-1" @click="onAddToCart">{{ t('product.addToCart') }}</JdButton>
+        <JdButton type="outline" size="lg" class="flex-1" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
         <JdButton size="lg" class="flex-1" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
         <button class="icon-btn" :class="{ active: favorited }" @click="toggleFavorite" aria-label="收藏">{{ favorited ? '❤️' : '🤍' }}</button>
         <button class="icon-btn" @click="shareProduct" aria-label="分享">📤</button>
@@ -239,16 +260,24 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
   <div v-if="product" class="pdp-section">
     <h3 class="section-title">{{ t('product.reviews') }} ({{ reviews.length }})</h3>
     <ReviewSummary v-if="reviews.length" :reviews="reviews" />
+    <div v-if="reviews.length" class="review-sort">
+      <span class="rs-opt" :class="{ active: reviewSort === 'newest' }" @click="reviewSort = 'newest'">最新</span>
+      <span class="rs-opt" :class="{ active: reviewSort === 'highest' }" @click="reviewSort = 'highest'">好评</span>
+      <span class="rs-opt" :class="{ active: reviewSort === 'lowest' }" @click="reviewSort = 'lowest'">差评</span>
+    </div>
     <div v-if="reviews.length">
-      <div v-for="r in reviews" :key="r.id" class="review-item">
+      <div v-for="r in sortedReviews" :key="r.id" class="review-item">
         <div class="review-header">
           <div class="review-user">
             <span class="review-username">{{ r.username }}</span>
             <span class="review-stars">{{ '★'.repeat(r.rating) }}</span>
           </div>
-          <span class="review-date">{{ r.createdAt?.substring(0, 10) }}</span>
+          <span class="review-date">{{ formatRelativeTime(r.createdAt) }}</span>
         </div>
         <p class="review-content">{{ r.content }}</p>
+      </div>
+      <div v-if="reviewShow < reviews.length" class="review-more">
+        <button class="review-more-btn" @click="showMoreReviews">加载更多评论 ({{ reviews.length - reviewShow }}条)</button>
       </div>
     </div>
     <div v-else class="empty-text">{{ t('product.noReviews') }}</div>
@@ -260,7 +289,7 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
     <div class="spec-grid">
       <div class="spec-row"><span class="spec-label">商品名称</span><span>{{ product.name }}</span></div>
       <div class="spec-row"><span class="spec-label">商品编号</span><span>{{ product.id }}</span></div>
-      <div v-if="(product as any).brandId" class="spec-row"><span class="spec-label">品牌</span><span>{{ (product as any).brandName || '品牌#' + (product as any).brandId }}</span></div>
+      <div v-if="(product as any).brandId" class="spec-row"><span class="spec-label">{{ t('product.brand') }}</span><span>{{ (product as any).brandName || t('product.brand') + '#' + (product as any).brandId }}</span></div>
       <div class="spec-row"><span class="spec-label">上架时间</span><span>{{ (product as any).createdAt?.substring(0, 10) || '-' }}</span></div>
     </div>
   </div>
@@ -273,7 +302,7 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
         <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
         <div class="related-info">
           <h5 class="related-name">{{ p.name }}</h5>
-          <span class="related-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+          <span class="related-price">{{ formatPrice(p.price / 100, 2) }}</span>
         </div>
       </div>
     </div>
@@ -299,15 +328,15 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
   <div v-if="showFloatingBar && product" class="floating-bar">
     <LazyImage :src="images[activeImage]" :alt="product.name" height="48px" width="48px" rounded="6px" />
     <div class="floating-name">{{ product.name }}</div>
-    <span class="floating-price">¥{{ (displayPrice() / 100).toFixed(2) }}</span>
-    <JdButton type="outline" @click="onAddToCart">{{ t('product.addToCart') }}</JdButton>
+    <span class="floating-price">{{ formatPrice(displayPrice() / 100, 2) }}</span>
+    <JdButton type="outline" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
     <JdButton @click="buyNow">{{ t('product.buyNow') }}</JdButton>
   </div>
 
   <!-- Mobile Sticky Bar -->
   <div v-if="product" class="mobile-bar">
-    <div class="mobile-bar-price">¥{{ (displayPrice() / 100).toFixed(2) }}</div>
-    <JdButton type="outline" class="flex-1" @click="onAddToCart">加入购物车</JdButton>
+    <div class="mobile-bar-price">{{ formatPrice(displayPrice() / 100, 2) }}</div>
+    <JdButton type="outline" class="flex-1" @click="() => onAddToCart()">加入购物车</JdButton>
     <JdButton class="flex-1" @click="buyNow">立即购买</JdButton>
   </div>
 </template>
@@ -327,7 +356,9 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 /* Main */
 .pdp-main { display: flex; gap: var(--space-xxxl); background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); }
 .gallery { width: 420px; flex-shrink: 0; }
-.gallery-main { cursor: zoom-in; }
+.gallery-main { cursor: zoom-in; overflow: hidden; border-radius: var(--radius-md); }
+.gallery-main :deep(img) { transition: transform .3s ease; }
+.gallery-main:hover :deep(img) { transform: scale(1.5); }
 .thumbnails { display: flex; gap: var(--space-sm); margin-top: var(--space-sm); }
 .thumb { width: 60px; height: 60px; border-radius: var(--radius-sm); cursor: pointer; overflow: hidden; border: 1px solid var(--border); transition: border var(--transition-fast); }
 .thumb.active { border: 2px solid var(--jd-red); }
@@ -393,6 +424,13 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 .section-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
 
 /* Reviews */
+.review-sort { display: flex; gap: var(--space-md); margin-bottom: var(--space-md); }
+.rs-opt { cursor: pointer; padding: 4px 10px; border-radius: var(--radius-sm); font-size: var(--font-sm); color: var(--text-secondary); transition: all var(--transition-fast); }
+.rs-opt.active { color: var(--jd-red); background: var(--jd-red-light); }
+.rs-opt:hover:not(.active) { color: var(--jd-red); }
+.review-more { text-align: center; padding: var(--space-lg) 0; }
+.review-more-btn { padding: var(--space-md) 32px; border: 1px solid var(--border); background: var(--bg-white); border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-md); color: var(--text-secondary); transition: all var(--transition-fast); }
+.review-more-btn:hover { border-color: var(--jd-red); color: var(--jd-red); }
 .review-item { padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); }
 .review-header { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); }
 .review-user { display: flex; align-items: center; gap: var(--space-sm); }

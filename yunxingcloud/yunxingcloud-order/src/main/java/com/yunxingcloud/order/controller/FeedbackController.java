@@ -1,7 +1,7 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.Feedback;
-import com.yunxingcloud.order.repository.FeedbackRepository;
+import com.yunxingcloud.order.service.FeedbackService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,9 +13,9 @@ import java.util.Map;
 @RequestMapping("/api/feedback")
 public class FeedbackController {
 
-    private final FeedbackRepository repo;
+    private final FeedbackService feedbackService;
 
-    public FeedbackController(FeedbackRepository repo) { this.repo = repo; }
+    public FeedbackController(FeedbackService feedbackService) { this.feedbackService = feedbackService; }
 
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
     private boolean isAdmin() { return SecurityContextHolder.getContext().getAuthentication()
@@ -24,19 +24,18 @@ public class FeedbackController {
     @PostMapping
     public ResponseEntity<?> submit(@RequestBody Feedback fb) {
         fb.setUsername(user());
-        return ResponseEntity.ok(repo.save(fb));
+        return ResponseEntity.ok(feedbackService.submit(fb));
     }
 
     @GetMapping
     public ResponseEntity<?> list() {
-        if (isAdmin()) return ResponseEntity.ok(repo.findByOrderByCreatedAtDesc());
-        return ResponseEntity.ok(repo.findByUsernameOrderByCreatedAtDesc(user()));
+        return ResponseEntity.ok(feedbackService.list(isAdmin(), user()));
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/reply")
     public ResponseEntity<?> reply(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        repo.findById(id).ifPresent(f -> { f.setReply(body.get("reply")); f.setStatus("1"); repo.save(f); });
+        feedbackService.reply(id, body.get("reply"));
         return ResponseEntity.ok(Map.of("success", true));
     }
 }

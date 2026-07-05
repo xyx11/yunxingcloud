@@ -61,7 +61,7 @@ onMounted(loadClients)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('oauth2.clientTitle')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="editingId=null;showModal=true"><template #icon>＋</template>{{ t('common.add') }}</n-button>

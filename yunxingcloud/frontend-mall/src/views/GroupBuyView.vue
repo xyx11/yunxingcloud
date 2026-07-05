@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
 const { t } = useI18n()
 import request from '@/api/request'
+import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -27,7 +28,7 @@ const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) /
   <div class="gb-page">
     <div class="gb-hero">
       <h1 class="gb-hero-title">👥 拼团专区</h1>
-      <p class="gb-hero-sub">{{ t('groupBuy.subtitle') || '邀请好友一起拼，享受超低拼团价' }}</p>
+      <p class="gb-hero-sub">{{ t('groupBuy.subtitle') }}</p>
     </div>
 
     <div v-if="loading" class="gb-grid">
@@ -44,12 +45,12 @@ const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) /
         <div class="gb-info">
           <h3 class="gb-name">{{ g.productName || t('groupBuy.defaultName', '拼团商品') }}</h3>
           <div class="gb-prices">
-            <span class="gb-price">¥{{ (g.groupPrice / 100).toFixed(2) }}</span>
-            <span class="gb-original">¥{{ (g.originalPrice / 100).toFixed(2) }}</span>
+            <span class="gb-price">{{ formatPrice(g.groupPrice / 100, 2) }}</span>
+            <span class="gb-original">{{ formatPrice(g.originalPrice / 100, 2) }}</span>
             <span class="gb-members">{{ g.currentMembers || 0 }}/{{ g.minMembers }}{{ t('groupBuy.people', '人') }}</span>
           </div>
           <div class="gb-bar"><div class="gb-bar-fill" :style="{ width: progress(g) + '%' }" /></div>
-          <JdButton block size="sm" @click.stop="goProduct(g.productId)">{{ t('groupBuy.join', '去开团') }}</JdButton>
+          <JdButton block size="sm" @click.stop="goProduct(g.productId)">{{ t('groupBuy.joinGroup') }}</JdButton>
         </div>
       </div>
     </div>

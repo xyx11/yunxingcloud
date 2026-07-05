@@ -36,10 +36,10 @@ const columns: DataTableColumns<Approval> = [
   ]})},
 ]
 
-async function loadItems() { loading.value=true;try{const r=await (tab.value==='my'?fetchMyApprovals():fetchPendingApprovals());items.value=r.data;pending.value=r.data}catch{/* ignore */}loading.value=false }
+async function loadItems() { loading.value=true;try{const r=await (tab.value==='my'?fetchMyApprovals():fetchPendingApprovals());items.value=r.data;pending.value=r.data}catch { /* ignore */ }loading.value=false }
 async function approve(id:number){await approveRequest(id);loadItems();notify.success(t('approval.approveSuccess'))}
 async function reject(id:number){await rejectRequest(id);loadItems();notify.success(t('approval.rejectSuccess'))}
-async function submit(){saving.value=true;try{await createApproval(form.value);showModal.value=false;form.value={approver:'admin',type:t('approval.typeLeave'),title:'',content:''};loadItems();notify.success(t('approval.createSuccess'))}catch{/* ignore */}finally{saving.value=false}}
+async function submit(){saving.value=true;try{await createApproval(form.value);showModal.value=false;form.value={approver:'admin',type:t('approval.typeLeave'),title:'',content:''};loadItems();notify.success(t('approval.createSuccess'))}catch { /* ignore */ }finally{saving.value=false}}
 const checkedRowKeys = ref<number[]>([])
 async function batchApprove(){if(!checkedRowKeys.value.length)return;try{for(const id of checkedRowKeys.value)await approveRequest(id);checkedRowKeys.value=[];loadItems();notify.success(t('approval.approveSuccess'))}catch{notify.error(t('common.saveFailed'))}}
 async function batchReject(){if(!checkedRowKeys.value.length)return;try{for(const id of checkedRowKeys.value)await rejectRequest(id);checkedRowKeys.value=[];loadItems();notify.success(t('approval.rejectSuccess'))}catch{notify.error(t('common.saveFailed'))}}
@@ -48,7 +48,7 @@ onMounted(loadItems)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.approval')">
       <template #header-extra>
         <n-space>

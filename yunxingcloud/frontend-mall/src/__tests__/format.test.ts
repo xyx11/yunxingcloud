@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatPrice, formatCount, formatRating, formatPercent, formatFileSize, formatDate, formatDateTime } from '@/utils/format'
+import { formatPrice, formatCount, formatRating, formatPercent, formatFileSize, formatDate, formatDateTime, formatRelativeTime } from '@/utils/format'
 
 describe('formatPrice', () => {
   it('formats integer price', () => {
@@ -10,6 +10,11 @@ describe('formatPrice', () => {
   })
   it('formats large price', () => {
     expect(formatPrice(1000000)).toBe('¥1,000,000')
+  })
+  it('formats price with decimals', () => {
+    expect(formatPrice(1299.50, 2)).toBe('¥1,299.50')
+    expect(formatPrice(1000, 2)).toBe('¥1,000.00')
+    expect(formatPrice(0, 2)).toBe('¥0.00')
   })
 })
 
@@ -58,5 +63,27 @@ describe('formatDateTime', () => {
     const result = formatDateTime('2026-01-15T10:30:00Z')
     expect(result).toContain('2026')
     expect(result).toContain('01')
+  })
+})
+
+describe('formatRelativeTime', () => {
+  it('returns 刚刚 for recent time', () => {
+    expect(formatRelativeTime(new Date().toISOString())).toBe('刚刚')
+  })
+  it('returns 分钟前', () => {
+    const d = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    expect(formatRelativeTime(d)).toBe('5分钟前')
+  })
+  it('returns 小时前', () => {
+    const d = new Date(Date.now() - 3 * 3600 * 1000).toISOString()
+    expect(formatRelativeTime(d)).toBe('3小时前')
+  })
+  it('returns 昨天', () => {
+    const d = new Date(Date.now() - 25 * 3600 * 1000).toISOString()
+    expect(formatRelativeTime(d)).toBe('昨天')
+  })
+  it('returns 天前', () => {
+    const d = new Date(Date.now() - 4 * 86400 * 1000).toISOString()
+    expect(formatRelativeTime(d)).toBe('4天前')
   })
 })

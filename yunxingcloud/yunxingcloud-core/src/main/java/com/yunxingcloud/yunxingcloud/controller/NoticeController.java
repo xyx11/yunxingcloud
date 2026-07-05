@@ -3,14 +3,13 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysNotice;
-import com.yunxingcloud.yunxingcloud.repository.SysNoticeRepository;
+import com.yunxingcloud.yunxingcloud.service.NoticeService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -19,65 +18,65 @@ import java.util.Map;
 @RequestMapping("/api/notices")
 public class NoticeController {
 
-    private final SysNoticeRepository noticeRepository;
+    private final NoticeService noticeService;
 
-    public NoticeController(SysNoticeRepository noticeRepository) {
-        this.noticeRepository = noticeRepository;
+    public NoticeController(NoticeService noticeService) {
+        this.noticeService = noticeService;
     }
 
     @GetMapping
     public ResponseEntity<List<SysNotice>> list() {
-        return ResponseEntity.ok(noticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")));
+        return ResponseEntity.ok(noticeService.list());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SysNotice> get(@PathVariable Long id) {
-        return noticeRepository.findById(id)
+        return noticeService.get(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/latest")
     public ResponseEntity<List<SysNotice>> latest() {
-        return ResponseEntity.ok(
-                noticeRepository.findTop5ByStatusAndNoticeTypeOrderByCreatedAtDesc("0", "2"));
+        return ResponseEntity.ok(noticeService.latest());
     }
 
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.INSERT)
     @PostMapping
     public ResponseEntity<SysNotice> create(@RequestBody SysNotice notice) {
-        return ResponseEntity.ok(noticeRepository.save(notice));
+        return ResponseEntity.ok(noticeService.create(notice));
     }
 
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SysNotice body) {
-        return noticeRepository.findById(id).map(notice -> {
-            notice.setNoticeTitle(body.getNoticeTitle());
-            notice.setNoticeType(body.getNoticeType());
-            notice.setNoticeContent(body.getNoticeContent());
-            notice.setStatus(body.getStatus());
-            notice.setRemark(body.getRemark());
-            return ResponseEntity.ok(noticeRepository.save(notice));
-        }).orElse(ResponseEntity.notFound().build());
+        try {
+            return ResponseEntity.ok(noticeService.update(id, body));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        return noticeRepository.findById(id).map(notice -> {
-            noticeRepository.delete(notice);
-            return ResponseEntity.ok(Map.of("success", (Object) true));
-        }).orElse(ResponseEntity.notFound().build());
+        try {
+            noticeService.delete(id);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
-        StringBuilder sb = new StringBuilder("标题,类型,状态,创建时间\n");
-        noticeRepository.findAll().forEach(n -> sb.append(String.format("%s,%s,%s,%s\n", n.getNoticeTitle(), "1".equals(n.getNoticeType()) ? "通知" : "公告", "0".equals(n.getStatus()) ? "正常" : "关闭", n.getCreatedAt())));
-        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=notices.csv").header("Content-Type", "text/csv; charset=UTF-8").body(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String csv = noticeService.exportCsv();
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=notices.csv")
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .body(csv.getBytes(StandardCharsets.UTF_8));
     }
 }

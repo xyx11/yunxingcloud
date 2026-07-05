@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import { getOrders, cancelOrder } from '@/api/order'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
+import { formatPrice, formatRelativeTime } from '@/utils/format'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -16,6 +18,9 @@ const orders = ref<any[]>([])
 const loading = ref(false)
 const activeTab = ref('all')
 const canceling = ref<Set<number>>(new Set())
+const confirmShow = ref(false)
+const confirmId = ref(0)
+const loadError = ref(false)
 
 const statusBadge: Record<string, { label: string; type: 'orange' | 'green' | 'blue' | 'gray' }> = {
   '0': { label: t('order.statusPending'), type: 'orange' },
@@ -35,9 +40,10 @@ const tabs = [
 
 const filteredOrders = () => activeTab.value === 'all' ? orders.value : orders.value.filter(o => o.status === activeTab.value)
 
-async function load() { loading.value = true; try { const r = await getOrders(); orders.value = r.data || [] } catch {} finally { loading.value = false } }
+async function load() { loading.value = true; loadError.value = false; try { const r = await getOrders(); orders.value = r.data || [] } catch { loadError.value = true } finally { loading.value = false } }
 function pay(id: number) { router.push(`/pay/${id}`) }
-async function cancel(id: number) { if (!confirm(t('order.cancelOrder') + '?')) return; if (canceling.value.has(id)) return; canceling.value.add(id); try { await cancelOrder(id); toast.info(t('toast.orderCanceled')); load() } catch {} finally { canceling.value.delete(id) } }
+function askCancel(id: number) { confirmId.value = id; confirmShow.value = true }
+async function doCancel() { if (canceling.value.has(confirmId.value)) return; canceling.value.add(confirmId.value); try { await cancelOrder(confirmId.value); toast.info(t('toast.orderCanceled')); load() } catch {} finally { canceling.value.delete(confirmId.value); confirmShow.value = false } }
 function goDetail(id: number) { router.push(`/order/${id}`) }
 onMounted(load)
 </script>
@@ -63,7 +69,7 @@ onMounted(load)
           <div>
             <span class="order-no-label">{{ t('order.orderNo') }}：</span>
             <span class="order-no">{{ o.orderNo }}</span>
-            <span class="order-date">{{ o.createdAt?.substring(0, 10) }}</span>
+            <span class="order-date">{{ formatRelativeTime(o.createdAt) }}</span>
           </div>
           <JdBadge :type="statusBadge[o.status]?.type || 'gray'">{{ statusBadge[o.status]?.label || o.status }}</JdBadge>
         </div>
@@ -71,26 +77,34 @@ onMounted(load)
           <div>
             <span v-if="o.receiverName" class="order-receiver">{{ o.receiverName }} {{ o.receiverAddress?.substring(0, 20) }}...</span>
           </div>
-          <span class="order-amount">¥{{ (o.totalAmount / 100).toFixed(2) }}</span>
+          <span class="order-amount">{{ formatPrice(o.totalAmount / 100, 2) }}</span>
         </div>
         <div v-if="o.status === '0'" class="order-actions" @click.stop>
-          <JdButton type="ghost" size="sm" :disabled="canceling.has(o.id)" @click="cancel(o.id)">{{ canceling.has(o.id) ? '取消中...' : t('order.cancelOrder') }}</JdButton>
+          <JdButton type="ghost" size="sm" :disabled="canceling.has(o.id)" @click="askCancel(o.id)">{{ canceling.has(o.id) ? t('orderDetail.processing') : t('order.cancelOrder') }}</JdButton>
           <JdButton size="sm" @click="pay(o.id)">{{ t('order.toPay') }}</JdButton>
         </div>
       </div>
     </div>
 
+    <div v-else-if="loadError" class="error-state">
+      <JdEmpty icon="🔌" title="加载失败" description="请检查网络后重试">
+        <JdButton @click="load">重新加载</JdButton>
+      </JdEmpty>
+    </div>
+
     <JdEmpty v-else icon="📋" :title="t('common.noOrders')">
       <JdButton @click="router.push('/')">{{ t('common.goShopping') }}</JdButton>
     </JdEmpty>
+
+    <ConfirmDialog :show="confirmShow" title="确认取消" :message="t('order.cancelOrder') + '?'" @confirm="doCancel" @cancel="confirmShow = false" />
   </div>
 </template>
 
 <style scoped>
 .page-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-lg); }
 
-.tab-bar { display: flex; margin-bottom: var(--space-lg); background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
-.tab { flex: 1; text-align: center; padding: var(--space-md); cursor: pointer; font-size: var(--font-md); transition: all var(--transition-fast); background: var(--bg-white); color: var(--text-secondary); }
+.tab-bar { display: flex; margin-bottom: var(--space-lg); background: var(--bg-white); border-radius: var(--radius-md); overflow-x: auto; box-shadow: var(--shadow-sm); -webkit-overflow-scrolling: touch; }
+.tab { flex: 1; text-align: center; padding: var(--space-md); cursor: pointer; font-size: var(--font-md); transition: all var(--transition-fast); background: var(--bg-white); color: var(--text-secondary); white-space: nowrap; }
 .tab.active { background: var(--jd-red); color: #fff; }
 
 .orders-list { display: flex; flex-direction: column; gap: var(--space-md); }
@@ -108,4 +122,5 @@ onMounted(load)
 .order-actions { margin-top: var(--space-md); display: flex; justify-content: flex-end; gap: var(--space-sm); }
 
 .sk-spacer { margin-top: var(--space-sm); }
+.error-state { padding: 60px var(--space-xl); }
 </style>

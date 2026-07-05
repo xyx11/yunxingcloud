@@ -42,10 +42,11 @@ public class ProductSearchService {
                                        String sort, int page, int size) {
         if (esAvailable && keyword != null && !keyword.isBlank()) {
             try {
-                var products = esOps.search(
+                var query = (org.springframework.data.elasticsearch.core.query.Query)
                     new org.springframework.data.elasticsearch.core.query.CriteriaQuery(
                         buildESCriteria(keyword, categoryId, brandId, minPrice, maxPrice))
-                        .setPageable(org.springframework.data.domain.PageRequest.of(page, size)),
+                        .setPageable(org.springframework.data.domain.PageRequest.of(page, size));
+                var products = esOps.search(query,
                     com.yunxingcloud.order.document.ProductDocument.class
                 );
                 if (products.hasSearchHits()) {

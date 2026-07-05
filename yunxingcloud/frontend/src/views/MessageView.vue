@@ -68,7 +68,7 @@ onMounted(loadMsgs)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.messages')">
       <template #header-extra>
         <n-space>

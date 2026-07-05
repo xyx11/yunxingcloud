@@ -1,7 +1,7 @@
 package com.yunxingcloud.yunxingcloud.config;
 
 import com.alibaba.csp.sentinel.slots.block.BlockException;
-import jakarta.servlet.http.HttpServletRequest;
+import com.yunxingcloud.common.core.BaseExceptionHandler;
 import org.slf4j.Logger;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends BaseExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -66,11 +66,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBlock(BlockException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("success", false, "message", msg("ratelimit.too_many_requests")));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

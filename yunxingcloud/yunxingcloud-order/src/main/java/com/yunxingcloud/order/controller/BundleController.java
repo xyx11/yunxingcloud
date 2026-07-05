@@ -1,47 +1,35 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.dto.ProductBundleDTO;
-import com.yunxingcloud.order.entity.*;
-import com.yunxingcloud.order.repository.*;
+import com.yunxingcloud.order.service.BundleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bundles")
 public class BundleController {
 
-    private final ProductBundleRepository bundleRepo;
-    private final ProductRepository productRepo;
+    private final BundleService bundleService;
 
-    public BundleController(ProductBundleRepository bundleRepo, ProductRepository productRepo) {
-        this.bundleRepo = bundleRepo; this.productRepo = productRepo;
-    }
+    public BundleController(BundleService bundleService) { this.bundleService = bundleService; }
 
     @GetMapping
-    public ResponseEntity<?> list() { return ResponseEntity.ok(bundleRepo.findByStatus("1")); }
+    public ResponseEntity<?> list() { return ResponseEntity.ok(bundleService.list()); }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> detail(@PathVariable Long id) {
-        ProductBundle b = bundleRepo.findById(id).orElse(null);
-        if (b == null) return ResponseEntity.notFound().build();
-        List<Product> items = new ArrayList<>();
-        for (String pid : b.getProductIds().split(",")) {
-            productRepo.findById(Long.parseLong(pid.trim())).ifPresent(items::add);
-        }
-        return ResponseEntity.ok(Map.of("bundle", b, "items", items,
-                "savings", (b.getOriginalPrice() != null ? b.getOriginalPrice() : 0) - b.getBundlePrice()));
+        Map<String, Object> result = bundleService.detail(id);
+        if (result == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody ProductBundleDTO dto) {
-        ProductBundle b = new ProductBundle();
-        b.setName(dto.getName()); b.setBundlePrice(dto.getBundlePrice()); b.setOriginalPrice(dto.getOriginalPrice());
-        b.setProductIds(dto.getProductIds()); b.setImageUrl(dto.getImageUrl()); b.setStatus(dto.getStatus());
-        return ResponseEntity.ok(bundleRepo.save(b));
+        return ResponseEntity.ok(bundleService.create(dto));
     }
 }

@@ -25,7 +25,7 @@ function doSearch() { roleSearch.value = roleSearch.value }
 const checkedRowKeys = ref<number[]>([])
 async function batchDelete() {
   if (!checkedRowKeys.value.length) return
-  try { for (const id of checkedRowKeys.value) await deleteRole(id); checkedRowKeys.value = []; loadRoles(); notify.success(t('common.deleted')) } catch { notify.error(t('common.saveFailed')) }
+  try { for (const id of checkedRowKeys.value) await deleteRole(id); checkedRowKeys.value = []; loadAll(); notify.success(t('common.deleted')) } catch { notify.error(t('common.saveFailed')) }
 }
 const form = ref({ name: '', code: '', description: '', permissions: '' })
 const menuTree = ref<TreeOption[]>([])
@@ -130,7 +130,7 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.roles')">
       <template #header-extra>
         <n-space>
@@ -138,7 +138,7 @@ onMounted(loadAll)
           <n-button type="primary" size="small" @click="addRole"><template #icon>＋</template>{{ t('common.add') }}</n-button>
         </n-space>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="roleSearch" @keyup.enter="doSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
@@ -150,8 +150,8 @@ onMounted(loadAll)
             <template #trigger>
               <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
             </template>
-            <div style="max-height:300px;overflow-y:auto">
-              <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
+            <div class="scroll-y">
+              <div v-for="opt in columnOptions" :key="opt.key" class="py-2">
                 <n-checkbox
                   :checked="!hiddenKeys.has(opt.key)"
                   @update:checked="toggleColumn(opt.key)"

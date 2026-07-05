@@ -7,8 +7,10 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import MobileNav from '@/components/MobileNav.vue'
 import CompareFloatingBar from '@/views/CompareView.vue'
+import { useThemeStore } from '@/stores/theme'
 
 const router = useRouter()
+useThemeStore()
 const toast = useGlobalToast()
 const cartCount = ref(0)
 const showBackTop = ref(false)
@@ -30,10 +32,7 @@ async function enablePush() {
   if (ok) { showPushBanner.value = false; sendTest() }
 }
 
-// Init dark theme
-if ((() => { try { return localStorage.getItem('mall_theme') } catch { return null } })() === 'dark') {
-  document.documentElement.setAttribute('data-theme', 'dark')
-}
+useThemeStore() // 初始化并应用主题
 
 onMounted(() => {
   updateCartCount()
@@ -55,9 +54,12 @@ onUnmounted(() => {
     <!-- Main Content -->
     <a href="#main-content" class="skip-link">跳转到主要内容</a>
     <main id="main-content" class="main-content" role="main" tabindex="-1">
-      <router-view v-slot="{ Component }">
+      <router-view v-slot="{ Component, route: r }">
         <Transition name="page-fade" mode="out-in">
-          <component :is="Component" />
+          <KeepAlive v-if="r.meta.keepAlive">
+            <component :is="Component" :key="r.name" />
+          </KeepAlive>
+          <component v-else :is="Component" :key="r.path" />
         </Transition>
       </router-view>
     </main>
@@ -78,8 +80,8 @@ onUnmounted(() => {
     </div>
 
     <!-- Welcome Modal -->
-    <div v-if="showWelcome" class="welcome-overlay" @click.self="dismissWelcome">
-      <div class="welcome-card">
+    <div v-if="showWelcome" class="welcome-overlay" @click.self="dismissWelcome" @keydown.escape="dismissWelcome">
+      <div class="welcome-card" role="dialog" aria-modal="true" aria-label="欢迎弹窗">
         <button class="welcome-close" @click="dismissWelcome" aria-label="关闭">✕</button>
         <div class="welcome-emoji">🎉</div>
         <h2 class="welcome-title">欢迎来到 YXCLOUD</h2>
@@ -102,13 +104,13 @@ onUnmounted(() => {
     <CompareFloatingBar />
 
     <!-- Toast -->
-    <div class="toast-container">
+    <TransitionGroup name="toast" tag="div" class="toast-container">
       <div v-for="t in toast.toasts.value" :key="t.id" class="toast-item" :class="`toast-${t.type}`">
         <span>{{ toast.icons[t.type] || 'ℹ️' }}</span>
         <span class="toast-msg">{{ t.message }}</span>
         <button class="toast-dismiss" @click="toast.dismiss(t.id)" aria-label="关闭">✕</button>
       </div>
-    </div>
+    </TransitionGroup>
   </div>
 </template>
 
@@ -223,7 +225,10 @@ onUnmounted(() => {
 @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
+.toast-enter-active { animation: fadeIn .3s; }
+.toast-leave-active { animation: fadeIn .2s reverse; }
+
 @media (max-width: 768px) {
-  .main-content { padding: var(--space-sm) var(--space-sm) 70px; }
+  .main-content { padding: var(--space-sm) var(--space-sm) calc(70px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>

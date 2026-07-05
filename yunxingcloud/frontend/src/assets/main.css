@@ -85,3 +85,66 @@ a { color: inherit; text-decoration: none; }
   background: #f5576c; color: #fff; text-align: center;
   padding: 6px; font-size: 13px; font-weight: 500;
 }
+
+/* Utility classes */
+.view-pad { padding: 20px; }
+.view-pad-lg { padding: 24px; }
+.view-max-w { max-width: 800px; }
+.mb-12 { margin-bottom: 12px; }
+.mt-16 { margin-top: 16px; }
+.filter-select { max-width: 160px; width: 95%; }
+.filter-select-sm { max-width: 120px; width: 95%; }
+.filter-select-md { max-width: 110px; width: 95%; }
+.filter-select-xs { max-width: 100px; width: 95%; }
+.text-muted { color: #999; }
+.text-xs-muted { font-size: 12px; color: #999; }
+.scroll-y { max-height: 300px; overflow-y: auto; }
+.py-2 { padding: 2px 0; }
+.chart-height { height: 240px; }
+.max-w-code { max-width: 600px; }
+.date-input { width: 120px; font-size: 12px; padding: 2px 6px; border: 1px solid #ddd; border-radius: 3px; }
+
+.cursor-pointer { cursor: pointer; }
+.price-text { color: #f10215; font-size: 20px; font-weight: 700; }
+.fs-18 { font-size: 18px; }
+.mt-12 { margin-top: 12px; }
+.w-80 { width: 80px; }
+.w-90 { width: 90px; }
+.w-100 { width: 100px; }
+.w-160 { width: 160px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mt-8 { margin-top: 8px; }
+
+/* Chat Admin */
+.chat-empty { text-align: center; color: #999; padding: 20px; }
+.chat-msg-row { margin-bottom: 12px; }
+.chat-msg--left { text-align: left; }
+.chat-msg--right { text-align: right; }
+.chat-bubble { display: inline-block; max-width: 80%; padding: 8px 14px; border-radius: 12px; font-size: 14px; }
+.chat-bubble--user { background: #e8f0fe; }
+.chat-bubble--agent { background: #f0f0f0; }
+.chat-time { font-size: 11px; color: #999; margin-top: 2px; }
+
+/* Export Center */
+.export-desc { color: #999; margin: 0; }
+.export-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #f9f9f9; border-radius: 8px; }
+.export-card-title { font-weight: 600; margin-bottom: 4px; }
+
+/* Import */
+.import-alert { margin-bottom: 16px; }
+
+/* SEO */
+.seo-alert { margin-bottom: 8px; }
+.seo-sitemap { background: #f5f5f5; padding: 16px; border-radius: 8px; font-size: 12px; overflow: auto; max-height: 300px; }
+.seo-copy-btn { margin-top: 8px; }
+
+/* Review */
+.review-stats { margin-bottom: 16px; }
+
+/* Recommend */
+.recommend-count { margin-left: 8px; color: #999; font-size: 12px; }
+
+
+
+

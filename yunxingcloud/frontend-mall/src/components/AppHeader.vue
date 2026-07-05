@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 import { useI18n } from '@/locales'
 import request from '@/api/request'
 
 const router = useRouter()
-const route = useRoute()
 const auth = useAuthStore()
+const theme = useThemeStore()
 const { locale, setLocale } = useI18n()
 const searchText = ref('')
 const categories = ref<any[]>([])
 const showMega = ref(false)
 const voiceSearching = ref(false)
-const isDark = ref((() => { try { return localStorage.getItem('mall_theme') === 'dark' } catch { return false } })())
 let megaTimer: ReturnType<typeof setTimeout> | null = null
 
 const hotKeywords = ['iPhone 17', 'MacBook Pro', '华为Mate 70', '茅台飞天', 'Nike Dunk', '戴森V16']
@@ -22,26 +22,24 @@ onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch { /* noop */ }
 })
 
-function safeSetStorage(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
 
-function toggleTheme() {
-  isDark.value = !isDark.value
-  safeSetStorage('mall_theme', isDark.value ? 'dark' : 'light')
-  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
-}
-
-function startVoiceSearch() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
-  const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
-  const rec = new SR(); rec.lang = 'zh-CN'; rec.interimResults = false
-  voiceSearching.value = true; rec.start()
-  rec.onresult = (e: any) => { searchText.value = e.results[0][0].transcript; doSearch(); voiceSearching.value = false }
-  rec.onerror = () => { voiceSearching.value = false }
-}
 
 function doSearch() {
   if (!searchText.value.trim()) return
   router.push({ path: '/search', query: { q: searchText.value.trim() } })
+}
+
+async function startVoiceSearch() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
+  voiceSearching.value = true
+  try {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'zh-CN'
+    recognition.onresult = (e: any) => { searchText.value = e.results[0][0].transcript; doSearch() }
+    recognition.onend = () => { voiceSearching.value = false }
+    recognition.start()
+  } catch { voiceSearching.value = false }
 }
 
 function goTo(path: string) { router.push(path) }
@@ -104,8 +102,8 @@ defineProps<{ cartCount?: number }>()
       <button class="header-btn" @click="startVoiceSearch" :disabled="voiceSearching" :title="voiceSearching?'正在监听...':'语音搜索'">
         {{ voiceSearching ? '🎙️' : '🎤' }}
       </button>
-      <button class="header-btn" @click="toggleTheme" :title="isDark?'浅色模式':'深色模式'">
-        {{ isDark ? '☀️' : '🌙' }}
+      <button class="header-btn" @click="theme.toggle" :title="theme.isDark?'浅色模式':'深色模式'">
+        {{ theme.isDark ? '☀️' : '🌙' }}
       </button>
       <span class="header-link" @click="goTo('/orders')">我的订单</span>
       <span class="header-link cart-link" @click="goTo('/cart')">

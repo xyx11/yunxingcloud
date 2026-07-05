@@ -106,12 +106,12 @@ onMounted(loadDepts)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.departments')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="addDept"><template #icon>＋</template>{{ t('common.add') }}</n-button>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="deptSearch" @keyup.enter="doSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
@@ -126,7 +126,7 @@ onMounted(loadDepts)
         default-expand-all :row-key="(row: Dept) => row.id" :children-key="'children'"
       />
 
-      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" style="max-width:480px;width:95%" preset="card" display-directive="show">
+      <n-modal v-model:show="showModal" :title="editing ? t('common.edit') : t('common.add')" class="crud-modal" preset="card" display-directive="show">
         <n-form label-placement="left" label-width="80">
           <n-form-item :label="t('department.name')">
             <n-input v-model:value="form.name" />

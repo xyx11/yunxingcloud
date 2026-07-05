@@ -96,7 +96,7 @@ function defaultImage(name: string): string {
   box-shadow: var(--shadow-sm);
 }
 .product-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.02);
   box-shadow: var(--shadow-card-hover);
 }
 
@@ -104,6 +104,12 @@ function defaultImage(name: string): string {
   position: relative;
   overflow: hidden;
   background: #f5f5f5;
+}
+.card-image :deep(img) {
+  transition: transform var(--transition-slow);
+}
+.product-card:hover .card-image :deep(img) {
+  transform: scale(1.05);
 }
 .card-badge {
   position: absolute; top: var(--space-sm); left: var(--space-sm);

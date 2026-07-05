@@ -116,7 +116,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <n-button size="small" @click="loadAll">{{ t('monitor.refresh') }}</n-button>
     </div>
@@ -135,7 +135,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
       </n-grid-item>
     </n-grid>
 
-    <n-grid cols="2" x-gap="16" style="margin-top:16px" responsive="screen">
+    <n-grid cols="2" x-gap="16" class="mt-16" responsive="screen">
       <n-grid-item span="2 m:1">
         <n-card :title="t('monitor.systemInfo')">
           <template v-if="hasSysInfo()">
@@ -150,7 +150,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
               <span v-if="sysInfo.dbActive !== undefined">{{ t('monitor.dbConnectionInfo') }}: {{ t('monitor.active') }}{{ sysInfo.dbActive }} {{ t('monitor.idle') }}{{ sysInfo.dbIdle }} {{ t('monitor.waiting') }}{{ sysInfo.dbWaiting }}</span>
             </n-space>
           </template>
-          <span v-else style="color:#999">{{ t('monitor.loading') }}</span>
+          <span v-else class="text-muted">{{ t('monitor.loading') }}</span>
         </n-card>
       </n-grid-item>
       <n-grid-item span="2 m:1">
@@ -171,7 +171,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
             <n-space>
               <n-tag type="info" size="small">{{ t('monitor.cache') }}</n-tag>
               <n-button size="tiny" @click="clearSystemCache">{{ t('monitor.clearCache') }}</n-button>
-              <span v-if="cacheInfo.cacheNames" style="font-size:12px;color:#999">{{ cacheInfo.cacheNames }}</span>
+              <span v-if="cacheInfo.cacheNames" class="text-xs-muted">{{ cacheInfo.cacheNames }}</span>
             </n-space>
             <n-space>
               <n-tag type="warning" size="small">{{ t('monitor.announcement') }}</n-tag>
@@ -187,11 +187,11 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
       </n-grid-item>
     </n-grid>
 
-    <n-card :title="t('monitor.realtimeTrend')" style="margin-top:16px" v-if="showCharts">
-      <v-chart :option="chartOption" style="height:240px" autoresize />
+    <n-card :title="t('monitor.realtimeTrend')" class="mt-16" v-if="showCharts">
+      <v-chart :option="chartOption" class="chart-height" autoresize />
     </n-card>
 
-    <n-card :title="t('monitor.sessionsCount', { n: sessions.length })" style="margin-top:16px">
+    <n-card :title="t('monitor.sessionsCount', { n: sessions.length })" class="mt-16">
       <n-data-table
         v-if="sessions.length"
         :columns="sessionColumns"
@@ -200,10 +200,10 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
         :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
         :row-key="(r: any) => r.token"
       />
-      <span v-else style="color:#999">{{ t('monitor.noActiveSessions') }}</span>
+      <span v-else class="text-muted">{{ t('monitor.noActiveSessions') }}</span>
     </n-card>
 
-    <n-card :title="t('monitor.benchmark')" style="margin-top:16px" v-if="benchmark.db_ms">
+    <n-card :title="t('monitor.benchmark')" class="mt-16" v-if="benchmark.db_ms">
       <n-grid cols="3" x-gap="16">
         <n-grid-item>
           <n-statistic :label="t('monitor.dbQuery')" :value="`${benchmark.db_ms}ms`" />
@@ -215,7 +215,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
           <n-statistic :label="t('monitor.module')" :value="benchmark.module || '-'" />
         </n-grid-item>
       </n-grid>
-      <n-grid v-if="Object.keys(serviceHealth).length" cols="6" x-gap="12" style="margin-top:16px">
+      <n-grid v-if="Object.keys(serviceHealth).length" cols="6" x-gap="12" class="mt-16">
         <n-grid-item v-for="(status, svc) in serviceHealth" :key="svc">
           <n-card size="small" :content-style="{padding:'12px',textAlign:'center'}">
             <div :style="{fontSize:'24px',marginBottom:'4px'}">{{ status === 'UP' ? '✅' : '❌' }}</div>

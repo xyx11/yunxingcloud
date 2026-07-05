@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHomeData } from '@/api/product'
 import { addToCart } from '@/api/cart'
+import { useCartFly } from '@/composables/useCartFly'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useToast } from '@/composables/useToast'
@@ -17,6 +18,7 @@ import JdButton from '@/components/JdButton.vue'
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
+const { flyToCart } = useCartFly()
 const { items: recentItems } = useRecentlyViewed()
 
 const banners = ref<any[]>([])
@@ -55,18 +57,32 @@ function startBanner() {
     if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length
   }, 4000)
 }
+function stopBanner() { if (bannerTimer) clearInterval(bannerTimer) }
+
+let bannerTouchX = 0
+function onBannerTouchStart(e: TouchEvent) { bannerTouchX = e.touches[0].clientX; stopBanner() }
+function onBannerTouchEnd(e: TouchEvent) {
+  const dx = e.changedTouches[0].clientX - bannerTouchX
+  if (Math.abs(dx) > 40 && banners.value.length > 1) {
+    currentBanner.value = dx > 0
+      ? (currentBanner.value - 1 + banners.value.length) % banners.value.length
+      : (currentBanner.value + 1) % banners.value.length
+  }
+  startBanner()
+}
 
 onMounted(async () => { await loadData(); startBanner() })
 onUnmounted(() => { if (bannerTimer) clearInterval(bannerTimer) })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
-function goProducts(query: Record<string, unknown>) { router.push({ path: '/products', query }) }
+function goProducts(query: Record<string, string>) { router.push({ path: '/products', query }) }
 
 async function quickAdd(e: Event, p: any) {
   e.stopPropagation()
   try {
-    await addToCart({ productId: p.id, quantity: 1 })
+    await addToCart(p.id, 1)
     toast.success('已加入购物车')
+    flyToCart(e as MouseEvent)
   } catch { toast.error('添加失败') }
 }
 
@@ -95,8 +111,10 @@ function productImage(p: any): string {
     <template v-if="!loading && !loadError">
       <!-- Banners -->
       <div v-if="banners.length" class="banner-wrapper"
-           @mouseenter="bannerTimer && clearInterval(bannerTimer)"
-           @mouseleave="startBanner">
+           @mouseenter="stopBanner"
+           @mouseleave="startBanner"
+           @touchstart.passive="onBannerTouchStart"
+           @touchend.passive="onBannerTouchEnd">
         <div v-for="(b, i) in banners" :key="b.id" class="banner-slide" :class="{ active: i === currentBanner }"
              :style="{ background: `linear-gradient(135deg, ${i % 2 ? '#d4000f' : '#f10215'}, ${i % 2 ? '#ff6b6b' : '#f90'})` }">
           <div class="banner-content">
@@ -111,12 +129,18 @@ function productImage(p: any): string {
       </div>
 
       <!-- Categories -->
-      <div v-if="categories.length" class="categories">
-        <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" @click="goProducts({ categoryId: cat.id })">
-          <div class="cat-icon">{{ cat.icon || '📁' }}</div>
-          <div class="cat-name">{{ cat.name }}</div>
+      <section v-if="categories.length" class="categories-section">
+        <div class="section-header">
+          <span class="section-title">📂 商品分类</span>
+          <span class="section-more" @click="goProducts({})">查看全部 &gt;</span>
         </div>
-      </div>
+        <div class="categories">
+          <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" @click="goProducts({ categoryId: cat.id })">
+            <div class="cat-icon">{{ cat.icon || '📁' }}</div>
+            <div class="cat-name">{{ cat.name }}</div>
+          </div>
+        </div>
+      </section>
 
       <!-- Flash Sale -->
       <section v-if="hotProducts.length >= 3" class="flash-section">
@@ -134,7 +158,7 @@ function productImage(p: any): string {
             <div class="flash-item-body">
               <h5 class="item-name">{{ p.name }}</h5>
               <div class="flex-center gap-sm">
-                <span class="flash-price">¥{{ (flashPrice(p.price) / 100).toFixed(2) }}</span>
+                <span class="flash-price">{{ formatPrice(flashPrice(p.price) / 100, 2) }}</span>
                 <span class="original-price">¥{{ (p.price / 100).toFixed(2) }}</span>
               </div>
             </div>
@@ -167,7 +191,7 @@ function productImage(p: any): string {
             <h4 class="product-name">{{ p.name }}</h4>
             <div class="product-bottom">
               <div>
-                <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
                 <span v-if="p.sales" class="product-sales">🔥 {{ formatCount(p.sales) }}人已购</span>
               </div>
               <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
@@ -191,7 +215,7 @@ function productImage(p: any): string {
             <LazyImage :src="productImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
             <div class="product-info">
               <h4 class="product-name">{{ p.name }}</h4>
-              <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
               <div class="viewed-time">{{ new Date(p.viewedAt).toLocaleString('zh-CN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) }}</div>
             </div>
           </div>
@@ -209,7 +233,7 @@ function productImage(p: any): string {
             <div class="product-info">
               <h4 class="product-name">{{ p.name }}</h4>
               <div class="product-bottom">
-                <span class="product-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
                 <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
               </div>
             </div>
@@ -249,15 +273,20 @@ function productImage(p: any): string {
 .banner-dot.active { background: #fff; transform: scale(1.3); }
 
 /* Categories */
+.categories-section {
+  background: var(--bg-white); border-radius: var(--radius-lg);
+  padding: var(--space-xl); margin-bottom: var(--space-xxl);
+  box-shadow: var(--shadow-sm);
+}
 .categories {
-  display: flex; gap: var(--space-lg); justify-content: center; margin-bottom: var(--space-xl);
+  display: flex; gap: var(--space-lg); justify-content: center;
   overflow-x: auto; padding: var(--space-xs) 0; -webkit-overflow-scrolling: touch;
 }
 .categories::-webkit-scrollbar { display: none; }
 .cat-item { text-align: center; cursor: pointer; flex-shrink: 0; width: 72px; transition: transform var(--transition); }
 .cat-item:hover { transform: scale(1.08); }
 .cat-icon {
-  width: 52px; height: 52px; border-radius: 50%;
+  width: 56px; height: 56px; border-radius: 50%;
   background: linear-gradient(135deg, var(--jd-red-light), #ffe0e0);
   display: flex; align-items: center; justify-content: center;
   font-size: 22px; margin: 0 auto 6px;

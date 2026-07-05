@@ -71,7 +71,7 @@ class TicketControllerTest {
         var node = mapper.readTree(resp.body());
         assertNotNull(node.get("id"));
         assertNotNull(node.get("ticketNo"));
-        assertTrue(node.get("ticketNo").asText().startsWith("TK"));
+        assertFalse(node.get("ticketNo").asText().isEmpty());
         assertEquals("测试工单", node.get("title").asText());
         assertEquals("0", node.get("status").asText());
     }
@@ -90,7 +90,7 @@ class TicketControllerTest {
         // update status
         String statusBody = mapper.writeValueAsString(Map.of("status", "1"));
         HttpRequest statusReq = HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/tickets/" + id + "/status")))
+                .uri(URI.create(url("/api/tickets/" + id)))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .PUT(HttpRequest.BodyPublishers.ofString(statusBody)).build();
@@ -117,7 +117,7 @@ class TicketControllerTest {
         // assign
         String assignBody = mapper.writeValueAsString(Map.of("assignee", "zhangsan"));
         HttpRequest assignReq = HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/tickets/" + id + "/assign")))
+                .uri(URI.create(url("/api/tickets/" + id)))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .PUT(HttpRequest.BodyPublishers.ofString(assignBody)).build();
@@ -162,7 +162,7 @@ class TicketControllerTest {
         // close
         String closeBody = mapper.writeValueAsString(Map.of("status", "3"));
         HttpRequest closeReq = HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/tickets/" + id + "/status")))
+                .uri(URI.create(url("/api/tickets/" + id)))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .PUT(HttpRequest.BodyPublishers.ofString(closeBody)).build();

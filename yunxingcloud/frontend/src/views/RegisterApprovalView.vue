@@ -62,7 +62,7 @@ onMounted(loadPending)
 </script>
 
 <template>
-  <div style="padding:24px">
+  <div class="view-pad-lg">
     <n-card :title="t('nav.registerApproval')">
       <template #header-extra>
         <n-button size="small" @click="loadPending" secondary>{{ t('common.refresh') }}</n-button>

@@ -8,6 +8,7 @@ import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
+import { formatPrice } from '@/utils/format'
 import type { CartItem } from '@/types'
 
 const router = useRouter()
@@ -17,6 +18,25 @@ const items = ref<CartItem[]>([])
 const recs = ref<any[]>([])
 const loading = ref(true)
 const selectedIds = ref<Set<number>>(new Set())
+
+const swipeOffset = ref<Record<number, number>>({})
+const swipeTouching = ref<Record<number, boolean>>({})
+let swipeStartX = 0
+
+function onSwipeStart(e: TouchEvent, id: number) {
+  swipeStartX = e.touches[0].clientX
+  swipeTouching.value[id] = true
+}
+function onSwipeMove(e: TouchEvent, id: number) {
+  if (!swipeTouching.value[id]) return
+  const dx = e.touches[0].clientX - swipeStartX
+  swipeOffset.value[id] = Math.min(0, Math.max(-80, dx))
+}
+function onSwipeEnd(id: number) {
+  swipeTouching.value[id] = false
+  if (swipeOffset.value[id] < -40) { swipeOffset.value[id] = -80 }
+  else { swipeOffset.value[id] = 0 }
+}
 
 const total = computed(() =>
   items.value.filter(i => selectedIds.value.has(i.id))
@@ -82,22 +102,31 @@ onMounted(load)
         <span class="header-col header-col--actions">{{ t('cart.actions') }}</span>
       </div>
 
-      <div v-for="item in items" :key="item.id" class="cart-item">
-        <label class="checkbox-label cart-check">
-          <input type="checkbox" :value="item.id" v-model="selectedIds" />
-        </label>
-        <LazyImage :src="item.productImage || ''" alt="" height="80px" width="80px" rounded="8px" class="cart-img" />
-        <div class="cart-name">
-          <router-link :to="`/product/${item.productId}`">{{ item.productName }}</router-link>
+      <div v-for="item in items" :key="item.id" class="cart-item-wrapper">
+        <div class="cart-item-swipe-bg" :class="{ reveal: (swipeOffset[item.id] || 0) < -40 }" @click="remove(item.id)">删除</div>
+        <div
+          class="cart-item"
+          :style="{ transform: 'translateX(' + (swipeOffset[item.id] || 0) + 'px)' }"
+          @touchstart.passive="(e: TouchEvent) => onSwipeStart(e, item.id)"
+          @touchmove="(e: TouchEvent) => onSwipeMove(e, item.id)"
+          @touchend="onSwipeEnd(item.id)"
+        >
+          <label class="checkbox-label cart-check">
+            <input type="checkbox" :value="item.id" v-model="selectedIds" />
+          </label>
+          <LazyImage :src="item.productImage || ''" alt="" height="80px" width="80px" rounded="8px" class="cart-img" />
+          <div class="cart-name">
+            <router-link :to="`/product/${item.productId}`">{{ item.productName }}</router-link>
+          </div>
+          <div class="cart-price">{{ formatPrice(item.price / 100, 2) }}</div>
+          <div class="qty-control">
+            <button class="qty-btn" @click="updateQty(item, -1)">-</button>
+            <span class="qty-val">{{ item.quantity }}</span>
+            <button class="qty-btn" @click="updateQty(item, 1)">+</button>
+          </div>
+          <div class="cart-subtotal">{{ formatPrice(item.price * item.quantity / 100, 2) }}</div>
+          <button class="cart-remove" @click="remove(item.id)" aria-label="删除">✕</button>
         </div>
-        <div class="cart-price">¥{{ (item.price / 100).toFixed(2) }}</div>
-        <div class="qty-control">
-          <button class="qty-btn" @click="updateQty(item, -1)">-</button>
-          <span class="qty-val">{{ item.quantity }}</span>
-          <button class="qty-btn" @click="updateQty(item, 1)">+</button>
-        </div>
-        <div class="cart-subtotal">¥{{ (item.price * item.quantity / 100).toFixed(2) }}</div>
-        <button class="cart-remove" @click="remove(item.id)" aria-label="删除">✕</button>
       </div>
 
       <!-- Bottom Bar -->
@@ -111,7 +140,7 @@ onMounted(load)
         <div class="footer-right">
           <div class="total-price">
             <span class="total-label">{{ t('cart.total') }}：</span>
-            <span class="total-num">¥{{ (total / 100).toFixed(2) }}</span>
+            <span class="total-num">{{ formatPrice(total / 100, 2) }}</span>
           </div>
           <JdButton size="lg" @click="checkout">{{ t('cart.checkout') }}</JdButton>
         </div>
@@ -132,7 +161,7 @@ onMounted(load)
             <LazyImage :src="(p as any).imageUrl || ''" alt="" height="120px" />
             <div class="recs-info">
               <div class="recs-name">{{ p.name }}</div>
-              <span class="recs-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+              <span class="recs-price">{{ formatPrice(p.price / 100, 2) }}</span>
             </div>
           </div>
         </div>
@@ -161,7 +190,16 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 .header-col--subtotal { width: 80px; margin-right: 60px; }
 .header-col--actions { width: 40px; }
 
-.cart-item { display: flex; align-items: center; padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); }
+.cart-item-wrapper { position: relative; overflow: hidden; }
+.cart-item-swipe-bg {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 80px;
+  background: var(--jd-red); color: #fff; display: flex;
+  align-items: center; justify-content: center; font-size: var(--font-md);
+  font-weight: 600; cursor: pointer; border-radius: var(--radius-md);
+  opacity: 0; transition: opacity var(--transition-fast);
+}
+.cart-item-swipe-bg.reveal { opacity: 1; }
+.cart-item { display: flex; align-items: center; padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); transition: transform .2s ease; position: relative; z-index: 1; background: var(--bg-white); }
 .cart-check { margin-right: var(--space-md); }
 .cart-img { flex-shrink: 0; }
 .cart-name { flex: 1; min-width: 0; padding: 0 var(--space-lg); }

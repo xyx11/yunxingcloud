@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 
 const notify = useNotify()
+const { t } = useI18n()
 const loading = ref(false); const saving = ref(false)
 const items = ref<any[]>([])
 const showModal = ref(false)
@@ -19,13 +21,13 @@ const filtered = computed(() => {
 })
 
 const columns: DataTableColumns<any> = [
-  { title: '名称', key: 'name', width: 180 },
+  { title: t('common.name'), key: 'name', width: 180 },
   { title: '商品数', key: 'cnt', width: 70, render(r: any) { return r.productIds?.length || 0 } },
   { title: '折扣率', key: 'discountRate', width: 80, render(r: any) { return (r.discountRate || 100) + '%' } },
   { title: '状态', key: 'status', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.status === '0' ? 'success' : 'default' }, { default: () => r.status === '0' ? '启用' : '停用' }) } },
-  { title: '操作', key: 'act', width: 100, render(r: any) { return h(NSpace, { size: 'small' }, { default: () => [
+  { title: t('common.actions'), key: 'act', width: 100, render(r: any) { return h(NSpace, { size: 'small' }, { default: () => [
     h(NButton, { size: 'tiny', onClick: () => viewDetail(r) }, { default: () => '详情' }),
-    h(NPopconfirm, { onPositiveClick: () => del(r.id!) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }), default: () => '确认删除？' })
+    h(NPopconfirm, { onPositiveClick: () => del(r.id!) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
   ]})}}
 ]
 
@@ -38,17 +40,17 @@ async function save() {
   const ids = productInput.value.split(',').map(s => Number(s.trim())).filter(n => n > 0)
   try {
     await request.post('/api/bundles', { ...form.value, productIds: ids })
-    showModal.value = false; notify.success('保存成功'); load()
-  } catch { notify.error('保存失败') } finally { saving.value = false }
+    showModal.value = false; notify.success(t('common.saveSuccess')); load()
+  } catch { notify.error(t('common.saveFailed')) } finally { saving.value = false }
 }
-async function del(id: number) { try { await request.delete(`/api/bundles/${id}`); notify.success('已删除'); load() } catch { notify.error('删除失败') } }
+async function del(id: number) { try { await request.delete(`/api/bundles/${id}`); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.deleteFailed')) } }
 function add() { form.value = { name: '', productIds: [], discountRate: 100, status: '0' }; productInput.value = ''; showModal.value = true }
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card title="捆绑套餐"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增套餐</n-button></template>
-      <n-space style="margin-bottom:12px">
+      <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索套餐..." size="small" clearable style="width:180px" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>

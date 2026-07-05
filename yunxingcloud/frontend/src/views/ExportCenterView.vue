@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
-import { NCard, NButton, NSpace, NTag } from 'naive-ui'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { NCard, NButton, NSpace } from 'naive-ui'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 import * as XLSX from 'xlsx'
 
+const { t } = useI18n()
 const notify = useNotify()
 const exports = ref([
-  { key: 'products', label: '商品数据', desc: '导出所有商品信息，包含价格/库存/分类' },
-  { key: 'orders', label: '订单数据', desc: '导出订单列表，包含金额/状态/用户' },
-  { key: 'users', label: '用户数据', desc: '导出所有用户信息' },
-  { key: 'inventory', label: '库存数据', desc: '导出库存列表' },
+  { key: 'products', label: t('export.products'), desc: t('export.productsDesc') },
+  { key: 'orders', label: t('export.orders'), desc: t('export.ordersDesc') },
+  { key: 'users', label: t('export.users'), desc: t('export.usersDesc') },
+  { key: 'inventory', label: t('export.inventory'), desc: t('export.inventoryDesc') },
 ])
 const loading = ref('')
 
@@ -24,22 +26,22 @@ async function doExport(key: string) {
     else if (key === 'inventory') { const r = await request.get('/api/inventory'); data = (r.data || []).map((i:any) => ({ 商品ID: i.productId, 商品名: i.productName, 仓库: i.warehouseId, 数量: i.quantity, 最低库存: i.minQuantity })) }
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'data')
     XLSX.writeFile(wb, `${key}_${new Date().toISOString().substring(0,10)}.xlsx`)
-    notify.success(`已导出 ${data.length} 条`)
-  } catch { notify.error('导出失败') }
+    notify.success(t('export.exported', { n: data.length }))
+  } catch { notify.error(t('export.fail')) }
   loading.value = ''
 }
 </script>
 <template>
-  <div style="padding:20px">
-    <n-card title="数据导出中心">
+  <div class="view-pad">
+    <n-card :title="t('export.title')">
       <n-space vertical size="large">
-        <p style="color:#999;margin:0">选择要导出的数据类型，数据将导出为 Excel (.xlsx) 格式</p>
-        <div v-for="e in exports" :key="e.key" style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f9f9f9;border-radius:8px">
+        <p class="export-desc">{{ t('export.desc') }}</p>
+        <div v-for="e in exports" :key="e.key" class="export-card">
           <div>
-            <div style="font-weight:600;margin-bottom:4px">{{ e.label }}</div>
-            <div style="font-size:12px;color:#999">{{ e.desc }}</div>
+            <div class="export-card-title">{{ e.label }}</div>
+            <div class="text-xs-muted">{{ e.desc }}</div>
           </div>
-          <n-button type="primary" :loading="loading===e.key" @click="doExport(e.key)">{{ loading===e.key?'导出中...':'导出 Excel' }}</n-button>
+          <n-button type="primary" :loading="loading===e.key" @click="doExport(e.key)">{{ loading===e.key ? t('export.exporting') : t('export.exportExcel') }}</n-button>
         </div>
       </n-space>
     </n-card>

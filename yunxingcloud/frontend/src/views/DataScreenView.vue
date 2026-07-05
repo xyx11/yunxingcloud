@@ -54,7 +54,7 @@ async function fetchData() {
         series: [{ data: dash.data.loginTrend.map((d:any)=>d.count), type: 'line', smooth: true, itemStyle: { color: '#43e97b' }, areaStyle: { color: 'rgba(67,233,123,0.15)' } }]
       }
     }
-  } catch {/* ignore */}
+  } catch { /* ignore */ }
   updateTime()
 }
 

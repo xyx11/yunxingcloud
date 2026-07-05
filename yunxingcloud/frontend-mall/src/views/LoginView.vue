@@ -13,9 +13,10 @@ const { t } = useI18n()
 
 const form = ref({
   username: (() => { try { return localStorage.getItem('mall_remember_user') || '' } catch { return '' } })(),
-  password: '',
+  password: (() => { try { return localStorage.getItem('mall_remember_pass') || '' } catch { return '' } })(),
 })
 const rememberMe = ref(!!form.value.username)
+const rememberPassword = ref(!!form.value.password)
 const error = ref('')
 const loading = ref(false)
 
@@ -25,19 +26,29 @@ async function doLogin() {
   loading.value = true
   try {
     await auth.login(form.value.username, form.value.password)
-    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user') } catch {}
+    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user'); if (rememberPassword.value) localStorage.setItem('mall_remember_pass', form.value.password); else localStorage.removeItem('mall_remember_pass') } catch {}
     toast.success(t('toast.loginSuccess'))
     const redirect = router.currentRoute.value.query.redirect as string
     router.push(redirect || '/')
   } catch (e: any) {
-    error.value = e.response?.data?.message || (e.response?.status === 401 ? '用户名或密码错误' : '登录失败')
+    const errData = e.response?.data || {}
+    const errMsg: string = errData.message || ''
+    if (errData.code === 'USER_NOT_FOUND' || errMsg.includes('不存在') || errMsg.includes('未注册')) {
+      error.value = t('login.userNotFound')
+    } else if (errData.code === 'PASSWORD_ERROR' || errMsg.includes('密码错误') || errMsg.includes('密码不正确')) {
+      error.value = t('login.wrongPassword')
+    } else if (errData.code === 'ACCOUNT_LOCKED' || errMsg.includes('锁定') || errMsg.includes('冻结') || errMsg.includes('禁用')) {
+      error.value = t('login.accountLocked')
+    } else {
+      error.value = errMsg || t('login.loginError')
+    }
   } finally { loading.value = false }
 }
 
 const oauthProviders = [
-  { id: 'wechat', label: '微信', color: '#07c160', bg: '#f0fff4', icon: '💬' },
+  { id: 'wechat', label: t('login.wechat'), color: '#07c160', bg: '#f0fff4', icon: '💬' },
   { id: 'qq', label: 'QQ', color: '#12b7f5', bg: '#f0f9ff', icon: '🐧' },
-  { id: 'alipay', label: '支付宝', color: '#1677ff', bg: '#f0f5ff', icon: '🔵' },
+  { id: 'alipay', label: t('login.alipay'), color: '#1677ff', bg: '#f0f5ff', icon: '🔵' },
 ]
 </script>
 
@@ -65,6 +76,9 @@ const oauthProviders = [
       <div class="login-options">
         <label class="remember-label">
           <input type="checkbox" v-model="rememberMe" /> {{ t('login.rememberUser') }}
+        </label>
+        <label class="remember-label">
+          <input type="checkbox" v-model="rememberPassword" /> 记住密码
         </label>
         <span class="forgot-link" @click="router.push('/forgot-password')">{{ t('login.forgotPassword') }}</span>
       </div>

@@ -11,6 +11,7 @@ import { fetchSystemInfo } from '@/api/system'
 import { fetchDepartments, fetchRoles } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { useLiveStatsStore } from '@/stores/liveStats'
+import { formatPrice } from '@/utils/format'
 import { NCard, NGrid, NGridItem, NStatistic, NSpace, NTag, NSpin, NEmpty, NButton, NSelect } from 'naive-ui'
 
 const { t, locale } = useI18n()
@@ -186,136 +187,121 @@ onMounted(async () => {
 <template>
   <n-spin :show="loading">
     <div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <span style="font-size:18px;font-weight:600;color:var(--n-text-color, #333)">{{ greeting }}</span>
+      <div class="dash-header">
+        <span class="dash-greeting">{{ greeting }}</span>
         <n-space>
           <n-button size="small" @click="router.push('/users')">{{ t('dashboard.addUser') }}</n-button>
-          <span v-if="lastUpdated" style="font-size:12px;color:#999;margin-right:8px">{{ t('dashboard.lastUpdated', { time: lastUpdated }) }}</span>
+          <span v-if="lastUpdated" class="dash-updated">{{ t('dashboard.lastUpdated', { time: lastUpdated }) }}</span>
           <n-button size="small" @click="refreshDashboard">{{ t('common.refresh') }}</n-button>
         </n-space>
       </div>
 
-      <div v-if="newOrderAlert" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:1px solid #f10215;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;animation:fadeIn .3s">
-        <span>🔔 <b>{{ newOrderCount }} 笔新订单</b>，请及时处理</span>
-        <n-button size="tiny" @click="newOrderAlert=false;router.push('/orders')" type="error">查看订单</n-button>
+      <div v-if="newOrderAlert" class="dash-alert">
+        <span>🔔 <b>{{ newOrderCount }} {{ t('dashboard.newOrders') }}</b>，{{ t('dashboard.pleaseHandle') }}</span>
+        <n-button size="tiny" @click="newOrderAlert=false;router.push('/orders')" type="error">{{ t('dashboard.viewOrders') }}</n-button>
       </div>
-      <!-- 业务 KPI -->
-      <n-grid cols="6" x-gap="12" y-gap="12" responsive="screen" style="margin-bottom:12px">
+
+      <n-grid cols="6" x-gap="12" y-gap="12" responsive="screen" class="dash-section">
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #18a058"><n-statistic label="今日订单"><template #prefix>📦</template>{{ bizStats.todayOrders }}</n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-green"><n-statistic :label="t('dashboard.todayOrders')"><template #prefix>📦</template>{{ bizStats.todayOrders }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #2080f0"><n-statistic label="今日营收"><template #prefix>💰</template><template #suffix>元</template>{{ ((bizStats.todayRevenue || 0)/100).toFixed(0) }}</n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-blue"><n-statistic :label="t('dashboard.todayRevenue')"><template #prefix>💰</template>{{ formatPrice((bizStats.todayRevenue || 0)/100) }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #f0a020;cursor:pointer" @click="router.push('/orders')"><n-statistic label="待处理"><template #prefix>⏳</template>{{ bizStats.pendingPay + bizStats.pendingShip }}<template #suffix><span style="font-size:11px;color:#999">待付{{bizStats.pendingPay}}/待发{{bizStats.pendingShip}}</span></template></n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-orange" @click="router.push('/orders')"><n-statistic :label="t('dashboard.pending')"><template #prefix>⏳</template>{{ bizStats.pendingPay + bizStats.pendingShip }}<template #suffix><span class="kpi-sub">{{ t('dashboard.pendingPay') }}{{bizStats.pendingPay}}/{{ t('dashboard.pendingShip') }}{{bizStats.pendingShip}}</span></template></n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #d03050;cursor:pointer" @click="router.push('/inventory')"><n-statistic label="库存预警"><template #prefix>⚠️</template>{{ bizStats.lowStock }}<template #suffix><span style="font-size:11px;color:#999">/{{bizStats.totalProducts}}件</span></template></n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-red" @click="router.push('/inventory')"><n-statistic :label="t('dashboard.lowStock')"><template #prefix>⚠️</template>{{ bizStats.lowStock }}<template #suffix><span class="kpi-sub">/{{bizStats.totalProducts}}{t('dashboard.items')}</span></template></n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #7c3aed;cursor:pointer" @click="router.push('/products')"><n-statistic label="商品总数"><template #prefix>🏷</template>{{ bizStats.totalProducts }}</n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-purple" @click="router.push('/products')"><n-statistic :label="t('dashboard.totalProducts')"><template #prefix>🏷</template>{{ bizStats.totalProducts }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="6 m:3 l:2">
-          <n-card size="small" style="border-left:3px solid #667eea;cursor:pointer" @click="router.push('/users')"><n-statistic label="新增用户"><template #prefix>👤</template>{{ bizStats.newUsers }}</n-statistic></n-card>
+          <n-card size="small" class="kpi-card kpi-indigo" @click="router.push('/users')"><n-statistic :label="t('dashboard.newUsers')"><template #prefix>👤</template>{{ bizStats.newUsers }}</n-statistic></n-card>
         </n-grid-item>
       </n-grid>
 
-      <!-- 核心统计卡片 -->
       <n-grid cols="8" x-gap="12" y-gap="12" responsive="screen" item-responsive>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #667eea" @click="router.push('/users')"><n-statistic :label="t('dashboard.users')"><template #prefix><span style="background:#667eea15;padding:4px 8px;border-radius:6px;margin-right:8px">👥</span></template>{{ stats.userCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-purple" @click="router.push('/users')"><n-statistic :label="t('dashboard.users')"><template #prefix><span class="stat-icon stat-icon--purple">👥</span></template>{{ stats.userCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #f0a020" @click="router.push('/roles')"><n-statistic :label="t('dashboard.roles')"><template #prefix><span style="background:#f0a02015;padding:4px 8px;border-radius:6px;margin-right:8px">🛡</span></template>{{ stats.roleCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-orange" @click="router.push('/roles')"><n-statistic :label="t('dashboard.roles')"><template #prefix><span class="stat-icon stat-icon--orange">🛡</span></template>{{ stats.roleCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #18a058" @click="router.push('/departments')"><n-statistic :label="t('dashboard.departments')"><template #prefix><span style="background:#18a05815;padding:4px 8px;border-radius:6px;margin-right:8px">🏢</span></template>{{ stats.deptCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-green" @click="router.push('/departments')"><n-statistic :label="t('dashboard.departments')"><template #prefix><span class="stat-icon stat-icon--green">🏢</span></template>{{ stats.deptCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #2080f0" @click="router.push('/posts')"><n-statistic :label="t('dashboard.posts')"><template #prefix><span style="background:#2080f015;padding:4px 8px;border-radius:6px;margin-right:8px">👔</span></template>{{ stats.jobCount > 0 ? t('common.enabled') : '-' }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-blue" @click="router.push('/posts')"><n-statistic :label="t('dashboard.posts')"><template #prefix><span class="stat-icon stat-icon--blue">👔</span></template>{{ stats.jobCount > 0 ? t('common.enabled') : '-' }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #d03050" @click="router.push('/menus')"><n-statistic :label="t('dashboard.menus')"><template #prefix><span style="background:#d0305015;padding:4px 8px;border-radius:6px;margin-right:8px">📋</span></template>{{ stats.menuCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-red" @click="router.push('/menus')"><n-statistic :label="t('dashboard.menus')"><template #prefix><span class="stat-icon stat-icon--red">📋</span></template>{{ stats.menuCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer;border-left:3px solid #7c3aed" @click="router.push('/operlog')"><n-statistic :label="t('dashboard.operlogs')"><template #prefix><span style="background:#7c3aed15;padding:4px 8px;border-radius:6px;margin-right:8px">📊</span></template>{{ stats.operLogCount }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card stat-purple2" @click="router.push('/operlog')"><n-statistic :label="t('dashboard.operlogs')"><template #prefix><span class="stat-icon stat-icon--purple2">📊</span></template>{{ stats.operLogCount }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/config')"><n-statistic :label="t('dashboard.configs')"><template #prefix>⚙</template>{{ stats.configCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card" @click="router.push('/config')"><n-statistic :label="t('dashboard.configs')"><template #prefix>⚙</template>{{ stats.configCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
         <n-grid-item span="8 m:4 l:2">
-          <n-card hoverable size="small" style="cursor:pointer" @click="router.push('/notices')"><n-statistic :label="t('dashboard.notices')"><template #prefix>📢</template>{{ stats.noticeCount || 0 }}</n-statistic></n-card>
+          <n-card hoverable size="small" class="stat-card" @click="router.push('/notices')"><n-statistic :label="t('dashboard.notices')"><template #prefix>📢</template>{{ stats.noticeCount || 0 }}</n-statistic></n-card>
         </n-grid-item>
       </n-grid>
 
-      <!-- 实时监控卡片 -->
-      <n-grid v-if="sysInfo" cols="5" x-gap="12" y-gap="12" style="margin-top:12px" responsive="screen" item-responsive>
+      <n-grid v-if="sysInfo" cols="5" x-gap="12" y-gap="12" class="dash-section" responsive="screen" item-responsive>
         <n-grid-item span="5 m:3 l:1">
-          <n-card size="small" :bordered="false" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff">
-            <n-statistic :label="t('dashboard.onlineUsers')" :value="liveStatsStore.activeSessions || 0">
-              <template #prefix>🟢</template>
-            </n-statistic>
+          <n-card size="small" :bordered="false" class="realtime-card rt-purple">
+            <n-statistic :label="t('dashboard.onlineUsers')" :value="liveStatsStore.activeSessions || 0"><template #prefix>🟢</template></n-statistic>
           </n-card>
         </n-grid-item>
         <n-grid-item span="5 m:3 l:1">
-          <n-card size="small" :bordered="false" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff">
-            <n-statistic :label="t('dashboard.uptime')" :value="sysInfo?.uptime || '-'">
-              <template #prefix>⏱️</template>
-            </n-statistic>
+          <n-card size="small" :bordered="false" class="realtime-card rt-blue">
+            <n-statistic :label="t('dashboard.uptime')" :value="sysInfo?.uptime || '-'"><template #prefix>⏱️</template></n-statistic>
           </n-card>
         </n-grid-item>
         <n-grid-item span="5 m:3 l:1">
-          <n-card size="small" :bordered="false" style="background:linear-gradient(135deg,#43e97b,#38f9d7);color:#fff">
-            <n-statistic :label="t('dashboard.todayLoginSuccess')" :value="stats.todayLoginCount || 0">
-              <template #prefix>✅</template>
-            </n-statistic>
+          <n-card size="small" :bordered="false" class="realtime-card rt-green">
+            <n-statistic :label="t('dashboard.todayLoginSuccess')" :value="stats.todayLoginCount || 0"><template #prefix>✅</template></n-statistic>
           </n-card>
         </n-grid-item>
         <n-grid-item span="5 m:3 l:1">
-          <n-card size="small" :bordered="false" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff">
-            <n-statistic :label="t('dashboard.heapMemory')" :value="sysInfo?.heapUsed || '-'">
-              <template #prefix>💾</template>
-              <template #suffix>/ {{ sysInfo?.heapMax || '-' }}</template>
-            </n-statistic>
+          <n-card size="small" :bordered="false" class="realtime-card rt-pink">
+            <n-statistic :label="t('dashboard.heapMemory')" :value="sysInfo?.heapUsed || '-'"><template #prefix>💾</template><template #suffix>/ {{ sysInfo?.heapMax || '-' }}</template></n-statistic>
           </n-card>
         </n-grid-item>
         <n-grid-item span="5 m:3 l:1">
-          <n-card size="small" :bordered="false" style="background:linear-gradient(135deg,#ff9a9e,#fecfef);color:#fff">
-            <n-statistic :label="t('dashboard.todayLoginFail')" :value="stats.todayLoginFailCount || 0">
-              <template #prefix>⚠️</template>
-            </n-statistic>
+          <n-card size="small" :bordered="false" class="realtime-card rt-rose">
+            <n-statistic :label="t('dashboard.todayLoginFail')" :value="stats.todayLoginFailCount || 0"><template #prefix>⚠️</template></n-statistic>
           </n-card>
         </n-grid-item>
       </n-grid>
 
-      <!-- 图表区域 -->
-      <n-grid cols="2" x-gap="12" style="margin-top:12px" responsive="screen" item-responsive>
+      <n-grid cols="2" x-gap="12" class="dash-section" responsive="screen" item-responsive>
         <n-grid-item span="2 m:1">
           <n-card :title="t('dashboard.weeklyOps')" size="small">
-            <v-chart v-if="hasWeeklyData" :option="barOption" style="height:260px" autoresize />
-            <n-empty v-else :description="t('dashboard.noOpsData')" style="height:260px;display:flex;align-items:center;justify-content:center" />
+            <v-chart v-if="hasWeeklyData" :option="barOption" class="dash-chart" autoresize />
+            <n-empty v-else :description="t('dashboard.noOpsData')" class="chart-empty" />
           </n-card>
         </n-grid-item>
         <n-grid-item span="2 m:1">
           <n-card :title="t('dashboard.bizTypeDist')" size="small">
-            <v-chart v-if="hasBizData" :option="pieOption" style="height:260px" autoresize />
-            <n-empty v-else :description="t('dashboard.noBizData')" style="height:260px;display:flex;align-items:center;justify-content:center" />
+            <v-chart v-if="hasBizData" :option="pieOption" class="dash-chart" autoresize />
+            <n-empty v-else :description="t('dashboard.noBizData')" class="chart-empty" />
           </n-card>
         </n-grid-item>
       </n-grid>
 
-      <!-- 近期公告 + 系统信息 -->
-      <n-grid cols="2" x-gap="12" style="margin-top:12px" responsive="screen" item-responsive>
+      <n-grid cols="2" x-gap="12" class="dash-section" responsive="screen" item-responsive>
         <n-grid-item span="2 m:1">
           <n-card :title="t('dashboard.recentNotices')" size="small">
             <template #header-extra>
               <n-button size="small" text @click="router.push('/notices')">{{ t('common.viewAll') }} →</n-button>
             </template>
             <div v-if="recentNotices.length">
-              <div v-for="notice in recentNotices" :key="notice.id" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--n-border-color, #f0f0f0);font-size:13px">
-                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ notice.noticeTitle }}</span>
-                <span style="color:#999;font-size:11px;margin-left:12px;white-space:nowrap">{{ notice.createdAt ? notice.createdAt.substring(0,10) : '' }}</span>
+              <div v-for="notice in recentNotices" :key="notice.id" class="list-row">
+                <span class="list-row-text">{{ notice.noticeTitle }}</span>
+                <span class="list-row-date">{{ notice.createdAt ? notice.createdAt.substring(0,10) : '' }}</span>
               </div>
             </div>
             <n-empty v-else :description="t('dashboard.noNotices')" size="small" />
@@ -332,36 +318,99 @@ onMounted(async () => {
         </n-grid-item>
       </n-grid>
 
-      <!-- 近期操作 -->
-      <n-card :title="t('dashboard.recentOps')" style="margin-top:12px" size="small">
+      <n-card :title="t('dashboard.recentOps')" class="dash-section" size="small">
         <template #header-extra>
           <n-button size="small" text @click="router.push('/operlog')">{{ t('common.viewAll') }} →</n-button>
         </template>
         <div v-if="recentLogs.length">
-          <div v-for="log in recentLogs" :key="log.id" style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--n-border-color, #f0f0f0);font-size:13px">
-            <div style="display:flex;align-items:center;gap:8px">
+          <div v-for="log in recentLogs" :key="log.id" class="list-row">
+            <div class="list-row-left">
               <n-tag :type="log.status === 0 ? 'success' : 'error'" size="tiny" :bordered="false">{{ log.status === 0 ? t('operlog.success') : t('operlog.fail') }}</n-tag>
               <span>{{ log.title }}</span>
             </div>
-            <span style="color:#999;font-size:12px">{{ log.operName || '-' }} · {{ log.operTime ? log.operTime.substring(0,16).replace('T',' ') : '' }}</span>
+            <span class="list-row-date">{{ log.operName || '-' }} · {{ log.operTime ? log.operTime.substring(0,16).replace('T',' ') : '' }}</span>
           </div>
         </div>
         <n-empty v-else :description="t('dashboard.noOpsLogs')" size="small" />
       </n-card>
 
-      <!-- 快速入口 -->
-      <n-card :title="t('dashboard.quickLinks')" style="margin-top:12px" size="small">
+      <n-card :title="t('dashboard.quickLinks')" class="dash-section" size="small">
         <template #header-extra>
           <n-button size="tiny" @click="showQuickEdit = !showQuickEdit">{{ showQuickEdit ? t('common.done') : t('common.edit') }}</n-button>
         </template>
         <n-space>
-          <n-tag v-for="q in quickLinks" :key="q.path" :type="q.type as any" size="medium" style="cursor:pointer" @click="router.push(q.path)" :closable="showQuickEdit" @close="removeQuick(q.path)">{{ q.icon }} {{ q.label }}</n-tag>
+          <n-tag v-for="q in quickLinks" :key="q.path" :type="q.type as any" size="medium" class="quick-tag" @click="router.push(q.path)" :closable="showQuickEdit" @close="removeQuick(q.path)">{{ q.icon }} {{ q.label }}</n-tag>
         </n-space>
-        <n-space v-if="showQuickEdit" style="margin-top:8px">
-          <n-select v-model:value="newQuick" :options="allQuickOptions" size="small" style="width:160px" />
+        <n-space v-if="showQuickEdit" class="quick-edit">
+          <n-select v-model:value="newQuick" :options="allQuickOptions" size="small" class="quick-select" />
           <n-button size="tiny" type="primary" @click="addQuick">{{ t('common.add') }}</n-button>
         </n-space>
       </n-card>
     </div>
   </n-spin>
 </template>
+
+<style scoped>
+.dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.dash-greeting { font-size: 18px; font-weight: 600; color: var(--n-text-color, #333); }
+.dash-updated { font-size: 12px; color: #999; margin-right: 8px; }
+.dash-section { margin-top: 12px; }
+
+.dash-alert {
+  background: linear-gradient(135deg, #fff5f5, #ffe8e8); border: 1px solid #f10215;
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  animation: fadeIn .3s;
+}
+
+/* KPI cards */
+.kpi-card { cursor: pointer; }
+.kpi-green { border-left: 3px solid #18a058; }
+.kpi-blue { border-left: 3px solid #2080f0; }
+.kpi-orange { border-left: 3px solid #f0a020; }
+.kpi-red { border-left: 3px solid #d03050; }
+.kpi-purple { border-left: 3px solid #7c3aed; }
+.kpi-indigo { border-left: 3px solid #667eea; }
+.kpi-sub { font-size: 11px; color: #999; }
+
+/* Stat cards */
+.stat-card { cursor: pointer; }
+.stat-purple { border-left: 3px solid #667eea; }
+.stat-orange { border-left: 3px solid #f0a020; }
+.stat-green { border-left: 3px solid #18a058; }
+.stat-blue { border-left: 3px solid #2080f0; }
+.stat-red { border-left: 3px solid #d03050; }
+.stat-purple2 { border-left: 3px solid #7c3aed; }
+.stat-icon { display: inline-block; padding: 4px 8px; border-radius: 6px; margin-right: 8px; }
+.stat-icon--purple { background: #667eea15; }
+.stat-icon--orange { background: #f0a02015; }
+.stat-icon--green { background: #18a05815; }
+.stat-icon--blue { background: #2080f015; }
+.stat-icon--red { background: #d0305015; }
+.stat-icon--purple2 { background: #7c3aed15; }
+
+/* Realtime cards */
+.realtime-card { color: #fff; }
+.rt-purple { background: linear-gradient(135deg, #667eea, #764ba2); }
+.rt-blue { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.rt-green { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+.rt-pink { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.rt-rose { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+
+/* Charts */
+.dash-chart { height: 260px; }
+.chart-empty { height: 260px; display: flex; align-items: center; justify-content: center; }
+
+/* List rows */
+.list-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--n-border-color, #f0f0f0); font-size: 13px; }
+.list-row-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-row-date { color: #999; font-size: 11px; margin-left: 12px; white-space: nowrap; }
+.list-row-left { display: flex; align-items: center; gap: 8px; }
+
+/* Quick links */
+.quick-tag { cursor: pointer; }
+.quick-edit { margin-top: 8px; }
+.quick-select { width: 160px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>

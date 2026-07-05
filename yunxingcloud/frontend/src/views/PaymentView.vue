@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatPrice } from '@/utils/format'
 import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace, NTag, NInputNumber } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchOrders, createOrder, payOrder, refundOrder, fetchRecords, type PaymentOrder } from '@/api/payment'
@@ -115,7 +116,7 @@ const recordColumns = computed(() => [
   { title: t('payment.time'), key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
 ])
 
-function exportCSV() { const h=['订单号','标题','金额','渠道','状态','交易号','时间']; const r=items.value.map((i:any)=>[i.orderNo||'',i.title||'',(i.amount/100).toFixed(2),i.channel||'',i.status||'',i.tradeNo||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='payments.csv'; a.click() }
+function exportCSV() { const h=['订单号','标题','金额','渠道','状态','交易号','时间']; const r=items.value.map((i:any)=>[i.orderNo||'',i.title||'',formatPrice(i.amount/100, 2),i.channel||'',i.status||'',i.tradeNo||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='payments.csv'; a.click() }
 onMounted(load)
 </script>
 

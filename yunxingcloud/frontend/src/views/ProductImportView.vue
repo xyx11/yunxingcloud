@@ -28,17 +28,17 @@ async function handleImport(options: any) {
   reader.onload = async (e) => {
     const text = e.target?.result as string
     const rows = parseCSV(text)
-    if (!rows.length) { notify.error('CSV格式错误或无数据'); return }
+    if (!rows.length) { notify.error(t('productImport.csvError')); return }
     importing.value = true; results.value = []; let ok = 0, fail = 0
     for (const row of rows) {
       try {
         const data = { name: row.name || row['商品名称'], price: Math.round(parseFloat(row.price || row['价格']) * 100) || 100, stock: parseInt(row.stock || row['库存']) || 0, description: row.description || row['描述'] || '', imageUrl: row.imageUrl || row['图片'] || '', status: '0' }
-        if (!data.name) { fail++; results.value.push({ ...data, _status:'fail', _reason:'缺名称' }); continue }
+        if (!data.name) { fail++; results.value.push({ ...data, _status: 'fail', _reason: t('productImport.missingName') }); continue }
         await request.post('/api/products', data)
-        ok++; results.value.push({ ...data, _status:'ok' })
-      } catch (e: any) { fail++; results.value.push({ ...row, _status:'fail', _reason: e.response?.data?.message || '创建失败' }) }
+        ok++; results.value.push({ ...data, _status: 'ok' })
+      } catch (e: any) { fail++; results.value.push({ ...row, _status: 'fail', _reason: e.response?.data?.message || t('productImport.createFail') }) }
     }
-    summary.value = `导入完成: 成功 ${ok} 条, 失败 ${fail} 条`
+    summary.value = t('productImport.summary', { ok, fail })
     notify.success(summary.value)
     importing.value = false
   }
@@ -46,20 +46,25 @@ async function handleImport(options: any) {
 }
 </script>
 <template>
-  <div style="padding:20px">
-    <n-card title="批量导入商品">
-      <n-alert type="info" style="margin-bottom:16px">
-        CSV格式: 商品名称,价格,库存,描述,图片<br>
-        示例: "iPhone 18",9999,100,"最新款","https://..."
+  <div class="view-pad">
+    <n-card :title="t('productImport.title')">
+      <n-alert type="info" class="import-alert">
+        {{ t('productImport.csvFormat') }}<br>
+        {{ t('productImport.csvExample') }}
       </n-alert>
       <n-space vertical>
         <n-upload :custom-request="handleImport" accept=".csv" :show-file-list="false">
-          <n-button type="primary" :loading="importing" size="large">{{ importing ? '导入中...' : '选择CSV文件导入' }}</n-button>
+          <n-button type="primary" :loading="importing" size="large">{{ importing ? t('productImport.importing') : t('productImport.chooseCSV') }}</n-button>
         </n-upload>
       </n-space>
     </n-card>
-    <n-card v-if="summary" :title="summary" style="margin-top:16px">
-      <n-dataTable :columns="[{title:'名称',key:'name'},{title:'价格',key:'price',width:80},{title:'状态',key:'_status',width:80,render:(r:any)=>h(NTag,{type:r._status==='ok'?'success':'error',size:'small'},{default:()=>r._status==='ok'?'成功':'失败'})},{title:'原因',key:'_reason',width:120}]" :data="results" size="small" :pagination="{pageSize:20}" />
+    <n-card v-if="summary" :title="summary" class="mt-16">
+      <n-dataTable :columns="[
+        { title: t('common.name'), key: 'name' },
+        { title: t('product.price'), key: 'price', width: 80 },
+        { title: t('product.status'), key: '_status', width: 80, render: (r: any) => h(NTag, { type: r._status === 'ok' ? 'success' : 'error', size: 'small' }, { default: () => r._status === 'ok' ? t('productImport.success') : t('productImport.fail') }) },
+        { title: t('productImport.reason'), key: '_reason', width: 120 }
+      ]" :data="results" size="small" :pagination="{ pageSize: 20 }" />
     </n-card>
   </div>
 </template>

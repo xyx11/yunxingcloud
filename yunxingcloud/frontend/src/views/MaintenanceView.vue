@@ -46,7 +46,7 @@ onMounted(loadStats)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('maintenance.title')">
       <n-grid cols="4" x-gap="16" y-gap="16" responsive="screen">
         <n-grid-item span="4 m:2 l:1">
@@ -64,7 +64,7 @@ onMounted(loadStats)
       </n-grid>
     </n-card>
 
-    <n-card :title="t('maintenance.logCleanup')" style="margin-top:16px">
+    <n-card :title="t('maintenance.logCleanup')" class="mt-16">
       <n-space align="center">
         <span>{{ t('maintenance.cleanLabel') }}</span>
         <n-input-number v-model:value="cleanDays" :min="1" :max="365" style="width:100px" size="small" />
@@ -76,7 +76,7 @@ onMounted(loadStats)
       </n-space>
     </n-card>
 
-    <n-card :title="t('maintenance.tokenCleanup')" style="margin-top:16px">
+    <n-card :title="t('maintenance.tokenCleanup')" class="mt-16">
       <n-space align="center">
         <span>{{ t('maintenance.tokenCleanupDesc') }}</span>
         <n-popconfirm @positive-click="cleanTokens">
@@ -86,7 +86,7 @@ onMounted(loadStats)
       </n-space>
     </n-card>
 
-    <n-card :title="t('maintenance.vacuum')" style="margin-top:16px">
+    <n-card :title="t('maintenance.vacuum')" class="mt-16">
       <n-space align="center">
         <span>{{ t('maintenance.vacuumDesc') }}</span>
         <n-popconfirm @positive-click="vacuum">

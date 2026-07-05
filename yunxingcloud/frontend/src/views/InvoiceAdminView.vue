@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { NCard, NDataTable, NButton, NModal, NSpace, NTag, NInput, NSelect } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import request from '@/api/request'
-import { useNotify } from '@/composables/useNotify'
 
-const notify = useNotify()
 const loading = ref(false)
 const items = ref<any[]>([])
 const showDetail = ref(false); const detail = ref<any>(null)
@@ -29,23 +29,23 @@ const filtered = computed(() => {
 })
 
 const columns: DataTableColumns<any> = [
-  { title: '发票号', key: 'invoiceNo', width: 180 },
-  { title: '订单号', key: 'orderNo', width: 180 },
+  { title: t('invoice.invoiceNo'), key: 'invoiceNo', width: 180 },
+  { title: t('order.orderNo'), key: 'orderNo', width: 180 },
   { title: '用户', key: 'username', width: 100 },
-  { title: '金额', key: 'amount', width: 100, render(r: any) { return '¥' + ((r.amount || 0) / 100).toFixed(2) } },
-  { title: '类型', key: 'type', width: 70, render(r: any) { return r.type === 'company' ? '企业' : '个人' } },
-  { title: '抬头', key: 'title', width: 160, ellipsis: { tooltip: true } },
-  { title: '状态', key: 'status', width: 80, render(r: any) { return h(NTag, { size: 'small', type: r.status === '1' ? 'success' : r.status === '2' ? 'error' : 'warning' }, { default: () => r.status === '0' ? '待开票' : r.status === '1' ? '已开票' : '已作废' }) } },
-  { title: '操作', key: 'act', width: 100, render(r: any) { return h(NButton, { size: 'tiny', onClick: () => { detail.value = r; showDetail.value = true } }, { default: () => '详情' }) } },
+  { title: t('invoice.amount'), key: 'amount', width: 100, render(r: any) { return '¥' + ((r.amount || 0) / 100).toFixed(2) } },
+  { title: t('invoice.type'), key: 'type', width: 70, render(r: any) { return r.type === 'company' ? '企业' : '个人' } },
+  { title: t('invoice.companyTitle'), key: 'title', width: 160, ellipsis: { tooltip: true } },
+  { title: t('order.status'), key: 'status', width: 80, render(r: any) { return h(NTag, { size: 'small', type: r.status === '1' ? 'success' : r.status === '2' ? 'error' : 'warning' }, { default: () => r.status === '0' ? '待开票' : r.status === '1' ? '已开票' : '已作废' }) } },
+  { title: t('common.actions'), key: 'act', width: 100, render(r: any) { return h(NButton, { size: 'tiny', onClick: () => { detail.value = r; showDetail.value = true } }, { default: () => '详情' }) } },
 ]
 
 async function load() { loading.value = true; try { const r = await request.get('/api/invoices'); items.value = r.data || [] } finally { loading.value = false } }
 onMounted(load)
 </script>
 <template>
-  <div style="padding:20px">
-    <n-card title="发票管理"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
-      <n-space style="margin-bottom:12px">
+  <div class="view-pad">
+    <n-card :title="t('invoice.title')"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+      <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索发票号/订单号/用户..." size="small" clearable style="width:220px" />
         <n-select v-model:value="filterStatus" :options="statusOpts" size="small" style="width:90px" />
         <n-select v-model:value="filterType" :options="typeOpts" size="small" style="width:80px" />

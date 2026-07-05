@@ -2,6 +2,8 @@ package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.order.entity.Product;
 import com.yunxingcloud.order.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,6 +14,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class RecommendationService {
+
+    private static final Logger log = LoggerFactory.getLogger(RecommendationService.class);
 
     private final ProductRepository productRepo;
     private final JdbcTemplate jdbc;
@@ -37,7 +41,7 @@ public class RecommendationService {
             if (!cfIds.isEmpty()) {
                 return productRepo.findAllById(cfIds);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
 
         return productRepo.findByCategoryIdAndIdNot(p.getCategoryId(), productId,
                 PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "sales")));
@@ -62,7 +66,7 @@ public class RecommendationService {
                 Object cid = row.get("category_id");
                 if (cid != null) categoryIds.add(((Number) cid).longValue());
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
 
         List<Product> results = new ArrayList<>();
 
@@ -78,7 +82,7 @@ public class RecommendationService {
                     Long.class, limit / 2
                 );
                 if (!cfIds.isEmpty()) results.addAll(productRepo.findAllById(cfIds));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
         }
 
         // 2. 内容推荐: 同分类热门商品
@@ -165,7 +169,7 @@ public class RecommendationService {
                 double cf = ((Number) row.get("cnt")).doubleValue();
                 scores.merge(pid, 0.35 * cf / maxCf, Double::sum);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
 
         // 新品加分
         List<Product> news = newArrivals(50);

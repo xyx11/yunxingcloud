@@ -187,7 +187,7 @@ onMounted(loadTypes)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-grid :cols="2" :x-gap="12">
       <n-grid-item>
         <n-card :title="t('dict.type')" size="small">

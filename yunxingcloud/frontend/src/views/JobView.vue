@@ -150,12 +150,12 @@ onMounted(loadJobs)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.jobs')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="addJob"><template #icon>＋</template>{{ t('common.add') }}</n-button>
       </template>
-      <n-space style="margin-bottom:12px"><n-button size="small" @click="loadJobs" secondary>{{ t('common.refresh') }}</n-button></n-space>
+      <n-space class="mb-12"><n-button size="small" @click="loadJobs" secondary>{{ t('common.refresh') }}</n-button></n-space>
       <n-data-table
         :columns="columns" :data="jobs" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
         :row-key="(row: SysJob) => row.id"
@@ -196,7 +196,7 @@ onMounted(loadJobs)
             {title:t('job.result'),key:'result',width:200,ellipsis:{tooltip:true}},
           ]" :data="jobLogs" size="small" :row-key="(r:any)=>r.id" :max-height="400"
         />
-        <span v-else style="color:#999">{{ t('job.noLogs') }}</span>
+        <span v-else class="text-muted">{{ t('job.noLogs') }}</span>
       </n-modal>
     </n-card>
   </div>

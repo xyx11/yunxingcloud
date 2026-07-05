@@ -38,7 +38,7 @@ async function doRegister() {
   if (!pwdChecks.value.special) { error.value = '密码需包含特殊字符(!@#$%等)'; return }
   loading.value = true
   try {
-    await auth.register(form.value.username, form.value.password)
+    await auth.register(form.value.username, form.value.password, form.value.email || undefined)
     showSuccess.value = true
   } catch (e: any) { error.value = e.response?.data?.message || t('register.registerFail') }
   finally { loading.value = false }
@@ -77,6 +77,11 @@ async function doRegister() {
       <div class="form-group">
         <label class="form-label">{{ t('register.confirmPassword') }}</label>
         <input v-model="form.confirmPassword" type="password" :placeholder="t('register.placeholderConfirm')" class="form-input" @keyup.enter="doRegister" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">邮箱 <span class="hint">(选填)</span></label>
+        <input v-model="form.email" type="email" placeholder="请输入邮箱（选填）" class="form-input" />
       </div>
 
       <div class="benefits-box">

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { ref, onMounted, h, computed } from 'vue'
 import { fetchUsers, fetchDepartments, fetchRoles, fetchPosts, fetchUserSourceDict, createUser, updateUserProfile, batchDeleteUsers, toggleUser, setUserDepartment, setUserPost, setUserRoles, resetUserPassword, type UserInfo, type Dept, type Role, type Post } from '@/api/user'
 import { useNotify } from '@/composables/useNotify'
+import { formatPrice } from '@/utils/format'
 
 import { NCard, NDataTable, NButton, NModal, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace, NTag, NInput, NSwitch, NDropdown, NPopover, NCheckbox, NTabs, NTabPane, NDivider, type FormRules, type FormInst } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
@@ -189,8 +190,8 @@ async function saveRoles() { if (!selectedUser.value) return; await setUserRoles
 async function resetPwd() { if (!selectedUser.value) return; await resetUserPassword(selectedUser.value.id); showPwdModal.value = false; notify.success(t('user.pwdResetSuccess')) }
 
 function exportCSV() {
-  const head = ['用户名','昵称','邮箱','手机','部门','角色','状态','创建时间']
-  const rows = allUsers.value.map((u:any) => [u.username||'',u.nickname||'',u.email||'',u.phone||'',u.deptName||'',u.roleNames||'',u.status==='0'?'正常':'禁用',u.createdAt||''])
+  const head = [t('user.username'),t('user.nickname'),t('user.email'),t('user.phone'),t('user.dept'),t('user.role'),t('user.status'),t('user.createdAt')]
+  const rows = users.value.map((u:any) => [u.username||'',u.nickname||'',u.email||'',u.phone||'',u.deptName||'',u.roleNames||'',u.status==='0'?t('user.enabledLabel'):t('user.disabledLabel'),u.createdAt||''])
   const csv = [head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')
   const blob = new Blob(['﻿'+csv],{type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='users.csv'; a.click()
 }
@@ -198,23 +199,23 @@ onMounted(loadData)
 </script>
 
 <template>
-  <div style="padding:24px">
+  <div class="view-pad-lg">
     <n-card :title="t('nav.users')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="showAddModal = true"><template #icon>＋</template>{{ t('common.add') }}</n-button>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-button size="small" @click="showSearch = !showSearch" :type="showSearch ? 'primary' : 'default'" secondary>
             {{ showSearch ? t('common.collapseSearch') : t('common.expandSearch') }}
           </n-button>
           <template v-if="showSearch">
-            <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable style="max-width:160px;width:95%" size="small" @keyup:enter="searchData" />
-            <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" style="max-width:120px;width:95%" @update:value="searchData" />
-            <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" style="max-width:110px;width:95%" @update:value="searchData" />
-            <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" style="max-width:100px;width:95%" @update:value="searchData" />
-            <input type="date" v-model="filterDateFrom" @change="searchData" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
-            <input type="date" v-model="filterDateTo" @change="searchData" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
+            <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable class="filter-select" size="small" @keyup:enter="searchData" />
+            <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" class="filter-select-sm" @update:value="searchData" />
+            <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" class="filter-select-md" @update:value="searchData" />
+            <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" class="filter-select-xs" @update:value="searchData" />
+            <input type="date" v-model="filterDateFrom" @change="searchData" class="date-input" />
+            <input type="date" v-model="filterDateTo" @change="searchData" class="date-input" />
             <n-button type="primary" size="small" @click="searchData">{{ t('common.search') }}</n-button>
             <n-button size="small" @click="searchKeyword = ''; filterDept = null; filterRole = ''; filterStatus = ''; filterDateFrom = ''; filterDateTo = ''; searchData()">{{ t('common.reset') }}</n-button>
           </template>
@@ -225,8 +226,8 @@ onMounted(loadData)
             <template #trigger>
               <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
             </template>
-            <div style="max-height:300px;overflow-y:auto">
-              <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
+            <div class="scroll-y">
+              <div v-for="opt in columnOptions" :key="opt.key" class="py-2">
                 <n-checkbox
                   :checked="!hiddenKeys.has(opt.key)"
                   @update:checked="toggleColumn(opt.key)"
@@ -238,7 +239,7 @@ onMounted(loadData)
           </n-popover>
         </n-space>
       </n-space>
-      <n-space v-if="checkedRowKeys.length" style="margin-bottom:8px">
+      <n-space v-if="checkedRowKeys.length" class="mb-8">
         <n-button type="error" size="small" @click="doBatchDelete">{{ t('common.batchDelete') }}({{ checkedRowKeys.length }})</n-button>
         <n-button size="small" @click="checkedRowKeys = []">{{ t('common.deselect') }}</n-button>
       </n-space>
@@ -249,7 +250,7 @@ onMounted(loadData)
       />
 
       <!-- 新增用户 -->
-      <n-modal v-model:show="showAddModal" :title="t('user.addUser')" preset="card" display-directive="show" style="max-width:480px;width:95%">
+      <n-modal v-model:show="showAddModal" :title="t('user.addUser')" preset="card" display-directive="show" class="crud-modal">
         <n-form ref="addFormRef" :model="addForm" :rules="addRules" label-placement="left" label-width="100">
           <n-form-item :label="t('user.username')" path="username">
             <n-input v-model:value="addForm.username" :placeholder="t('validate.usernameLen')" />
@@ -307,10 +308,10 @@ onMounted(loadData)
 
       <!-- 用户详情 Drawer -->
       <n-drawer v-model:show="showDetailModal" :width="520" placement="right">
-        <n-drawer-content :title="'客户: ' + (detailUser?.username || '')" closable>
+        <n-drawer-content :title="t('user.customerDetail') + ': ' + (detailUser?.username || '')" closable>
           <template v-if="detailUser">
             <n-tabs type="line" size="small" :default-value="'info'">
-              <n-tab-pane name="info" tab="基本信息">
+              <n-tab-pane name="info" :tab="t('user.basicInfo')">
                 <n-form label-placement="left" label-width="70" size="small">
                   <n-form-item :label="t('user.username')"><span>{{ detailUser.username }}</span></n-form-item>
                   <n-form-item :label="t('user.nickname')"><span>{{ detailUser.nickname || '-' }}</span></n-form-item>
@@ -319,37 +320,37 @@ onMounted(loadData)
                   <n-form-item :label="t('user.post')"><span>{{ getPostName(detailUser) }}</span></n-form-item>
                   <n-form-item :label="t('user.role')"><span>{{ (detailUser.roles||[]).map(r=>r.name).join(', ') || '-' }}</span></n-form-item>
                   <n-form-item :label="t('user.enabled')"><n-tag :type="detailUser.enabled?'success':'default'" size="small">{{ detailUser.enabled?t('user.enabledLabel'):t('user.disabledLabel') }}</n-tag></n-form-item>
-                  <n-form-item label="最后登录"><span>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</span></n-form-item>
+                  <n-form-item :label="t('user.lastLogin')"><span>{{ detailUser.lastLoginTime ? detailUser.lastLoginTime.substring(0,19).replace('T',' ') : '-' }}</span></n-form-item>
                 </n-form>
               </n-tab-pane>
-              <n-tab-pane name="orders" tab="订单">
-                <div v-if="custOrders.length" style="max-height:40vh;overflow:auto">
-                  <div v-for="o in custOrders.slice(0,10)" :key="o.id" style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #f0f0f0;font-size:13px">
-                    <span style="color:#999">{{ o.orderNo }}</span>
-                    <span>¥{{ ((o.totalAmount||0)/100).toFixed(2) }}</span>
-                    <n-tag size="tiny" :type="o.status==='3'?'success':o.status==='4'?'default':'info'">{{ ['待付','已付','已发','完成','取消'][Number(o.status)]||o.status }}</n-tag>
+              <n-tab-pane name="orders" :tab="t('nav.orders')">
+                <div v-if="custOrders.length" class="cust-scroll">
+                  <div v-for="o in custOrders.slice(0,10)" :key="o.id" class="cust-order-row">
+                    <span class="text-muted">{{ o.orderNo }}</span>
+                    <span>{{ formatPrice((o.totalAmount||0)/100, 2) }}</span>
+                    <n-tag size="tiny" :type="o.status==='3'?'success':o.status==='4'?'default':'info'">{{ [t('order.statusPending'),t('order.statusPaid'),t('order.statusShipped'),t('order.statusDone'),t('order.statusCanceled')][Number(o.status)]||o.status }}</n-tag>
                   </div>
                 </div>
-                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无订单</div>
+                <div v-else class="empty-tab-text">{{ t('common.noData') }}</div>
               </n-tab-pane>
-              <n-tab-pane name="addr" tab="地址">
-                <div v-if="custAddresses.length" style="max-height:40vh;overflow:auto">
-                  <div v-for="a in custAddresses" :key="a.id" style="padding:8px;margin-bottom:8px;background:#f9f9f9;border-radius:6px;font-size:13px">
-                    <div style="font-weight:600">{{ a.name }} {{ a.phone }}</div>
-                    <div style="color:#666">{{ a.province }}{{ a.city }}{{ a.district }} {{ a.detail }}</div>
-                    <n-tag v-if="a.isDefault" size="tiny" type="success">默认</n-tag>
+              <n-tab-pane name="addr" :tab="t('user.address')">
+                <div v-if="custAddresses.length" class="cust-scroll">
+                  <div v-for="a in custAddresses" :key="a.id" class="cust-addr-card">
+                    <div class="fw-600">{{ a.name }} {{ a.phone }}</div>
+                    <div class="text-secondary">{{ a.province }}{{ a.city }}{{ a.district }} {{ a.detail }}</div>
+                    <n-tag v-if="a.isDefault" size="tiny" type="success">{{ t('user.defaultAddr') }}</n-tag>
                   </div>
                 </div>
-                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无地址</div>
+                <div v-else class="empty-tab-text">{{ t('common.noData') }}</div>
               </n-tab-pane>
-              <n-tab-pane name="coupon" tab="优惠券">
-                <div v-if="custCoupons.length" style="max-height:40vh;overflow:auto">
-                  <div v-for="c in custCoupons.slice(0,10)" :key="c.id" style="padding:8px;margin-bottom:8px;background:#fef9e7;border-radius:6px;font-size:13px;display:flex;justify-content:space-between">
-                    <span>券ID: {{ c.couponId }}</span>
-                    <n-tag size="tiny" :type="c.status==='0'?'warning':'default'">{{ c.status==='0'?'未使用':c.status==='1'?'已使用':'已过期' }}</n-tag>
+              <n-tab-pane name="coupon" :tab="t('user.coupons')">
+                <div v-if="custCoupons.length" class="cust-scroll">
+                  <div v-for="c in custCoupons.slice(0,10)" :key="c.id" class="cust-coupon-row">
+                    <span>{{ t('user.couponId') }}: {{ c.couponId }}</span>
+                    <n-tag size="tiny" :type="c.status==='0'?'warning':'default'">{{ c.status==='0'?t('coupon.statusUnused'):c.status==='1'?t('coupon.statusUsed'):t('coupon.statusExpired') }}</n-tag>
                   </div>
                 </div>
-                <div v-else style="text-align:center;color:#ccc;padding:20px">暂无优惠券</div>
+                <div v-else class="empty-tab-text">{{ t('common.noData') }}</div>
               </n-tab-pane>
             </n-tabs>
           </template>
@@ -358,3 +359,17 @@ onMounted(loadData)
     </n-card>
   </div>
 </template>
+<style scoped>
+.empty-tab-text { text-align: center; color: var(--text-tertiary, #ccc); padding: 20px; }
+
+
+
+
+.cust-scroll { max-height: 40vh; overflow: auto; }
+.cust-order-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.cust-empty { text-align: center; color: #ccc; padding: 20px; }
+.cust-addr-card { padding: 8px; margin-bottom: 8px; background: #f9f9f9; border-radius: 6px; font-size: 13px; }
+.cust-coupon-row { padding: 8px; margin-bottom: 8px; background: #fef9e7; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; }
+.fw-600 { font-weight: 600; }
+.text-secondary { color: #666; }
+</style>

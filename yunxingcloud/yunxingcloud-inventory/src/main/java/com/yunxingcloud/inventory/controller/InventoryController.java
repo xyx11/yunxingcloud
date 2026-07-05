@@ -6,6 +6,8 @@ import com.yunxingcloud.inventory.repository.*;
 import com.yunxingcloud.inventory.service.InventoryService;
 import jakarta.validation.Valid;
 import com.yunxingcloud.inventory.service.WarehouseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class InventoryController {
 
+    private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
     private final WarehouseService whService;
     private final StockRepository stockRepo;
     private final StockLogRepository logRepo;
@@ -104,7 +107,7 @@ public class InventoryController {
                 emitter.send(SseEmitter.event().name("alerts").data(service.alerts()));
             } catch (Exception e) {
                 scheduler.shutdown();
-                try { emitter.completeWithError(e); } catch (Exception ignored) {}
+                try { emitter.completeWithError(e); } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
             }
         };
 

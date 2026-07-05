@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import request from '@/api/request'
+import { formatPrice } from '@/utils/format'
 import { useI18n } from '@/locales'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
@@ -22,10 +23,10 @@ async function activate() { try{loading.value=true;const r=await request.post('/
       <div class="gc-card-bg" /><div class="gc-card-bg gc-card-bg--small" />
       <div class="gc-card-content">
         <p class="gc-card-type">GIFT CARD</p>
-        <p class="gc-card-amount">¥{{ (card.amount / 100).toFixed(2) }}</p>
+        <p class="gc-card-amount">{{ formatPrice(card.amount / 100, 2) }}</p>
         <div class="gc-card-footer">
           <div>
-            <p class="gc-card-balance">{{ t('giftCard.balance') }}: ¥{{ ((card.balance || 0) / 100).toFixed(2) }}</p>
+            <p class="gc-card-balance">{{ t('giftCard.balance') }}: {{ formatPrice((card.balance || 0) / 100, 2) }}</p>
             <p class="gc-card-no">{{ t('giftCard.cardNo') }}: {{ cardNo }}</p>
           </div>
           <JdBadge :type="statusType[card.status] || 'gray'">{{ statusMap[card.status] || '-' }}</JdBadge>
@@ -75,7 +76,8 @@ async function activate() { try{loading.value=true;const r=await request.post('/
 
 .gc-form { background: var(--bg-white); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm); }
 .gc-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); text-align: center; }
-.gc-input { width: 100%; padding: var(--space-md); border: 2px solid var(--jd-red); border-radius: var(--radius-md); font-size: 15px; text-align: center; box-sizing: border-box; margin-bottom: var(--space-md); background: var(--bg-white); color: var(--text-primary); }
+.gc-input { width: 100%; padding: var(--space-md); border: 2px solid var(--jd-red); border-radius: var(--radius-md); font-size: 15px; text-align: center; box-sizing: border-box; margin-bottom: var(--space-md); background: var(--bg-white); color: var(--text-primary); outline: none; transition: box-shadow var(--transition-fast); }
+.gc-input:focus { box-shadow: 0 0 0 3px var(--jd-red-light); }
 .gc-btns { display: flex; gap: var(--space-sm); }
 .gc-msg { text-align: center; margin-top: var(--space-md); font-size: var(--font-base); color: var(--jd-red); }
 .gc-msg.success { color: var(--green); }

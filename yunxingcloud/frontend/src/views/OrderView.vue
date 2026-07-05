@@ -6,6 +6,7 @@ import type { DataTableColumns } from 'naive-ui'
 import { fetchOrders, getOrder, payOrder, cancelOrder, type OrderHead } from '@/api/order'
 import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
+import { formatPrice } from '@/utils/format'
 
 const { t } = useI18n()
 const notify = useNotify()
@@ -20,7 +21,7 @@ const filterDateFrom = ref('')
 const filterDateTo = ref('')
 const checkedRowKeys = ref<number[]>([])
 const showBatchShip = ref(false); const showBatchCancel = ref(false)
-const batchCarrier = ref('顺丰'); const batchReason = ref('批量取消')
+const batchCarrier = ref('SF Express'); const batchReason = ref(t('order.batchCancel'))
 const batchLoading = ref(false)
 
 const statusLabels = computed<Record<string, string>>(() => ({
@@ -42,7 +43,7 @@ const columns = computed<DataTableColumns<OrderHead>>(() => [
   { type: 'selection' },
   { title: t('order.orderNo'), key: 'orderNo', width: 180 },
   { title: t('order.username'), key: 'username', width: 100 },
-  { title: t('order.totalAmount'), key: 'totalAmount', width: 100, render(r: OrderHead) { return `¥${(r.totalAmount / 100).toFixed(2)}` } },
+  { title: t('order.totalAmount'), key: 'totalAmount', width: 100, render(r: OrderHead) { return formatPrice(r.totalAmount / 100, 2) } },
   { title: t('order.status'), key: 'status', width: 80, render(r: OrderHead) { return h(NTag, { size: 'small', type: statusColors[r.status] as any }, { default: () => statusLabels.value[r.status] }) } },
   { title: t('common.createdAt'), key: 'createdAt', width: 150, render(r: OrderHead) { return r.createdAt?.substring(0, 16) } },
   {
@@ -51,8 +52,8 @@ const columns = computed<DataTableColumns<OrderHead>>(() => [
       const btns = [h(NButton, { size: 'small', onClick: () => openDetail(r.id) }, { default: () => t('order.detail') })]
       const s = submitting.value
       if (r.status === '0') btns.push(h(NButton, { size: 'small', type: 'primary', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doPay(r.id) }, { default: () => t('order.pay') }))
-      if (r.status === '1') btns.push(h(NButton, { size: 'small', type: 'info', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doStatus(r.id, '2') }, { default: () => '发货' }))
-      if (r.status === '2') btns.push(h(NButton, { size: 'small', type: 'success', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doStatus(r.id, '3') }, { default: () => '完成' }))
+      if (r.status === '1') btns.push(h(NButton, { size: 'small', type: 'info', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doStatus(r.id, '2') }, { default: () => t('order.ship') }))
+      if (r.status === '2') btns.push(h(NButton, { size: 'small', type: 'success', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doStatus(r.id, '3') }, { default: () => t('order.complete') }))
       if (r.status !== '3' && r.status !== '4') btns.push(h(NButton, { size: 'small', type: 'warning', loading: s.has(r.id), disabled: s.has(r.id), onClick: () => doCancel(r.id) }, { default: () => t('order.cancel') }))
       return h(NSpace, { size: 'small' }, { default: () => btns })
     },
@@ -61,7 +62,7 @@ const columns = computed<DataTableColumns<OrderHead>>(() => [
 
 const detailColumns = computed(() => [
   { title: t('order.product'), key: 'productName' },
-  { title: t('order.unitPrice'), key: 'price', render(r: any) { return '¥' + (r.price / 100).toFixed(2) } },
+  { title: t('order.unitPrice'), key: 'price', render(r: any) { return formatPrice(r.price / 100, 2) } },
   { title: t('order.quantity'), key: 'quantity' },
 ])
 
@@ -75,15 +76,15 @@ async function doStatus(id: number, status: string) { if(submitting.value.has(id
 // 批量操作
 async function doBatchShip() {
   if (!checkedRowKeys.value.length) return; batchLoading.value = true
-  try { const r = await request.put('/api/batch/ship', { ids: checkedRowKeys.value, carrier: batchCarrier.value }); notify.success(`已发货 ${r.data.shipped}/${r.data.total} 单`); checkedRowKeys.value = []; showBatchShip.value = false; load() }
-  catch { notify.error('批量发货失败') } finally { batchLoading.value = false }
+  try { const r = await request.put('/api/batch/ship', { ids: checkedRowKeys.value, carrier: batchCarrier.value }); notify.success(t('order.shipResult', { shipped: r.data.shipped, total: r.data.total })); checkedRowKeys.value = []; showBatchShip.value = false; load() }
+  catch { notify.error(t('order.batchShipFailed')) } finally { batchLoading.value = false }
 }
 async function doBatchCancel() {
   if (!checkedRowKeys.value.length) return; batchLoading.value = true
-  try { const r = await request.put('/api/batch/cancel', { ids: checkedRowKeys.value, reason: batchReason.value }); notify.success(`已取消 ${r.data.canceled}/${r.data.total} 单`); checkedRowKeys.value = []; showBatchCancel.value = false; load() }
-  catch { notify.error('批量取消失败') } finally { batchLoading.value = false }
+  try { const r = await request.put('/api/batch/cancel', { ids: checkedRowKeys.value, reason: batchReason.value }); notify.success(t('order.cancelResult', { canceled: r.data.canceled, total: r.data.total })); checkedRowKeys.value = []; showBatchCancel.value = false; load() }
+  catch { notify.error(t('order.batchCancelFailed')) } finally { batchLoading.value = false }
 }
-function exportCSV() { const h=['订单号','用户','金额','状态','时间']; const r=items.value.map((i:any)=>[i.orderNo||'',i.username||'',(i.totalAmount/100).toFixed(2),i.status||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders.csv'; a.click() }
+function exportCSV() { const h=[t('order.orderNo'),t('order.username'),t('order.totalAmount'),t('order.status'),t('common.createdAt')]; const r=items.value.map((i:any)=>[i.orderNo||'',i.username||'',(i.totalAmount/100, 2),i.status||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders.csv'; a.click() }
 onMounted(load)
 </script>
 <template>
@@ -91,13 +92,13 @@ onMounted(load)
     <n-space vertical>
       <n-space justify="space-between">
         <n-space>
-          <n-input v-model:value="searchKeyword" :placeholder="t('order.searchPlaceholder')" clearable style="width:160px" size="small" />
-          <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:t('order.statuses.0'),value:'0'},{label:t('order.statuses.1'),value:'1'},{label:t('order.statuses.2'),value:'2'},{label:t('order.statuses.3'),value:'3'},{label:t('order.statuses.4'),value:'4'}]" style="width:100px" size="small" />
-          <n-input v-model:value="filterMinAmount" placeholder="最低¥" style="width:80px" size="small" />
-          <span style="font-size:12px;color:#999">日期</span>
-          <input type="date" v-model="filterDateFrom" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
-          <span style="color:#999">-</span>
-          <input type="date" v-model="filterDateTo" style="width:120px;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:3px" />
+          <n-input v-model:value="searchKeyword" :placeholder="t('order.searchPlaceholder')" clearable class="w-160" size="small" />
+          <n-select v-model:value="filterStatus" :options="[{label:t('order.allStatus'),value:''},{label:t('order.statuses.0'),value:'0'},{label:t('order.statuses.1'),value:'1'},{label:t('order.statuses.2'),value:'2'},{label:t('order.statuses.3'),value:'3'},{label:t('order.statuses.4'),value:'4'}]" class="w-100" size="small" />
+          <n-input v-model:value="filterMinAmount" :placeholder="t('order.minAmount')" class="w-80" size="small" />
+          <span class="filter-label">{{ t('common.date') }}</span>
+          <input type="date" v-model="filterDateFrom" class="date-input" />
+          <span class="text-muted">-</span>
+          <input type="date" v-model="filterDateTo" class="date-input" />
         </n-space>
         <n-space>
           <n-button v-if="checkedRowKeys.length" type="info" size="small" @click="showBatchShip = true">批量发货 ({{ checkedRowKeys.length }})</n-button>
@@ -113,7 +114,7 @@ onMounted(load)
           <n-form label-placement="left" label-width="80" size="small">
             <n-form-item :label="t('order.orderNo')"><span>{{ detail.order?.orderNo }}</span></n-form-item>
             <n-form-item :label="t('order.username')"><span>{{ detail.order?.username }}</span></n-form-item>
-            <n-form-item :label="t('order.totalAmount')"><b>¥{{ (detail.order?.totalAmount / 100).toFixed(2) }}</b></n-form-item>
+            <n-form-item :label="t('order.totalAmount')"><b>{{ formatPrice(detail.order?.totalAmount / 100, 2) }}</b></n-form-item>
             <n-form-item :label="t('order.status')"><n-tag :type="statusColors[detail.order?.status] as any" size="small">{{ statusLabels[detail.order?.status] }}</n-tag></n-form-item>
             <n-form-item label="收货人"><span>{{ detail.order?.receiverName }} {{ detail.order?.receiverPhone }}</span></n-form-item>
             <n-form-item :label="t('order.address')"><span>{{ detail.order?.receiverAddress }}</span></n-form-item>
@@ -127,11 +128,11 @@ onMounted(load)
             </div>
           </div>
           <n-divider />
-          <div style="background:#f9f9f9;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>商品总额</span><span>¥{{ ((detail.order?.totalAmount||0)/100).toFixed(2) }}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#d03050" v-if="detail.order?.couponAmount"><span>优惠券抵扣</span><span>-¥{{ ((detail.order?.couponAmount||0)/100).toFixed(2) }}</span></div>
+          <div class="price-breakdown">
+            <div class="price-row"><span>{{ t('order.productTotal') }}</span><span>{{ formatPrice((detail.order?.totalAmount||0)/100, 2) }}</span></div>
+            <div class="price-row price-coupon" v-if="detail.order?.couponAmount"><span>{{ t('order.couponDeduction') }}</span><span>-{{ formatPrice((detail.order?.couponAmount||0)/100, 2) }}</span></div>
             <n-divider style="margin:8px 0" />
-            <div style="display:flex;justify-content:space-between;font-weight:600"><span>实付金额</span><span style="color:#d03050;font-size:16px">¥{{ ((detail.order?.actualAmount||detail.order?.totalAmount||0)/100).toFixed(2) }}</span></div>
+            <div class="price-row price-total"><span>{{ t('order.actualPay') }}</span><span class="price-total-amount">{{ formatPrice((detail.order?.actualAmount||detail.order?.totalAmount||0)/100, 2) }}</span></div>
           </div>
           <n-divider />
           <n-dataTable size="small" :columns="detailColumns" :data="detail.lines || []" :pagination="false" :max-height="300" />
@@ -139,10 +140,10 @@ onMounted(load)
       </n-drawer-content>
     </n-drawer>
     <!-- 批量发货弹窗 -->
-    <n-modal v-model:show="showBatchShip" title="批量发货" preset="card" style="max-width:400px">
+    <n-modal v-model:show="showBatchShip" :title="t('order.batchShip')" preset="card" style="max-width:400px">
       <n-form>
-        <n-form-item label="快递公司"><n-input v-model:value="batchCarrier" placeholder="如: 顺丰/中通/圆通" /></n-form-item>
-        <n-form-item label="选中订单">{{ checkedRowKeys.length }} 单</n-form-item>
+        <n-form-item :label="t('order.carrier')"><n-input v-model:value="batchCarrier" :placeholder="t('order.carrierPlaceholder')" /></n-form-item>
+        <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
       </n-form>
       <template #footer><n-space justify="end"><n-button @click="showBatchShip=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchShip">确认批量发货</n-button></n-space></template>
     </n-modal>
@@ -150,7 +151,7 @@ onMounted(load)
     <n-modal v-model:show="showBatchCancel" title="批量取消" preset="card" style="max-width:400px">
       <n-form>
         <n-form-item label="取消原因"><n-input v-model:value="batchReason" placeholder="输入取消原因" /></n-form-item>
-        <n-form-item label="选中订单">{{ checkedRowKeys.length }} 单</n-form-item>
+        <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
       </n-form>
       <template #footer><n-space justify="end"><n-button @click="showBatchCancel=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchCancel">确认批量取消</n-button></n-space></template>
     </n-modal>

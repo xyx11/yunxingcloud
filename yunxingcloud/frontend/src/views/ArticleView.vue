@@ -25,27 +25,27 @@ function handleUpload(options: UploadCustomRequestOptions) {
   const fd = new FormData(); fd.append('file', options.file.file!)
   request.post('/api/files/upload', fd).then(r => {
     form.value.coverImage = r.data?.url || r.data || ''
-    options.onFinish(); notify.success('上传成功')
-  }).catch(() => { options.onError(); notify.error('上传失败') })
+    options.onFinish(); notify.success(t('common.uploadSuccess'))
+  }).catch(() => { options.onError(); notify.error(t('common.uploadFailed')) })
 }
 
 const columns: DataTableColumns<Article> = [
-  { title: '标题', key: 'title', width: 200 },
-  { title: '分类', key: 'category', width: 70, render(r: any) { return catOpts.find(o => o.value === r.category)?.label || r.category } },
+  { title: t('common.title'), key: 'title', width: 200 },
+  { title: t('product.category'), key: 'category', width: 70, render(r: any) { return catOpts.find(o => o.value === r.category)?.label || r.category } },
   { title: '状态', key: 'status', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.status === '1' ? 'success' : 'default' }, { default: () => r.status === '1' ? '已发布' : '草稿' }) } },
   { title: '浏览', key: 'viewCount', width: 60 },
-  { title: '操作', key: 'act', width: 140, render(r: Article) { return h(NSpace, { size: 'small' }, { default: () => [
-    h(NButton, { size: 'small', onClick: () => edit(r) }, { default: () => '编辑' }),
-    h(NPopconfirm, { onPositiveClick: () => del(r.id!) }, { trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }), default: () => '确认删除？' }),
+  { title: t('common.actions'), key: 'act', width: 140, render(r: Article) { return h(NSpace, { size: 'small' }, { default: () => [
+    h(NButton, { size: 'small', onClick: () => edit(r) }, { default: () => t('common.edit') }),
+    h(NPopconfirm, { onPositiveClick: () => del(r.id!) }, { trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') }),
   ]})}},
 ]
 
 async function load() { const r = await fetchArticles(); items.value = r.data }
 async function save() {
   editingId.value ? await updateArticle(editingId.value, form.value) : await createArticle(form.value)
-  showModal.value = false; notify.success('保存成功'); load()
+  showModal.value = false; notify.success(t('common.saveSuccess')); load()
 }
-async function del(id: number) { try { await request.delete(`/api/articles/${id}`); notify.success('已删除'); load() } catch { notify.error('删除失败') } }
+async function del(id: number) { try { await request.delete(`/api/articles/${id}`); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.deleteFailed')) } }
 function add() { editingId.value = null; form.value = { title: '', content: '', category: 'news', status: '0', coverImage: '' }; showModal.value = true }
 function edit(r: Article) { editingId.value = r.id!; form.value = { ...r, coverImage: (r as any).coverImage || '' }; showModal.value = true }
 onMounted(load)
@@ -59,8 +59,8 @@ onMounted(load)
       <n-drawer-content title="编辑文章" closable>
         <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="70" size="small">
-          <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
-          <n-form-item label="分类"><n-select v-model:value="form.category" :options="catOpts" /></n-form-item>
+          <n-form-item :label="t('common.title')"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item :label="t('product.category')"><n-select v-model:value="form.category" :options="catOpts" /></n-form-item>
           <n-form-item label="状态"><n-select v-model:value="form.status" :options="[{label:'草稿',value:'0'},{label:'发布',value:'1'}]" /></n-form-item>
           <n-form-item label="封面图">
             <n-space vertical>
@@ -69,8 +69,8 @@ onMounted(load)
             </n-space>
           </n-form-item>
           <n-divider />
-          <n-form-item label="内容">
-            <RichEditor v-model="form.content" />
+          <n-form-item :label="t('common.content')">
+            <RichEditor v-model="form.content!" />
           </n-form-item>
         </n-form>
       </n-drawer-content>

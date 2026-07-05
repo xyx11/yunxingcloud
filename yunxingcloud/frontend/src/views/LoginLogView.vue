@@ -116,7 +116,7 @@ onMounted(() => { loadItems(); loadStats() })
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.loginlog')">
       <n-grid cols="3" x-gap="12" style="margin-bottom:16px">
         <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.totalLogins')" :value="stats.todayTotal" /></n-card></n-grid-item>
@@ -132,7 +132,7 @@ onMounted(() => { loadItems(); loadStats() })
           </n-popconfirm>
         </n-space>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="filterUser" :placeholder="t('loginlog.username')" size="small" clearable style="width:120px" />
           <n-select v-model:value="filterStatus" :options="statusOptions" size="small" style="width:80px" />

@@ -32,25 +32,25 @@ const columns = computed<DataTableColumns<any>>(() => [
 ])
 
 const logColumns: DataTableColumns<any> = [
-  { title: '商品ID', key: 'productId', width: 60 },
-  { title: '类型', key: 'type', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.type === 'IN' ? 'success' : r.type === 'OUT' ? 'error' : 'info' }, { default: () => r.type === 'IN' ? '入库' : r.type === 'OUT' ? '出库' : '调拨' }) } },
-  { title: '数量', key: 'quantity', width: 60 },
-  { title: '仓库(从)', key: 'fromWarehouseId', width: 80, render(r: any) { return r.fromWarehouseId || '-' } },
-  { title: '仓库(至)', key: 'toWarehouseId', width: 80, render(r: any) { return r.toWarehouseId || '-' } },
-  { title: '备注', key: 'remark', width: 120, ellipsis: { tooltip: true } },
-  { title: '时间', key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
+  { title: t('inventory.productId'), key: 'productId', width: 60 },
+  { title: t('common.type'), key: 'type', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.type === 'IN' ? 'success' : r.type === 'OUT' ? 'error' : 'info' }, { default: () => r.type === 'IN' ? t('inventory.stockIn') : r.type === 'OUT' ? t('inventory.stockOut') : t('inventory.transfer') }) } },
+  { title: t('inventory.quantity'), key: 'quantity', width: 60 },
+  { title: t('inventory.fromWarehouse'), key: 'fromWarehouseId', width: 80, render(r: any) { return r.fromWarehouseId || '-' } },
+  { title: t('inventory.toWarehouse'), key: 'toWarehouseId', width: 80, render(r: any) { return r.toWarehouseId || '-' } },
+  { title: t('common.remark'), key: 'remark', width: 120, ellipsis: { tooltip: true } },
+  { title: t('common.time'), key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
 ]
 
 const suggestColumns: DataTableColumns<any> = [
-  { title: '商品', key: 'productName', width: 180 },
-  { title: '当前库存', key: 'currentStock', width: 80 },
-  { title: '建议补货', key: 'suggestedQty', width: 80 },
-  { title: '优先级', key: 'priority', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.priority === 'HIGH' ? 'error' : 'warning' }, { default: () => r.priority }) } },
+  { title: t('inventory.product'), key: 'productName', width: 180 },
+  { title: t('inventory.currentStock'), key: 'currentStock', width: 80 },
+  { title: t('inventory.suggestedQty'), key: 'suggestedQty', width: 80 },
+  { title: t('inventory.priority'), key: 'priority', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.priority === 'HIGH' ? 'error' : 'warning' }, { default: () => r.priority }) } },
 ]
 
 async function load() { loading.value = true; try { const r = await fetchInventory(); items.value = r.data; const a = await fetchAlerts(); alerts.value = a.data } finally { loading.value = false } }
-async function loadLogs() { try { const r = await fetchLogs(); logs.value = r.data || [] } catch {} }
-async function loadSuggestions() { try { const r = await request.get('/api/inventory/reorder-suggestions'); reorderSuggestions.value = r.data || [] } catch {} }
+async function loadLogs() { try { const r = await fetchLogs(); logs.value = r.data || [] } catch(e) { console.error(e) } }
+async function loadSuggestions() { try { const r = await request.get('/api/inventory/reorder-suggestions'); reorderSuggestions.value = r.data || [] } catch(e) { console.error(e) } }
 async function loadWh() { const r = await fetchWarehouses(); warehouses.value = r.data; whOptions.value = r.data.map((w: any) => ({ label: w.name, value: w.id })) }
 
 async function doIn() { saving.value = true; try { await stockIn(form.value); showIn.value = false; notify.success(t('inventory.stockInSuccess')); load() } catch { notify.error(t('common.saveFailed')) } finally { saving.value = false } }
@@ -65,8 +65,8 @@ async function doTransfer() {
       quantity: transferForm.value.quantity,
       remark: transferForm.value.remark,
     })
-    showTransfer.value = false; notify.success('调拨成功'); load()
-  } catch { notify.error('调拨失败') } finally { saving.value = false }
+    showTransfer.value = false; notify.success(t('inventory.transferSuccess')); load()
+  } catch { notify.error(t('inventory.operationFailed')) } finally { saving.value = false }
 }
 
 function exportExcel() {
@@ -83,7 +83,7 @@ onMounted(() => { load(); loadWh() })
 let sse: EventSource | null = null
 function connectSSE() {
   sse = new EventSource('/api/inventory/alerts/stream')
-  sse.addEventListener('alerts', (e: MessageEvent) => { try { const data = JSON.parse(e.data); if (Array.isArray(data)) alerts.value = data } catch {} })
+  sse.addEventListener('alerts', (e: MessageEvent) => { try { const data = JSON.parse(e.data); if (Array.isArray(data)) alerts.value = data } catch(e) { console.error(e) } })
   sse.onerror = () => { sse?.close(); setTimeout(connectSSE, 10000) }
 }
 connectSSE()
@@ -100,13 +100,13 @@ onUnmounted(() => { sse?.close() })
         <n-tag v-if="alerts.length" type="error">⚠ {{ t('inventory.lowStockAlert', { n: alerts.length }) }}</n-tag>
       </n-space>
       <n-tabs v-model:value="activeTab" type="line" @update:value="(v: string) => { if (v === 'logs') loadLogs(); if (v === 'suggest') loadSuggestions() }">
-        <n-tab-pane name="inventory" tab="库存列表">
+        <n-tab-pane name="inventory" :tab="t('inventory.list')">
           <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r: any) => r.id" :pagination="{ pageSize: 10 }" />
         </n-tab-pane>
         <n-tab-pane name="logs" tab="库存流水">
           <n-dataTable :columns="logColumns" :data="logs" :loading="loading" :row-key="(r: any) => r.id" :pagination="{ pageSize: 10 }" size="small" />
         </n-tab-pane>
-        <n-tab-pane name="suggest" tab="补货建议">
+        <n-tab-pane name="suggest" :tab="t('inventory.suggestions')">
           <n-dataTable :columns="suggestColumns" :data="reorderSuggestions" :loading="loading" :row-key="(r: any, i: number) => i" :pagination="false" size="small" />
         </n-tab-pane>
       </n-tabs>
@@ -142,7 +142,7 @@ onUnmounted(() => { sse?.close() })
           <n-form-item label="调出仓库"><n-select v-model:value="transferForm.fromWarehouseId" :options="whOptions" /></n-form-item>
           <n-form-item label="调入仓库"><n-select v-model:value="transferForm.toWarehouseId" :options="whOptions" /></n-form-item>
           <n-form-item label="数量"><n-input-number v-model:value="transferForm.quantity" :min="1" /></n-form-item>
-          <n-form-item label="备注"><n-input v-model:value="transferForm.remark" /></n-form-item>
+          <n-form-item :label="t('common.remark')"><n-input v-model:value="transferForm.remark" /></n-form-item>
         </n-form>
       </n-drawer-content>
     </n-drawer>

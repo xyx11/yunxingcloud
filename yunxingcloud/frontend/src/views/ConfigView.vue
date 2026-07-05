@@ -121,12 +121,12 @@ onMounted(loadConfigs)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.config')">
       <template #header-extra>
         <n-button type="primary" size="small" @click="addConfig"><template #icon>＋</template>{{ t('common.add') }}</n-button>
       </template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-button size="small" :type="cfgTypeFilter===''?'primary':'default'" @click="cfgTypeFilter=''">{{ t('common.all') }}</n-button>
           <n-button size="small" :type="cfgTypeFilter==='Y'?'primary':'default'" @click="cfgTypeFilter='Y'">{{ t('config.builtin') }}</n-button>
@@ -141,8 +141,8 @@ onMounted(loadConfigs)
             <template #trigger>
               <n-button size="small" secondary>{{ t('common.columnOptions') }}</n-button>
             </template>
-            <div style="max-height:300px;overflow-y:auto">
-              <div v-for="opt in columnOptions" :key="opt.key" style="padding:2px 0">
+            <div class="scroll-y">
+              <div v-for="opt in columnOptions" :key="opt.key" class="py-2">
                 <n-checkbox
                   :checked="!hiddenKeys.has(opt.key)"
                   @update:checked="toggleColumn(opt.key)"

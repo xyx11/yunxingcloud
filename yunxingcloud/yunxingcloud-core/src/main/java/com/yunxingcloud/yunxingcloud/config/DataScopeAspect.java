@@ -38,9 +38,9 @@ public class DataScopeAspect {
         try {
             Long c = jdbc.queryForObject("SELECT COUNT(*) FROM user_roles ur JOIN role r ON r.id=ur.role_id JOIN users u ON u.id=ur.user_id WHERE u.username=? AND r.code='admin'", Long.class, username);
             if (c != null && c > 0) return null;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
         Long deptId = null;
-        try { deptId = jdbc.queryForObject("SELECT department_id FROM users WHERE username=?", Long.class, username); } catch (Exception ignored) {}
+        try { deptId = jdbc.queryForObject("SELECT department_id FROM users WHERE username=?", Long.class, username); } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
         if (deptId != null) return String.format(" %s IN (SELECT id FROM department WHERE id=%d OR parent_id=%d) ", ds.deptAlias(), deptId, deptId);
         return String.format(" %s='%s' ", ds.userAlias(), username);
     }

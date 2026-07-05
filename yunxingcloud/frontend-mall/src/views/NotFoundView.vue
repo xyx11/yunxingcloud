@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import JdButton from '@/components/JdButton.vue'
 const router = useRouter()
 </script>
 <template>
-  <div style="text-align:center;padding:80px 20px">
-    <div style="font-size:80px;font-weight:800;color:#f10215;margin-bottom:16px;line-height:1">404</div>
-    <h2 style="font-size:20px;color:#333;margin-bottom:8px">页面未找到</h2>
-    <p style="color:#999;font-size:14px;margin-bottom:24px">您访问的页面不存在或已被移除</p>
-    <button @click="router.push('/')"
-            style="padding:10px 36px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
-      返回首页
-    </button>
+  <div class="nf-page">
+    <div class="nf-code">404</div>
+    <h2 class="nf-title">页面未找到</h2>
+    <p class="nf-desc">您访问的页面不存在或已被移除</p>
+    <JdButton size="lg" @click="router.push('/')">返回首页</JdButton>
   </div>
 </template>
+<style scoped>
+.nf-page { text-align: center; padding: 80px 20px; }
+.nf-code { font-size: 80px; font-weight: 800; color: var(--jd-red); margin-bottom: 16px; line-height: 1; }
+.nf-title { font-size: var(--font-xl); color: var(--text-primary); margin-bottom: 8px; }
+.nf-desc { color: var(--text-tertiary); font-size: var(--font-md); margin-bottom: 24px; }
+</style>

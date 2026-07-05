@@ -37,7 +37,7 @@ const { t, locale } = useI18n()
 
 const collapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true' ? true : window.innerWidth < 768)
 const collapsedGroups = ref<Set<string>>(new Set())
-function toggleGroup(key: string) { if (collapsedGroups.value.has(key)) collapsedGroups.value.delete(key); else collapsedGroups.value.add(key) }
+function toggleGroup(key: string | number | undefined) { if (key == null) return; const k = String(key); if (collapsedGroups.value.has(k)) collapsedGroups.value.delete(k); else collapsedGroups.value.add(k) }
 const isMobile = ref(window.innerWidth < 768)
 const mobileOverlay = ref(false)
 const isDark = ref(localStorage.getItem('theme') === 'dark')
@@ -379,31 +379,31 @@ useKeyboard({
   'Ctrl+u': () => router.push('/users'),
   'Ctrl+r': () => router.push('/roles'),
   'Ctrl+m': () => router.push('/menus'),
-  '/': (e: KeyboardEvent) => { if (document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); const inp = document.querySelector<HTMLInputElement>('.search-input input, [placeholder*="搜索"]'); inp?.focus() } },
+  '/': () => { const active = document.activeElement; if (!active || active.tagName !== 'INPUT') { const inp = document.querySelector<HTMLInputElement>('.search-input input, [placeholder*="搜索"]'); inp?.focus() } },
 })
 </script>
 
 <template>
   <AnnouncementBanner />
   <div v-if="isMobile && mobileOverlay" class="mobile-backdrop" @click="mobileOverlay = false" />
-  <n-layout style="min-height: 100vh" :has-sider="true">
+  <n-layout class="app-layout" :has-sider="true">
     <n-layout-sider
       bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
       :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
     >
       <div class="logo">
-        <span v-if="!collapsed" style="font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,#f10215,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">YXCLOUD</span>
-        <span v-else style="font-size:16px;font-weight:800;color:#f10215">YC</span>
-        <span v-if="!collapsed" style="font-size:10px;color:#999;display:block;margin-top:2px">管理后台 v2.4</span>
+        <span v-if="!collapsed" class="logo-text">YXCLOUD</span>
+        <span v-else class="logo-text-collapsed">YC</span>
+        <span v-if="!collapsed" class="logo-version">管理后台 v2.4</span>
       </div>
-      <div class="custom-menu" :class="{ collapsed }" style="overflow-y:auto;max-height:calc(100vh - 110px);padding-right:4px">
+      <div class="custom-menu menu-scroll" :class="{ collapsed }">
         <template v-for="item in menuOptions" :key="item.key">
           <template v-if="item.children">
-            <div v-show="!collapsed" class="menu-group-title" @click="toggleGroup(item.key)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+            <div v-show="!collapsed" class="menu-group-title menu-group-header" @click="toggleGroup(item.key)">
               <span>{{ item.label }}</span>
-              <span style="font-size:10px;transition:transform .2s" :style="{transform: collapsedGroups.has(item.key)?'rotate(-90deg)':'rotate(0)'}">▼</span>
+              <span style="font-size:10px;transition:transform .2s" :style="{transform: collapsedGroups.has(String(item.key))?'rotate(-90deg)':'rotate(0)'}">▼</span>
             </div>
-            <div v-show="!collapsed && !collapsedGroups.has(item.key)">
+            <div v-show="!collapsed && !collapsedGroups.has(String(item.key))">
             <div
               v-for="child in item.children"
               :key="child.key"
@@ -421,75 +421,75 @@ useKeyboard({
     <n-layout>
       <n-layout-header class="header">
         <div class="header-left">
-          <n-button text @click="toggleSidebar" style="font-size:18px;">
+          <n-button text class="sidebar-toggle" @click="toggleSidebar">
             {{ collapsed ? '▶' : '◀' }}
           </n-button>
           <span v-if="collapsed" class="mobile-title">{{ pageTitle }}</span>
           <n-popover trigger="manual" :show="showSearchResults" placement="bottom-start" :width="320" @clickoutside="showSearchResults = false">
             <template #trigger>
               <n-input
-                v-model:value="searchQuery" :placeholder="t('nav.searchPlaceholder')" size="small" clearable style="width:160px"
+                v-model:value="searchQuery" class="search-input-width" :placeholder="t('nav.searchPlaceholder')" size="small" clearable
                 @keyup:enter="globalSearch" @clear="showSearchResults = false" @focus="searchQuery && globalSearch()"
               >
                 <template #prefix>🔍</template>
               </n-input>
             </template>
-            <div v-if="!searchQuery && searchHistory.length && !showSearchResults" style="max-height:200px;overflow-y:auto">
-              <div style="font-size:11px;color:#999;padding:2px 8px">{{ t('nav.recentSearches') }}</div>
-              <div v-for="item in searchHistory" :key="item" class="search-item" @click="searchQuery = item; globalSearch()" style="justify-content:flex-start">{{ item }}</div>
+            <div v-if="!searchQuery && searchHistory.length && !showSearchResults" class="search-history">
+              <div class="search-section-title">{{ t('nav.recentSearches') }}</div>
+              <div v-for="item in searchHistory" :key="item" class="search-item search-item-start" @click="searchQuery = item; globalSearch()">{{ item }}</div>
             </div>
-            <div v-if="hasSearchResults" style="max-height:360px;overflow-y:auto">
-              <div v-if="searchResults.users?.length" style="margin-bottom:8px">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.users') }}</div>
+            <div v-if="hasSearchResults" class="search-results">
+              <div v-if="searchResults.users?.length" class="search-section">
+                <div class="search-section-label">{{ t('nav.users') }}</div>
                 <div v-for="u in searchResults.users" :key="u.id" class="search-item" @click="navigateFromSearch('users', u)">
-                  <span>{{ u.username }}</span><span style="color:#999;font-size:12px">{{ u.nickname }} {{ u.email }}</span>
+                  <span>{{ u.username }}</span><span class="search-item-detail">{{ u.nickname }} {{ u.email }}</span>
                 </div>
               </div>
-              <div v-if="searchResults.roles?.length" style="margin-bottom:8px">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.roles') }}</div>
+              <div v-if="searchResults.roles?.length" class="search-section">
+                <div class="search-section-label">{{ t('nav.roles') }}</div>
                 <div v-for="r in searchResults.roles" :key="r.id" class="search-item" @click="navigateFromSearch('roles', r)">
-                  <span>{{ r.name }}</span><span style="color:#999;font-size:12px">{{ r.code }}</span>
+                  <span>{{ r.name }}</span><span class="search-item-detail">{{ r.code }}</span>
                 </div>
               </div>
-              <div v-if="searchResults.menus?.length" style="margin-bottom:8px">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.menus') }}</div>
+              <div v-if="searchResults.menus?.length" class="search-section">
+                <div class="search-section-label">{{ t('nav.menus') }}</div>
                 <div v-for="m in searchResults.menus" :key="m.id" class="search-item" @click="navigateFromSearch('menus', m)">
-                  <span>{{ m.name }}</span><span style="color:#999;font-size:12px">{{ m.path }}</span>
+                  <span>{{ m.name }}</span><span class="search-item-detail">{{ m.path }}</span>
                 </div>
               </div>
               <div v-if="searchResults.configs?.length">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.config') }}</div>
+                <div class="search-section-label">{{ t('nav.config') }}</div>
                 <div v-for="c in searchResults.configs" :key="c.id" class="search-item" @click="navigateFromSearch('configs', c)">
-                  <span>{{ c.name }}</span><span style="color:#999;font-size:12px">{{ c.config_key }}</span>
+                  <span>{{ c.name }}</span><span class="search-item-detail">{{ c.config_key }}</span>
                 </div>
               </div>
               <div v-if="searchResults.dict?.length">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.dict') }}</div>
+                <div class="search-section-label">{{ t('nav.dict') }}</div>
                 <div v-for="d in searchResults.dict" :key="d.id" class="search-item" @click="navigateFromSearch('dict', d)">
-                  <span>{{ d.dict_name }}</span><span style="color:#999;font-size:12px">{{ d.dict_type }}</span>
+                  <span>{{ d.dict_name }}</span><span class="search-item-detail">{{ d.dict_type }}</span>
                 </div>
               </div>
               <div v-if="searchResults.notices?.length">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.notice') }}</div>
+                <div class="search-section-label">{{ t('nav.notice') }}</div>
                 <div v-for="n in searchResults.notices" :key="n.id" class="search-item" @click="navigateFromSearch('notices', n)">
                   <span>{{ n.notice_title }}</span>
                 </div>
               </div>
               <div v-if="searchResults.posts?.length">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.posts') }}</div>
+                <div class="search-section-label">{{ t('nav.posts') }}</div>
                 <div v-for="p in searchResults.posts" :key="p.id" class="search-item" @click="navigateFromSearch('posts', p)">
-                  <span>{{ p.post_name }}</span><span style="color:#999;font-size:12px">{{ p.post_code }}</span>
+                  <span>{{ p.post_name }}</span><span class="search-item-detail">{{ p.post_code }}</span>
                 </div>
               </div>
               <div v-if="searchResults.departments?.length">
-                <div style="font-size:12px;color:#999;padding:4px 0">{{ t('nav.departments') }}</div>
+                <div class="search-section-label">{{ t('nav.departments') }}</div>
                 <div v-for="d in searchResults.departments" :key="d.id" class="search-item" @click="navigateFromSearch('departments', d)">
                   <span>{{ d.name }}</span>
                 </div>
               </div>
-              <div v-if="searchResults.total" style="font-size:11px;color:#999;text-align:center;padding:4px 0;border-top:1px solid var(--n-border-color,#eee)">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
+              <div v-if="searchResults.total" class="search-result-total">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
             </div>
-            <div v-else style="color:#999;padding:8px;text-align:center">{{ t('nav.noResults') }}</div>
+            <div v-else class="search-no-results">{{ t('nav.noResults') }}</div>
           </n-popover>
           <n-breadcrumb>
             <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
@@ -498,15 +498,15 @@ useKeyboard({
           </n-breadcrumb>
         </div>
         <div class="header-right">
-          <n-button text @click="toggleFullscreen" style="font-size:16px;margin-right:8px;" :title="t('nav.fullscreen')">⛶</n-button>
-          <n-button text size="small" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')" style="margin-right:4px;font-size:12px;">
+          <n-button text class="header-icon-btn" @click="toggleFullscreen" :title="t('nav.fullscreen')">⛶</n-button>
+          <n-button text size="small" class="header-locale-btn" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')">
             {{ locale === 'zh' ? 'EN' : '中' }}
           </n-button>
-          <n-button text @click="toggleTheme" style="font-size:18px;margin-right:4px;">
+          <n-button text class="header-theme-btn" @click="toggleTheme">
             {{ isDark ? '☀️' : '🌙' }}
           </n-button>
-          <n-badge :value="unreadCount" :max="99" style="margin-right:12px;">
-            <n-button text @click="router.push('/messages')" style="font-size:18px;" :title="t('nav.openMessages')">📬</n-button>
+          <n-badge :value="unreadCount" :max="99" class="header-badge">
+            <n-button text class="header-icon-btn" @click="router.push('/messages')" :title="t('nav.openMessages')">📬</n-button>
           </n-badge>
           <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
             <div class="user-area">
@@ -541,7 +541,7 @@ useKeyboard({
       </n-layout-content>
       <n-layout-footer class="footer">
         yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
-        <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" style="color:#999;text-decoration:none">湘ICP备2026022380号-1</a></div>
+        <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" class="footer-icp">湘ICP备2026022380号-1</a></div>
       </n-layout-footer>
     </n-layout>
   </n-layout>
@@ -643,4 +643,42 @@ useKeyboard({
 }
 .menu-icon { font-size: 18px; display: flex; align-items: center; flex-shrink: 0; }
 .menu-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+/* Layout */
+.app-layout { min-height: 100vh; }
+.sidebar-toggle { font-size: 18px; }
+.search-input-width { width: 160px; }
+
+/* Logo */
+.logo-text { font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #f10215, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo-text-collapsed { font-size: 16px; font-weight: 800; color: #f10215; }
+.logo-version { font-size: 10px; color: #999; display: block; margin-top: 2px; }
+
+/* Menu */
+.menu-scroll { overflow-y: auto; max-height: calc(100vh - 110px); padding-right: 4px; }
+.menu-group-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+
+/* Search Results */
+.search-history { max-height: 200px; overflow-y: auto; }
+.search-results { max-height: 360px; overflow-y: auto; }
+.search-section { margin-bottom: 8px; }
+.search-section-title { font-size: 11px; color: #999; padding: 2px 8px; }
+.search-section-label { font-size: 12px; color: #999; padding: 4px 0; }
+.search-item-detail { color: #999; font-size: 12px; }
+.search-item-start { justify-content: flex-start; }
+
+
+/* Search */
+.search-result-total { font-size: 11px; color: #999; text-align: center; padding: 4px 0; border-top: 1px solid var(--n-border-color, #eee); }
+.search-no-results { color: #999; padding: 8px; text-align: center; }
+
+/* Header */
+.header-icon-btn { font-size: 18px; }
+.header-locale-btn { margin-right: 4px; font-size: 12px; }
+.header-theme-btn { font-size: 18px; margin-right: 4px; }
+.header-badge { margin-right: 12px; }
+
+/* Footer */
+.footer-icp { color: #999; text-decoration: none; }
+
 </style>

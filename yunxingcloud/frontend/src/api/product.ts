@@ -3,6 +3,8 @@ import request from '@/api/request'
 export interface Product {
   id: number; name: string; description: string; price: number; stock: number
   imageUrl: string; status: string; createdAt: string
+  categoryId?: number; brandId?: number
+  isHot?: boolean; isNew?: boolean; sales?: number
 }
 
 export function fetchProducts() { return request.get('/api/products') }

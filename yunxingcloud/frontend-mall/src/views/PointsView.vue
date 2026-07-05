@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
+import { formatRelativeTime } from '@/utils/format'
 
 const { t } = useI18n()
 const account = ref<{balance:number,totalEarned:number,totalSpent:number} | null>(null)
@@ -50,7 +51,7 @@ const actions = [
         <div v-for="r in records.slice(0, 20)" :key="r.id" class="pts-row">
           <div class="pts-row-info">
             <div class="pts-row-desc">{{ r.remark || r.type }}</div>
-            <div class="pts-row-date">{{ r.createdAt?.substring(0, 10) }}</div>
+            <div class="pts-row-date">{{ formatRelativeTime(r.createdAt) }}</div>
           </div>
           <span class="pts-row-amount" :class="{ plus: r.amount > 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }}</span>
         </div>

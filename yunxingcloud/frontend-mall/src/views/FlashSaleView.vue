@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
 import request from '@/api/request'
+import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
@@ -49,19 +50,19 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) /
         <div class="flash-info">
           <h3 class="flash-name">{{ s.productName || '秒杀商品' }}</h3>
           <div class="flash-prices">
-            <span class="flash-price">¥{{ (s.flashPrice / 100).toFixed(2) }}</span>
-            <span class="flash-original">¥{{ (s.originalPrice / 100).toFixed(2) }}</span>
+            <span class="flash-price">{{ formatPrice(s.flashPrice / 100, 2) }}</span>
+            <span class="flash-original">{{ formatPrice(s.originalPrice / 100, 2) }}</span>
           </div>
           <div class="progress-bar"><div class="progress-fill" :style="{ width: (100 - stockPct(s)) + '%' }" /></div>
           <JdButton block size="sm" :style="{ opacity: isActive(s) ? '1' : '.5' }" @click.stop="goProduct(s.productId)">
-            {{ isActive(s) ? '立即抢购' : '即将开始' }}
+            {{ isActive(s) ? t('flashSale.buyNow') : t('flashSale.comingSoon') }}
           </JdButton>
         </div>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <p style="font-size:48px;margin-bottom:12px">⚡</p><p>暂无秒杀活动，敬请期待</p>
+      <p style="font-size:48px;margin-bottom:12px">⚡</p><p>{{ t('flashSale.noSales') }}</p>
     </div>
   </div>
 </template>

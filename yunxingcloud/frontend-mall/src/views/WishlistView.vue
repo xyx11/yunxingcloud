@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LazyImage from '@/components/LazyImage.vue'
+import JdButton from '@/components/JdButton.vue'
+import JdEmpty from '@/components/JdEmpty.vue'
 import { getFavorites, removeFavorite } from '@/api/order'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
+import { useCartFly } from '@/composables/useCartFly'
 import { useI18n } from '@/locales'
+import { formatPrice } from '@/utils/format'
 
 const router = useRouter()
 const toast = useToast()
+const { flyToCart } = useCartFly()
 const { t } = useI18n()
 const items = ref<any[]>([])
 const loading = ref(true)
@@ -25,7 +30,7 @@ async function unfav(productId: number) {
 async function quickAdd(e: Event, p: any) {
   e.stopPropagation()
   const pid = p.productId || p.id
-  try { await addToCart({ productId: pid, quantity: 1 }); toast.success('已加入购物车') } catch { toast.error('添加失败') }
+  try { await addToCart(pid, 1); toast.success('已加入购物车'); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
 }
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
@@ -34,33 +39,68 @@ onMounted(load)
 
 <template>
   <div>
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:16px">{{ t('profile.favorites') }}</h2>
-    <div v-if="loading" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-      <div v-for="i in 4" :key="i" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-        <div style="height:180px;background:linear-gradient(90deg,#f0f0f0,#e0e0e0,#f0f0f0);background-size:200% 100%;animation:shimmer 1.5s infinite"></div>
-        <div style="padding:12px"><div style="height:16px;width:70%;background:#f0f0f0;border-radius:4px;margin-bottom:8px"></div></div>
+    <h2 class="page-title">{{ t('wishlist.title') }}</h2>
+
+    <div v-if="loading" class="wl-grid">
+      <div v-for="i in 4" :key="i" class="wl-skel">
+        <div class="wl-skel-img" /><div class="wl-skel-body"><div class="wl-skel-line" /></div>
       </div>
     </div>
-    <div v-else-if="items.length" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-      <div v-for="p in items" :key="p.id" @click="goDetail(p.productId || p.id)"
-           style="background:#fff;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s;box-shadow:0 2px 8px rgba(0,0,0,.06);position:relative"
-           @mouseenter="(e:any) => e.target.style.transform='translateY(-4px)'" @mouseleave="(e:any) => e.target.style.transform=''">
-        <button @click.stop="unfav(p.productId || p.id)" style="position:absolute;top:8px;right:8px;z-index:2;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.9);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s"
-                @mouseenter="(e:any) => e.target.style.transform='scale(1.2)'" @mouseleave="(e:any) => e.target.style.transform=''">❤️</button>
+
+    <div v-else-if="items.length" class="wl-grid">
+      <div v-for="p in items" :key="p.id" class="wl-card" @click="goDetail(p.productId || p.id)">
+        <button class="wl-unfav" @click.stop="unfav(p.productId || p.id)" aria-label="取消收藏">❤️</button>
         <LazyImage :src="p.imageUrl || ''" :alt="p.productName || p.name" height="180px" />
-        <div style="padding:12px">
-          <h4 style="font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.productName || p.name || '商品' }}</h4>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="color:#f10215;font-size:16px;font-weight:700">¥{{ ((p.price || 0) / 100).toFixed(2) }}</span>
-            <button @click.stop="(e: Event) => quickAdd(e, p)" style="width:28px;height:28px;border-radius:50%;border:2px solid #f10215;background:#fff;color:#f10215;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+        <div class="wl-info">
+          <h4 class="wl-name">{{ p.productName || p.name || '商品' }}</h4>
+          <div class="wl-bottom">
+            <span class="wl-price">{{ formatPrice((p.price || 0) / 100, 2) }}</span>
+            <button class="wl-add" @click.stop="(e: Event) => quickAdd(e, p)" aria-label="加购">+</button>
           </div>
         </div>
       </div>
     </div>
-    <div v-else style="background:#fff;border-radius:12px;padding:60px;text-align:center;color:#999;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-      <p style="font-size:48px;margin-bottom:16px">💝</p><p style="font-size:16px">{{ t('profile.noFavorites') }}</p>
-      <button @click="router.push('/')" style="margin-top:16px;padding:8px 24px;background:#f10215;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">{{ t('common.goShopping') }}</button>
-    </div>
+
+    <JdEmpty v-else icon="💝" :title="t('wishlist.noItems')">
+      <JdButton @click="router.push('/')">{{ t('wishlist.goBrowse') }}</JdButton>
+    </JdEmpty>
   </div>
 </template>
-<style scoped>@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }</style>
+
+<style scoped>
+.page-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-lg); }
+.wl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.wl-skel { background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+.wl-skel-img { height: 180px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+.wl-skel-body { padding: 12px; }
+.wl-skel-line { height: 16px; width: 70%; background: var(--border-light); border-radius: var(--radius-sm); }
+
+.wl-card {
+  background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden;
+  cursor: pointer; transition: transform var(--transition); box-shadow: var(--shadow-sm); position: relative;
+}
+.wl-card:hover { transform: translateY(-4px); }
+.wl-unfav {
+  position: absolute; top: 8px; right: 8px; z-index: 2; width: 28px; height: 28px;
+  border-radius: 50%; border: none; background: rgba(255,255,255,.9); cursor: pointer;
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+  transition: transform var(--transition-fast);
+}
+.wl-unfav:hover { transform: scale(1.2); }
+
+.wl-info { padding: 12px; }
+.wl-name { font-size: var(--font-md); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-bottom { display: flex; align-items: center; justify-content: space-between; }
+.wl-price { color: var(--jd-red); font-size: 16px; font-weight: 700; }
+.wl-add {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--jd-red);
+  background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast);
+}
+.wl-add:hover { background: var(--jd-red); color: #fff; }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) { .wl-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>

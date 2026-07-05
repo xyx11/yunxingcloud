@@ -51,7 +51,7 @@ public class AuditEventListener {
                         info.setOs(parseOs(ua));
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
 
             loginInfoRepository.save(info);
         } catch (Exception e) {

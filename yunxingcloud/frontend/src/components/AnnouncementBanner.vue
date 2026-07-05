@@ -44,7 +44,7 @@ onBeforeUnmount(() => clearInterval(timer))
 
 <template>
   <div v-if="announcement && !dismissed" :class="['banner', bannerType]">
-    <span class="banner-text" @click="showPopup = true" style="cursor:pointer">📢 {{ announcement }}</span>
+    <span class="banner-text banner-clickable" @click="showPopup = true">📢 {{ announcement }}</span>
     <button @click="dismiss" class="close-btn">✕</button>
   </div>
   <n-modal v-model:show="showPopup" preset="card" :title="announcement" style="width:500px">
@@ -66,4 +66,9 @@ onBeforeUnmount(() => clearInterval(timer))
 .close-btn { background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:2px 6px;font-size:12px;flex-shrink:0 }
 .close-btn:hover { background:rgba(255,255,255,.35) }
 @keyframes slideDown { from { transform:translateY(-100%) } to { transform:translateY(0) } }
+</style>
+<style scoped>
+.banner-clickable { cursor: pointer; }
+.banner-text-wrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.banner-popup-actions { margin-top: 4px; }
 </style>

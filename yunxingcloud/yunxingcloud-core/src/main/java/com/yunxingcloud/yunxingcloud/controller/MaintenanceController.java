@@ -130,7 +130,7 @@ public class MaintenanceController {
                 }
             }
             list.sort((a, b) -> b.get("filename").toString().compareTo(a.get("filename").toString()));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
         return ResponseEntity.ok(list);
     }
 

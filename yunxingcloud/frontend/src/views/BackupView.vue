@@ -64,7 +64,7 @@ onMounted(loadFiles)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('backup.title')">
       <template #header-extra>
         <n-button type="primary" size="small" :loading="backing" @click="doBackup">

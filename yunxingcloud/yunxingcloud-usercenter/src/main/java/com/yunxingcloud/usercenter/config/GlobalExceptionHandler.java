@@ -1,6 +1,7 @@
 package com.yunxingcloud.usercenter.config;
 
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.yunxingcloud.common.core.BaseExceptionHandler;
 import com.yunxingcloud.common.core.I18nService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends BaseExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private final I18nService i18n;
@@ -38,11 +39,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBlock(BlockException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("success", false, "message", i18n.msg("ratelimit.too_many_requests")));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

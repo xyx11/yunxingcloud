@@ -152,12 +152,12 @@ onMounted(loadMenus)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.menus')">
       <template #header-extra>
         <n-space><n-button v-if="checkedRowKeys.length" type="error" size="small" @click="batchDelete">{{ t('common.batchDelete') }} ({{ checkedRowKeys.length }})</n-button><n-button type="primary" size="small" @click="addMenu"><template #icon>＋</template>{{ t('common.add') }}</n-button></n-space>
       </template>
-      <n-space style="margin-bottom:12px"><n-button size="small" @click="loadMenus" secondary>{{ t('common.refresh') }}</n-button></n-space>
+      <n-space class="mb-12"><n-button size="small" @click="loadMenus" secondary>{{ t('common.refresh') }}</n-button></n-space>
       <n-data-table
         :columns="columns" :data="menus" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" v-model:checked-row-keys="checkedRowKeys"
         default-expand-all :row-key="(row: Menu) => row.id" :children-key="'children'"

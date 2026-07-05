@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatPrice } from '@/utils/format'
 import { NCard, NDataTable, NButton, NModal, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NInputNumber, NSpace, NTag, NPopconfirm, NSelect, NUpload, NImage, NDropdown, NTabs, NTabPane, NDivider } from 'naive-ui'
 import request from '@/api/request'
 import type { DataTableColumns } from 'naive-ui'
@@ -78,7 +79,7 @@ const columns = computed<DataTableColumns<Product>>(() => [
   },
   {
     title: '销量', key: 'sales', width: 70,
-    render(r: Product) { return h('span', { style: { fontWeight: '600', color: (r.sales || 0) > 1000 ? '#d03050' : '#333' } }, r.sales > 9999 ? (r.sales/10000).toFixed(1) + '万' : String(r.sales || 0)) }
+    render(r: Product) { const s = r.sales || 0; return h('span', { style: { fontWeight: '600', color: s > 1000 ? '#d03050' : '#333' } }, s > 9999 ? (s/10000).toFixed(1) + '万' : String(s)) }
   },
   { title: t('product.status'), key: 'status', width: 70, render(r: Product) { return h(NTag, { size: 'small', type: r.status === '0' ? 'success' : 'default' }, { default: () => r.status === '0' ? t('product.statuses.0') : t('product.statuses.1') }) } },
   {
@@ -114,7 +115,7 @@ async function save() {
   finally { saving.value = false }
 }
 async function del(id: number) { try { await deleteProduct(id); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.saveFailed')) } }
-function exportExcel() { const data = items.value.map((p:any) => ({ 名称:p.name, 价格:(p.price/100).toFixed(2), 库存:p.stock, 销量:p.sales||0, 状态:p.status==='0'?'上架':'下架', 创建时间:p.createdAt?.substring(0,10) })); import('xlsx').then(X => { const ws = X.utils.json_to_sheet(data); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, '商品'); X.writeFile(wb, 'products.xlsx') }) }
+function exportExcel() { const data = items.value.map((p:any) => ({ 名称:p.name, 价格:formatPrice(p.price/100, 2), 库存:p.stock, 销量:p.sales||0, 状态:p.status==='0'?'上架':'下架', 创建时间:p.createdAt?.substring(0,10) })); import('xlsx').then(X => { const ws = X.utils.json_to_sheet(data); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, '商品'); X.writeFile(wb, 'products.xlsx') }) }
 
 // 批量操作
 const batchOpts = [
@@ -153,12 +154,12 @@ onMounted(() => {
     <n-space vertical>
       <n-space justify="space-between">
         <n-space>
-          <n-input v-model:value="searchKeyword" :placeholder="t('product.searchPlaceholder')" clearable style="width:160px" size="small" />
-          <n-select v-model:value="filterCategoryId" :options="categoryOpts" placeholder="分类" clearable size="small" style="width:100px" />
-          <n-select v-model:value="filterBrandId" :options="brandOpts" placeholder="品牌" clearable size="small" style="width:100px" />
-          <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:t('product.statuses.0'),value:'0'},{label:t('product.statuses.1'),value:'1'}]" size="small" style="width:90px" />
-          <n-input-number v-model:value="filterPriceMin" placeholder="最低¥" :min="0" size="small" style="width:80px" />
-          <n-input-number v-model:value="filterPriceMax" placeholder="最高¥" :min="0" size="small" style="width:80px" />
+          <n-input v-model:value="searchKeyword" :placeholder="t('product.searchPlaceholder')" clearable class="w-160" size="small" />
+          <n-select v-model:value="filterCategoryId" :options="categoryOpts" :placeholder="t('product.category')" clearable size="small" class="w-100" />
+          <n-select v-model:value="filterBrandId" :options="brandOpts" :placeholder="t('product.brand')" clearable size="small" class="w-100" />
+          <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:t('product.statuses.0'),value:'0'},{label:t('product.statuses.1'),value:'1'}]" size="small" class="w-90" />
+          <n-input-number v-model:value="filterPriceMin" :placeholder="t('order.minAmount')" :min="0" size="small" class="w-80" />
+          <n-input-number v-model:value="filterPriceMax" placeholder="最高¥" :min="0" size="small" class="w-80" />
           <n-dropdown trigger="click" :options="batchOpts" @select="openBatch">
             <n-button :disabled="!checkedRowKeys.length" secondary size="small">批量 ({{ checkedRowKeys.length }})</n-button>
           </n-dropdown>

@@ -1,3 +1,7 @@
+app:
+  elasticsearch:
+    enabled: false
+
 spring:
   cloud:
     nacos:

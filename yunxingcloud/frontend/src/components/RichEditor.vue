@@ -59,3 +59,9 @@ onBeforeUnmount(() => {
     <div ref="editorBox" style="height:300px;overflow-y:auto"></div>
   </div>
 </template>
+
+<style scoped>
+.re-wrap { display: flex; flex-direction: column; gap: 8px; }
+.re-editor { border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; z-index: 1; }
+.re-content { height: 300px; }
+</style>

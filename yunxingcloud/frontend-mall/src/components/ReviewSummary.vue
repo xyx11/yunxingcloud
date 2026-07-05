@@ -16,20 +16,34 @@ const distribution = computed(() => {
 </script>
 
 <template>
-  <div v-if="total" style="display:flex;gap:20px;align-items:center;padding:16px 0;border-bottom:1px solid #f0f0f0;margin-bottom:16px">
-    <div style="text-align:center;flex-shrink:0">
-      <div style="font-size:36px;font-weight:700;color:#e4393c;line-height:1">{{ avg }}</div>
-      <div style="color:#f90;font-size:14px">{{ '★'.repeat(Math.round(Number(avg))) }}</div>
-      <div style="color:#999;font-size:11px">{{ t('product.reviewCount', { n: total }) }}</div>
+  <div v-if="total" class="rs-wrap">
+    <div class="rs-score">
+      <div class="rs-avg">{{ avg }}</div>
+      <div class="rs-stars">{{ '★'.repeat(Math.round(Number(avg))) }}</div>
+      <div class="rs-total">{{ t('product.reviewCount', { n: total }) }}</div>
     </div>
-    <div style="flex:1">
-      <div v-for="[star, count] in distribution" :key="star" style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-        <span style="font-size:11px;color:#666;width:24px;text-align:right">{{ t('product.starLabel', { n: star }) }}</span>
-        <div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
-          <div style="height:100%;background:linear-gradient(90deg,#f90,#ffc107);border-radius:3px;transition:width .6s" :style="{width:(count/Math.max(1,total)*100)+'%'}"></div>
+    <div class="rs-bars">
+      <div v-for="[star, count] in distribution" :key="star" class="rs-bar-row">
+        <span class="rs-bar-label">{{ t('product.starLabel', { n: star }) }}</span>
+        <div class="rs-bar-track">
+          <div class="rs-bar-fill" :style="{ width: (count / Math.max(1, total) * 100) + '%' }" />
         </div>
-        <span style="font-size:10px;color:#999;width:24px">{{ count }}</span>
+        <span class="rs-bar-count">{{ count }}</span>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.rs-wrap { display: flex; gap: 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-light); margin-bottom: 16px; }
+.rs-score { text-align: center; flex-shrink: 0; }
+.rs-avg { font-size: 36px; font-weight: 700; color: var(--jd-red); line-height: 1; }
+.rs-stars { color: #f90; font-size: var(--font-md); }
+.rs-total { color: var(--text-tertiary); font-size: 11px; }
+.rs-bars { flex: 1; }
+.rs-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.rs-bar-label { font-size: 11px; color: var(--text-secondary); width: 32px; text-align: right; }
+.rs-bar-track { flex: 1; height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+.rs-bar-fill { height: 100%; background: linear-gradient(90deg, #f90, #ffc107); border-radius: 3px; transition: width .6s; }
+.rs-bar-count { font-size: 10px; color: var(--text-tertiary); width: 20px; }
+</style>

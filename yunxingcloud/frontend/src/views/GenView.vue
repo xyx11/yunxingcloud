@@ -117,7 +117,7 @@ onMounted(loadTables)
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.generator')">
       <template #header-extra>
         <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>{{ t('common.refresh') }}</n-button>
@@ -138,7 +138,7 @@ onMounted(loadTables)
 
       <!-- 代码预览弹窗 -->
       <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="max-width:800px;width:95%">
-        <n-space vertical style="margin-bottom:12px">
+        <n-space vertical class="mb-12">
           <n-space justify="space-between">
             <n-space>
               <n-button

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { NCard, NDataTable, NButton, NSpace, NImage, NPopconfirm, NInput, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import request from '@/api/request'
 
 const message = useMessage()
+const { t } = useI18n()
 const loading = ref(false)
 const files = ref<any[]>([])
 const checkedKeys = ref<string[]>([])
@@ -28,27 +30,26 @@ const columns: DataTableColumns<any> = [
   { title: '大小', key: 'size', width: 90, render(r: any) { return formatSize(r.size) } },
   { title: '修改时间', key: 'modified', width: 180, render(r: any) { return r.modified?.substring(0, 19).replace('T', ' ') } },
   { title: 'URL', key: 'url', width: 200, ellipsis: { tooltip: true }, render(r: any) { return h(NButton, { size: 'tiny', text: true, onClick: () => { navigator.clipboard.writeText(r.url); message.success('已复制') } }, { default: () => r.url }) } },
-  { title: '操作', key: 'act', width: 80, render(r: any) { return h(NPopconfirm, { onPositiveClick: () => delFile(r.filename) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '删除' }), default: () => '确认删除？' }) } },
+  { title: t('common.actions'), key: 'act', width: 80, render(r: any) { return h(NPopconfirm, { onPositiveClick: () => delFile(r.filename) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') }) } },
 ]
 
 async function load() { loading.value = true; try { const r = await request.get('/api/files/list'); files.value = r.data || [] } finally { loading.value = false } }
-async function delFile(name: string) { try { await request.delete(`/api/files/${name}`); message.success('已删除'); load() } catch { message.error('删除失败') } }
+async function delFile(name: string) { try { await request.delete(`/api/files/${name}`); message.success(t('common.deleted')); load() } catch { message.error(t('common.deleteFailed')) } }
 async function batchDel() {
   if (!checkedKeys.value.length) return
   for (const name of checkedKeys.value) {
-    try { await request.delete(`/api/files/${name}`) } catch {}
+    try { await request.delete(`/api/files/${name}`) } catch(e) { console.error(e) }
   }
   checkedKeys.value = []; message.success(`已删除`); load()
 }
 
 onMounted(load)
-import { computed } from 'vue'
 </script>
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card title="媒体库">
       <template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
-      <n-space style="margin-bottom:12px" justify="space-between">
+      <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="searchKeyword" placeholder="搜索文件..." size="small" clearable style="width:200px" />
           <n-button v-if="checkedKeys.length" type="error" size="small" @click="batchDel">批量删除 ({{ checkedKeys.length }})</n-button>

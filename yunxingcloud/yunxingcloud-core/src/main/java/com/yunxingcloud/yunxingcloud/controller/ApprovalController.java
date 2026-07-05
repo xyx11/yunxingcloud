@@ -1,7 +1,7 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.entity.Approval;
-import com.yunxingcloud.yunxingcloud.repository.ApprovalRepository;
+import com.yunxingcloud.yunxingcloud.service.ApprovalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,43 +14,41 @@ import java.util.Map;
 @RequestMapping("/api/approval")
 public class ApprovalController {
 
-    private final ApprovalRepository repo;
+    private final ApprovalService approvalService;
 
-    public ApprovalController(ApprovalRepository repo) { this.repo = repo; }
+    public ApprovalController(ApprovalService approvalService) { this.approvalService = approvalService; }
+
+    private String currentUser() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
 
     @GetMapping
     public ResponseEntity<List<Approval>> list() {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(repo.findByApplicantOrderByCreatedAtDesc(user));
+        return ResponseEntity.ok(approvalService.list(currentUser()));
     }
 
     @GetMapping("/pending")
     public ResponseEntity<List<Approval>> pending() {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(repo.findByApproverOrderByCreatedAtDesc(user));
+        return ResponseEntity.ok(approvalService.pending(currentUser()));
     }
 
     @PostMapping
     public ResponseEntity<Approval> create(@RequestBody Approval approval) {
-        approval.setApplicant(SecurityContextHolder.getContext().getAuthentication().getName());
-        return ResponseEntity.ok(repo.save(approval));
+        approval.setApplicant(currentUser());
+        return ResponseEntity.ok(approvalService.create(approval));
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/approve")
     public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return repo.findById(id).map(a -> {
-            a.setStatus("1"); a.setRemark(body.getOrDefault("remark", "已通过")); repo.save(a);
-            return ResponseEntity.ok(Map.of("success", (Object) true));
-        }).orElse(ResponseEntity.notFound().build());
+        return approvalService.approve(id, body.get("remark"))
+                .map(a -> ResponseEntity.ok(Map.of("success", (Object) true)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/reject")
     public ResponseEntity<Map<String, Object>> reject(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return repo.findById(id).map(a -> {
-            a.setStatus("2"); a.setRemark(body.getOrDefault("remark", "已驳回")); repo.save(a);
-            return ResponseEntity.ok(Map.of("success", (Object) true));
-        }).orElse(ResponseEntity.notFound().build());
+        return approvalService.reject(id, body.get("remark"))
+                .map(a -> ResponseEntity.ok(Map.of("success", (Object) true)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatPrice } from '@/utils/format'
 const { t } = useI18n()
 import { NCard, NForm, NFormItem, NInputNumber, NInput, NButton, NSpace, NTag, NDataTable } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -17,9 +18,9 @@ const batchCount = ref(10); const batchAmount = ref(10000)
 const statusLabel: Record<string,string> = { '0':'未激活', '1':'已激活', '2':'已用完', '3':'已过期' }
 
 const columns: DataTableColumns<any> = [
-  { title: '卡号', key: 'cardNo', width: 200 },
-  { title: '面额', key: 'amount', width: 80, render(r:any){ return '¥'+(r.amount/100).toFixed(2) } },
-  { title: '余额', key: 'balance', width: 80, render(r:any){ return '¥'+(r.balance/100).toFixed(2) } },
+  { title: t('giftCard.cardNo'), key: 'cardNo', width: 200 },
+  { title: t('giftCard.amount'), key: 'amount', width: 80, render(r:any){ return formatPrice(r.amount/100, 2) } },
+  { title: t('giftCard.balance'), key: 'balance', width: 80, render(r:any){ return formatPrice(r.balance/100, 2) } },
   { title: '状态', key:'status', width:80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'?'success':'default'},{default:()=>statusLabel[r.status]}) } },
   { title: '绑定用户', key:'owner', width:100, render(r:any){ return r.owner||'-' } },
 ]
@@ -36,7 +37,7 @@ async function batchCreate() {
     notify.success(`已生成 ${batchCount.value} 张礼品卡`); loadCards()
   } finally { creating.value = false }
 }
-async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch {} }
+async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.error(e) } }
 onMounted(loadCards)
 </script>
 <template>
@@ -45,7 +46,7 @@ onMounted(loadCards)
       <n-space><n-input v-model:value="cardNo" placeholder="输入卡号查询" style="width:240px" /><n-button type="primary" @click="query">查询</n-button></n-space>
       <div v-if="queryResult" style="background:#f5f5f5;padding:16px;border-radius:8px">
         <p><b>卡号:</b> {{ queryResult.cardNo }}</p>
-        <p><b>面额:</b> ¥{{ (queryResult.amount/100).toFixed(2) }} | <b>余额:</b> ¥{{ (queryResult.balance/100).toFixed(2) }}</p>
+        <p><b>面额:</b> {{ formatPrice(queryResult.amount/100, 2) }} | <b>余额:</b> {{ formatPrice(queryResult.balance/100, 2) }}</p>
         <p><b>状态:</b> <n-tag size="small" :type="queryResult.status==='1'?'success':'default'">{{ statusLabel[queryResult.status] }}</n-tag></p>
         <p v-if="queryResult.owner"><b>绑定用户:</b> {{ queryResult.owner }}</p>
       </div>

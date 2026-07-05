@@ -6,8 +6,10 @@ import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
 import LazyImage from '@/components/LazyImage.vue'
+import { formatPrice } from '@/utils/format'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import type { OrderHead } from '@/types'
 
 const route = useRoute()
@@ -22,6 +24,7 @@ const showReview = ref(false)
 const loading = ref(true)
 const receiving = ref(false)
 const reviewing = ref(false)
+const confirmShow = ref(false)
 
 const statusMap: Record<string, { label: string; bg: string }> = {
   '0': { label: t('orderDetail.statusPending'), bg: '#fff3cd' },
@@ -39,11 +42,12 @@ onMounted(async () => {
 })
 
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
-async function cancel() { if (!confirm('确认取消订单？')) return; try { await cancelOrder(order.value.id); order.value.status = '4'; toast.info(t('orderDetail.statusCanceled')) } catch {} }
+async function cancel() { confirmShow.value = true }
+async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as any; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch {} }
 
 async function confirmReceive() {
-  if (receiving.value) return; receiving.value = true
-  try { await request.put(`/orders/${order.value.id}/status`, { status: '3' }); order.value.status = '3'; toast.success('已确认收货') } catch { toast.error('操作失败') }
+  if (receiving.value || !order.value) return; receiving.value = true
+  try { await request.put(`/orders/${order.value.id}/status`, { status: 3 as any }); order.value.status = 3 as any; toast.success(t('toast.received')) } catch { toast.error(t('toast.updateFailed')) }
   finally { receiving.value = false }
 }
 
@@ -51,12 +55,15 @@ function openReview(productId: number) { reviewForm.value = { productId, rating:
 
 async function submitReview() {
   if (reviewing.value) return; reviewing.value = true
-  try { await request.post(`/products/${reviewForm.value.productId}/reviews`, reviewForm.value); toast.success('评价成功'); showReview.value = false } catch { toast.error('评价失败') }
+  try { await request.post(`/products/${reviewForm.value.productId}/reviews`, reviewForm.value); toast.success(t('toast.reviewSuccess')); showReview.value = false } catch { toast.error(t('toast.reviewFail')) }
   finally { reviewing.value = false }
 }
 </script>
 
 <template>
+  <div class="back-nav">
+    <button class="back-btn" @click="router.push('/orders')">&larr; 返回订单列表</button>
+  </div>
   <div v-if="loading" class="order-page">
     <div class="card">
       <div v-for="i in 4" :key="i" class="sk-line" :style="{ width: (100 - i * 15) + '%' }" />
@@ -75,14 +82,14 @@ async function submitReview() {
 
       <!-- Steps -->
       <div class="steps">
-        <div v-for="(s, i) in ['0', '1', '2', '3']" :key="s" class="step" :class="{ done: parseInt(order.status) >= parseInt(s) }">
-          <div class="step-dot" :class="{ active: parseInt(order.status) >= parseInt(s) }">
-            {{ parseInt(order.status) >= parseInt(s) ? '✓' : i + 1 }}
+        <div v-for="(s, i) in ['0', '1', '2', '3']" :key="s" class="step" :class="{ done: Number(order.status) >= Number(s) }">
+          <div class="step-dot" :class="{ active: Number(order.status) >= Number(s) }">
+            {{ Number(order.status) >= Number(s) ? '✓' : i + 1 }}
           </div>
-          <span class="step-label" :class="{ active: parseInt(order.status) >= parseInt(s) }">{{ stepLabels[i] }}</span>
+          <span class="step-label" :class="{ active: Number(order.status) >= Number(s) }">{{ stepLabels[i] }}</span>
         </div>
         <div class="step-line">
-          <div class="step-line-fill" :style="{ width: ((parseInt(order.status) / 3) * 100) + '%' }" />
+          <div class="step-line-fill" :style="{ width: ((Number(order.status) / 3) * 100) + '%' }" />
         </div>
       </div>
     </div>
@@ -113,14 +120,14 @@ async function submitReview() {
         <LazyImage :src="l.imageUrl || l.productImage || ''" alt="" height="60px" width="60px" rounded="6px" />
         <div class="item-info">
           <div class="item-name">{{ l.productName }}</div>
-          <div class="item-meta">¥{{ (l.price / 100).toFixed(2) }} × {{ l.quantity }}</div>
+          <div class="item-meta">{{ formatPrice(l.price / 100, 2) }} × {{ l.quantity }}</div>
         </div>
-        <span class="item-total">¥{{ (l.price * l.quantity / 100).toFixed(2) }}</span>
+        <span class="item-total">{{ formatPrice(l.price * l.quantity / 100, 2) }}</span>
         <JdButton v-if="order.status==='3'" type="outline" size="sm" @click="openReview(l.productId)">{{ t('orderDetail.review') }}</JdButton>
       </div>
       <div class="order-total">
         <span class="total-label">{{ t('orderDetail.total') }}：</span>
-        <span class="total-price">¥{{ (order.totalAmount / 100).toFixed(2) }}</span>
+        <span class="total-price">{{ formatPrice(order.totalAmount / 100, 2) }}</span>
       </div>
     </div>
 
@@ -128,31 +135,35 @@ async function submitReview() {
     <div class="action-row">
       <JdButton v-if="order.status==='0'" type="ghost" @click="cancel">{{ t('orderDetail.cancelOrder') }}</JdButton>
       <JdButton v-if="order.status==='0'" @click="pay">{{ t('orderDetail.toPay') }}</JdButton>
-      <JdButton v-if="order.status==='2'" :loading="receiving" @click="confirmReceive">确认收货</JdButton>
-      <JdButton v-if="order.status==='3'" type="outline" @click="router.push('/after-sale?orderId=' + order.id)">申请售后</JdButton>
+      <JdButton v-if="order.status==='2'" :loading="receiving" @click="confirmReceive">{{ t('orderDetail.confirmReceive') }}</JdButton>
+      <JdButton v-if="order.status==='3'" type="outline" @click="router.push('/after-sale?orderId=' + order.id)">{{ t('afterSale.title') }}</JdButton>
     </div>
 
     <!-- Review Modal -->
     <div v-if="showReview" class="modal-overlay" @click.self="showReview=false">
       <div class="review-modal">
-        <h3 class="review-title">商品评价</h3>
+        <h3 class="review-title">{{ t('rating.title') }}</h3>
         <div class="rating-stars">
           <span class="rating-label">评分</span>
           <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= reviewForm.rating }" @click="reviewForm.rating = i">
             {{ i <= reviewForm.rating ? '★' : '☆' }}
           </span>
         </div>
-        <textarea v-model="reviewForm.content" placeholder="分享你的使用体验..." class="review-textarea" />
+        <textarea v-model="reviewForm.content" :placeholder="t('rating.placeholder')" class="review-textarea" />
         <div class="review-actions">
-          <JdButton type="ghost" @click="showReview = false">取消</JdButton>
-          <JdButton @click="submitReview">提交评价</JdButton>
+          <JdButton type="ghost" @click="showReview = false">{{ t('common.cancel') }}</JdButton>
+          <JdButton @click="submitReview">{{ t('rating.submitReview') }}</JdButton>
         </div>
       </div>
     </div>
+    <ConfirmDialog :show="confirmShow" title="确认取消" :message="t('order.cancelOrder') + '?'" @confirm="doCancel" @cancel="confirmShow = false" />
   </div>
 </template>
 
 <style scoped>
+.back-nav { max-width: 800px; margin: 0 auto var(--space-lg); }
+.back-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: var(--font-md); padding: 0; }
+.back-btn:hover { color: var(--jd-red); }
 .order-page { max-width: 800px; margin: 0 auto; }
 .card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-lg); }
 .card-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-md); }

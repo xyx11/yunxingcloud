@@ -111,3 +111,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .label { font-size: 14px; font-weight: 500; }
 .empty { text-align: center; padding: 24px; color: #999; font-size: 13px; }
 </style>
+
+<style scoped>
+.cp-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 6px; cursor: pointer; transition: background .15s; margin: 0 8px; }
+.cp-desc { font-size: 12px; color: #999; }
+.cp-hint { font-size: 10px; color: #999; }
+</style>

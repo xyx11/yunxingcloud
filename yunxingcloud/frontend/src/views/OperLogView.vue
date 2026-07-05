@@ -116,9 +116,9 @@ async function loadLogs() {
         chartOption.value.series[0].data = statsRes.data.bizTypeDist.map((d:any)=>d.value)
         showChart.value = true
       }
-    } catch {/* ignore */}
+    } catch { /* ignore */ }
     total.value = res.data.total || 0
-  } catch {/* ignore */}
+  } catch { /* ignore */ }
   loading.value = false
 }
 
@@ -190,18 +190,18 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('nav.operlog')">
       <template #header-extra>
-        <n-select v-model:value="filterType" :options="typeOptions" size="small" style="width:120px;margin-right:8px" @update:value="searchLogs" />
-        <n-input v-model:value="filterUser" :placeholder="t('operlog.operator')" size="small" style="width:100px;margin-right:4px" clearable @keyup:enter="searchLogs" @clear="searchLogs" />
-        <n-select v-model:value="filterMethod" :options="[{label:t('operlog.methodLabel'),value:''},{label:'GET',value:'GET'},{label:'POST',value:'POST'},{label:'PUT',value:'PUT'},{label:'DELETE',value:'DELETE'}]" size="small" style="width:80px;margin-right:4px" @update:value="searchLogs" />
-        <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" style="width:240px;margin-right:4px" clearable @update:value="searchLogs" />
-        <n-button size="small" @click="searchLogs" style="margin-right:8px">{{ t('common.search') }}</n-button>
-        <n-button size="small" @click="toggleAutoRefresh" :type="autoRefresh ? 'success' : 'default'" style="margin-right:8px">{{ autoRefresh ? t('operlog.autoRefreshing') : t('operlog.autoRefresh') }}</n-button>
-        <n-button size="small" :loading="exporting" @click="exportLogs" style="margin-right:8px">{{ t('operlog.exportCsv') }}</n-button>
+        <n-select v-model:value="filterType" :options="typeOptions" size="small" class="op-filter-type" @update:value="searchLogs" />
+        <n-input v-model:value="filterUser" :placeholder="t('operlog.operator')" size="small" class="op-filter-input" clearable @keyup:enter="searchLogs" @clear="searchLogs" />
+        <n-select v-model:value="filterMethod" :options="[{label:t('operlog.methodLabel'),value:''},{label:'GET',value:'GET'},{label:'POST',value:'POST'},{label:'PUT',value:'PUT'},{label:'DELETE',value:'DELETE'}]" size="small" class="op-filter-method" @update:value="searchLogs" />
+        <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" class="op-filter-date" clearable @update:value="searchLogs" />
+        <n-button size="small" @click="searchLogs" class="op-mr-8">{{ t('common.search') }}</n-button>
+        <n-button size="small" @click="toggleAutoRefresh" :type="autoRefresh ? 'success' : 'default'" class="op-mr-8">{{ autoRefresh ? t('operlog.autoRefreshing') : t('operlog.autoRefresh') }}</n-button>
+        <n-button size="small" :loading="exporting" @click="exportLogs" class="op-mr-8">{{ t('operlog.exportCsv') }}</n-button>
         <n-popconfirm @positive-click="batchDelete" v-if="checkedKeys.length > 0">
-          <template #trigger><n-button type="warning" size="small" style="margin-right:8px">{{ t('operlog.batchDelete') }}({{ checkedKeys.length }})</n-button></template>
+          <template #trigger><n-button type="warning" size="small" class="op-mr-8">{{ t('operlog.batchDelete') }}({{ checkedKeys.length }})</n-button></template>
           {{ t('operlog.confirmDeleteSelected', { n: checkedKeys.length }) }}
         </n-popconfirm>
         <n-popconfirm @positive-click="cleanLogs">
@@ -209,7 +209,7 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
           {{ t('operlog.confirmCleanAll') }}
         </n-popconfirm>
       </template>
-      <v-chart v-if="showChart" :option="chartOption" style="height:180px;margin-bottom:12px" autoresize />
+      <v-chart v-if="showChart" :option="chartOption" class="op-chart" autoresize />
       <n-data-table
         :columns="columns" :data="logs" :loading="loading" size="small" :bordered="false"
         :pagination="{ page: page, pageSize: pageSize, itemCount: total, pageSizes: [10,20,50,100], prefix: ({ itemCount }) => t('operlog.totalItems', { n: itemCount }) }"
@@ -220,8 +220,8 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
         :checked-row-keys="checkedKeys" @update:checked-row-keys="handleCheck"
       />
 
-      <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" style="max-width:640px;width:95%">
-        <div v-if="detailLog" style="max-height:500px; overflow-y:auto">
+      <n-modal v-model:show="detailVisible" :title="t('operlog.detailTitle')" class="crud-modal">
+        <div v-if="detailLog" class="op-detail-scroll">
           <p><strong>{{ t('operlog.title') }}：</strong>{{ detailLog.title }}</p>
           <p><strong>{{ t('operlog.bizType') }}：</strong>{{ businessTypeMap[detailLog.businessType] || detailLog.businessType }}</p>
           <p><strong>{{ t('operlog.method') }}：</strong>{{ detailLog.method }}</p>
@@ -234,14 +234,26 @@ onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
           <p v-if="detailLog.errorMsg"><strong>{{ t('operlog.errorMsg') }}：</strong>{{ detailLog.errorMsg }}</p>
           <details>
             <summary><strong>{{ t('operlog.requestParam') }}</strong></summary>
-            <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.operParam }}</pre>
+            <pre class="op-code-block">{{ detailLog.operParam }}</pre>
           </details>
-          <details style="margin-top:8px">
+          <details class="mt-8">
             <summary><strong>{{ t('operlog.responseResult') }}</strong></summary>
-            <pre style="white-space:pre-wrap;word-break:break-all;background:var(--n-color-modal, #f5f5f5);padding:8px;border-radius:4px;max-height:200px;overflow:auto">{{ detailLog.jsonResult }}</pre>
+            <pre class="op-code-block">{{ detailLog.jsonResult }}</pre>
           </details>
         </div>
       </n-modal>
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.op-filter-type { width: 120px; margin-right: 8px; }
+.op-filter-input { width: 100px; margin-right: 4px; }
+.op-filter-method { width: 80px; margin-right: 4px; }
+.op-filter-date { width: 240px; margin-right: 4px; }
+.op-mr-8 { margin-right: 8px; }
+.op-chart { height: 180px; margin-bottom: 12px; }
+.op-detail-scroll { max-height: 500px; overflow-y: auto; }
+.op-code-block { white-space: pre-wrap; word-break: break-all; background: var(--n-color-modal, #f5f5f5); padding: 8px; border-radius: 4px; max-height: 200px; overflow: auto; }
+.mt-8 { margin-top: 8px; }
+</style>

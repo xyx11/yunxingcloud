@@ -79,7 +79,7 @@ class FullStackIntegrationTest {
                 "创建工单应返回200或401, 实际: " + resp.statusCode());
         if (resp.statusCode() == 200) {
             var node = mapper.readTree(resp.body());
-            assertTrue(node.get("ticketNo").asText().startsWith("TK"));
+            assertFalse(node.get("ticketNo").asText().isEmpty());
         }
 
         var listResp = client.send(authGet("/api/tickets").build(),

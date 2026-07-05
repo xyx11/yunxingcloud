@@ -24,6 +24,7 @@ export interface Product {
 export interface Sku {
   id: number
   productId: number
+  name?: string
   specValues: string
   price: number
   stock: number
@@ -77,6 +78,10 @@ export interface OrderHead {
   deliveryTime?: string
   items: OrderItem[]
   address?: Address
+  receiverName?: string
+  receiverPhone?: string
+  receiverAddress?: string
+  expiresAt?: string
 }
 
 export interface OrderItem {
@@ -89,7 +94,7 @@ export interface OrderItem {
   skuInfo?: string
 }
 
-export type OrderStatus = 0 | 1 | 2 | 3 | 4 | 5
+export type OrderStatus = 0 | 1 | 2 | 3 | 4 | 5 | '0' | '1' | '2' | '3' | '4' | '5'
 // 0-待支付 1-已支付 2-已发货 3-已完成 4-已取消 5-售后中
 
 export interface Address {
@@ -108,10 +113,12 @@ export interface Coupon {
   name: string
   type: 'discount' | 'cash'
   value: number
+  amount?: number
   minAmount: number
   startTime: string
   endTime: string
   status: 'available' | 'used' | 'expired'
+  couponId?: number
 }
 
 export interface UserInfo {

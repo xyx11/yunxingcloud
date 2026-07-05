@@ -51,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS role (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, code VARCHAR(50) NOT NULL UNIQUE, description VARCHAR(200), permissions VARCHAR(2000) DEFAULT '', enabled BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS user_roles (user_id BIGINT NOT NULL, role_id BIGINT NOT NULL, PRIMARY KEY (user_id, role_id))");
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS department (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, parent_id BIGINT, sort_order INT DEFAULT 0, enabled BOOLEAN DEFAULT TRUE)");
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM role", Integer.class);
         if (count != null && count == 0) {
@@ -68,7 +68,7 @@ public class DataInitializer implements CommandLineRunner {
         try {
             String newPerms = "admin,user:read,user:write,dept:read,dept:write,role:read,role:write,menu:read,menu:write,config:read,config:write,job:read,job:write,operlog:read,operlog:write,file:write,dict:read,dict:write,notice:read,notice:write,post:read,post:write,logininfor:read,logininfor:write,ticket:read,ticket:write,monitor:banner:list,monitor:review:list,monitor:import:list,monitor:sku:list,monitor:shipment:list";
             jdbcTemplate.update("UPDATE role SET permissions = ? WHERE code = 'admin'", newPerms);
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
     }
 
     private void initDepts() {
@@ -93,7 +93,7 @@ public class DataInitializer implements CommandLineRunner {
                         "INSERT INTO user_roles (user_id, role_id) VALUES (?,?)",
                         admin.getId(), roleId);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
         }
     }
 
@@ -159,7 +159,7 @@ public class DataInitializer implements CommandLineRunner {
                     jdbcTemplate.update(
                         "INSERT INTO user_roles (user_id, role_id) VALUES (?,?)", demo.getId(), roleId);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
         }
 
         // 种子字典数据
@@ -196,7 +196,7 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, is_default, sort_order) VALUES (?,?,?,?,?)",
                         "sys_common_status", "停用", "1", "N", 2);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
 
         // 种子岗位数据
         try {
@@ -213,7 +213,7 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO sys_post (post_code, post_name, sort_order) VALUES (?,?,?)",
                         "hr", "人力资源", 5);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
 
         // 种子通知公告
         try {
@@ -226,7 +226,7 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO sys_notice (notice_title, notice_type, notice_content, status) VALUES (?,?,?,?)",
                         "安全提醒", "1", "请定期修改密码，不要将账号密码泄露给他人，确保系统安全。", "0");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
 
         // 演示系统配置
         try {
@@ -239,7 +239,7 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO sys_config (name, config_key, config_value, config_type) VALUES (?,?,?,?)",
                         "每页条数", "sys.pageSize", "10", "Y");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
     }
 
     private void initNewModuleMenus() {
@@ -332,7 +332,7 @@ public class DataInitializer implements CommandLineRunner {
                     menuRepository.save(createMenu("站内信", toolsParent.getId(), 7, "/messages", "MessageView", "C", "tool:message:list"));
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("初始化数据失败: {}", e.getMessage()); }
     }
 
     /** 增量添加新页面菜单项 */

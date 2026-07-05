@@ -12,26 +12,26 @@ const items = ref<any[]>([])
 const replyText = ref('')
 const replyId = ref(0)
 const showReply = ref(false)
-const typeLabels: Record<string,string> = { suggestion:'建议', bug:'Bug', praise:'好评', complaint:'投诉' }
+const typeLabels: Record<string,string> = { suggestion: t('feedback.typeSuggestion'), bug: t('feedback.typeBug'), praise: t('feedback.typePraise'), complaint: t('feedback.typeComplaint') }
 
 const columns: DataTableColumns<any> = [
-  { title: '用户', key: 'username', width: 90 }, { title: '类型', key: 'type', width: 60, render(r:any){ return typeLabels[r.type] } },
-  { title: '内容', key: 'content', width: 250, ellipsis:{tooltip:true} },
-  { title: '状态', key: 'status', width: 70, render(r:any){ return h(NTag,{size:'small',type:r.status==='0'?'warning':r.status==='1'?'success':'default'},{default:()=>r.status==='0'?'待处理':'已回复'}) } },
-  { title: '时间', key: 'createdAt', width: 140, render(r:any){ return r.createdAt?.substring(0,16) } },
-  { title: '操作', key:'act', width: 80, render(r:any){ return r.status==='0'?h(NButton,{size:'small',onClick:()=>{replyId.value=r.id;replyText.value='';showReply.value=true}},{default:()=>'回复'}):null } },
+  { title: t('order.username'), key: 'username', width: 90 }, { title: t('feedback.type'), key: 'type', width: 60, render(r:any){ return typeLabels[r.type] || r.type } },
+  { title: t('feedback.content'), key: 'content', width: 250, ellipsis:{tooltip:true} },
+  { title: t('feedback.status'), key: 'status', width: 70, render(r:any){ return h(NTag,{size:'small',type:r.status==='0'?'warning':r.status==='1'?'success':'default'},{default:()=>r.status==='0'?t('feedback.statusPending'):t('feedback.statusReplied')}) } },
+  { title: t('feedback.time'), key: 'createdAt', width: 140, render(r:any){ return r.createdAt?.substring(0,16) } },
+  { title: t('common.actions'), key:'act', width: 80, render(r:any){ return r.status==='0'?h(NButton,{size:'small',onClick:()=>{replyId.value=r.id;replyText.value='';showReply.value=true}},{default:()=>t('feedback.reply')}):null } },
 ]
 
 async function load() { const r = await fetchFeedback(); items.value = r.data }
-async function doReply() { await replyFeedback(replyId.value, replyText.value); showReply.value=false; notify.success('已回复'); load() }
+async function doReply() { await replyFeedback(replyId.value, replyText.value); showReply.value=false; notify.success(t('feedback.replySuccess')); load() }
 onMounted(load)
 </script>
 <template>
-  <n-card title="客户反馈">
+  <n-card :title="t('feedback.title')">
     <n-dataTable :columns="columns" :data="items" :pagination="{pageSize:10}" />
-    <n-modal v-model:show="showReply" title="回复反馈" preset="card" style="max-width:400px">
-      <n-input v-model:value="replyText" type="textarea" :autosize="{minRows:3}" placeholder="回复内容" />
-      <template #footer><n-button @click="showReply=false">取消</n-button><n-button type="primary" @click="doReply">回复</n-button></template>
+    <n-modal v-model:show="showReply" :title="t('feedback.replyTitle')" preset="card" style="max-width:400px">
+      <n-input v-model:value="replyText" type="textarea" :autosize="{minRows:3}" :placeholder="t('feedback.replyPlaceholder')" />
+      <template #footer><n-button @click="showReply=false">{{ t('feedback.cancel') }}</n-button><n-button type="primary" @click="doReply">{{ t('feedback.reply') }}</n-button></template>
     </n-modal>
   </n-card>
 </template>

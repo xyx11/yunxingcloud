@@ -61,7 +61,7 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <div style="padding:20px">
+  <div class="view-pad">
     <n-card :title="t('monitor.onlineTitle')">
       <template #header-extra>
         <n-space>

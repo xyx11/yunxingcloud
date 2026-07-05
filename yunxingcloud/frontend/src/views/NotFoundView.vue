@@ -25,7 +25,7 @@ const links = [
         <n-space justify="center" size="small">
           <n-tag
             v-for="link in links" :key="link.path"
-            type="info" size="medium" style="cursor:pointer"
+            type="info" size="medium" class="cursor-pointer"
             @click="router.push(link.path)"
           >
             {{ link.label }}

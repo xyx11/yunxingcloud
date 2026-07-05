@@ -1,9 +1,8 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.entity.Message;
-import com.yunxingcloud.yunxingcloud.repository.MessageRepository;
+import com.yunxingcloud.yunxingcloud.service.MessageService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,53 +13,48 @@ import java.util.Map;
 @RequestMapping("/api/messages")
 public class MessageController {
 
-    private final MessageRepository msgRepo;
+    private final MessageService messageService;
 
-    public MessageController(MessageRepository msgRepo) { this.msgRepo = msgRepo; }
+    public MessageController(MessageService messageService) { this.messageService = messageService; }
+
+    private String currentUser() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
 
     @GetMapping("/inbox")
     public ResponseEntity<List<Message>> inbox() {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(msgRepo.findByToUserOrderByCreatedAtDesc(user));
+        return ResponseEntity.ok(messageService.inbox(currentUser()));
     }
 
     @GetMapping("/sent")
     public ResponseEntity<List<Message>> sent() {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(msgRepo.findByFromUserOrderByCreatedAtDesc(user));
+        return ResponseEntity.ok(messageService.sent(currentUser()));
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<Map<String, Object>> unreadCount() {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(Map.of("count", msgRepo.countUnread(user)));
+        return ResponseEntity.ok(Map.of("count", messageService.unreadCount(currentUser())));
     }
 
     @PostMapping
     public ResponseEntity<Message> send(@RequestBody Message msg) {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        msg.setFromUser(user);
-        return ResponseEntity.ok(msgRepo.save(msg));
+        msg.setFromUser(currentUser());
+        return ResponseEntity.ok(messageService.send(msg));
     }
 
     @PutMapping("/{id}/read")
     public ResponseEntity<Map<String, Object>> markRead(@PathVariable Long id) {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return msgRepo.findById(id).map(m -> {
-            if (!m.getToUser().equals(user)) return ResponseEntity.status(403).body(Map.<String, Object>of("success", false));
-            m.setIsRead(true); msgRepo.save(m);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true));
-        }).orElse(ResponseEntity.notFound().build());
+        return messageService.markRead(id, currentUser())
+                .map(m -> m != null
+                    ? ResponseEntity.ok(Map.<String, Object>of("success", true))
+                    : ResponseEntity.status(403).body(Map.<String, Object>of("success", false)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        String user = SecurityContextHolder.getContext().getAuthentication().getName();
-        return msgRepo.findById(id).map(m -> {
-            if (!m.getToUser().equals(user) && !m.getFromUser().equals(user))
-                return ResponseEntity.status(403).body(Map.<String, Object>of("success", false));
-            msgRepo.deleteById(id);
-            return ResponseEntity.ok(Map.<String, Object>of("success", true));
-        }).orElse(ResponseEntity.notFound().build());
+        return messageService.delete(id, currentUser())
+                .map(ok -> ok
+                    ? ResponseEntity.ok(Map.<String, Object>of("success", true))
+                    : ResponseEntity.status(403).body(Map.<String, Object>of("success", false)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }

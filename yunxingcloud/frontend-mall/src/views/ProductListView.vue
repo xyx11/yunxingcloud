@@ -11,6 +11,7 @@ import QuickViewModal from '@/components/QuickViewModal.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import { formatPrice } from '@/utils/format'
 import type { Product } from '@/types'
 
 const route = useRoute()
@@ -29,6 +30,7 @@ const brands = ref<any[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const quickViewProduct = ref<Product | null>(null)
+const showFilter = ref(false)
 
 const filters = ref({ categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' })
 const priceRanges = [
@@ -102,7 +104,7 @@ function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrol
 
 async function quickAdd(e: Event, p: any) {
   e.stopPropagation()
-  try { await addToCart({ productId: p.id, quantity: 1 }); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
+  try { await addToCart(p.id, 1); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
 }
 
 function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct.value = p }
@@ -110,6 +112,9 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
 
 <template>
   <div class="plp">
+    <!-- Mobile Filter Button -->
+    <button class="mobile-filter-btn" @click="showFilter = true">🔍 筛选</button>
+
     <!-- Sidebar -->
     <aside class="sidebar">
       <!-- Categories -->
@@ -180,7 +185,7 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
             <h4 class="card-name">{{ p.name }}</h4>
             <div class="card-bottom">
               <div>
-                <span class="card-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span class="card-price">{{ formatPrice(p.price / 100, 2) }}</span>
                 <span class="card-sales" v-if="p.sales">{{ p.sales > 1000 ? '🔥 ' + (p.sales / 1000).toFixed(1) + 'k人已购' : p.sales + '人已购' }}</span>
               </div>
               <button class="add-btn" :class="{ added: (p as any)._added }" @click="(e: Event) => quickAdd(e, p)">
@@ -208,11 +213,67 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
     </div>
 
     <QuickViewModal :product="quickViewProduct" :show="!!quickViewProduct" @close="quickViewProduct = null" />
+
+    <!-- Mobile Filter Sheet -->
+    <Teleport to="body">
+      <div v-if="showFilter" class="filter-overlay" @click.self="showFilter = false">
+        <div class="filter-sheet">
+          <div class="filter-sheet-header">
+            <h3>筛选</h3>
+            <button class="filter-sheet-close" @click="showFilter = false">✕</button>
+          </div>
+          <div class="filter-sheet-body">
+            <div class="filter-card">
+              <h4 class="filter-title">分类</h4>
+              <div class="filter-tags">
+                <span v-for="cat in categories" :key="cat.id" class="filter-tag"
+                  :class="{ active: filters.categoryId === cat.id + '' }"
+                  @click="filters.categoryId = cat.id + ''; applyFilters(); showFilter = false">{{ cat.name }}</span>
+              </div>
+            </div>
+            <div class="filter-card">
+              <h4 class="filter-title">品牌</h4>
+              <div class="filter-tags">
+                <span v-for="b in brands" :key="b.id" class="filter-tag"
+                  :class="{ active: filters.brandId === b.id + '' }"
+                  @click="filters.brandId = b.id + ''; applyFilters(); showFilter = false">{{ b.name }}</span>
+              </div>
+            </div>
+            <div class="filter-card">
+              <h4 class="filter-title">价格区间</h4>
+              <div class="price-inputs">
+                <input v-model="filters.minPrice" placeholder="最低价" type="number" class="price-input" />
+                <span class="price-sep">-</span>
+                <input v-model="filters.maxPrice" placeholder="最高价" type="number" class="price-input" />
+                <button class="price-confirm" @click="applyFilters(); showFilter = false">确定</button>
+              </div>
+              <div class="price-tags">
+                <span v-for="r in priceRanges" :key="r.label" class="price-tag" @click="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters(); showFilter = false">{{ r.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
 .plp { display: flex; gap: var(--space-xxl); }
+
+/* Mobile filter button */
+.mobile-filter-btn { display: none; }
+
+/* Filter Sheet */
+.filter-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-overlay); z-index: 600; display: flex; align-items: flex-end; animation: fadeIn .2s; }
+.filter-sheet { background: var(--bg-white); border-radius: var(--radius-xl) var(--radius-xl) 0 0; width: 100%; max-height: 70vh; display: flex; flex-direction: column; animation: slideUp .3s ease-out; padding-bottom: env(safe-area-inset-bottom); }
+.filter-sheet-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-lg) var(--space-xl); border-bottom: 1px solid var(--border-light); }
+.filter-sheet-header h3 { font-size: var(--font-lg); font-weight: 700; }
+.filter-sheet-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-tertiary); }
+.filter-sheet-body { overflow-y: auto; padding: var(--space-xl); flex: 1; }
+.filter-tags { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.filter-tag { padding: 6px 14px; border-radius: var(--radius-round); border: 1px solid var(--border); font-size: var(--font-sm); cursor: pointer; color: var(--text-secondary); transition: all var(--transition-fast); }
+.filter-tag.active { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
 
 /* Sidebar */
 .sidebar { width: 220px; flex-shrink: 0; }
@@ -267,6 +328,7 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
 
 @media (max-width: 768px) {
   .sidebar { display: none; }
+  .mobile-filter-btn { display: block; position: sticky; top: 0; z-index: 10; background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-lg); margin-bottom: var(--space-md); font-size: var(--font-md); cursor: pointer; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
   .product-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

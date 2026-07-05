@@ -7,10 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.transaction.TransactionException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.yunxingcloud.common.enums.ErrorCode;
 import java.util.Map;
 
 /**
@@ -19,6 +21,13 @@ import java.util.Map;
 public abstract class BaseExceptionHandler {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(BusinessException e) {
+        ErrorCode code = e.getErrorCode();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("success", false, "code", code != null ? code.getCode() : -1, "message", e.getMessage()));
+    }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<?> handleBadRequest(RuntimeException e) {
@@ -33,6 +42,14 @@ public abstract class BaseExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
+        String msg = e.getBindingResult().getFieldErrors().stream()
+                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", msg));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
