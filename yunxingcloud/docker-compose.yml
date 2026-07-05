@@ -123,8 +123,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
-        redis:
-          condition: service_healthy
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   core:
@@ -230,8 +230,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
-        redis:
-          condition: service_healthy
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   order:
@@ -252,6 +252,7 @@ services:
       NACOS_SERVER: nacos:8848
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      ES_URIS: http://elasticsearch:9200
     networks:
       - yunxingcloud
     healthcheck:
@@ -264,8 +265,10 @@ services:
       nacos:
         condition: service_healthy
       mysql:
-        redis:
-          condition: service_healthy
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
 
   inventory:
@@ -298,8 +301,8 @@ services:
       nacos:
         condition: service_healthy
       mysql:
-        redis:
-          condition: service_healthy
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:
