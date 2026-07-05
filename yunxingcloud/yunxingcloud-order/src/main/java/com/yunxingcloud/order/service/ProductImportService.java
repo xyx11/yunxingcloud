@@ -17,6 +17,7 @@ public class ProductImportService {
     public ProductImportService(ProductRepository repo) { this.repo = repo; }
 
     /** CSV 导入 (name,description,price,stock) */
+    @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> importCsv(MultipartFile file) {
         int success = 0, fail = 0;
         List<String> errors = new ArrayList<>();
