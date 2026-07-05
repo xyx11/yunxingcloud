@@ -42,5 +42,12 @@
             <artifactId>minio</artifactId>
             <version>8.5.10</version>
         </dependency>
+        <!-- ELK JSON 日志 (logback-spring-elk.xml 需要) -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>
