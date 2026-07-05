@@ -4,12 +4,9 @@ metadata:
   name: yunxingcloud-config
   namespace: yunxingcloud
 data:
-  DB_USERNAME: "root"
-  OAUTH2_CLIENT_ID: "yunxingcloud-client"
-  OAUTH2_REDIRECT_URI: "https://your-domain.com/callback"
   NACOS_SERVER: "nacos-service:8848"
-  SENTINEL_DASHBOARD: "sentinel-service:8082"
-  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
-  DB_URL: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
+  DB_USERNAME: "root"
+  ES_URIS: "http://elasticsearch-service:9200"
+  OTEL_ENABLED: "false"

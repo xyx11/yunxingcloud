@@ -1,26 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: yunxingcloud
-
 resources:
   - namespace.yaml
   - configmap.yaml
   - secret.yaml
-  - deployment.yaml
   - service.yaml
+  - infrastructure.yaml
+  - deployment.yaml
   - ingress.yaml
   - hpa.yaml
-
-images:
-  - name: yunxingcloud-core
-    newTag: latest
-  - name: yunxingcloud-usercenter
-    newTag: latest
-  - name: yunxingcloud-gateway
-    newTag: latest
-  - name: yunxingcloud-payment
-    newTag: latest
-  - name: yunxingcloud-order
-    newTag: latest
-  - name: yunxingcloud-inventory
-    newTag: latest
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: yunxingcloud

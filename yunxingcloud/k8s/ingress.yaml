@@ -4,17 +4,14 @@ metadata:
   name: yunxingcloud-ingress
   namespace: yunxingcloud
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - www.yunxingcloud.com
-      secretName: yunxingcloud-tls
   rules:
-    - host: www.yunxingcloud.com
+    - host: api.yunxingcloud.local
       http:
         paths:
           - path: /
@@ -24,3 +21,13 @@ spec:
                 name: yunxingcloud-gateway
                 port:
                   number: 8090
+    - host: admin.yunxingcloud.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yunxingcloud-core
+                port:
+                  number: 8080
