@@ -308,6 +308,47 @@ export default {
     freeShipping: '包邮', birthdayGift: '生日礼', prioritySupport: '优先客服',
     cancel: '取消', save: '保存',
   },
+  afterSale: {
+    title: '售后管理',
+    type: '类型',
+    amount: '退款金额',
+    reason: '原因',
+    detail: '售后详情',
+    refundOnly: '退款',
+    returnRefund: '退货',
+    exchange: '换货',
+    statusPending: '待审核',
+    statusApproved: '已通过',
+    statusRejected: '已拒绝',
+    statusRefunding: '退款中',
+    statusCompleted: '已完成',
+    rejectReason: '拒绝原因',
+    rejectPlaceholder: '填写拒绝原因',
+  },
+  coupon: {
+    statusUnused: '未使用',
+    statusUsed: '已使用',
+    statusExpired: '已过期',
+    threshold: '满{0}可用',
+  },
+  flashSale: {
+    flashPrice: '秒杀价',
+  },
+  giftCard: {
+    amount: '面值',
+    balance: '余额',
+    cardNo: '卡号',
+  },
+  groupBuy: {
+    minMembers: '{n}人团',
+  },
+  invoice: {
+    title: '发票管理',
+    type: '发票类型',
+    amount: '金额',
+    invoiceNo: '发票号',
+    companyTitle: '发票抬头',
+  },
   generator: {
     tables: '数据库表', tableName: '表名', columns: '字段',
     codeType: '代码类型', packageName: '包名', author: '作者',
@@ -425,6 +466,15 @@ export default {
   dataScreen: {
     title: '数据大屏', totalUsers: '总用户数', totalRoles: '总角色数',
     totalDepts: '总部数', totalJobs: '总任务数',
+  },
+  auth: {
+    backToLogin: '返回登录',
+    loggingIn: '登录中...',
+    loginFailed: '登录失败',
+    loginRedirect: '登录成功，正在跳转...',
+    oauthFailed: '第三方登录失败',
+    verifying: '验证中...',
+    welcomeBack: '欢迎回来，{name}',
   },
   pwd: {
     old: '当前密码', new: '新密码', confirm: '确认密码',

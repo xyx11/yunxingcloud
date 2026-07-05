@@ -313,6 +313,47 @@ export default {
     freeShipping: 'Free Shipping', birthdayGift: 'Birthday Gift', prioritySupport: 'Priority Support',
     cancel: 'Cancel', save: 'Save',
   },
+  afterSale: {
+    title: 'After-Sale',
+    type: 'Type',
+    amount: 'Amount',
+    reason: 'Reason',
+    detail: 'Detail',
+    refundOnly: 'Refund',
+    returnRefund: 'Return',
+    exchange: 'Exchange',
+    statusPending: 'Pending',
+    statusApproved: 'Approved',
+    statusRejected: 'Rejected',
+    statusRefunding: 'Refunding',
+    statusCompleted: 'Completed',
+    rejectReason: 'Reject Reason',
+    rejectPlaceholder: 'Enter reject reason',
+  },
+  coupon: {
+    statusUnused: 'Unused',
+    statusUsed: 'Used',
+    statusExpired: 'Expired',
+    threshold: 'Min spend {0}',
+  },
+  flashSale: {
+    flashPrice: 'Flash Price',
+  },
+  giftCard: {
+    amount: 'Amount',
+    balance: 'Balance',
+    cardNo: 'Card No.',
+  },
+  groupBuy: {
+    minMembers: '{n} ppl',
+  },
+  invoice: {
+    title: 'Invoice',
+    type: 'Type',
+    amount: 'Amount',
+    invoiceNo: 'Invoice No.',
+    companyTitle: 'Company Title',
+  },
   generator: {
     tables: 'Tables', tableName: 'Table Name', columns: 'Columns',
     codeType: 'Code Type', packageName: 'Package', author: 'Author',
@@ -430,6 +471,15 @@ export default {
   dataScreen: {
     title: 'Data Screen', totalUsers: 'Total Users', totalRoles: 'Total Roles',
     totalDepts: 'Total Depts', totalJobs: 'Total Jobs',
+  },
+  auth: {
+    backToLogin: 'Back to Login',
+    loggingIn: 'Logging in...',
+    loginFailed: 'Login failed',
+    loginRedirect: 'Logged in, redirecting...',
+    oauthFailed: 'OAuth login failed',
+    verifying: 'Verifying...',
+    welcomeBack: 'Welcome back, {name}',
   },
   pwd: {
     old: 'Current Password', new: 'New Password', confirm: 'Confirm Password',
