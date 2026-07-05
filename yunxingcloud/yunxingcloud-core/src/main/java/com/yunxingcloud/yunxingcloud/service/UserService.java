@@ -18,6 +18,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public User register(String username, String password, String email) {
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("用户名已存在");
