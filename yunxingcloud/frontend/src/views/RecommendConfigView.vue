@@ -11,8 +11,8 @@ const hotLimit = ref(8); const newLimit = ref(8)
 const hotProducts = ref<any[]>([]); const newProducts = ref<any[]>([])
 
 async function load() {
-  try { const r = await request.get('/api/recommend/hot'); hotProducts.value = r.data || [] } catch(e) { console.error(e) }
-  try { const r = await request.get('/api/recommend/new'); newProducts.value = r.data || [] } catch(e) { console.error(e) }
+  try { const r = await request.get('/api/recommend/hot'); hotProducts.value = r.data || [] } catch(e) { console.warn('加载推荐数据失败:', e) }
+  try { const r = await request.get('/api/recommend/new'); newProducts.value = r.data || [] } catch(e) { console.warn('加载推荐数据失败:', e) }
 }
 onMounted(load)
 </script>

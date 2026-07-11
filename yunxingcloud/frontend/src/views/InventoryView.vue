@@ -49,8 +49,8 @@ const suggestColumns: DataTableColumns<any> = [
 ]
 
 async function load() { loading.value = true; try { const r = await fetchInventory(); items.value = r.data; const a = await fetchAlerts(); alerts.value = a.data } finally { loading.value = false } }
-async function loadLogs() { try { const r = await fetchLogs(); logs.value = r.data || [] } catch(e) { console.error(e) } }
-async function loadSuggestions() { try { const r = await request.get('/api/inventory/reorder-suggestions'); reorderSuggestions.value = r.data || [] } catch(e) { console.error(e) } }
+async function loadLogs() { try { const r = await fetchLogs(); logs.value = r.data || [] } catch(e) { console.warn('加载库存日志失败:', e) } }
+async function loadSuggestions() { try { const r = await request.get('/api/inventory/reorder-suggestions'); reorderSuggestions.value = r.data || [] } catch(e) { console.warn('加载补货建议失败:', e) } }
 async function loadWh() { const r = await fetchWarehouses(); warehouses.value = r.data; whOptions.value = r.data.map((w: any) => ({ label: w.name, value: w.id })) }
 
 async function doIn() { saving.value = true; try { await stockIn(form.value); showIn.value = false; notify.success(t('inventory.stockInSuccess')); load() } catch { notify.error(t('common.saveFailed')) } finally { saving.value = false } }
@@ -83,7 +83,7 @@ onMounted(() => { load(); loadWh() })
 let sse: EventSource | null = null
 function connectSSE() {
   sse = new EventSource('/api/inventory/alerts/stream')
-  sse.addEventListener('alerts', (e: MessageEvent) => { try { const data = JSON.parse(e.data); if (Array.isArray(data)) alerts.value = data } catch(e) { console.error(e) } })
+  sse.addEventListener('alerts', (e: MessageEvent) => { try { const data = JSON.parse(e.data); if (Array.isArray(data)) alerts.value = data } catch(e) { console.warn('解析SSE告警数据失败:', e) } })
   sse.onerror = () => { sse?.close(); setTimeout(connectSSE, 10000) }
 }
 connectSSE()

@@ -37,7 +37,7 @@ async function batchCreate() {
     notify.success(`已生成 ${batchCount.value} 张礼品卡`); loadCards()
   } finally { creating.value = false }
 }
-async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.error(e) } }
+async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.warn('加载礼品卡失败:', e) } }
 onMounted(loadCards)
 </script>
 <template>

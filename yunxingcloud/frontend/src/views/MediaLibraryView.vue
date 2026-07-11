@@ -38,7 +38,7 @@ async function delFile(name: string) { try { await request.delete(`/api/files/${
 async function batchDel() {
   if (!checkedKeys.value.length) return
   for (const name of checkedKeys.value) {
-    try { await request.delete(`/api/files/${name}`) } catch(e) { console.error(e) }
+    try { await request.delete(`/api/files/${name}`) } catch(e) { console.warn('删除文件失败:', e) }
   }
   checkedKeys.value = []; message.success(`已删除`); load()
 }

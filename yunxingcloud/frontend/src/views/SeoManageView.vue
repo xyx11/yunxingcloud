@@ -11,8 +11,8 @@ const homeMeta = ref({ title: '', description: '', keywords: '' })
 const sitemap = ref('')
 
 async function load() {
-  try { const r = await request.get('/api/seo/meta/home'); Object.assign(homeMeta.value, r.data) } catch(e) { console.error(e) }
-  try { const r = await request.get('/api/seo/sitemap'); sitemap.value = typeof r.data === 'string' ? r.data : '' } catch(e) { console.error(e) }
+  try { const r = await request.get('/api/seo/meta/home'); Object.assign(homeMeta.value, r.data) } catch(e) { console.warn('加载SEO数据失败:', e) }
+  try { const r = await request.get('/api/seo/sitemap'); sitemap.value = typeof r.data === 'string' ? r.data : '' } catch(e) { console.warn('加载SEO数据失败:', e) }
 }
 function copySitemap() { navigator.clipboard.writeText(sitemap.value); notify.success(t('seo.copied')) }
 onMounted(load)

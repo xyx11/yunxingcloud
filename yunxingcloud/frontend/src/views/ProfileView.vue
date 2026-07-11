@@ -37,7 +37,7 @@ const socialProviderSvgs: Record<string, string> = {
 
 async function loadSocialAccounts() {
   socialLoading.value = true
-  try { socialAccounts.value = await fetchSocialAccounts() } catch(e) { console.error(e) }
+  try { socialAccounts.value = await fetchSocialAccounts() } catch(e) { console.warn('加载社交账号失败:', e) }
   socialLoading.value = false
 }
 
