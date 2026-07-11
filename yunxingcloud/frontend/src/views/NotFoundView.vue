@@ -21,7 +21,7 @@ const links = [
       <div class="divider" />
       <div class="title">{{ t('notFound.title') }}</div>
       <div class="subtitle">{{ t('notFound.subtitle') }}</div>
-      <div style="margin: 28px 0 20px;">
+      <div class="actions-gap">
         <n-space justify="center" size="small">
           <n-tag
             v-for="link in links" :key="link.path"
@@ -63,4 +63,5 @@ const links = [
 }
 .title { font-size: 22px; color: #fff; font-weight: 500; }
 .subtitle { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 8px; }
+.actions-gap { margin: 28px 0 20px; }
 </style>
