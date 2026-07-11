@@ -12,6 +12,7 @@ WORKDIR /app
 ARG SERVICE=yunxingcloud-core
 ARG PORT=8080
 COPY --from=builder /build/${SERVICE}/target/*.jar app.jar
+RUN mkdir -p /app/logs && chown -R app:app /app
 USER app
 EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=90s \
