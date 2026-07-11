@@ -143,7 +143,7 @@ async function saveType() {
     showTypeModal.value = false
     notify.success(editingType.value ? t('dict.updateSuccess') : t('dict.createSuccess'))
     await loadTypes()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delType(id: number) {
@@ -172,7 +172,7 @@ async function saveData() {
     showDataModal.value = false
     notify.success(editingData.value ? t('dict.updateSuccess') : t('dict.createSuccess'))
     if (selectedType.value) await selectType(selectedType.value)
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delData(id: number) {
@@ -194,8 +194,8 @@ onMounted(loadTypes)
           <template #header-extra>
             <n-space><n-button v-if="checkedTypeKeys.length" type="error" size="small" @click="batchDeleteTypes">{{ t('common.batchDelete') }} ({{checkedTypeKeys.length}})</n-button><n-button type="primary" size="small" @click="addType"><template #icon>＋</template>{{ t('common.add') }}</n-button></n-space>
           </template>
-          <n-space style="margin-bottom:8px">
-            <n-input v-model:value="typeSearch" :placeholder="t('dict.searchType')" size="small" clearable style="max-width:140px;width:95%" />
+          <n-space class="mb-8">
+            <n-input v-model:value="typeSearch" :placeholder="t('dict.searchType')" size="small" clearable class="search-input" />
             <n-button size="small" @click="loadTypes" secondary>{{ t('common.refresh') }}</n-button>
           </n-space>
           <n-dataTable
@@ -211,8 +211,8 @@ onMounted(loadTypes)
           <template #header-extra>
             <n-space><n-button v-if="checkedDataKeys.length" type="error" size="small" @click="batchDeleteData">{{ t('common.batchDelete') }} ({{checkedDataKeys.length}})</n-button><n-button type="primary" size="small" @click="addData"><template #icon>＋</template>{{ t('common.add') }}</n-button></n-space>
           </template>
-          <n-space style="margin-bottom:8px">
-            <n-input v-model:value="dataSearch" :placeholder="t('dict.searchData')" size="small" clearable style="max-width:140px;width:95%" />
+          <n-space class="mb-8">
+            <n-input v-model:value="dataSearch" :placeholder="t('dict.searchData')" size="small" clearable class="search-input" />
             <n-button size="small" @click="selectedType && selectType(selectedType)" secondary>{{ t('common.refresh') }}</n-button>
           </n-space>
           <n-dataTable
@@ -220,7 +220,7 @@ onMounted(loadTypes)
             :bordered="false" :pagination="{ pageSize: 10 }"
             :row-key="(row: DictData) => row.id" v-model:checked-row-keys="checkedDataKeys"
           />
-          <n-empty v-if="!selectedType" :description="t('dict.selectTypeHint')" style="margin-top:40px" />
+          <n-empty v-if="!selectedType" :description="t('dict.selectTypeHint')" class="mt-40" />
         </n-card>
       </n-grid-item>
     </n-grid>
@@ -244,7 +244,7 @@ onMounted(loadTypes)
           <n-form-item :label="t('dict.dictType')"><n-input :value="dataForm.dictType" disabled /></n-form-item>
           <n-form-item path="dictLabel" :label="t('dict.dictLabel')"><n-input v-model:value="dataForm.dictLabel" :placeholder="t('dict.labelPlaceholder')" /></n-form-item>
           <n-form-item path="dictValue" :label="t('dict.dictValue')"><n-input v-model:value="dataForm.dictValue" :placeholder="t('dict.valuePlaceholder')" /></n-form-item>
-          <n-form-item :label="t('dict.sortOrder')"><n-input-number v-model:value="dataForm.sortOrder" :min="0" style="width:100%" /></n-form-item>
+          <n-form-item :label="t('dict.sortOrder')"><n-input-number v-model:value="dataForm.sortOrder" :min="0" class="w-full" /></n-form-item>
           <n-form-item :label="t('dict.isDefaultLabel')"><n-select v-model:value="dataForm.isDefault" :options="[{label:t('common.yes'),value:'Y'},{label:t('common.no'),value:'N'}]" /></n-form-item>
           <n-form-item :label="t('dict.status')"><n-select v-model:value="dataForm.status" :options="statusOptions" /></n-form-item>
         </n-form>
@@ -252,3 +252,10 @@ onMounted(loadTypes)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.mb-8 { margin-bottom: 8px; }
+.search-input { max-width: 140px; width: 95%; }
+.mt-40 { margin-top: 40px; }
+.w-full { width: 100%; }
+</style>

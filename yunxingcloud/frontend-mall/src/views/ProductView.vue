@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, inject, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail } from '@/api/product'
 import { addToCart } from '@/api/cart'
@@ -10,8 +10,14 @@ import { useCartFly } from '@/composables/useCartFly'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
 import { formatPrice, formatRelativeTime } from '@/utils/format'
-import type { Product, Sku } from '@/types'
-import ProductRating from '@/components/ProductRating.vue'
+import type { Product, Sku, Review } from '@/types'
+
+// Sub-components
+import ProductGallery from '@/components/ProductGallery.vue'
+import SkuSelector from '@/components/SkuSelector.vue'
+import ProductInfo from '@/components/ProductInfo.vue'
+
+// Retained existing components
 import ReviewSummary from '@/components/ReviewSummary.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -23,9 +29,11 @@ const auth = useAuthStore()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
 const { flyToCart } = useCartFly()
+
+// Data state
 const product = ref<Product | null>(null)
 const skus = ref<Sku[]>([])
-const reviews = ref<any[]>([])
+const reviews = ref<Review[]>([])
 const reviewSort = ref<'newest' | 'highest' | 'lowest'>('newest')
 const reviewShow = ref(3)
 const sortedReviews = computed(() => {
@@ -36,31 +44,37 @@ const sortedReviews = computed(() => {
   return arr.slice(0, reviewShow.value)
 })
 function showMoreReviews() { reviewShow.value = Math.min(reviewShow.value + 3, reviews.value.length) }
-const related = ref<any[]>([])
+
+const related = ref<Product[]>([])
 const selectedSku = ref<Sku | null>(null)
 const qty = ref(1)
 const favorited = ref(false)
+const alertSet = ref(false)
 const loading = ref(true)
 const shareMenu = ref(false)
-const fullscreen = ref(false)
 const showFloatingBar = ref(false)
-const activeImage = ref(0)
 const images = ref<string[]>([])
 const alertPrice = ref('')
 const showPriceAlert = ref(false)
-const alertSet = ref(false)
 const viewerCount = ref(Math.floor(Math.random() * 200) + 50)
 let viewerTimer: ReturnType<typeof setInterval> | null = null
+
 function onScroll() { showFloatingBar.value = window.scrollY > 500 }
 
-const displayPrice = () => selectedSku.value ? selectedSku.value.price : product.value?.price || 0
-const displayStock = () => selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
+const displayPrice = computed(() =>
+  selectedSku.value ? selectedSku.value.price : product.value?.price || 0
+)
+const displayStock = computed(() =>
+  selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
+)
 
-function productImage(p: any): string {
-  if (p?.imageUrl && p.imageUrl !== '📦') return p.imageUrl
+function productImage(p: Product): string {
+  if (p?.imageUrl && p.imageUrl !== '\u{1F4E6}') return p.imageUrl
   if (p?.images?.length) return p.images[0]
   return ''
 }
+
+// --- Lifecycle ---
 
 onMounted(async () => {
   const id = route.params.id
@@ -81,11 +95,10 @@ onMounted(async () => {
   }
 
   window.addEventListener('scroll', onScroll)
-  window.addEventListener('keydown', onFsKeydown)
 
   if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
   else if (product.value?.images) images.value = product.value.images
-  if (!images.value.length) images.value = ['📦']
+  if (!images.value.length) images.value = ['\u{1F4E6}']
 
   viewerTimer = setInterval(() => {
     viewerCount.value = Math.max(10, viewerCount.value + Math.floor(Math.random() * 7) - 3)
@@ -94,20 +107,27 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
-  window.removeEventListener('keydown', onFsKeydown)
   if (viewerTimer) clearInterval(viewerTimer)
 })
+
+// --- Actions ---
 
 async function onAddToCart(e?: MouseEvent) {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value) return
-  try { await addToCart(product.value.id, qty.value); toast.success(t('toast.addedToCart')); if (e) flyToCart(e) } catch { toast.error(t('toast.addCartFail')) }
+  try {
+    await addToCart(product.value.id, qty.value)
+    toast.success(t('toast.addedToCart'))
+    if (e) flyToCart(e)
+  } catch { toast.error(t('toast.addCartFail')) }
 }
+
 async function buyNow() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value) return
   try { await addToCart(product.value.id, qty.value); router.push('/cart') } catch {}
 }
+
 async function toggleFavorite() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value) return
@@ -118,15 +138,21 @@ async function toggleFavorite() {
   } catch {}
 }
 
-function setPriceAlert() {
+function onSetPriceAlert() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value) return
-  alertPrice.value = String((displayPrice() / 100).toFixed(2))
+  alertPrice.value = String((displayPrice.value / 100).toFixed(2))
   showPriceAlert.value = true
 }
+
 async function confirmPriceAlert() {
   if (!product.value) return
-  try { await request.post('/price-alert', { productId: product.value.id, targetPrice: Number(alertPrice.value) * 100 }); alertSet.value = true; showPriceAlert.value = false; toast.success('降价时将通过通知提醒您') } catch { toast.error('设置失败') }
+  try {
+    await request.post('/price-alert', { productId: product.value.id, targetPrice: Number(alertPrice.value) * 100 })
+    alertSet.value = true
+    showPriceAlert.value = false
+    toast.success('降价时将通过通知提醒您')
+  } catch { toast.error('设置失败') }
 }
 
 async function shareProduct() {
@@ -138,112 +164,53 @@ async function shareProduct() {
 }
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
-
-// Touch swipe
-let touchX = 0
-function onTouchStart(e: TouchEvent) { touchX = e.touches[0].clientX }
-function onTouchEnd(e: TouchEvent) {
-  const dx = e.changedTouches[0].clientX - touchX
-  if (Math.abs(dx) > 50 && images.value.length > 1) {
-    activeImage.value = dx < 0 ? Math.min(images.value.length - 1, activeImage.value + 1) : Math.max(0, activeImage.value - 1)
-  }
-}
-function onFsKeydown(e: KeyboardEvent) {
-  if (!fullscreen.value) return
-  if (e.key === 'ArrowLeft') { activeImage.value = activeImage.value > 0 ? activeImage.value - 1 : images.value.length - 1 }
-  else if (e.key === 'ArrowRight') { activeImage.value = activeImage.value < images.value.length - 1 ? activeImage.value + 1 : 0 }
-  else if (e.key === 'Escape') { fullscreen.value = false }
-}
-
-const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff', '绿': '#4caf50', '黄': '#ffc107', '紫': '#9c27b0', '黑': '#333', '白': '#fff', '灰': '#999', '粉': '#e91e63', '金': '#ffc107', '银': '#ccc', '橙': '#ff9800' }
 </script>
 
 <template>
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <span @click="router.push('/')" class="crumb-link">首页</span><span>/</span>
-    <span v-if="product?.categoryId" @click="router.push('/products?categoryId=' + product.categoryId)" class="crumb-link">{{ (product as any).categoryName || t('product.category') }}</span><span v-if="product?.categoryId">/</span>
+    <span
+      v-if="product?.categoryId"
+      class="crumb-link"
+      @click="router.push('/products?categoryId=' + product.categoryId)"
+    >{{ (product as Product).categoryName || t('product.category') }}</span><span v-if="product?.categoryId">/</span>
     <span class="crumb-current">{{ product?.name || t('product.detail') }}</span>
   </div>
 
   <!-- Skeleton -->
   <div v-if="loading" class="pdp-skeleton">
     <div class="sk-img" />
-    <div class="sk-body"><div class="sk-line" style="width:60%;height:28px;margin-bottom:16px" /></div>
+    <div class="sk-body">
+      <div class="sk-line sk-line-lg" />
+    </div>
   </div>
 
   <!-- Main Product -->
   <div v-else-if="product" class="pdp-main">
-    <!-- Gallery -->
-    <div class="gallery">
-      <div @touchstart="onTouchStart" @touchend="onTouchEnd" @click="fullscreen = true" class="gallery-main">
-        <LazyImage :src="images[activeImage]" :alt="product.name" height="420px" rounded="8px" />
-      </div>
+    <ProductGallery :images="images" :product-name="product.name" />
 
-      <!-- Fullscreen -->
-      <div v-if="fullscreen" class="fullscreen-overlay" @click="fullscreen = false">
-        <button class="fs-close" @click.stop="fullscreen = false" aria-label="关闭">✕</button>
-        <button v-if="images.length > 1" class="fs-nav fs-nav--prev" @click.stop="activeImage = activeImage > 0 ? activeImage - 1 : images.length - 1" aria-label="上一张">‹</button>
-        <button v-if="images.length > 1" class="fs-nav fs-nav--next" @click.stop="activeImage = activeImage < images.length - 1 ? activeImage + 1 : 0" aria-label="下一张">›</button>
-        <img v-if="images[activeImage] && images[activeImage] !== '📦'" :src="images[activeImage]" class="fs-img" />
-        <span v-else class="fs-placeholder">📦</span>
-        <div v-if="images.length > 1" class="fs-dots">
-          <button v-for="(_img, i) in images" :key="i" class="fs-dot" :class="{ active: activeImage === i }" @click.stop="activeImage = i" />
-        </div>
-      </div>
-
-      <!-- Thumbnails -->
-      <div v-if="images.length > 1" class="thumbnails">
-        <div v-for="(img, i) in images" :key="i" class="thumb" :class="{ active: activeImage === i }" @click="activeImage = i">
-          <LazyImage :src="img" alt="" height="100%" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Info -->
     <div class="pdp-info">
-      <h1 class="pdp-name">{{ product.name }}<span class="jd-tag">自营</span></h1>
-      <p class="pdp-desc">{{ product.description || '' }}</p>
+      <ProductInfo
+        :product="product"
+        :selected-sku="selectedSku"
+        :favorited="favorited"
+        :reviews-count="reviews.length"
+        :alert-set="alertSet"
+        :viewer-count="viewerCount"
+        @toggle-favorite="toggleFavorite"
+        @share="shareProduct"
+        @set-price-alert="onSetPriceAlert"
+      />
 
-      <div class="pdp-rating">
-        <ProductRating v-if="product.rating" :rating="product.rating || 0" :count="reviews.length" />
-        <span v-else class="no-rating">暂无评分</span>
-      </div>
-
-      <!-- Price Box -->
-      <div class="price-box">
-        <div class="price-row">
-          <span class="price-label">{{ t('product.price') }}</span>
-          <span class="price-value">{{ formatPrice(displayPrice() / 100, 2) }}</span>
-          <span v-if="displayStock() > 0 && displayStock() <= 10" class="stock-warn">仅剩 {{ displayStock() }} 件</span>
-          <span v-if="displayStock() === 0" class="stock-out">暂时缺货</span>
-          <button class="alert-btn" :class="{ set: alertSet }" @click="setPriceAlert">{{ alertSet ? t('product.alertSet') : t('product.priceAlert') }}</button>
-        </div>
-        <div class="meta-row">
-          <span>{{ t('product.salesCount') }} <b class="text-red">{{ product.sales || 0 }}</b></span>
-          <span>👁 <b class="text-blue">{{ viewerCount }}</b> 人正在看</span>
-          <span>{{ t('product.stock') }} <b>{{ displayStock() }}</b></span>
-        </div>
-      </div>
-
-      <!-- SKU Selector -->
-      <div v-if="skus.length" class="sku-section">
-        <div class="sku-label">{{ t('product.skuSelector') }}</div>
-        <div class="sku-grid">
-          <span v-for="sku in skus" :key="sku.id" class="sku-item" :class="{ selected: selectedSku?.id === sku.id }" @click="selectedSku = sku">
-            <span v-if="(sku as any).specs" class="sku-color" :style="{ background: SKU_COLORS[((sku as any).specs || '').match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''] || '#ddd' }" />
-            {{ sku.name }}
-            <span class="sku-price">{{ formatPrice(sku.price / 100, 2) }}</span>
-          </span>
-        </div>
-      </div>
+      <SkuSelector v-if="skus.length" v-model="selectedSku" :skus="skus" />
 
       <!-- Quantity -->
       <div class="qty-row">
         <span class="qty-label">{{ t('product.quantity') }}</span>
         <button class="qty-btn" @click="qty = Math.max(1, qty - 1)">-</button>
         <span class="qty-val">{{ qty }}</span>
-        <button class="qty-btn" @click="qty = Math.min(displayStock(), qty + 1)">+</button>
+        <button class="qty-btn" @click="qty = Math.min(displayStock, qty + 1)">+</button>
       </div>
 
       <!-- Actions -->
@@ -289,13 +256,13 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
     <div class="spec-grid">
       <div class="spec-row"><span class="spec-label">商品名称</span><span>{{ product.name }}</span></div>
       <div class="spec-row"><span class="spec-label">商品编号</span><span>{{ product.id }}</span></div>
-      <div v-if="(product as any).brandId" class="spec-row"><span class="spec-label">{{ t('product.brand') }}</span><span>{{ (product as any).brandName || t('product.brand') + '#' + (product as any).brandId }}</span></div>
-      <div class="spec-row"><span class="spec-label">上架时间</span><span>{{ (product as any).createdAt?.substring(0, 10) || '-' }}</span></div>
+      <div v-if="product.brandId" class="spec-row"><span class="spec-label">{{ t('product.brand') }}</span><span>{{ product.brandName || t('product.brand') + '#' + product.brandId }}</span></div>
+      <div class="spec-row"><span class="spec-label">上架时间</span><span>{{ product.createdAt?.substring(0, 10) || '-' }}</span></div>
     </div>
   </div>
 
   <!-- Related -->
-  <div v-if="related.length">
+  <div v-if="related.length" class="pdp-section">
     <h3 class="section-title">{{ t('product.relatedProducts') }}</h3>
     <div class="related-grid">
       <div v-for="p in related" :key="p.id" class="related-card" @click="goDetail(p.id)">
@@ -326,16 +293,16 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 
   <!-- Floating Bar -->
   <div v-if="showFloatingBar && product" class="floating-bar">
-    <LazyImage :src="images[activeImage]" :alt="product.name" height="48px" width="48px" rounded="6px" />
+    <LazyImage :src="images[0]" :alt="product.name" height="48px" width="48px" rounded="6px" />
     <div class="floating-name">{{ product.name }}</div>
-    <span class="floating-price">{{ formatPrice(displayPrice() / 100, 2) }}</span>
+    <span class="floating-price">{{ formatPrice(displayPrice / 100, 2) }}</span>
     <JdButton type="outline" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
     <JdButton @click="buyNow">{{ t('product.buyNow') }}</JdButton>
   </div>
 
   <!-- Mobile Sticky Bar -->
   <div v-if="product" class="mobile-bar">
-    <div class="mobile-bar-price">{{ formatPrice(displayPrice() / 100, 2) }}</div>
+    <div class="mobile-bar-price">{{ formatPrice(displayPrice / 100, 2) }}</div>
     <JdButton type="outline" class="flex-1" @click="() => onAddToCart()">加入购物车</JdButton>
     <JdButton class="flex-1" @click="buyNow">立即购买</JdButton>
   </div>
@@ -352,59 +319,11 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 .sk-img { width: 420px; height: 420px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); flex-shrink: 0; }
 .sk-body { flex: 1; }
 .sk-line { background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.sk-line-lg { width: 60%; height: 28px; margin-bottom: 16px; }
 
-/* Main */
+/* Main layout */
 .pdp-main { display: flex; gap: var(--space-xxxl); background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); }
-.gallery { width: 420px; flex-shrink: 0; }
-.gallery-main { cursor: zoom-in; overflow: hidden; border-radius: var(--radius-md); }
-.gallery-main :deep(img) { transition: transform .3s ease; }
-.gallery-main:hover :deep(img) { transform: scale(1.5); }
-.thumbnails { display: flex; gap: var(--space-sm); margin-top: var(--space-sm); }
-.thumb { width: 60px; height: 60px; border-radius: var(--radius-sm); cursor: pointer; overflow: hidden; border: 1px solid var(--border); transition: border var(--transition-fast); }
-.thumb.active { border: 2px solid var(--jd-red); }
-
-/* Fullscreen */
-.fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.95); z-index: 9999; display: flex; align-items: center; justify-content: center; animation: fadeIn .2s; }
-.fs-close { position: absolute; top: var(--space-lg); right: var(--space-lg); z-index: 2; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.2); color: #fff; border: none; font-size: var(--font-lg); cursor: pointer; }
-.fs-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.15); color: #fff; border: none; font-size: var(--font-xxl); cursor: pointer; transition: background var(--transition); }
-.fs-nav:hover { background: rgba(255,255,255,.3); }
-.fs-nav--prev { left: var(--space-lg); }
-.fs-nav--next { right: var(--space-lg); }
-.fs-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.fs-placeholder { font-size: 120px; }
-.fs-dots { position: absolute; bottom: var(--space-xl); left: 50%; transform: translateX(-50%); display: flex; gap: var(--space-xs); }
-.fs-dot { width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer; background: rgba(255,255,255,.4); }
-.fs-dot.active { background: var(--jd-red); }
-
-/* Info */
 .pdp-info { flex: 1; }
-.pdp-name { font-size: var(--font-title); margin-bottom: var(--space-sm); display: flex; align-items: center; }
-.jd-tag { font-size: var(--font-xs); background: var(--jd-red); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: var(--space-sm); font-weight: 400; }
-.pdp-desc { color: var(--jd-red); font-size: var(--font-base); margin-bottom: var(--space-sm); }
-.pdp-rating { margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
-.no-rating { color: var(--text-placeholder); font-size: var(--font-sm); }
-
-/* Price Box */
-.price-box { background: linear-gradient(135deg, var(--jd-red-light), var(--jd-red-bg)); padding: var(--space-xl); border-radius: var(--radius-md); margin-bottom: var(--space-lg); }
-.price-row { display: flex; align-items: baseline; gap: var(--space-md); flex-wrap: wrap; }
-.price-label { color: var(--text-tertiary); font-size: var(--font-base); }
-.price-value { color: var(--jd-red); font-size: 32px; font-weight: 700; }
-.stock-warn { padding: 2px 6px; background: #fff3cd; color: #856404; border-radius: 3px; font-size: var(--font-xs); }
-.stock-out { padding: 2px 6px; background: #f8d7da; color: #721c24; border-radius: 3px; font-size: var(--font-xs); }
-.alert-btn { background: none; border: 1px solid var(--jd-red); color: var(--jd-red); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm); padding: 2px 8px; white-space: nowrap; }
-.alert-btn.set { background: var(--jd-red); color: #fff; }
-.meta-row { display: flex; gap: var(--space-xxl); margin-top: var(--space-md); font-size: var(--font-base); color: var(--text-secondary); }
-.text-red { color: var(--jd-red); }
-.text-blue { color: var(--blue); }
-
-/* SKU */
-.sku-section { margin-bottom: var(--space-lg); }
-.sku-label { font-size: var(--font-base); color: var(--text-secondary); margin-bottom: var(--space-sm); }
-.sku-grid { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
-.sku-item { padding: var(--space-sm) var(--space-lg); border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-base); transition: all var(--transition); font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); color: var(--text-primary); background: var(--bg-white); }
-.sku-item.selected { border: 2px solid var(--jd-red); color: var(--jd-red); background: var(--jd-red-light); }
-.sku-color { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border); display: inline-block; flex-shrink: 0; }
-.sku-price { font-size: var(--font-xs); color: var(--text-tertiary); }
 
 /* Quantity */
 .qty-row { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-xxl); }
@@ -475,13 +394,11 @@ const SKU_COLORS: Record<string, string> = { '红': '#f10215', '蓝': '#1677ff',
 .flex-1 { flex: 1; }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 @media (min-width: 769px) { .floating-bar { display: flex; } }
 @media (max-width: 768px) {
   .pdp-main { flex-direction: column; padding: var(--space-md); }
-  .gallery { width: 100%; }
   .related-grid { grid-template-columns: repeat(2, 1fr); }
   .pdp-section { padding: var(--space-md); }
   .mobile-bar { display: flex; }

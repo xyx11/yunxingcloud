@@ -11,8 +11,21 @@ import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 
+interface GroupBuyItem {
+  id: number
+  productId: number
+  productName?: string
+  imageUrl?: string
+  groupPrice: number
+  originalPrice: number
+  minMembers: number
+  currentMembers?: number
+  endTime: string
+  stock?: number
+}
+
 const router = useRouter()
-const groups = ref<any[]>([])
+const groups = ref<GroupBuyItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
@@ -21,7 +34,7 @@ onMounted(async () => {
 })
 
 function goProduct(id: number) { router.push(`/product/${id}`) }
-const progress = (g: any) => Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
+const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
 </script>
 
 <template>

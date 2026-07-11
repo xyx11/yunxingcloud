@@ -47,9 +47,9 @@ onBeforeUnmount(() => clearInterval(timer))
     <span class="banner-text banner-clickable" @click="showPopup = true">📢 {{ announcement }}</span>
     <button @click="dismiss" class="close-btn">✕</button>
   </div>
-  <n-modal v-model:show="showPopup" preset="card" :title="announcement" style="width:500px">
+  <n-modal v-model:show="showPopup" preset="card" :title="announcement" class="popup-modal">
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div style="line-height:1.8" v-html="noticeContent || t('common.noDetail')" />
+    <div class="notice-content" v-html="noticeContent || t('common.noDetail')" />
     <template #footer>
       <n-space justify="end">
         <n-button type="primary" @click="closePopup">{{ t('common.gotIt') }}</n-button>
@@ -71,4 +71,6 @@ onBeforeUnmount(() => clearInterval(timer))
 .banner-clickable { cursor: pointer; }
 .banner-text-wrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
 .banner-popup-actions { margin-top: 4px; }
+.popup-modal { width: 500px; }
+.notice-content { line-height: 1.8; }
 </style>

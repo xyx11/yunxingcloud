@@ -34,7 +34,7 @@ const columns: DataTableColumns<Client> = [
   { title: t('oauth2.name'), key: 'client_name', width: 120 },
   { title: t('oauth2.redirectUri'), key: 'redirect_uris', width: 180, ellipsis: { tooltip: true } },
   { title: t('oauth2.scopes'), key: 'scopes', width: 120 },
-  { title: t('common.createdAt'), key: 'created_at', width: 150, render: (row: any) => row.created_at?.substring(0,19).replace('T',' ') || '-' },
+  { title: t('common.createdAt'), key: 'created_at', width: 150, render: (row: Client) => row.created_at?.substring(0,19).replace('T',' ') || '-' },
   { title: t('oauth2.actions'), key: 'actions', width: 80, render: (row) => renderActions(row) },
 ]
 
@@ -53,7 +53,7 @@ async function saveClient() {
       if (newSecret.value) notify.info('Client Secret: ' + newSecret.value)
     }
     showModal.value = false; editingId.value = null; loadClients()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) }
   finally { saving.value = false }
 }
 

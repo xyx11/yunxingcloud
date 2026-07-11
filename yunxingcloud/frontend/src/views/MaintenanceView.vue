@@ -8,7 +8,7 @@ import { NCard, NGrid, NGridItem, NStatistic, NButton, NSpace, NPopconfirm, NInp
 const { t } = useI18n()
 
 const notify = useNotify()
-const stats = ref<any>({})
+const stats = ref<Record<string, unknown>>({})
 const cleanDays = ref(90)
 
 async function loadStats() {
@@ -67,7 +67,7 @@ onMounted(loadStats)
     <n-card :title="t('maintenance.logCleanup')" class="mt-16">
       <n-space align="center">
         <span>{{ t('maintenance.cleanLabel') }}</span>
-        <n-input-number v-model:value="cleanDays" :min="1" :max="365" style="width:100px" size="small" />
+        <n-input-number v-model:value="cleanDays" :min="1" :max="365" class="w-100" size="small" />
         <span>{{ t('maintenance.daysBefore') }}</span>
         <n-popconfirm @positive-click="cleanLogs">
           <template #trigger><n-button type="warning" size="small">{{ t('maintenance.executeClean') }}</n-button></template>
@@ -97,3 +97,7 @@ onMounted(loadStats)
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-100 { width: 100px; }
+</style>

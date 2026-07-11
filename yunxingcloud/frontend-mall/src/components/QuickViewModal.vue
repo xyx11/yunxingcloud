@@ -4,10 +4,11 @@ import { useRouter } from 'vue-router'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { formatPrice } from '@/utils/format'
+import type { Product } from '@/types'
 import ProductRating from './ProductRating.vue'
 import LazyImage from './LazyImage.vue'
 
-const props = defineProps<{ product: any; show: boolean }>()
+const props = defineProps<{ product: Product | null; show: boolean }>()
 const emit = defineEmits(['close'])
 const router = useRouter()
 const toast = useToast()
@@ -21,7 +22,7 @@ function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') emit('close') }
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-async function quickAdd() {
+async function quickAdd() { if (!props.product) return
   adding.value = true
   try { await addToCart(Number(props.product.id), qty.value); toast.success('已加入购物车'); emit('close') } catch { toast.error('添加失败') } finally { adding.value = false }
 }

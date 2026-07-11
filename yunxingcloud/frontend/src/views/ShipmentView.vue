@@ -47,7 +47,7 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="物流发货管理"><template #header-extra><n-space><n-button size="small" @click="showTrack=true">单号追踪</n-button><n-button type="primary" size="small" @click="add">+ 录入发货</n-button></n-space></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索快递..." size="small" clearable style="width:180px"/><n-button size="small" @click="load" secondary>刷新</n-button>
+        <n-input v-model:value="searchKeyword" placeholder="搜索快递..." size="small" clearable class="w-180"/><n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small"/>
     </n-card>
@@ -61,15 +61,22 @@ onMounted(load)
         </n-form>
       </n-drawer-content>
     </n-drawer>
-    <n-modal v-model:show="showTrack" title="物流追踪" preset="card" style="max-width:450px">
+    <n-modal v-model:show="showTrack" title="物流追踪" preset="card" class="max-w-450">
       <n-space vertical>
-        <n-space><n-input v-model:value="trackNo" placeholder="输入快递单号" style="width:200px" size="small" /><n-button type="primary" size="small" :loading="tracking" @click="doTrack(trackNo)">查询</n-button></n-space>
+        <n-space><n-input v-model:value="trackNo" placeholder="输入快递单号" class="w-200" size="small" /><n-button type="primary" size="small" :loading="tracking" @click="doTrack(trackNo)">查询</n-button></n-space>
         <n-spin :show="tracking" />
         <n-timeline v-if="trackSteps.length">
           <n-timeline-item v-for="(s,i) in trackSteps" :key="i" :type="i===0?'success':i===trackSteps.length-1?'info':'default'" :title="s.status" :time="s.time?.substring(0,16)" :content="s.desc" />
         </n-timeline>
-        <div v-if="!trackSteps.length && !tracking" style="text-align:center;color:#999;padding:20px">输入快递单号点击查询</div>
+        <div v-if="!trackSteps.length && !tracking" class="track-empty">输入快递单号点击查询</div>
       </n-space>
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+.w-200 { width: 200px; }
+.max-w-450 { max-width: 450px; }
+.track-empty { text-align: center; color: #999; padding: 20px; }
+</style>

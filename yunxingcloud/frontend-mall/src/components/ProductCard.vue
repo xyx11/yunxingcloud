@@ -47,7 +47,7 @@ function defaultImage(name: string): string {
       <LazyImage
         :src="product.imageUrl || defaultImage(product.name)"
         :alt="product.name"
-        style="width:100%;aspect-ratio:1;object-fit:cover"
+        class="card-img"
       />
       <span v-if="product.badge" class="card-badge">{{ product.badge }}</span>
     </div>
@@ -105,6 +105,7 @@ function defaultImage(name: string): string {
   overflow: hidden;
   background: #f5f5f5;
 }
+.card-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 .card-image :deep(img) {
   transition: transform var(--transition-slow);
 }

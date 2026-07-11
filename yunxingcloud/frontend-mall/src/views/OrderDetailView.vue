@@ -10,14 +10,14 @@ import { formatPrice } from '@/utils/format'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import type { OrderHead } from '@/types'
+import type { OrderHead, OrderItem, OrderStatus } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
 const order = ref<OrderHead | null>(null)
-const lines = ref<any[]>([])
+const lines = ref<OrderItem[]>([])
 const shipment = ref<{carrier:string,trackingNo:string} | null>(null)
 const reviewForm = ref({ productId: 0, rating: 5, content: '' })
 const showReview = ref(false)
@@ -43,11 +43,11 @@ onMounted(async () => {
 
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
 async function cancel() { confirmShow.value = true }
-async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as any; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch {} }
+async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch {} }
 
 async function confirmReceive() {
   if (receiving.value || !order.value) return; receiving.value = true
-  try { await request.put(`/orders/${order.value.id}/status`, { status: 3 as any }); order.value.status = 3 as any; toast.success(t('toast.received')) } catch { toast.error(t('toast.updateFailed')) }
+  try { await request.put(`/orders/${order.value.id}/status`, { status: 3 as OrderStatus }); order.value.status = 3 as OrderStatus; toast.success(t('toast.received')) } catch { toast.error(t('toast.updateFailed')) }
   finally { receiving.value = false }
 }
 

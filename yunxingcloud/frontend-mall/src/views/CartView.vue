@@ -9,13 +9,13 @@ import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
 import { formatPrice } from '@/utils/format'
-import type { CartItem } from '@/types'
+import type { CartItem, Product } from '@/types'
 
 const router = useRouter()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
 const items = ref<CartItem[]>([])
-const recs = ref<any[]>([])
+const recs = ref<Product[]>([])
 const loading = ref(true)
 const selectedIds = ref<Set<number>>(new Set())
 
@@ -86,7 +86,7 @@ onMounted(load)
     <div v-if="loading" class="cart-skeleton">
       <div v-for="i in 3" :key="i" class="sk-row">
         <SkeletonBox width="80px" height="80px" rounded="8px" :count="1" />
-        <div style="flex:1"><SkeletonBox height="16px" width="60%" :count="1" /></div>
+        <div class="sk-body"><SkeletonBox height="16px" width="60%" :count="1" /></div>
       </div>
     </div>
 
@@ -158,7 +158,7 @@ onMounted(load)
         <h3 class="recs-title">🔥 为你推荐</h3>
         <div class="recs-grid">
           <div v-for="p in recs" :key="p.id" class="recs-item" @click="router.push('/product/' + p.id)">
-            <LazyImage :src="(p as any).imageUrl || ''" alt="" height="120px" />
+            <LazyImage :src="p.imageUrl || ''" alt="" height="120px" />
             <div class="recs-info">
               <div class="recs-name">{{ p.name }}</div>
               <span class="recs-price">{{ formatPrice(p.price / 100, 2) }}</span>
@@ -178,6 +178,7 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 
 .cart-skeleton { padding: 40px 0; }
 .sk-row { display: flex; align-items: center; padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); gap: var(--space-md); }
+.sk-body { flex: 1; }
 
 .cart-header {
   display: flex; align-items: center; padding: var(--space-md) 0;

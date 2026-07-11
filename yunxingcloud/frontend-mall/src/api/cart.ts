@@ -6,7 +6,7 @@ export interface CartItem {
 }
 
 async function refreshCount() {
-  try { const r = await getCart(); const items = r.data || []; const count = items.reduce((s: number, i: any) => s + i.quantity, 0); localStorage.setItem('cart_count', String(count)); window.dispatchEvent(new CustomEvent('cart_updated')) } catch (e) { console.error('[cart] refreshCount failed:', e) }
+  try { const r = await getCart(); const items = r.data || []; const count = items.reduce((s: number, i: CartItem) => s + i.quantity, 0); localStorage.setItem('cart_count', String(count)); window.dispatchEvent(new CustomEvent('cart_updated')) } catch (e) { console.error('[cart] refreshCount failed:', e) }
 }
 
 export const getCart = () => request.get('/cart')

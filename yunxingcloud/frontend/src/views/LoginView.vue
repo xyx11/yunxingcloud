@@ -88,8 +88,9 @@ async function handleLogin() {
     const redirectUrl = await authStore.login(model.value.username, password, model.value.code || undefined)
     const finalUrl = redirectUrl !== '/' ? redirectUrl : (route.query.redirect as string) || '/'
     router.push(finalUrl)
-  } catch (e: any) {
-    error.value = e.response?.data?.message || e.message || t('login.badCredentials')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } }; message?: string }
+    error.value = err.response?.data?.message || err.message || t('login.badCredentials')
     await getCaptcha()
   } finally { loading.value = false }
 }
@@ -108,7 +109,7 @@ function handleSocialLogin(provider: string) {
       </div>
       <p class="subtitle">{{ t('app.subtitle') }}</p>
 
-      <n-alert v-if="error" type="error" closable @close="error = ''" style="margin-bottom:20px">
+      <n-alert v-if="error" type="error" closable @close="error = ''" class="mb-20">
         {{ error }}
       </n-alert>
 
@@ -126,15 +127,15 @@ function handleSocialLogin(provider: string) {
         </n-form-item>
 
         <n-form-item v-if="captchaEnabled" path="code">
-          <div style="display:flex; gap:12px; width:100%;">
-            <n-input v-model:value="model.code" :placeholder="t('login.captcha')" size="large" style="flex:1;">
+          <div class="captcha-row">
+            <n-input v-model:value="model.code" :placeholder="t('login.captcha')" size="large" class="flex-1">
               <template #prefix>🔑</template>
             </n-input>
-            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" :alt="t('login.captcha')" :title="t('login.refreshCaptcha')" style="height:40px;width:120px;cursor:pointer;border-radius:4px;">
+            <img v-if="codeUrl" :src="codeUrl" @click="getCaptcha" :alt="t('login.captcha')" :title="t('login.refreshCaptcha')" class="captcha-image">
           </div>
         </n-form-item>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="login-actions">
           <n-checkbox v-model:checked="model.rememberMe">{{ t('login.remember') }}</n-checkbox>
           <router-link to="/forgot-password" class="link">{{ t('login.forgot') }}</router-link>
         </div>
@@ -150,7 +151,7 @@ function handleSocialLogin(provider: string) {
 
       <n-divider>{{ t('login.thirdParty') }}</n-divider>
 
-      <div style="display:flex;justify-content:center;gap:24px;">
+      <div class="social-login-row">
         <div v-for="sp in socialProviders" :key="sp.provider" class="social-btn" @click="handleSocialLogin(sp.provider)">
           <svg class="social-icon" viewBox="0 0 24 24" width="28" height="28" :fill="sp.color">
             <path :d="sp.svg" />
@@ -197,4 +198,10 @@ function handleSocialLogin(provider: string) {
 .social-name { font-size: 12px; color: #666; }
 .brand { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
 .version-badge { font-size: 13px; color: #667eea; font-weight: 500; background: rgba(102,126,234,0.1); padding: 2px 10px; border-radius: 10px; }
+.mb-20 { margin-bottom: 20px; }
+.flex-1 { flex: 1; }
+.captcha-image { height: 40px; width: 120px; cursor: pointer; border-radius: 4px; }
+.captcha-row { display: flex; gap: 12px; width: 100%; }
+.login-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.social-login-row { display: flex; justify-content: center; gap: 24px; }
 </style>

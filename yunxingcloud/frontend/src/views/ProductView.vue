@@ -14,31 +14,31 @@ const { t } = useI18n()
 const notify = useNotify()
 const loading = ref(false); const batchLoading = ref(false)
 const items = ref<Product[]>([])
-const categories = ref<any[]>([])
-const brands = ref<any[]>([])
-const categoryOpts = computed(() => categories.value.map((c: any) => ({ label: c.name, value: c.id })))
-const brandOpts = computed(() => brands.value.map((b: any) => ({ label: b.name, value: b.id })))
+const categories = ref<Record<string, unknown>[]>([])
+const brands = ref<Record<string, unknown>[]>([])
+const categoryOpts = computed(() => categories.value.map((c) => ({ label: c.name as string, value: c.id as number })))
+const brandOpts = computed(() => brands.value.map((b) => ({ label: b.name as string, value: b.id as number })))
 const showModal = ref(false); const showBatchModal = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref({ name: '', description: '', price: 1, stock: 0, imageUrl: '', images: [] as string[], status: '0', categoryId: null as any, brandId: null as any, metaTitle: '', metaDescription: '' })
-const batchForm = ref({ price: null as any, status: '', categoryId: null as any })
+const form = ref({ name: '', description: '', price: 1, stock: 0, imageUrl: '', images: [] as string[], status: '0', categoryId: null as number | null, brandId: null as number | null, metaTitle: '', metaDescription: '' })
+const batchForm = ref({ price: null as number | null, status: '', categoryId: null as number | null })
 const saving = ref(false); const uploading = ref(false)
 const imagePreview = ref('')
 const searchKeyword = ref('')
 const checkedRowKeys = ref<number[]>([])
-const filterCategoryId = ref<any>(null)
-const filterBrandId = ref<any>(null)
+const filterCategoryId = ref<number | null>(null)
+const filterBrandId = ref<number | null>(null)
 const filterStatus = ref('')
 const filterPriceMin = ref<number|null>(null)
 const filterPriceMax = ref<number|null>(null)
 
-async function handleUpload(options: any) {
+async function handleUpload(options: { file: { file: File } }) {
   const fd = new FormData(); fd.append('file', options.file.file)
   uploading.value = true
   try { const r = await request.post('/api/files/upload', fd); imagePreview.value = r.data.url || ''; form.value.imageUrl = r.data.url || ''; options.onFinish() } catch { options.onError() } finally { uploading.value = false }
 }
 
-async function handleMultiUpload(options: any) {
+async function handleMultiUpload(options: { file: { file: File } }) {
   const fd = new FormData(); fd.append('file', options.file.file)
   try { const r = await request.post('/api/files/upload', fd); const url = r.data.url || ''; if (url) { form.value.images.push(url) }; options.onFinish() } catch { options.onError() }
 }
@@ -95,7 +95,7 @@ const columns = computed<DataTableColumns<Product>>(() => [
 ])
 
 async function load() { loading.value = true; try { const r = await fetchProducts(); items.value = r.data.content || r.data || [] } finally { loading.value = false } }
-function edit(r: any) {
+function edit(r: Product) {
   editingId.value = r.id
   let images: string[] = []
   if (r.images) { try { images = typeof r.images === 'string' ? JSON.parse(r.images) : r.images } catch { images = [] } }
@@ -106,16 +106,16 @@ function add() { editingId.value = null; form.value = { name: '', description: '
 async function save() {
   if (!form.value.name.trim()) { notify.error(t('validate.required')); return }
   saving.value = true
-  const data: any = { ...form.value, price: Math.round(form.value.price * 100) }
+  const data: Record<string, unknown> = { ...form.value, price: Math.round(form.value.price * 100) }
   data.images = JSON.stringify(data.images)
   if (!data.categoryId) delete data.categoryId
   if (!data.brandId) delete data.brandId
   try { editingId.value ? await updateProduct(editingId.value, data) : await createProduct(data); showModal.value = false; notify.success(t('common.saveSuccess')); load() }
-  catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) }
+  catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) }
   finally { saving.value = false }
 }
 async function del(id: number) { try { await deleteProduct(id); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.saveFailed')) } }
-function exportExcel() { const data = items.value.map((p:any) => ({ 名称:p.name, 价格:formatPrice(p.price/100, 2), 库存:p.stock, 销量:p.sales||0, 状态:p.status==='0'?'上架':'下架', 创建时间:p.createdAt?.substring(0,10) })); import('xlsx').then(X => { const ws = X.utils.json_to_sheet(data); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, '商品'); X.writeFile(wb, 'products.xlsx') }) }
+function exportExcel() { const data = items.value.map((p: Product) => ({ 名称:p.name, 价格:formatPrice(p.price/100, 2), 库存:p.stock, 销量:p.sales||0, 状态:p.status==='0'?'上架':'下架', 创建时间:p.createdAt?.substring(0,10) })); import('xlsx').then(X => { const ws = X.utils.json_to_sheet(data); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, '商品'); X.writeFile(wb, 'products.xlsx') }) }
 
 // 批量操作
 const batchOpts = [
@@ -132,7 +132,7 @@ async function doBatch() {
   batchLoading.value = true
   try {
     for (const id of checkedRowKeys.value) {
-      const data: any = {}
+      const data: Record<string, unknown> = {}
       if (batchForm.value.price !== null) data.price = Math.round(batchForm.value.price * 100)
       if (batchForm.value.status) data.status = batchForm.value.status
       if (batchForm.value.categoryId) data.categoryId = batchForm.value.categoryId
@@ -193,14 +193,14 @@ onMounted(() => {
                 <n-upload :custom-request="handleUpload" :show-file-list="false" accept="image/*">
                   <n-button :loading="uploading" size="small">选择图片</n-button>
                 </n-upload>
-                <n-image v-if="imagePreview || form.imageUrl" :src="imagePreview || form.imageUrl" width="120" height="120" style="margin-top:8px;border-radius:8px;object-fit:cover" />
+                <n-image v-if="imagePreview || form.imageUrl" :src="imagePreview || form.imageUrl" width="120" height="120" class="preview-image" />
               </n-form-item>
               <n-divider />
               <n-form-item label="多图">
                 <n-space>
-                  <div v-for="(img, i) in form.images" :key="i" style="position:relative;display:inline-block">
-                    <n-image :src="img" width="80" height="80" style="border-radius:6px;object-fit:cover" />
-                    <n-button size="tiny" circle type="error" style="position:absolute;top:-6px;right:-6px" @click="removeImage(i)">×</n-button>
+                  <div v-for="(img, i) in form.images" :key="i" class="image-wrapper">
+                    <n-image :src="img" width="80" height="80" class="thumb-image" />
+                    <n-button size="tiny" circle type="error" class="remove-btn" @click="removeImage(i)">×</n-button>
                   </div>
                   <n-upload :custom-request="handleMultiUpload" :show-file-list="false" accept="image/*">
                     <n-button size="small" secondary>+ 添加</n-button>
@@ -218,7 +218,7 @@ onMounted(() => {
         </n-tabs>
       </n-drawer-content>
     </n-drawer>
-    <n-modal v-model:show="showBatchModal" title="批量编辑" preset="card" style="max-width:400px">
+    <n-modal v-model:show="showBatchModal" title="批量编辑" preset="card" class="max-w-400">
       <n-form :model="batchForm">
         <n-form-item label="新价格(¥)"><n-input-number v-model:value="batchForm.price" :min="0.01" :step="0.01" placeholder="留空不修改" /></n-form-item>
         <n-form-item label="新状态"><n-select v-model:value="batchForm.status" :options="[{label:'不修改',value:''},...statusOpts]" /></n-form-item>
@@ -228,3 +228,11 @@ onMounted(() => {
     </n-modal>
   </n-card>
 </template>
+
+<style scoped>
+.preview-image { margin-top: 8px; border-radius: 8px; object-fit: cover; }
+.image-wrapper { position: relative; display: inline-block; }
+.thumb-image { border-radius: 6px; object-fit: cover; }
+.remove-btn { position: absolute; top: -6px; right: -6px; }
+.max-w-400 { max-width: 400px; }
+</style>

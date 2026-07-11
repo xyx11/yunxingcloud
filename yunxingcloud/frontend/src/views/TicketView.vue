@@ -170,7 +170,7 @@ onMounted(load)
   <n-card :title="t('nav.tickets')">
     <n-space vertical>
       <n-space justify="space-between">
-        <n-input v-model:value="searchKeyword" :placeholder="t('ticket.searchPlaceholder')" clearable style="width: 240px" />
+        <n-input v-model:value="searchKeyword" :placeholder="t('ticket.searchPlaceholder')" clearable class="w-240" />
         <n-space><n-button v-if="checkedRowKeys.length" type="error" size="small" @click="batchDelete">{{ t('common.batchDelete') }} ({{ checkedRowKeys.length }})</n-button><n-button type="primary" @click="addTicket">{{ t('ticket.add') }}</n-button></n-space>
       </n-space>
       <n-dataTable :columns="columns" :data="filteredItems" :loading="loading" :row-key="(r: SysTicket) => r.id" v-model:checked-row-keys="checkedRowKeys" :pagination="{ pageSize: 10 }" />
@@ -201,3 +201,7 @@ onMounted(load)
     </n-drawer>
   </n-card>
 </template>
+
+<style scoped>
+.w-240 { width: 240px; }
+</style>

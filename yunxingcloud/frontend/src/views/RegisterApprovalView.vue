@@ -71,9 +71,14 @@ onMounted(loadPending)
         :columns="columns" :data="items" :loading="loading" size="small" :bordered="false"
         :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }" :row-key="(row: PendingUser) => row.id"
       />
-      <n-space v-if="!loading && items.length === 0" justify="center" style="padding:40px">
-        <span style="color:var(--n-text-color-3)">{{ t('common.noData') }}</span>
+      <n-space v-if="!loading && items.length === 0" justify="center" class="p-40">
+        <span class="text-muted-var">{{ t('common.noData') }}</span>
       </n-space>
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.p-40 { padding: 40px; }
+.text-muted-var { color: var(--n-text-color-3); }
+</style>

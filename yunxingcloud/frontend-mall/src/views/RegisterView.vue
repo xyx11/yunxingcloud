@@ -40,7 +40,7 @@ async function doRegister() {
   try {
     await auth.register(form.value.username, form.value.password, form.value.email || undefined)
     showSuccess.value = true
-  } catch (e: any) { error.value = e.response?.data?.message || t('register.registerFail') }
+  } catch (e: unknown) { error.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('register.registerFail') }
   finally { loading.value = false }
 }
 </script>

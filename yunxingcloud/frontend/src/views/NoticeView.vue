@@ -53,7 +53,7 @@ const columns: DataTableColumns<Notice> = [
     render: (row) => h(NTag, { type: row.noticeType === '1' ? 'info' : 'warning', size: 'small' },
       { default: () => row.noticeType === '1' ? t('notice.types.notice') : t('notice.types.announcement') })
   },
-  { title: t('notice.content'), key: 'noticeContent', width: 200, ellipsis: { tooltip: true }, render: (row: any) => h('div', { innerHTML: (row.noticeContent || '').replace(/<[^>]+>/g,'').substring(0, 50) }) },
+  { title: t('notice.content'), key: 'noticeContent', width: 200, ellipsis: { tooltip: true }, render: (row: Notice) => h('div', { innerHTML: (row.noticeContent || '').replace(/<[^>]+>/g,'').substring(0, 50) }) },
   {
     title: t('notice.status'), key: 'status', width: 60,
     render: (row) => h(NTag, { type: row.status === '0' ? 'success' : 'default', size: 'small' },
@@ -103,7 +103,7 @@ async function saveNotice() {
     showModal.value = false
     notify.success(editing.value ? t('notice.updateSuccess') : t('notice.createSuccess'))
     await loadNotices()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delNotice(id: number) {
@@ -124,7 +124,7 @@ onMounted(loadNotices)
       </template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
-          <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable style="width:180px" />
+          <n-input v-model:value="searchKeyword" :placeholder="t('notice.searchPlaceholder')" size="small" clearable class="w-180" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="searchKeyword = ''">{{ t('common.reset') }}</n-button>
         </n-space>
@@ -151,3 +151,7 @@ onMounted(loadNotices)
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+</style>

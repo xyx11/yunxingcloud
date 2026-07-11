@@ -12,7 +12,7 @@ import SkeletonBox from '@/components/SkeletonBox.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import { formatPrice } from '@/utils/format'
-import type { Product } from '@/types'
+import type { Product, Category } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,12 +21,12 @@ const toast = useToast()
 const { toggle: toggleCompare, isSelected } = useCompare()
 const { flyToCart } = useCartFly()
 
-const products = ref<any[]>([])
+const products = ref<Product[]>([])
 const totalPages = ref(0)
 const currentPage = ref(0)
 const pageSize = 20
-const categories = ref<any[]>([])
-const brands = ref<any[]>([])
+const categories = ref<Category[]>([])
+const brands = ref<{ id: number; name: string }[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const quickViewProduct = ref<Product | null>(null)
@@ -66,7 +66,7 @@ function onScroll() {
 async function loadProducts() {
   loading.value = true
   try {
-    const params: any = { page: currentPage.value, size: pageSize }
+    const params: Record<string, string | number> = { page: currentPage.value, size: pageSize }
     if (filters.value.sort) params.sort = filters.value.sort
     if (filters.value.categoryId) params.categoryId = filters.value.categoryId
     if (filters.value.brandId) params.brandId = filters.value.brandId
@@ -78,7 +78,7 @@ async function loadProducts() {
   } catch { products.value = [] } finally { loading.value = false }
 }
 
-function applyFilters() { currentPage.value = 0; const q: any = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
+function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
 function clearFilters() { filters.value = { categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' }; router.push({ query: {} }); loadProducts(); window.scrollTo(0, 0) }
 function setSort(s: string) { filters.value.sort = filters.value.sort === s ? '' : s; currentPage.value = 0; products.value = []; loadProducts(); window.scrollTo(0, 0) }
 
@@ -87,7 +87,7 @@ async function loadMore(nextPage?: number) {
   loadingMore.value = true
   const page = nextPage || currentPage.value + 1
   try {
-    const params: any = { page, size: pageSize }
+    const params: Record<string, string | number> = { page, size: pageSize }
     if (filters.value.sort) params.sort = filters.value.sort
     if (filters.value.categoryId) params.categoryId = filters.value.categoryId
     if (filters.value.brandId) params.brandId = filters.value.brandId
@@ -102,12 +102,12 @@ async function loadMore(nextPage?: number) {
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrollTo(0, 0) }
 
-async function quickAdd(e: Event, p: any) {
+async function quickAdd(e: Event, p: Product) {
   e.stopPropagation()
-  try { await addToCart(p.id, 1); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
+  try { await addToCart(p.id, 1); toast.success('已加入购物车'); (p as Product)._added = true; setTimeout(() => (p as Product)._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
 }
 
-function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct.value = p }
+function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewProduct.value = p }
 </script>
 
 <template>
@@ -188,8 +188,8 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
                 <span class="card-price">{{ formatPrice(p.price / 100, 2) }}</span>
                 <span class="card-sales" v-if="p.sales">{{ p.sales > 1000 ? '🔥 ' + (p.sales / 1000).toFixed(1) + 'k人已购' : p.sales + '人已购' }}</span>
               </div>
-              <button class="add-btn" :class="{ added: (p as any)._added }" @click="(e: Event) => quickAdd(e, p)">
-                {{ (p as any)._added ? '✓' : '+' }}
+              <button class="add-btn" :class="{ added: (p as Product)._added }" @click="(e: Event) => quickAdd(e, p)">
+                {{ (p as Product)._added ? '✓' : '+' }}
               </button>
             </div>
           </div>
@@ -198,7 +198,7 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
 
       <!-- Empty -->
       <div v-if="!loading && !products.length" class="empty-state">
-        <p style="font-size:48px">📭</p><p>{{ t('common.noResults') }}</p>
+        <p class="empty-icon">📭</p><p>{{ t('common.noResults') }}</p>
       </div>
 
       <!-- Load More -->
@@ -321,6 +321,7 @@ function openQuickView(e: Event, p: any) { e.stopPropagation(); quickViewProduct
 .add-btn.added { background: var(--jd-red); color: #fff; }
 
 .empty-state { text-align: center; padding: 60px; color: var(--text-tertiary); }
+.empty-icon { font-size: 48px; }
 .load-more { text-align: center; padding: var(--space-lg); color: var(--text-tertiary); font-size: var(--font-base); }
 .pagination { display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-xxl); }
 .page-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-base); background: var(--bg-white); color: var(--text-primary); }

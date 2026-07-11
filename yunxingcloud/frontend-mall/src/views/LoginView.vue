@@ -30,8 +30,9 @@ async function doLogin() {
     toast.success(t('toast.loginSuccess'))
     const redirect = router.currentRoute.value.query.redirect as string
     router.push(redirect || '/')
-  } catch (e: any) {
-    const errData = e.response?.data || {}
+  } catch (e: unknown) {
+    const apiErr = e as { response?: { data?: { message?: string; code?: string } } }
+    const errData = apiErr.response?.data || {}
     const errMsg: string = errData.message || ''
     if (errData.code === 'USER_NOT_FOUND' || errMsg.includes('不存在') || errMsg.includes('未注册')) {
       error.value = t('login.userNotFound')

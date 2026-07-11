@@ -7,7 +7,7 @@ import { NCard, NDataTable, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import request from '@/api/request'
 
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 
 const typeLabels: Record<string, string> = { refund: t('refund.typeRefund'), return: t('refund.typeReturn'), exchange: t('refund.typeExchange') }
 const statusLabels: Record<string, { l: string; t: string }> = {
@@ -18,15 +18,15 @@ const statusLabels: Record<string, { l: string; t: string }> = {
   '4': { l: t('refund.statusCompleted'), t: 'success' },
 }
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: 'ID', key: 'id', width: 60 },
   { title: t('refund.username'), key: 'username', width: 90 },
   { title: t('refund.orderNo'), key: 'orderNo', width: 170 },
-  { title: t('refund.type'), key: 'type', width: 70, render(r: any) { return typeLabels[r.type] || r.type } },
-  { title: t('refund.amount'), key: 'refundAmount', width: 100, render(r: any) { return r.refundAmount ? formatPrice(r.refundAmount / 100, 2) : '-' } },
+  { title: t('refund.type'), key: 'type', width: 70, render(r: Record<string, unknown>) { return typeLabels[r.type as string] || r.type as string } },
+  { title: t('refund.amount'), key: 'refundAmount', width: 100, render(r: Record<string, unknown>) { return (r.refundAmount as number) ? formatPrice((r.refundAmount as number) / 100, 2) : '-' } },
   { title: t('refund.reason'), key: 'reason', width: 150, ellipsis: { tooltip: true } },
-  { title: t('refund.status'), key: 'status', width: 80, render(r: any) { const s = statusLabels[r.status] || { l: r.status, t: 'default' }; return h(NTag, { size: 'small', type: s.t as any }, { default: () => s.l }) } },
-  { title: t('refund.time'), key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
+  { title: t('refund.status'), key: 'status', width: 80, render(r: Record<string, unknown>) { const s = statusLabels[r.status as string] || { l: r.status as string, t: 'default' }; return h(NTag, { size: 'small', type: s.t as any }, { default: () => s.l }) } },
+  { title: t('refund.time'), key: 'createdAt', width: 140, render(r: Record<string, unknown>) { return (r.createdAt as string)?.substring(0, 16) } },
 ]
 
 async function load() { const r = await request.get('/after-sale'); items.value = r.data }

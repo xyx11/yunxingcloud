@@ -46,13 +46,13 @@ onMounted(load)
   <div class="view-pad">
     <n-card :title="t('invoice.title')"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索发票号/订单号/用户..." size="small" clearable style="width:220px" />
-        <n-select v-model:value="filterStatus" :options="statusOpts" size="small" style="width:90px" />
-        <n-select v-model:value="filterType" :options="typeOpts" size="small" style="width:80px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索发票号/订单号/用户..." size="small" clearable class="w-220" />
+        <n-select v-model:value="filterStatus" :options="statusOpts" size="small" class="w-90" />
+        <n-select v-model:value="filterType" :options="typeOpts" size="small" class="w-80" />
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
     </n-card>
-    <n-modal v-model:show="showDetail" title="发票详情" preset="card" style="max-width:500px">
+    <n-modal v-model:show="showDetail" title="发票详情" preset="card" class="max-w-500">
       <template v-if="detail">
         <p><b>发票号:</b> {{ detail.invoiceNo }}</p>
         <p><b>订单号:</b> {{ detail.orderNo }}</p>
@@ -67,3 +67,10 @@ onMounted(load)
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.w-220 { width: 220px; }
+.w-90 { width: 90px; }
+.w-80 { width: 80px; }
+.max-w-500 { max-width: 500px; }
+</style>

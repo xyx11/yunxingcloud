@@ -91,7 +91,7 @@ async function savePost() {
     showModal.value = false
     notify.success(editing.value ? t('post.updateSuccess') : t('post.createSuccess'))
     await loadPosts()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delPost(id: number) {
@@ -131,7 +131,7 @@ onMounted(loadPosts)
           <n-input v-model:value="form.postName" />
         </n-form-item>
         <n-form-item :label="t('post.sort')">
-          <n-input-number v-model:value="form.sortOrder" :min="0" style="width:100%" />
+          <n-input-number v-model:value="form.sortOrder" :min="0" class="w-full" />
         </n-form-item>
         <n-form-item :label="t('post.status')">
           <n-select v-model:value="form.status" :options="statusOptions" />
@@ -146,3 +146,7 @@ onMounted(loadPosts)
     </template>
   </CrudTable>
 </template>
+
+<style scoped>
+.w-full { width: 100%; }
+</style>

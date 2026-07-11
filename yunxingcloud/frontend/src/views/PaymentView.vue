@@ -15,7 +15,7 @@ const saving = ref(false)
 const paying = ref<Set<number>>(new Set())
 const refunding = ref(false)
 const items = ref<PaymentOrder[]>([])
-const records = ref<any[]>([])
+const records = ref<Record<string, unknown>[]>([])
 const showModal = ref(false)
 const showRecords = ref(false)
 const showRefund = ref(false)
@@ -113,10 +113,10 @@ const recordColumns = computed(() => [
   { title: t('payment.channel'), key: 'channel', width: 60 },
   { title: t('payment.request'), key: 'request', width: 200, ellipsis: { tooltip: true } },
   { title: t('payment.response'), key: 'response', width: 200, ellipsis: { tooltip: true } },
-  { title: t('payment.time'), key: 'createdAt', width: 140, render(r: any) { return r.createdAt?.substring(0, 16) } },
+  { title: t('payment.time'), key: 'createdAt', width: 140, render(r: Record<string, unknown>) { return (r.createdAt as string || '').substring(0, 16) } },
 ])
 
-function exportCSV() { const h=['订单号','标题','金额','渠道','状态','交易号','时间']; const r=items.value.map((i:any)=>[i.orderNo||'',i.title||'',formatPrice(i.amount/100, 2),i.channel||'',i.status||'',i.tradeNo||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='payments.csv'; a.click() }
+function exportCSV() { const h=['订单号','标题','金额','渠道','状态','交易号','时间']; const r=items.value.map((i: PaymentOrder)=>[i.orderNo||'',i.title||'',formatPrice(i.amount/100, 2),i.channel||'',i.status||'',i.tradeNo||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='payments.csv'; a.click() }
 onMounted(load)
 </script>
 
@@ -124,7 +124,7 @@ onMounted(load)
   <n-card :title="t('nav.payments')">
     <n-space vertical>
       <n-space justify="space-between">
-        <n-input v-model:value="searchKeyword" :placeholder="t('payment.searchPlaceholder')" clearable style="width: 240px" />
+        <n-input v-model:value="searchKeyword" :placeholder="t('payment.searchPlaceholder')" clearable class="w-240" />
         <n-space><n-button size="small" @click="exportCSV">{{ t('operlog.exportCsv') }}</n-button><n-button type="primary" @click="showModal = true">{{ t('payment.createOrder') }}</n-button></n-space>
       </n-space>
       <n-dataTable :columns="columns" :data="filteredItems" :loading="loading" :row-key="(r: PaymentOrder) => r.id" :pagination="{ pageSize: 10 }" />
@@ -151,9 +151,14 @@ onMounted(load)
       </n-drawer-content>
     </n-drawer>
 
-    <n-modal v-model:show="showRecords" :title="t('payment.payRecords')" preset="card" style="max-width:700px">
+    <n-modal v-model:show="showRecords" :title="t('payment.payRecords')" preset="card" class="max-w-700">
       <n-dataTable :columns="recordColumns" :data="records" :pagination="{ pageSize: 5 }" size="small" />
       <template #footer><n-button @click="showRecords = false">{{ t('common.close') }}</n-button></template>
     </n-modal>
   </n-card>
 </template>
+
+<style scoped>
+.w-240 { width: 240px; }
+.max-w-700 { max-width: 700px; }
+</style>

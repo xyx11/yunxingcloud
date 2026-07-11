@@ -88,7 +88,7 @@ async function saveDept() {
     showModal.value = false
     notify.success(editing.value ? t('department.updateSuccess') : t('department.createSuccess'))
     await loadDepts()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function moveDept(id: number, direction: number) {
@@ -113,7 +113,7 @@ onMounted(loadDepts)
       </template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
-          <n-input v-model:value="deptSearch" @keyup.enter="doSearch" :placeholder="t('department.name')" size="small" clearable style="max-width:180px;width:95%" />
+          <n-input v-model:value="deptSearch" @keyup.enter="doSearch" :placeholder="t('department.name')" size="small" clearable class="search-input" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="deptSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
@@ -148,3 +148,7 @@ onMounted(loadDepts)
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.search-input { max-width: 180px; width: 95%; }
+</style>

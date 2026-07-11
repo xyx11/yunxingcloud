@@ -20,9 +20,9 @@ const columns: DataTableColumns<GroupBuy> = [
   { title: '拼团价(分)', key: 'groupPrice', width: 100 },
   { title: t('groupBuy.minMembers'), key: 'minMembers', width: 80 },
   { title: '状态', key: 'status', width: 80, render(r: GroupBuy) { return h(NTag, { size:'small', type: r.status==='0'?'success':'default' }, { default: () => r.status==='0'?'进行中':'已结束' }) } },
-  { title: '开始', key: 'startTime', width: 140, render(r:any){ return r.startTime?.substring(0,16) } },
-  { title: '结束', key: 'endTime', width: 140, render(r:any){ return r.endTime?.substring(0,16) } },
-  { title: t('common.actions'), key:'act', width:160, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
+  { title: '开始', key: 'startTime', width: 140, render(r: GroupBuy){ return r.startTime?.substring(0,16) } },
+  { title: '结束', key: 'endTime', width: 140, render(r: GroupBuy){ return r.endTime?.substring(0,16) } },
+  { title: t('common.actions'), key:'act', width:160, render(r: GroupBuy){ return h(NSpace,{size:'small'},{default:()=>[
     h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>'编辑'}),
     h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
   ]})}}

@@ -9,44 +9,44 @@ import { useNotify } from '@/composables/useNotify'
 const notify = useNotify()
 const { t } = useI18n()
 const loading = ref(false); const saving = ref(false)
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number | null>(null)
-const form = ref({ name: '', icon: '', sortOrder: 0, status: '0', parentId: null as any })
+const form = ref({ name: '', icon: '', sortOrder: 0, status: '0', parentId: null as number | null })
 const searchKeyword = ref('')
 
 const filtered = computed(() => {
   if (!searchKeyword.value) return items.value
   const kw = searchKeyword.value.toLowerCase()
-  return items.value.filter((c: any) => c.name?.toLowerCase().includes(kw))
+  return items.value.filter((c) => (c.name as string || '').toLowerCase().includes(kw))
 })
 
 const parentOpts = computed(() => [
   { label: '顶级分类', value: null },
-  ...items.value.filter((c: any) => c.id !== editingId.value).map((c: any) => ({ label: c.name, value: c.id }))
+  ...items.value.filter((c) => c.id !== editingId.value).map((c) => ({ label: c.name as string, value: c.id as number }))
 ])
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '图标', key: 'icon', width: 60, render: (r: any) => r.icon || '-' },
+  { title: '图标', key: 'icon', width: 60, render: (r) => (r.icon as string) || '-' },
   { title: '分类名称', key: 'name', width: 160 },
   {
     title: '父级', key: 'parentId', width: 100,
-    render: (r: any) => {
+    render: (r) => {
       if (!r.parentId) return '-'
-      const p = items.value.find((c: any) => c.id === r.parentId)
-      return p?.name || r.parentId
+      const p = items.value.find((c) => c.id === r.parentId)
+      return (p?.name as string) || (r.parentId as string)
     }
   },
   { title: t('common.sort'), key: 'sortOrder', width: 60 },
   {
     title: '状态', key: 'status', width: 70,
-    render: (r: any) => h(NTag, { type: r.status === '0' ? 'success' : 'default', size: 'small' }, { default: () => r.status === '0' ? '启用' : '禁用' })
+    render: (r) => h(NTag, { type: r.status === '0' ? 'success' : 'default', size: 'small' }, { default: () => r.status === '0' ? '启用' : '禁用' })
   },
   {
     title: t('common.actions'), key: 'act', width: 120,
-    render: (r: any) => h(NSpace, { size: 'small' }, { default: () => [
-      h(NButton, { size: 'tiny', onClick: () => { editingId.value = r.id; form.value = { name: r.name, icon: r.icon || '', sortOrder: r.sortOrder || 0, status: r.status, parentId: r.parentId || null }; showModal.value = true } }, { default: () => t('common.edit') }),
-      h(NPopconfirm, { onPositiveClick: () => del(r.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
+    render: (r) => h(NSpace, { size: 'small' }, { default: () => [
+      h(NButton, { size: 'tiny', onClick: () => { editingId.value = r.id as number; form.value = { name: r.name as string, icon: (r.icon as string) || '', sortOrder: (r.sortOrder as number) || 0, status: r.status as string, parentId: (r.parentId as number | null) || null }; showModal.value = true } }, { default: () => t('common.edit') }),
+      h(NPopconfirm, { onPositiveClick: () => del(r.id as number) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
     ]})}
 ]
 
@@ -55,7 +55,7 @@ async function load() { loading.value = true; try { const r = await request.get(
 async function save() {
   saving.value = true
   try {
-    const data: any = { name: form.value.name, icon: form.value.icon, sortOrder: form.value.sortOrder, status: form.value.status, parentId: form.value.parentId || 0 }
+    const data: Record<string, unknown> = { name: form.value.name, icon: form.value.icon, sortOrder: form.value.sortOrder, status: form.value.status, parentId: form.value.parentId || 0 }
     if (editingId.value) {
       await request.put(`/api/categories/${editingId.value}`, data)
     } else {
@@ -75,10 +75,10 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="分类管理"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增分类</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索分类..." size="small" clearable style="width:180px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索分类..." size="small" clearable class="w-180" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
-      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:20}" size="small" />
+      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r: Record<string, unknown>)=>r.id" :pagination="{pageSize:20}" size="small" />
     </n-card>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
       <n-drawer-content :title="editingId ? '编辑分类' : '新增分类'" closable>
@@ -94,3 +94,7 @@ onMounted(load)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+</style>

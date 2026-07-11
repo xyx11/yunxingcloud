@@ -39,7 +39,7 @@ onMounted(load)
     </div>
 
     <div v-if="loading" class="cp-grid">
-      <div v-for="i in 4" :key="i" class="sk-card"><div class="sk-line" style="width:60%;height:16px" /></div>
+      <div v-for="i in 4" :key="i" class="sk-card"><div class="sk-line sk-line-s" /></div>
     </div>
 
     <!-- Available -->
@@ -93,6 +93,7 @@ onMounted(load)
 
 .sk-card { background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-xl); box-shadow: var(--shadow-sm); height: 120px; display: flex; align-items: center; }
 .sk-line { background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.sk-line-s { width: 60%; height: 16px; }
 
 .coupon-card { background: linear-gradient(135deg, var(--bg-white), var(--jd-red-light)); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; }
 .coupon-card.used { opacity: .5; }

@@ -8,22 +8,22 @@ import { useNotify } from '@/composables/useNotify'
 const { t } = useI18n()
 const notify = useNotify()
 const importing = ref(false)
-const results = ref<any[]>([])
+const results = ref<Record<string, unknown>[]>([])
 const summary = ref('')
 
-function parseCSV(text: string): any[] {
+function parseCSV(text: string): Record<string, string>[] {
   const lines = text.split('\n').filter(l => l.trim())
   if (lines.length < 2) return []
   const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''))
   return lines.slice(1).map(line => {
     const vals = line.split(',').map(v => v.trim().replace(/"/g,''))
-    const obj: any = {}
+    const obj: Record<string, string> = {}
     headers.forEach((h, i) => { if (vals[i] !== undefined) obj[h] = vals[i] })
     return obj
   })
 }
 
-async function handleImport(options: any) {
+async function handleImport(options: { file: { file: File } }) {
   const reader = new FileReader()
   reader.onload = async (e) => {
     const text = e.target?.result as string
@@ -36,7 +36,7 @@ async function handleImport(options: any) {
         if (!data.name) { fail++; results.value.push({ ...data, _status: 'fail', _reason: t('productImport.missingName') }); continue }
         await request.post('/api/products', data)
         ok++; results.value.push({ ...data, _status: 'ok' })
-      } catch (e: any) { fail++; results.value.push({ ...row, _status: 'fail', _reason: e.response?.data?.message || t('productImport.createFail') }) }
+      } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; fail++; results.value.push({ ...row, _status: 'fail', _reason: err.response?.data?.message || t('productImport.createFail') }) }
     }
     summary.value = t('productImport.summary', { ok, fail })
     notify.success(summary.value)
@@ -62,7 +62,7 @@ async function handleImport(options: any) {
       <n-dataTable :columns="[
         { title: t('common.name'), key: 'name' },
         { title: t('product.price'), key: 'price', width: 80 },
-        { title: t('product.status'), key: '_status', width: 80, render: (r: any) => h(NTag, { type: r._status === 'ok' ? 'success' : 'error', size: 'small' }, { default: () => r._status === 'ok' ? t('productImport.success') : t('productImport.fail') }) },
+        { title: t('product.status'), key: '_status', width: 80, render: (r: Record<string, unknown>) => h(NTag, { type: r._status === 'ok' ? 'success' : 'error', size: 'small' }, { default: () => r._status === 'ok' ? t('productImport.success') : t('productImport.fail') }) },
         { title: t('productImport.reason'), key: '_reason', width: 120 }
       ]" :data="results" size="small" :pagination="{ pageSize: 20 }" />
     </n-card>

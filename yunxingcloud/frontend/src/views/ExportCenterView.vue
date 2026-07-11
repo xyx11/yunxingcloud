@@ -19,11 +19,11 @@ const loading = ref('')
 async function doExport(key: string) {
   loading.value = key
   try {
-    let data: any[] = []
-    if (key === 'products') { const r = await request.get('/api/products?size=200'); data = (r.data.content || r.data || []).map((p:any) => ({ 名称: p.name, 价格: (p.price/100).toFixed(2), 库存: p.stock, 状态: p.status==='0'?'上架':'下架', 销量: p.sales, 创建时间: p.createdAt?.substring(0,10) })) }
-    else if (key === 'orders') { const r = await request.get('/api/orders'); data = (r.data || []).map((o:any) => ({ 订单号: o.orderNo, 用户: o.username, 金额: (o.totalAmount/100).toFixed(2), 状态: ['待支付','已支付','已发货','已完成','已取消'][Number(o.status)]||o.status, 创建时间: o.createdAt?.substring(0,10) })) }
-    else if (key === 'users') { const r = await request.get('/api/users?size=500'); data = (r.data.content || r.data || []).map((u:any) => ({ 用户名: u.username, 昵称: u.nickname, 邮箱: u.email, 手机: u.phone, 状态: u.enabled?'启用':'停用', 创建时间: u.createdAt?.substring(0,10) })) }
-    else if (key === 'inventory') { const r = await request.get('/api/inventory'); data = (r.data || []).map((i:any) => ({ 商品ID: i.productId, 商品名: i.productName, 仓库: i.warehouseId, 数量: i.quantity, 最低库存: i.minQuantity })) }
+    let data: Record<string, unknown>[] = []
+    if (key === 'products') { const r = await request.get('/api/products?size=200'); data = (r.data.content || r.data || []).map((p: Record<string, unknown>) => ({ 名称: p.name, 价格: ((p.price as number)/100).toFixed(2), 库存: p.stock, 状态: p.status==='0'?'上架':'下架', 销量: p.sales, 创建时间: (p.createdAt as string || '').substring(0,10) })) }
+    else if (key === 'orders') { const r = await request.get('/api/orders'); data = (r.data || []).map((o: Record<string, unknown>) => ({ 订单号: o.orderNo, 用户: o.username, 金额: ((o.totalAmount as number)/100).toFixed(2), 状态: ['待支付','已支付','已发货','已完成','已取消'][Number(o.status)]||o.status, 创建时间: (o.createdAt as string || '').substring(0,10) })) }
+    else if (key === 'users') { const r = await request.get('/api/users?size=500'); data = (r.data.content || r.data || []).map((u: Record<string, unknown>) => ({ 用户名: u.username, 昵称: u.nickname, 邮箱: u.email, 手机: u.phone, 状态: u.enabled?'启用':'停用', 创建时间: (u.createdAt as string || '').substring(0,10) })) }
+    else if (key === 'inventory') { const r = await request.get('/api/inventory'); data = (r.data || []).map((i: Record<string, unknown>) => ({ 商品ID: i.productId, 商品名: i.productName, 仓库: i.warehouseId, 数量: i.quantity, 最低库存: i.minQuantity })) }
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'data')
     XLSX.writeFile(wb, `${key}_${new Date().toISOString().substring(0,10)}.xlsx`)
     notify.success(t('export.exported', { n: data.length }))

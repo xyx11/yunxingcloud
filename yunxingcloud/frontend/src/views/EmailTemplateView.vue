@@ -34,7 +34,7 @@ onMounted(load)
     <n-card :title="t('email.title')"><template #header-extra><n-button size="small" @click="load" secondary>{{ t('email.refresh') }}</n-button></template>
       <n-dataTable :columns="columns" :data="templates" :loading="loading" :row-key="(r:any)=>r.key" :pagination="{pageSize:15}" size="small" />
     </n-card>
-    <n-modal v-model:show="showTest" :title="t('email.testTitle')" preset="card" style="max-width:400px">
+    <n-modal v-model:show="showTest" :title="t('email.testTitle')" preset="card" class="max-w-400">
       <n-form :model="testForm">
         <n-form-item :label="t('email.template')"><n-input v-model:value="testForm.templateKey" readonly /></n-form-item>
         <n-form-item :label="t('email.recipient')"><n-input v-model:value="testForm.to" placeholder="test@example.com" /></n-form-item>
@@ -44,3 +44,7 @@ onMounted(load)
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.max-w-400 { max-width: 400px; }
+</style>

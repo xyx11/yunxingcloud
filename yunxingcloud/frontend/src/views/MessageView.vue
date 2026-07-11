@@ -28,7 +28,7 @@ const columns: DataTableColumns<Msg> = [
     title: t('message.status'), key: 'isRead', width: 60,
     render: (row) => h(NTag, { type: row.isRead ? 'default' : 'info', size: 'small' }, { default: () => row.isRead ? t('message.read') : t('message.unread') })
   },
-  { title: t('message.time'), key: 'createdAt', width: 160, render: (row: any) => row.createdAt?.substring(0, 19).replace('T', ' ') || '-' },
+  { title: t('message.time'), key: 'createdAt', width: 160, render: (row: Msg) => row.createdAt?.substring(0, 19).replace('T', ' ') || '-' },
   {
     title: t('message.actions'), key: 'actions', width: 140,
     render: (row) => h(NSpace, null, {

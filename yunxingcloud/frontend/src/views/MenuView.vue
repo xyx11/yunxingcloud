@@ -132,7 +132,7 @@ async function saveMenu() {
     showModal.value = false
     notify.success(editing.value ? t('menu.updateSuccess') : t('menu.createSuccess'))
     await loadMenus()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function moveMenuById(id: number, direction: number) {
@@ -169,7 +169,7 @@ onMounted(loadMenus)
           <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="80" size="small">
             <n-form-item :label="t('menu.name')"><n-input v-model:value="form.name" /></n-form-item>
             <n-form-item :label="t('menu.type')"><n-select v-model:value="form.menuType" :options="typeOptions" /></n-form-item>
-            <n-form-item :label="t('menu.parent')"><n-select v-model:value="form.parentId" :options="parentOptions as any" /></n-form-item>
+            <n-form-item :label="t('menu.parent')"><n-select v-model:value="form.parentId" :options="parentOptions" /></n-form-item>
             <n-form-item :label="t('menu.path')"><n-input v-model:value="form.path" placeholder="/example" /></n-form-item>
             <n-form-item :label="t('menu.component')"><n-input v-model:value="form.component" placeholder="ExampleView" /></n-form-item>
             <n-form-item :label="t('menu.icon')"><n-select v-model:value="form.icon" :options="iconOptions" :placeholder="t('menu.selectIcon')" clearable filterable /></n-form-item>

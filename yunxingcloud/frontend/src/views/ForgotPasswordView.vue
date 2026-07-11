@@ -29,8 +29,9 @@ async function handleSubmit() {
         token.value = res.data.token
       }
     }
-  } catch (e: any) {
-    error.value = e.response?.data?.message || t('common.error')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    error.value = err.response?.data?.message || t('common.error')
   } finally {
     loading.value = false
   }
@@ -43,10 +44,10 @@ async function handleSubmit() {
       <h1 class="title">{{ t('login.forgot') }}</h1>
       <p class="subtitle">{{ t('pwd.forgotInstruction') }}</p>
 
-      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-      <n-alert v-if="message" type="success" style="margin-bottom: 20px">
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" class="mb-20" />
+      <n-alert v-if="message" type="success" class="mb-20">
         <div>{{ message }}</div>
-        <div v-if="token" style="margin-top: 12px; word-break: break-all; font-size: 12px; color: #666;">
+        <div v-if="token" class="token-info">
           {{ t('pwd.tokenLabel') }}: {{ token }}
         </div>
       </n-alert>
@@ -60,7 +61,7 @@ async function handleSubmit() {
         </n-button>
       </n-form>
 
-      <div v-if="token" style="margin-top: 20px; text-align: center;">
+      <div v-if="token" class="action-center">
         <n-button type="primary" @click="router.push({ path: '/reset-password', query: { token } })">
           {{ t('pwd.goReset') }}
         </n-button>
@@ -80,4 +81,7 @@ async function handleSubmit() {
 .subtitle { text-align: center; color: var(--n-text-color-3, #888); margin-bottom: 28px; font-size: 14px; }
 .back-link { text-align: center; margin-top: 16px; font-size: 13px; }
 .back-link a { color: var(--primary-color, #667eea); text-decoration: none; }
+.mb-20 { margin-bottom: 20px; }
+.token-info { margin-top: 12px; word-break: break-all; font-size: 12px; color: #666; }
+.action-center { margin-top: 20px; text-align: center; }
 </style>

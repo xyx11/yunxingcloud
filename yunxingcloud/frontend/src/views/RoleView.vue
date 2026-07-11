@@ -8,7 +8,7 @@ import { useNotify } from '@/composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NPopconfirm, NTree, NSwitch, NPopover, NCheckbox } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
-import type { DataTableColumns, TreeOption } from 'naive-ui'
+import type { DataTableColumn, DataTableColumns, TreeOption } from 'naive-ui'
 
 interface Role { id: number; name: string; code: string; description: string; permissions: string; enabled: boolean; createdAt?: string }
 
@@ -41,10 +41,10 @@ const permNodes = computed(() => {
   return menuTree.value.map(m => ({
     key: m.key as string,
     label: m.label as string,
-    children: (m.children as any[])?.map(c => ({
+    children: (m.children as TreeOption[])?.map(c => ({
       key: c.key as string,
       label: c.label as string,
-      children: (c.children as any[])?.map(b => ({
+      children: (c.children as TreeOption[])?.map(b => ({
         key: b.key as string,
         label: b.label as string,
       })) || undefined
@@ -57,7 +57,7 @@ const columns = computed<DataTableColumns<Role>>(() => [
   { title: t('role.name'), key: 'name', width: 120, sorter: true },
   { title: t('role.code'), key: 'code', width: 100 },
   { title: t('role.userCount'), key: 'user_count', width: 60 },
-  { title: t('role.permCount'), key: 'permissions', width: 60, render: (row: any) => row.permissions ? row.permissions.split(',').filter((s:string)=>s.trim()).length : 0 },
+  { title: t('role.permCount'), key: 'permissions', width: 60, render: (row: Role) => row.permissions ? row.permissions.split(',').filter((s:string)=>s.trim()).length : 0 },
   { title: t('role.desc'), key: 'description', width: 120, ellipsis: { tooltip: true } },
   { title: t('role.enabled'), key: 'enabled', width: 70, render: (row) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleRole(row) }) },
   { title: t('role.created'), key: 'createdAt', width: 140, render: (row) => row.createdAt || '-' },
@@ -67,9 +67,9 @@ const columns = computed<DataTableColumns<Role>>(() => [
   ]}) },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(columns, 'roles')
-const columnOptions = computed(() => (columns.value as any[])
-  .filter((c: any) => c.key && c.key !== 'actions')
-  .map((c: any) => ({ key: c.key, title: c.title })),
+const columnOptions = computed(() => (columns.value as DataTableColumns<Role>)
+  .filter((c: DataTableColumn<Role>) => c.key && c.key !== 'actions')
+  .map((c: DataTableColumn<Role>) => ({ key: c.key, title: c.title?.toString() || '' })),
 )
 
 async function loadAll() {
@@ -82,11 +82,11 @@ async function loadAll() {
   loading.value = false
 }
 
-function buildPermTree(menus: any[]): TreeOption[] {
-  return menus.filter((m: any) => m.menuType !== 'F').map((m: any) => ({
-    key: m.perms || `menu-${m.id}`,
-    label: m.name,
-    children: m.children ? buildPermTree(m.children) : undefined,
+function buildPermTree(menus: Record<string, unknown>[]): TreeOption[] {
+  return menus.filter((m) => m.menuType !== 'F').map((m) => ({
+    key: (m.perms as string) || `menu-${(m.id as number)}`,
+    label: m.name as string,
+    children: m.children ? buildPermTree(m.children as Record<string, unknown>[]) : undefined,
   }))
 }
 
@@ -115,7 +115,7 @@ async function saveRole() {
     if (editing.value) await updateRole(editing.value.id, body)
     else await createRole(body)
     showModal.value = false; notify.success(editing.value ? t('role.updateSuccess') : t('role.createSuccess')); await loadAll()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.error')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.error')) } finally { saving.value = false }
 }
 
 async function delRole(id: number) { await deleteRole(id); notify.success(t('role.deleteSuccess')); await loadAll() }
@@ -140,7 +140,7 @@ onMounted(loadAll)
       </template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
-          <n-input v-model:value="roleSearch" @keyup.enter="doSearch" :placeholder="t('role.placeholder')" clearable style="width:180px" size="small" />
+          <n-input v-model:value="roleSearch" @keyup.enter="doSearch" :placeholder="t('role.placeholder')" clearable class="w-180" size="small" />
           <n-button type="primary" size="small" @click="doSearch">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="roleSearch = ''">{{ t('common.reset') }}</n-button>
         </n-space>
@@ -173,11 +173,11 @@ onMounted(loadAll)
             <n-form-item :label="t('role.code')"><n-input v-model:value="form.code" placeholder="admin" /></n-form-item>
             <n-form-item :label="t('role.desc')"><n-input v-model:value="form.description" :placeholder="t('role.desc')" /></n-form-item>
             <n-form-item :label="t('role.perms')">
-              <n-space style="margin-bottom:4px">
+              <n-space class="mb-4">
                 <n-button size="tiny" @click="selectAllPerms">{{ t('common.selectAll') }}</n-button>
                 <n-button size="tiny" @click="deselectAllPerms">{{ t('common.deselectAll') }}</n-button>
               </n-space>
-              <div style="max-height:50vh;overflow-y:auto;border:1px solid var(--n-border-color, #e8e8e8);border-radius:4px;padding:8px">
+              <div class="perm-tree-container">
                 <n-tree :data="permNodes" checkable :checked-keys="checkedPerms" @update:checked-keys="(ks:string[])=>checkedPerms=ks" default-expand-all block-line />
               </div>
             </n-form-item>
@@ -187,3 +187,9 @@ onMounted(loadAll)
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+.mb-4 { margin-bottom: 4px; }
+.perm-tree-container { max-height: 50vh; overflow-y: auto; border: 1px solid var(--n-border-color, #e8e8e8); border-radius: 4px; padding: 8px; }
+</style>

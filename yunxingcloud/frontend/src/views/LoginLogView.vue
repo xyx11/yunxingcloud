@@ -39,7 +39,7 @@ async function loadStats() {
   try {
     const res = await fetchLoginInfos({ page: 1, pageSize: 200 })
     const hours = new Array(24).fill(0)
-    res.data.items?.forEach((l:any) => { if (l.loginTime) { const h = new Date(l.loginTime).getHours(); hours[h]++ } })
+    res.data.items?.forEach((l: LoginInfo) => { if (l.loginTime) { const h = new Date(l.loginTime).getHours(); hours[h]++ } })
     hourOption.value.series[0].data = hours
     hourOption.value = { ...hourOption.value }
   } catch { notify.error(t('common.error')); }
@@ -77,11 +77,11 @@ const columns: DataTableColumns<LoginInfo> = [
 async function loadItems() {
   loading.value = true
   try {
-    const params: any = { page: page.value, pageSize: pageSize.value }
+    const params: Record<string, string | number> = { page: page.value, pageSize: pageSize.value }
     if (filterUser.value) params.userName = filterUser.value
     if (filterStatus.value) params.status = filterStatus.value
     if (dateRange.value) { params.startTime = new Date(dateRange.value[0]).toISOString().substring(0,19); params.endTime = new Date(dateRange.value[1]).toISOString().substring(0,19) }
-    const res = await fetchLoginInfos(params as any)
+    const res = await fetchLoginInfos(params)
     items.value = res.data.items
     total.value = res.data.total
   } catch { notify.error(t('common.error')); }
@@ -118,12 +118,12 @@ onMounted(() => { loadItems(); loadStats() })
 <template>
   <div class="view-pad">
     <n-card :title="t('nav.loginlog')">
-      <n-grid cols="3" x-gap="12" style="margin-bottom:16px">
+      <n-grid cols="3" x-gap="12" class="mb-16">
         <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.totalLogins')" :value="stats.todayTotal" /></n-card></n-grid-item>
         <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.todayLogins')"><template #prefix>✅</template>{{ stats.todaySuccess }}</n-statistic></n-card></n-grid-item>
         <n-grid-item><n-card size="small"><n-statistic :label="t('loginlog.todayFailures')"><template #prefix>⚠️</template>{{ stats.todayFail }}</n-statistic></n-card></n-grid-item>
       </n-grid>
-      <v-chart :option="hourOption" style="height:160px;margin-bottom:12px" autoresize />
+      <v-chart :option="hourOption" class="chart-hourly" autoresize />
       <template #header-extra>
         <n-space>
           <n-popconfirm @positive-click="cleanAll">
@@ -134,9 +134,9 @@ onMounted(() => { loadItems(); loadStats() })
       </template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
-          <n-input v-model:value="filterUser" :placeholder="t('loginlog.username')" size="small" clearable style="width:120px" />
-          <n-select v-model:value="filterStatus" :options="statusOptions" size="small" style="width:80px" />
-          <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" style="width:240px" clearable @update:value="loadItems" />
+          <n-input v-model:value="filterUser" :placeholder="t('loginlog.username')" size="small" clearable class="w-120" />
+          <n-select v-model:value="filterStatus" :options="statusOptions" size="small" class="w-80" />
+          <n-date-picker v-model:value="dateRange" type="datetimerange" size="small" class="w-240" clearable @update:value="loadItems" />
           <n-button type="primary" size="small" @click="() => { page = 1; loadItems() }">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="filterUser = ''; filterStatus = ''; page = 1; loadItems()">{{ t('common.reset') }}</n-button>
         </n-space>
@@ -150,3 +150,11 @@ onMounted(() => { loadItems(); loadStats() })
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.mb-16 { margin-bottom: 16px; }
+.chart-hourly { height: 160px; margin-bottom: 12px; }
+.w-120 { width: 120px; }
+.w-80 { width: 80px; }
+.w-240 { width: 240px; }
+</style>

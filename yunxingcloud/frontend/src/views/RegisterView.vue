@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { register } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
-import type { FormInst, FormRules } from 'naive-ui'
+import type { FormInst, FormItemRule, FormRules } from 'naive-ui'
 import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 
 const { t } = useI18n()
@@ -37,26 +37,26 @@ const rules: FormRules = {
     { required: true, message: () => t('login.passwordRequired'), trigger: 'blur' },
     { min: 8, message: () => t('validate.passwordMinLen'), trigger: 'blur' },
     {
-      validator: (_rule: any, value: string) => /[A-Z]/.test(value),
+      validator: (_rule: FormItemRule, value: string) => /[A-Z]/.test(value),
       message: () => t('validate.passwordNeedUpper'), trigger: 'blur',
     },
     {
-      validator: (_rule: any, value: string) => /[a-z]/.test(value),
+      validator: (_rule: FormItemRule, value: string) => /[a-z]/.test(value),
       message: () => t('validate.passwordNeedLower'), trigger: 'blur',
     },
     {
-      validator: (_rule: any, value: string) => /[0-9]/.test(value),
+      validator: (_rule: FormItemRule, value: string) => /[0-9]/.test(value),
       message: () => t('validate.passwordNeedDigit'), trigger: 'blur',
     },
     {
-      validator: (_rule: any, value: string) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
+      validator: (_rule: FormItemRule, value: string) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
       message: () => t('validate.passwordNeedSpecial'), trigger: 'blur',
     },
   ],
   confirmPassword: [
     { required: true, message: () => t('validate.confirmRequired'), trigger: 'blur' },
     {
-      validator: (_rule: any, value: string) => value === model.value.password,
+      validator: (_rule: FormItemRule, value: string) => value === model.value.password,
       message: () => t('validate.passwordMismatch'),
       trigger: 'blur',
     },
@@ -88,8 +88,9 @@ async function handleRegister() {
     } else {
       error.value = res.data.message || t('validate.registerFailed')
     }
-  } catch (e: any) {
-    error.value = e.response?.data?.message || t('validate.registerFailed')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    error.value = err.response?.data?.message || t('validate.registerFailed')
   } finally {
     loading.value = false
   }
@@ -102,8 +103,8 @@ async function handleRegister() {
       <h1 class="title">{{ t('register.title') }}</h1>
       <p class="subtitle">{{ t('app.subtitle') }}</p>
 
-      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-      <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" class="mb-20" />
+      <n-alert v-if="success" type="success" :title="success" class="mb-20" />
 
       <n-form ref="formRef" :model="model" :rules="rules" @submit.prevent="handleRegister">
         <n-form-item :label="t('register.username')" path="username">
@@ -114,8 +115,8 @@ async function handleRegister() {
         </n-form-item>
         <n-form-item :label="t('register.password')" path="password">
           <n-input v-model:value="model.password" type="password" placeholder="8+ chars" size="large" show-password-on="click" />
-          <div v-if="model.password" style="margin-top:4px">
-            <div style="height:4px;border-radius:2px;background:var(--n-action-color,#eee);overflow:hidden">
+          <div v-if="model.password" class="mt-4">
+            <div class="password-meter">
               <div :style="{width:passwordStrength.pct+'%',height:'100%',background:passwordStrength.color,transition:'all .3s'}" />
             </div>
             <span :style="{fontSize:'11px',color:passwordStrength.color,float:'right'}">{{ passwordStrength.label }}</span>
@@ -178,4 +179,7 @@ async function handleRegister() {
   cursor: pointer;
   text-decoration: none;
 }
+.mb-20 { margin-bottom: 20px; }
+.mt-4 { margin-top: 4px; }
+.password-meter { height: 4px; border-radius: 2px; background: var(--n-action-color, #eee); overflow: hidden; }
 </style>

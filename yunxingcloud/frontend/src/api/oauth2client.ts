@@ -4,11 +4,11 @@ export async function fetchOAuth2Clients() {
   return request.get('/api/oauth2/clients')
 }
 
-export async function createOAuth2Client(data: any) {
+export async function createOAuth2Client(data: Record<string, unknown>) {
   return request.post('/api/oauth2/clients', data)
 }
 
-export async function updateOAuth2Client(id: string, data: any) {
+export async function updateOAuth2Client(id: string, data: Record<string, unknown>) {
   return request.put(`/api/oauth2/clients/${id}`, data)
 }
 

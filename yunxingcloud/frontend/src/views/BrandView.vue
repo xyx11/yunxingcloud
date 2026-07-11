@@ -9,7 +9,7 @@ import { useNotify } from '@/composables/useNotify'
 const notify = useNotify()
 const { t } = useI18n()
 const loading = ref(false); const saving = ref(false)
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number | null>(null)
 const form = ref({ name: '', logo: '', description: '' })
 const searchKeyword = ref('')
@@ -17,22 +17,22 @@ const searchKeyword = ref('')
 const filtered = computed(() => {
   if (!searchKeyword.value) return items.value
   const kw = searchKeyword.value.toLowerCase()
-  return items.value.filter((b: any) => b.name?.toLowerCase().includes(kw))
+  return items.value.filter((b) => (b.name as string || '').toLowerCase().includes(kw))
 })
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: 'ID', key: 'id', width: 60 },
   {
     title: 'Logo', key: 'logo', width: 80,
-    render: (r: any) => r.logo ? h('img', { src: r.logo, style: 'width:40px;height:40px;object-fit:contain;border-radius:4px' }) : '-'
+    render: (r) => r.logo ? h('img', { src: r.logo as string, style: 'width:40px;height:40px;object-fit:contain;border-radius:4px' }) : '-'
   },
   { title: '品牌名称', key: 'name', width: 150 },
   { title: t('common.description'), key: 'description', width: 200, ellipsis: { tooltip: true } },
   {
     title: t('common.actions'), key: 'act', width: 120,
-    render: (r: any) => h(NSpace, { size: 'small' }, { default: () => [
-      h(NButton, { size: 'tiny', onClick: () => { editingId.value = r.id; form.value = { name: r.name, logo: r.logo || '', description: r.description || '' }; showModal.value = true } }, { default: () => t('common.edit') }),
-      h(NPopconfirm, { onPositiveClick: () => delBrand(r.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
+    render: (r) => h(NSpace, { size: 'small' }, { default: () => [
+      h(NButton, { size: 'tiny', onClick: () => { editingId.value = r.id as number; form.value = { name: r.name as string, logo: (r.logo as string) || '', description: (r.description as string) || '' }; showModal.value = true } }, { default: () => t('common.edit') }),
+      h(NPopconfirm, { onPositiveClick: () => delBrand(r.id as number) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') })
     ]})}
 ]
 
@@ -70,10 +70,10 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="品牌管理"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增品牌</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索品牌..." size="small" clearable style="width:180px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索品牌..." size="small" clearable class="w-180" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
-      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
+      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r: Record<string, unknown>)=>r.id" :pagination="{pageSize:10}" size="small" />
     </n-card>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
       <n-drawer-content :title="editingId ? '编辑品牌' : '新增品牌'" closable>
@@ -85,7 +85,7 @@ onMounted(load)
             <n-space vertical>
               <n-input v-model:value="form.logo" placeholder="Logo URL" />
               <n-upload :custom-request="handleUpload" :show-file-list="false" accept="image/*"><n-button size="small" secondary>本地上传</n-button></n-upload>
-              <img v-if="form.logo" :src="form.logo" style="width:100px;height:100px;object-fit:contain;border:1px solid #eee;border-radius:8px" />
+              <img v-if="form.logo" :src="form.logo" class="brand-logo" />
             </n-space>
           </n-form-item>
         </n-form>
@@ -93,3 +93,8 @@ onMounted(load)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+.brand-logo { width: 100px; height: 100px; object-fit: contain; border: 1px solid #eee; border-radius: 8px; }
+</style>

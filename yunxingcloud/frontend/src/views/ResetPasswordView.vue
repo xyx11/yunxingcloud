@@ -47,8 +47,9 @@ async function handleSubmit() {
       success.value = res.data.message
       setTimeout(() => router.push('/login'), 2000)
     }
-  } catch (e: any) {
-    error.value = e.response?.data?.message || t('pwd.resetFailed')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    error.value = err.response?.data?.message || t('pwd.resetFailed')
   } finally {
     loading.value = false
   }
@@ -61,8 +62,8 @@ async function handleSubmit() {
       <h1 class="title">{{ t('pwd.reset') }}</h1>
       <p class="subtitle">{{ t('pwd.change') }}</p>
 
-      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" style="margin-bottom: 20px" />
-      <n-alert v-if="success" type="success" :title="success" style="margin-bottom: 20px" />
+      <n-alert v-if="error" type="error" :title="error" closable @close="error = ''" class="mb-20" />
+      <n-alert v-if="success" type="success" :title="success" class="mb-20" />
 
       <n-form v-if="!success" @submit.prevent="handleSubmit">
         <n-form-item :label="t('pwd.token')">
@@ -93,4 +94,5 @@ async function handleSubmit() {
 .subtitle { text-align: center; color: var(--n-text-color-3, #888); margin-bottom: 28px; font-size: 14px; }
 .back-link { text-align: center; margin-top: 16px; font-size: 13px; }
 .back-link a { color: var(--primary-color, #667eea); text-decoration: none; }
+.mb-20 { margin-bottom: 20px; }
 </style>

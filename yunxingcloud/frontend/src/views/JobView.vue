@@ -121,7 +121,7 @@ async function saveJob() {
     showModal.value = false
     notify.success(editing.value ? t('job.updateSuccess') : t('job.createSuccess'))
     await loadJobs()
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delJob(id: number) {
@@ -130,7 +130,7 @@ async function delJob(id: number) {
 }
 
 const showLogModal = ref(false)
-const jobLogs = ref<any[]>([])
+const jobLogs = ref<Record<string, unknown>[]>([])
 const logJobName = ref('')
 
 async function pauseJobById(id: number) { await pauseJob(id); await loadJobs() }
@@ -170,7 +170,7 @@ onMounted(loadJobs)
             <n-form-item :label="t('job.target')"><n-input v-model:value="form.invokeTarget" placeholder="com.example.Task.method" /></n-form-item>
             <n-form-item :label="t('job.cron')">
               <n-input v-model:value="form.cronExpression" placeholder="0/10 * * * * ?" />
-              <n-space style="margin-top:4px">
+              <n-space class="mt-4">
                 <n-button size="tiny" @click="form.cronExpression='0/10 * * * * ?'">{{ t('job.cron10s') }}</n-button>
                 <n-button size="tiny" @click="form.cronExpression='0/30 * * * * ?'">{{ t('job.cron30s') }}</n-button>
                 <n-button size="tiny" @click="form.cronExpression='0 * * * * ?'">{{ t('job.cron1m') }}</n-button>
@@ -187,17 +187,22 @@ onMounted(loadJobs)
       </n-drawer>
 
       <!-- 执行日志弹窗 -->
-      <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" preset="card" display-directive="show" style="max-width:700px;width:95%">
+      <n-modal v-model:show="showLogModal" :title="`${t('job.logsTitle')}: ${logJobName}`" preset="card" display-directive="show" class="modal-lg">
         <n-dataTable
           v-if="jobLogs.length" :columns="[
-            {title:t('job.startTime'),key:'startTime',width:150,render:(r:any)=>r.startTime?.substring(0,19)||'-'},
-            {title:t('job.endTime'),key:'endTime',width:150,render:(r:any)=>r.endTime?.substring(0,19)||'-'},
-            {title:t('job.status'),key:'status',width:60,render:(r:any)=>h(NTag,{type:r.status==='0'?'success':'error',size:'small'},{default:()=>r.status==='0'?t('common.success'):t('common.error')})},
+            {title:t('job.startTime'),key:'startTime',width:150,render:(r:Record<string,unknown>)=>String(r.startTime??'-').substring(0,19)||'-'},
+            {title:t('job.endTime'),key:'endTime',width:150,render:(r:Record<string,unknown>)=>String(r.endTime??'-').substring(0,19)||'-'},
+            {title:t('job.status'),key:'status',width:60,render:(r:Record<string,unknown>)=>h(NTag,{type:r.status==='0'?'success':'error',size:'small'},{default:()=>r.status==='0'?t('common.success'):t('common.error')})},
             {title:t('job.result'),key:'result',width:200,ellipsis:{tooltip:true}},
-          ]" :data="jobLogs" size="small" :row-key="(r:any)=>r.id" :max-height="400"
+          ]" :data="jobLogs" size="small" :row-key="(r:Record<string,unknown>)=>r.id" :max-height="400"
         />
         <span v-else class="text-muted">{{ t('job.noLogs') }}</span>
       </n-modal>
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.mt-4 { margin-top: 4px; }
+.modal-lg { max-width: 700px; width: 95%; }
+</style>

@@ -120,8 +120,8 @@ onMounted(load)
             <n-form-item :label="t('order.address')"><span>{{ detail.order?.receiverAddress }}</span></n-form-item>
           </n-form>
           <n-divider />
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
-            <div v-for="(s,i) in ['已下单','已支付','已发货','已完成']" :key="i" style="text-align:center;flex:1;position:relative">
+          <div class="order-steps">
+            <div v-for="(s,i) in ['已下单','已支付','已发货','已完成']" :key="i" class="order-step">
               <div :style="{width:24,height:24,borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,background:Number(detail.order?.status)>=i?'#18a058':'#e8e8e8',color:Number(detail.order?.status)>=i?'#fff':'#999'}">{{ Number(detail.order?.status)>=i ? '✓' : i+1 }}</div>
               <div style="font-size:11px;margin-top:4px;color:Number(detail.order?.status)>=i?'#18a058':'#999'">{{ s }}</div>
               <div v-if="i<3" :style="{position:'absolute',top:12,left:'60%',width:'80%',height:2,background:Number(detail.order?.status)>i?'#18a058':'#e8e8e8',transform:'translateX(-40%)'}" />
@@ -131,7 +131,7 @@ onMounted(load)
           <div class="price-breakdown">
             <div class="price-row"><span>{{ t('order.productTotal') }}</span><span>{{ formatPrice((detail.order?.totalAmount||0)/100, 2) }}</span></div>
             <div class="price-row price-coupon" v-if="detail.order?.couponAmount"><span>{{ t('order.couponDeduction') }}</span><span>-{{ formatPrice((detail.order?.couponAmount||0)/100, 2) }}</span></div>
-            <n-divider style="margin:8px 0" />
+            <n-divider class="divider-sm" />
             <div class="price-row price-total"><span>{{ t('order.actualPay') }}</span><span class="price-total-amount">{{ formatPrice((detail.order?.actualAmount||detail.order?.totalAmount||0)/100, 2) }}</span></div>
           </div>
           <n-divider />
@@ -140,7 +140,7 @@ onMounted(load)
       </n-drawer-content>
     </n-drawer>
     <!-- 批量发货弹窗 -->
-    <n-modal v-model:show="showBatchShip" :title="t('order.batchShip')" preset="card" style="max-width:400px">
+    <n-modal v-model:show="showBatchShip" :title="t('order.batchShip')" preset="card" class="max-w-400">
       <n-form>
         <n-form-item :label="t('order.carrier')"><n-input v-model:value="batchCarrier" :placeholder="t('order.carrierPlaceholder')" /></n-form-item>
         <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
@@ -148,7 +148,7 @@ onMounted(load)
       <template #footer><n-space justify="end"><n-button @click="showBatchShip=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchShip">确认批量发货</n-button></n-space></template>
     </n-modal>
     <!-- 批量取消弹窗 -->
-    <n-modal v-model:show="showBatchCancel" title="批量取消" preset="card" style="max-width:400px">
+    <n-modal v-model:show="showBatchCancel" title="批量取消" preset="card" class="max-w-400">
       <n-form>
         <n-form-item label="取消原因"><n-input v-model:value="batchReason" placeholder="输入取消原因" /></n-form-item>
         <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
@@ -157,3 +157,10 @@ onMounted(load)
     </n-modal>
   </n-card>
 </template>
+
+<style scoped>
+.order-steps { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.order-step { text-align: center; flex: 1; position: relative; }
+.divider-sm { margin: 8px 0; }
+.max-w-400 { max-width: 400px; }
+</style>

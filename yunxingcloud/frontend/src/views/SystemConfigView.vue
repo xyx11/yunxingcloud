@@ -33,7 +33,7 @@ onMounted(load)
     <n-card title="系统配置"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
       <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r:any)=>r.key" :pagination="{pageSize:15}" size="small" />
     </n-card>
-    <n-modal v-model:show="showModal" title="编辑配置" preset="card" style="max-width:450px">
+    <n-modal v-model:show="showModal" title="编辑配置" preset="card" class="max-w-450">
       <n-form :model="form">
         <n-form-item label="配置项"><n-input v-model:value="form.key" readonly /></n-form-item>
         <n-form-item label="值"><n-input v-model:value="form.value" type="textarea" /></n-form-item>
@@ -43,3 +43,7 @@ onMounted(load)
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.max-w-450 { max-width: 450px; }
+</style>

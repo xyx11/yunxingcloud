@@ -5,14 +5,14 @@ import en from './en'
 function safeGet(k: string, d: string) { try { return localStorage.getItem(k) || d } catch { return d } }
 function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
 
-const messages: Record<string, any> = { zh, en }
+const messages: Record<string, Record<string, unknown>> = { zh, en }
 const locale = ref(safeGet('locale', 'zh'))
 
-function t(key: string, fallbackOrParams?: string | Record<string, any>): string {
+function t(key: string, fallbackOrParams?: string | Record<string, string | number>): string {
   const keys = key.split('.')
-  let val: any = messages[locale.value]
+  let val: unknown = messages[locale.value]
   for (const k of keys) {
-    val = val?.[k]
+    val = (val as Record<string, unknown> | undefined)?.[k]
     if (val === undefined) {
       if (typeof fallbackOrParams === 'string') return fallbackOrParams
       return key

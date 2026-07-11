@@ -10,12 +10,13 @@ import { useToast } from '@/composables/useToast'
 import { useCartFly } from '@/composables/useCartFly'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
+import type { FavoriteItem } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { flyToCart } = useCartFly()
 const { t } = useI18n()
-const items = ref<any[]>([])
+const items = ref<FavoriteItem[]>([])
 const loading = ref(true)
 
 async function load() {
@@ -27,7 +28,7 @@ async function unfav(productId: number) {
   try { await removeFavorite(productId); items.value = items.value.filter(i => i.productId !== productId && i.id !== productId); toast.info(t('product.unfavorite')) } catch {}
 }
 
-async function quickAdd(e: Event, p: any) {
+async function quickAdd(e: Event, p: FavoriteItem) {
   e.stopPropagation()
   const pid = p.productId || p.id
   try { await addToCart(pid, 1); toast.success('已加入购物车'); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }

@@ -19,6 +19,10 @@ export interface Product {
   tags?: string[]
   skus?: Sku[]
   specs?: Spec[]
+  _added?: boolean
+  categoryName?: string
+  brandName?: string
+  createdAt?: string
 }
 
 export interface Sku {
@@ -156,6 +160,8 @@ export interface CompareItem {
   name: string
   price: number
   imageUrl?: string
+  sales?: number
+  description?: string
 }
 
 export interface ViewedProduct {
@@ -164,6 +170,34 @@ export interface ViewedProduct {
   price: number
   imageUrl?: string
   viewedAt: string
+}
+
+// ===== API / Extra Types =====
+
+export interface Review {
+  id: number
+  username: string
+  rating: number
+  content: string
+  createdAt: string
+}
+
+export interface FavoriteItem {
+  id: number
+  productId: number
+  imageUrl?: string
+  productName?: string
+  name?: string
+  price?: number
+}
+
+export interface ApiError {
+  response?: {
+    data?: {
+      message?: string
+      code?: string
+    }
+  }
 }
 
 // ===== Event Types =====

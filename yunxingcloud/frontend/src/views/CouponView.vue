@@ -73,7 +73,7 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="优惠券管理"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增优惠券</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索优惠券..." size="small" clearable style="width:180px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索优惠券..." size="small" clearable class="w-180" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
@@ -93,3 +93,7 @@ onMounted(load)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+</style>

@@ -19,11 +19,11 @@ const typeOpts = [{label:'满减',value:'full_reduction'},{label:'折扣',value:
 const statusLabel: Record<string,string> = {'0':'未开始','1':'进行中','2':'已结束'}
 
 const columns: DataTableColumns<Campaign> = [
-  { title: t('common.name'), key: 'name', width: 160 }, { title: '类型', key: 'type', width: 70, render(r:any){ return typeOpts.find(o=>o.value===r.type)?.label } },
-  { title: '门槛', key: 'threshold', width: 90, render(r:any){ return r.threshold?formatPrice(r.threshold/100, 2):'-' } },
-  { title: '优惠', key: 'discount', width: 90, render(r:any){ return r.type==='discount'?r.discount+'%':formatPrice(r.discount/100, 2) } },
-  { title: '状态', key: 'status', width: 80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'?'success':r.status==='2'?'default':'warning'},{default:()=>statusLabel[r.status]}) } },
-  { title: t('common.actions'), key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
+  { title: t('common.name'), key: 'name', width: 160 }, { title: '类型', key: 'type', width: 70, render(r: Campaign){ return typeOpts.find(o=>o.value===r.type)?.label } },
+  { title: '门槛', key: 'threshold', width: 90, render(r: Campaign){ return r.threshold?formatPrice(r.threshold/100, 2):'-' } },
+  { title: '优惠', key: 'discount', width: 90, render(r: Campaign){ return r.type==='discount'?r.discount+'%':formatPrice(r.discount/100, 2) } },
+  { title: '状态', key: 'status', width: 80, render(r: Campaign){ return h(NTag,{size:'small',type:r.status==='1'?'success':r.status==='2'?'default':'warning'},{default:()=>statusLabel[r.status]}) } },
+  { title: t('common.actions'), key:'act', width:120, render(r: Campaign){ return h(NSpace,{size:'small'},{default:()=>[
     h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>'编辑'}),
     h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
   ]})}}
@@ -42,7 +42,7 @@ onMounted(load)
 <template>
   <n-card title="营销活动">
     <n-space vertical>
-      <n-space><n-button type="primary" @click="add">新建活动</n-button><n-input v-model:value="searchKeyword" placeholder="搜索..." size="small" clearable style="width:160px" /></n-space>
+      <n-space><n-button type="primary" @click="add">新建活动</n-button><n-input v-model:value="searchKeyword" placeholder="搜索..." size="small" clearable class="w-160" /></n-space>
       <n-dataTable :columns="columns" :data="items" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="400" placement="right">
@@ -57,4 +57,8 @@ onMounted(load)
       </n-drawer-content>
     </n-drawer>
   </n-card>
+
+<style scoped>
+.w-160 { width: 160px; }
+</style>
 </template>

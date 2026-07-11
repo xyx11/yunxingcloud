@@ -8,10 +8,10 @@ const props = withDefaults(defineProps<{
 }>(), { label: '距结束', compact: false })
 
 const now = ref(Date.now())
-let timer: any = null
+let timer: number | null = null
 
-onMounted(() => { timer = setInterval(() => now.value = Date.now(), 1000) })
-onUnmounted(() => clearInterval(timer))
+onMounted(() => { timer = window.setInterval(() => now.value = Date.now(), 1000) })
+onUnmounted(() => { if (timer) clearInterval(timer) })
 
 const remaining = computed(() => Math.max(0, new Date(props.endTime).getTime() - now.value))
 const h = computed(() => Math.floor(remaining.value / 3600000))
@@ -36,16 +36,18 @@ const boxStyle = {
     {{ label }}已结束
   </span>
   <span v-else class="countdown" :class="{ 'pulse-urgent': isUrgent }" :style="{fontSize:compact?'12px':'14px'}">
-    <span v-if="label" style="color:#999;margin-right:4px;font-size:11px">{{ label }}</span>
+    <span v-if="label" class="countdown-label">{{ label }}</span>
     <span :style="boxStyle">{{ pad(h) }}</span>
-    <span style="margin:0 1px;color:#999">:</span>
+    <span class="countdown-sep">:</span>
     <span :style="boxStyle">{{ pad(m) }}</span>
-    <span style="margin:0 1px;color:#999">:</span>
+    <span class="countdown-sep">:</span>
     <span :style="[boxStyle, isUrgent ? {background:'#f10215',animation:'pulse-bg .8s ease-in-out infinite'} : {}]">{{ pad(s) }}</span>
   </span>
 </template>
 
 <style scoped>
+.countdown-label { color: #999; margin-right: 4px; font-size: 11px; }
+.countdown-sep { margin: 0 1px; color: #999; }
 @keyframes pulse-bg {
   0%, 100% { background: #f10215; }
   50% { background: #ff4444; }

@@ -98,7 +98,7 @@ function showDetail(log: OperLog) {
 async function loadLogs() {
   loading.value = true
   try {
-    const params: any = { page: page.value, pageSize: pageSize.value }
+    const params: Record<string, string | number | undefined> = { page: page.value, pageSize: pageSize.value }
     if (filterType.value) params.type = filterType.value
     if (filterUser.value) params.user = filterUser.value
     if (filterMethod.value) params.method = filterMethod.value
@@ -112,8 +112,8 @@ async function loadLogs() {
     try {
       const statsRes = await fetchDashboard()
       if (statsRes.data.bizTypeDist?.length) {
-        chartOption.value.xAxis.data = statsRes.data.bizTypeDist.map((d:any)=>d.name)
-        chartOption.value.series[0].data = statsRes.data.bizTypeDist.map((d:any)=>d.value)
+        chartOption.value.xAxis.data = statsRes.data.bizTypeDist.map((d: Record<string, unknown>)=>d.name as string)
+        chartOption.value.series[0].data = statsRes.data.bizTypeDist.map((d: Record<string, unknown>)=>d.value as number)
         showChart.value = true
       }
     } catch { /* ignore */ }

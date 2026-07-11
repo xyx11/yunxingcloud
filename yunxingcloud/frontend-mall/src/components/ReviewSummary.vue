@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/locales'
+import type { Review } from '@/types'
 
 const { t } = useI18n()
-const props = defineProps<{ reviews: any[] }>()
+const props = defineProps<{ reviews: Review[] }>()
 
 const total = computed(() => props.reviews.length)
 const avg = computed(() => total.value ? (props.reviews.reduce((s, r) => s + (r.rating || 0), 0) / total.value).toFixed(1) : 0)

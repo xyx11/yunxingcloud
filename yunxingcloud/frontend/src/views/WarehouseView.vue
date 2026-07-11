@@ -36,7 +36,7 @@ onMounted(load)
 <template>
   <n-card :title="t('nav.warehouses')">
     <n-space vertical>
-      <n-button type="primary" @click="add" style="align-self:flex-start">{{ t('warehouse.add') }}</n-button>
+      <n-button type="primary" @click="add" class="align-start">{{ t('warehouse.add') }}</n-button>
       <n-dataTable :columns="columns" :data="items" :row-key="(r: any) => r.id" :pagination="false" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="380" placement="right">
@@ -50,3 +50,7 @@ onMounted(load)
     </n-drawer>
   </n-card>
 </template>
+
+<style scoped>
+.align-start { align-self: flex-start; }
+</style>

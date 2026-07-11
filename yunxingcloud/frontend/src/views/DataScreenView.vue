@@ -79,12 +79,12 @@ onBeforeUnmount(() => clearInterval(timer))
     </div>
 
     <div class="chart-row">
-      <div class="chart-box"><v-chart :option="barOption" style="height:280px" autoresize /></div>
-      <div class="chart-box"><v-chart :option="pieOption" style="height:280px" autoresize /></div>
+      <div class="chart-box"><v-chart :option="barOption" class="chart-h-280" autoresize /></div>
+      <div class="chart-box"><v-chart :option="pieOption" class="chart-h-280" autoresize /></div>
     </div>
 
     <div class="chart-row" v-if="lineOption.series">
-      <div class="chart-box full"><v-chart :option="lineOption" style="height:200px" autoresize /></div>
+      <div class="chart-box full"><v-chart :option="lineOption" class="chart-h-200" autoresize /></div>
     </div>
   </div>
 </template>
@@ -112,4 +112,6 @@ onBeforeUnmount(() => clearInterval(timer))
 .chart-box { background: rgba(255,255,255,0.02); border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.04); }
 .chart-box.full { grid-column: 1/-1; }
 @media (max-width: 1024px) { .stat-row { grid-template-columns: repeat(3, 1fr); } .chart-row { grid-template-columns: 1fr; } }
+.chart-h-280 { height: 280px; }
+.chart-h-200 { height: 200px; }
 </style>

@@ -9,9 +9,22 @@ import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
 
+interface FlashSaleItem {
+  id: number
+  productId: number
+  productName?: string
+  imageUrl?: string
+  flashPrice: number
+  originalPrice: number
+  startTime: string
+  endTime: string
+  stock: number
+  sold?: number
+}
+
 const { t } = useI18n()
 const router = useRouter()
-const sales = ref<any[]>([])
+const sales = ref<FlashSaleItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
@@ -20,8 +33,8 @@ onMounted(async () => {
 })
 
 function goProduct(id: number) { router.push(`/product/${id}`) }
-const isActive = (s: any) => new Date(s.startTime).getTime() <= Date.now() && new Date(s.endTime).getTime() > Date.now()
-const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) / Math.max(1, s.stock)) * 100))
+const isActive = (s: FlashSaleItem) => new Date(s.startTime).getTime() <= Date.now() && new Date(s.endTime).getTime() > Date.now()
+const stockPct = (s: FlashSaleItem) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) / Math.max(1, s.stock)) * 100))
 </script>
 
 <template>
@@ -34,7 +47,7 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) /
     <div v-if="loading" class="flash-grid">
       <div v-for="i in 6" :key="i" class="flash-card">
         <SkeletonBox height="200px" :count="1" />
-        <div style="padding:16px"><SkeletonBox height="16px" width="60%" :count="1" /></div>
+        <div class="sk-pad"><SkeletonBox height="16px" width="60%" :count="1" /></div>
       </div>
     </div>
 
@@ -62,7 +75,7 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) /
     </div>
 
     <div v-else class="empty-state">
-      <p style="font-size:48px;margin-bottom:12px">⚡</p><p>{{ t('flashSale.noSales') }}</p>
+      <p class="empty-icon">⚡</p><p>{{ t('flashSale.noSales') }}</p>
     </div>
   </div>
 </template>
@@ -91,6 +104,8 @@ const stockPct = (s: any) => Math.max(0, Math.round(((s.stock - (s.sold || 0)) /
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--jd-red), #ff6b6b); border-radius: var(--radius-sm); transition: width 1s; }
 
 .empty-state { background: var(--bg-white); border-radius: var(--radius-lg); padding: 60px; text-align: center; color: var(--text-tertiary); box-shadow: var(--shadow-sm); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.sk-pad { padding: 16px; }
 
 @media (max-width: 768px) { .flash-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

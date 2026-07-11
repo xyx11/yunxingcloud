@@ -76,7 +76,11 @@ onMounted(loadFiles)
         :bordered="false" :pagination="{ pageSize: 10 }"
         :row-key="(row: BackupFile) => row.filename"
       />
-      <n-empty v-if="!files.length && !loading" :description="t('backup.noBackups')" style="margin-top:40px" />
+      <n-empty v-if="!files.length && !loading" :description="t('backup.noBackups')" class="mt-40" />
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.mt-40 { margin-top: 40px; }
+</style>

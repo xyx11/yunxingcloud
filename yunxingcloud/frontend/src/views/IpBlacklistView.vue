@@ -29,7 +29,7 @@ const columns: DataTableColumns<IpItem> = [
   { title: 'ID', key: 'id', width: 60 },
   { title: t('ipBlacklist.ip'), key: 'ip', width: 160 },
   { title: t('ipBlacklist.reason'), key: 'reason', width: 200, ellipsis: { tooltip: true } },
-  { title: t('ipBlacklist.time'), key: 'createdAt', width: 160, render: (row: any) => row.createdAt?.substring(0,19).replace('T',' ') || '-' },
+  { title: t('ipBlacklist.time'), key: 'createdAt', width: 160, render: (row: IpItem) => row.createdAt?.substring(0,19).replace('T',' ') || '-' },
   { title: t('common.actions'), key: 'actions', width: 80, render: (row) => h(NPopconfirm, { onPositiveClick: () => delItem(row.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('ipBlacklist.unblock') }), default: () => t('ipBlacklist.unblockConfirm') }) },
 ]
 
@@ -39,7 +39,7 @@ async function saveItem() {
   if (formRef.value) { try { await formRef.value.validate() } catch { return } }
   saving.value = true
   try { await blockIp(form.value); showModal.value = false; form.value = { ip: '', reason: '' }; notify.success(t('ipBlacklist.blockSuccess')); await loadItems() }
-  catch (e: any) { notify.error(e.response?.data?.message || t('ipBlacklist.blockFailed')) }
+  catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('ipBlacklist.blockFailed')) }
   finally { saving.value = false }
 }
 

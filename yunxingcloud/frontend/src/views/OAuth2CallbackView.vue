@@ -30,7 +30,7 @@ onMounted(() => {
 
 <template>
   <n-config-provider>
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea,#764ba2)">
+    <div class="oauth-page">
       <n-result
         v-if="status === 'loading'"
         :title="t('auth.loggingIn')"
@@ -59,3 +59,7 @@ onMounted(() => {
     </div>
   </n-config-provider>
 </template>
+
+<style scoped>
+.oauth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea, #764ba2); }
+</style>

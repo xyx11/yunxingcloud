@@ -9,20 +9,20 @@ import LazyImage from '@/components/LazyImage.vue'
 import { formatPrice } from '@/utils/format'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
-import type { Address, Coupon } from '@/types'
+import type { Address, Coupon, CartItem } from '@/types'
 
 const router = useRouter()
 const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
-const items = ref<any[]>([])
-const addresses = ref<any[]>([])
+const items = ref<CartItem[]>([])
+const addresses = ref<Address[]>([])
 const loading = ref(true)
 const total = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
 const selectedAddr = ref<Address | null>(null)
 const receiver = ref({ name: '', phone: '', address: '' })
 const selectedCoupon = ref<Coupon | null>(null)
 const couponApplied = ref(false)
-const myCoupons = ref<any[]>([])
+const myCoupons = ref<Coupon[]>([])
 const showCoupons = ref(false)
 const paymentMethod = ref('wechat')
 const submitting = ref(false)
@@ -36,20 +36,20 @@ async function load() {
   finally { loading.value = false }
 }
 
-function selectAddress(addr: any) {
+function selectAddress(addr: Address) {
   selectedAddr.value = addr
   receiver.value = { name: addr.name, phone: addr.phone, address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(' ') }
 }
 
-async function loadCoupons() { try { const r = await getMyCoupons(); myCoupons.value = (r.data || []).filter((c: any) => c.status === '0') } catch {} }
+async function loadCoupons() { try { const r = await getMyCoupons(); myCoupons.value = (r.data || []).filter((c: Coupon) => c.status === '0' || c.status === 'available') } catch {} }
 
-function selectCoupon(c: any) { selectedCoupon.value = c; couponApplied.value = true; showCoupons.value = false; toast.success('优惠券已选用') }
+function selectCoupon(c: Coupon) { selectedCoupon.value = c; couponApplied.value = true; showCoupons.value = false; toast.success('优惠券已选用') }
 
 async function submit() {
   if (!receiver.value.name || !receiver.value.phone || !receiver.value.address) { toast.error(t('checkout.selectAddress')); return }
   submitting.value = true
-  try { const res = await submitOrder({ ...receiver.value, couponCode: String(selectedCoupon.value?.couponId ?? ''), paymentMethod: paymentMethod.value }); toast.success(t('toast.orderPlaced')); const orderId = (res.data as any)?.id || (res.data as any)?.data?.id; router.push(orderId ? '/order/' + orderId : '/orders') }
-  catch (e: any) { toast.error(e.response?.data?.message || t('toast.orderFail')) }
+  try { const res = await submitOrder({ ...receiver.value, couponCode: String(selectedCoupon.value?.couponId ?? ''), paymentMethod: paymentMethod.value }); toast.success(t('toast.orderPlaced')); const resData = res.data as { id?: number; data?: { id?: number } }; const orderId = resData.id || resData.data?.id; router.push(orderId ? '/order/' + orderId : '/orders') }
+  catch (e: unknown) { toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || t('toast.orderFail')) }
   finally { submitting.value = false }
 }
 

@@ -9,7 +9,7 @@ import { useNotify } from '@/composables/useNotify'
 const { t } = useI18n()
 const notify = useNotify()
 const loading = ref(false); const saving = ref(false)
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number|null>(null)
 const form = ref({ title:'', imageUrl:'', linkUrl:'', sortOrder:0, status:'0' })
 
@@ -21,17 +21,17 @@ function handleUpload(options: UploadCustomRequestOptions) {
   }).catch(() => { options.onError(); notify.error(t('common.uploadFailed')) })
 }
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title:'ID', key:'id', width:50 },
   { title:'标题', key:'title', width:150 },
-  { title:'图片', key:'imageUrl', width:100, render(r:any) { return h(NImage, {src:r.imageUrl,width:80,height:40,style:{objectFit:'cover',borderRadius:'4px'}}) } },
+  { title:'图片', key:'imageUrl', width:100, render(r: Record<string, unknown>) { return h(NImage, {src:r.imageUrl as string,width:80,height:40,style:{objectFit:'cover',borderRadius:'4px'}}) } },
   { title:'链接', key:'linkUrl', width:150, ellipsis:{tooltip:true} },
   { title:'排序', key:'sortOrder', width:60 },
-  { title:'状态', key:'status', width:70, render(r:any) { return r.status==='0'?'启用':'禁用' } },
+  { title:'状态', key:'status', width:70, render(r: Record<string, unknown>) { return r.status==='0'?'启用':'禁用' } },
   { title:'操作', key:'act', width:120,
-    render(r:any) { return h(NSpace,{size:'small'},{default:()=>[
-      h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={title:r.title,imageUrl:r.imageUrl||'',linkUrl:r.linkUrl||'',sortOrder:r.sortOrder||0,status:r.status};showModal.value=true}},{default:()=>'编辑'}),
-      h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
+    render(r: Record<string, unknown>) { return h(NSpace,{size:'small'},{default:()=>[
+      h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id as number;form.value={title:r.title as string,imageUrl:(r.imageUrl as string)||'',linkUrl:(r.linkUrl as string)||'',sortOrder:(r.sortOrder as number)||0,status:r.status as string};showModal.value=true}},{default:()=>'编辑'}),
+      h(NPopconfirm,{onPositiveClick:()=>del(r.id as number)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
     ]})}
   }
 ]
@@ -46,7 +46,7 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="Banner 管理">
       <template #header-extra><n-button type="primary" size="small" @click="add">+ 新增</n-button></template>
-      <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
+      <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r: Record<string, unknown>)=>r.id" :pagination="{pageSize:10}" size="small" />
     </n-card>
     <n-drawer v-model:show="showModal" :width="450" placement="right">
       <n-drawer-content :title="editingId?'编辑':'新增'" closable>
@@ -60,7 +60,7 @@ onMounted(load)
             <n-space vertical>
               <n-input v-model:value="form.imageUrl" placeholder="https://..." />
               <n-upload :custom-request="handleUpload" :show-file-list="false" accept="image/*"><n-button size="small" secondary>本地上传</n-button></n-upload>
-              <n-image v-if="form.imageUrl" :src="form.imageUrl" width="200" height="80" style="object-fit:cover;border-radius:8px" />
+              <n-image v-if="form.imageUrl" :src="form.imageUrl" width="200" height="80" class="banner-preview" />
             </n-space>
           </n-form-item>
         </n-form>
@@ -68,3 +68,7 @@ onMounted(load)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.banner-preview { object-fit: cover; border-radius: 8px; }
+</style>

@@ -73,16 +73,17 @@ async function changePassword() {
     notify.success(t('pwd.success'))
     showPwdModal.value = false
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
-  } catch (e: any) {
-    notify.error(e.response?.data?.message || t('profile.changeFailed'))
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    notify.error(err.response?.data?.message || t('profile.changeFailed'))
   }
   pwdLoading.value = false
 }
 
 onMounted(async () => {
   const userRes = await fetchUserInfo()
-  user.value = userRes as any
-  avatarUrl.value = (userRes as any).avatarUrl || ''
+  user.value = userRes as { username: string; nickname: string; email: string; registerSource: string; authorities: string[]; avatarUrl?: string; lastLoginTime?: string }
+  avatarUrl.value = (userRes as { avatarUrl?: string }).avatarUrl || ''
   const tok = localStorage.getItem('accessToken') || ''
   tokenPreview.value = tok ? tok.substring(0, 40) + '...' : ''
   loadSocialAccounts()
@@ -96,7 +97,7 @@ function copyToken() {
 function openHealth() { window.open('/actuator/health') }
 function openInfo() { window.open('/actuator/info') }
 
-async function handleUpload({ file }: any) {
+async function handleUpload({ file }: { file: { file: File } }) {
   const form = new FormData()
   form.append('file', file.file)
   const res = await uploadFile(form)
@@ -112,7 +113,7 @@ async function handleUpload({ file }: any) {
     <n-card :title="t('profile.title')">
       <n-space align="center" class="mb-16">
         <div :style="{width:'64px',height:'64px',borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,#667eea,#764ba2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'28px',color:'#fff',fontWeight:600}">
-          <img v-if="avatarUrl" :src="avatarUrl" style="width:100%;height:100%;object-fit:cover">
+          <img v-if="avatarUrl" :src="avatarUrl" class="avatar-image">
           <span v-else>{{ user?.username?.charAt(0)?.toUpperCase() }}</span>
         </div>
         <n-upload :show-file-list="false" accept="image/*" :custom-request="handleUpload">
@@ -172,10 +173,10 @@ async function handleUpload({ file }: any) {
             {{ socialProviderNames[sa.provider] || sa.provider }}: {{ sa.nickname }}
           </n-tag>
         </n-space>
-        <span v-else style="color:#999;font-size:13px">暂未绑定第三方账号</span>
+        <span v-else class="text-muted-sm">暂未绑定第三方账号</span>
         <n-space class="mt-8">
           <n-button v-for="p in ['wechat','qq','alipay']" :key="p" size="tiny" @click="bindSocial(p)" :style="{borderColor:socialProviderColors[p],color:socialProviderColors[p]}">
-            <svg viewBox="0 0 24 24" width="14" height="14" :fill="socialProviderColors[p]" style="margin-right:4px;vertical-align:middle"><path :d="socialProviderSvgs[p]" /></svg>
+            <svg viewBox="0 0 24 24" width="14" height="14" :fill="socialProviderColors[p]" class="social-icon-sm"><path :d="socialProviderSvgs[p]" /></svg>
             绑定{{ socialProviderNames[p] }}
           </n-button>
         </n-space>
@@ -194,17 +195,17 @@ async function handleUpload({ file }: any) {
     <n-card :title="t('profile.settings')" class="mt-16">
       <n-space vertical>
         <n-space align="center">
-          <span style="max-width:80px;width:95%">{{ t('profile.themeColor') }}</span>
+          <span class="setting-label">{{ t('profile.themeColor') }}</span>
           <n-button v-for="c in themeColors" :key="c" size="tiny" :style="{background:c,width:'28px',height:'28px',borderRadius:'50%',border:currentColor===c?'3px solid #fff':''}" @click="setThemeColor(c)" />
         </n-space>
         <n-space align="center">
-          <span style="max-width:80px;width:95%">{{ t('profile.pageSize') }}</span>
+          <span class="setting-label">{{ t('profile.pageSize') }}</span>
           <n-select v-model:value="pageSizeSetting" :options="[10,20,50,100].map(n=>({label:n+t('common.items'),value:n}))" size="small" class="filter-select-xs" @update:value="(v:number)=>storage.setItem('pageSize',String(v))" />
         </n-space>
       </n-space>
     </n-card>
 
-    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" preset="card" display-directive="show" style="max-width:400px;width:95%">
+    <n-modal v-model:show="showPwdModal" :title="t('pwd.change')" preset="card" display-directive="show" class="modal-md">
       <n-form label-placement="left" label-width="80">
         <n-form-item :label="t('pwd.old')">
           <n-input v-model:value="pwdForm.oldPassword" type="password" />
@@ -225,3 +226,11 @@ async function handleUpload({ file }: any) {
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.avatar-image { width: 100%; height: 100%; object-fit: cover; }
+.text-muted-sm { color: #999; font-size: 13px; }
+.setting-label { max-width: 80px; width: 95%; }
+.modal-md { max-width: 400px; width: 95%; }
+.social-icon-sm { margin-right: 4px; vertical-align: middle; }
+</style>

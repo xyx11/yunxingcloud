@@ -10,19 +10,19 @@ import { useNotify } from '@/composables/useNotify'
 const { t } = useI18n()
 const notify = useNotify()
 const loading = ref(false); const saving = ref(false)
-const items = ref<any[]>([]); const products = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([]); const products = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number|null>(null)
-const form = ref({ productId: null as any, name:'', price:1, stock:0, skuCode:'', status:'0' })
+const form = ref({ productId: null as number | null, name:'', price:1, stock:0, skuCode:'', status:'0' })
 const searchKeyword = ref('')
 
-const filtered = computed(() => { if(!searchKeyword.value)return items.value; const kw=searchKeyword.value.toLowerCase(); return items.value.filter((s:any)=>s.name?.toLowerCase().includes(kw)||s.skuCode?.toLowerCase().includes(kw)) })
-const productOpts = computed(() => products.value.map((p:any)=>({label:p.name,value:p.id})))
+const filtered = computed(() => { if(!searchKeyword.value)return items.value; const kw=searchKeyword.value.toLowerCase(); return items.value.filter((s)=>((s.name as string)||'').toLowerCase().includes(kw)||((s.skuCode as string)||'').toLowerCase().includes(kw)) })
+const productOpts = computed(() => products.value.map((p)=>({label:p.name as string,value:p.id as number})))
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title:'ID',key:'id',width:50 }, { title:'商品',key:'productName',width:120 }, { title:'SKU名称',key:'name',width:120 },
-  { title:'价格',key:'price',width:80,render:(r:any)=>formatPrice(r.price/100, 2) },
+  { title:'价格',key:'price',width:80,render:(r)=>formatPrice(((r.price as number)||0)/100, 2) },
   { title:'库存',key:'stock',width:60 }, { title:'编码',key:'skuCode',width:100 },
-  { title:'操作',key:'act',width:120,render(r:any){return h(NSpace,{size:'small'},{default:()=>[h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={productId:r.productId,name:r.name,price:r.price/100,stock:r.stock,skuCode:r.skuCode||'',status:r.status};showModal.value=true}},{default:()=>'编辑'}),h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})]})}}
+  { title:'操作',key:'act',width:120,render(r){return h(NSpace,{size:'small'},{default:()=>[h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id as number;form.value={productId:r.productId as number,name:r.name as string,price:(r.price as number)/100,stock:r.stock as number,skuCode:(r.skuCode as string)||'',status:r.status as string};showModal.value=true}},{default:()=>'编辑'}),h(NPopconfirm,{onPositiveClick:()=>del(r.id as number)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})]})}}
 ]
 
 async function load() { loading.value=true; try{const r=await request.get('/api/products/skus/all');items.value=r.data.content||r.data||[];const p=await request.get('/api/products?size=100');products.value=p.data.content||[]}finally{loading.value=false} }
@@ -34,8 +34,8 @@ onMounted(load)
 <template>
   <div class="view-pad">
     <n-card title="SKU 规格管理"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增</n-button></template>
-      <n-space class="mb-12"><n-input v-model:value="searchKeyword" placeholder="搜索SKU..." size="small" clearable style="width:180px"/><n-button size="small" @click="load" secondary>刷新</n-button></n-space>
-      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small"/>
+      <n-space class="mb-12"><n-input v-model:value="searchKeyword" placeholder="搜索SKU..." size="small" clearable class="w-180"/><n-button size="small" @click="load" secondary>刷新</n-button></n-space>
+      <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r: Record<string, unknown>)=>r.id" :pagination="{pageSize:10}" size="small"/>
     </n-card>
     <n-drawer v-model:show="showModal" :width="400" placement="right">
       <n-drawer-content :title="editingId?'编辑SKU':'新增SKU'" closable>
@@ -51,3 +51,7 @@ onMounted(load)
     </n-drawer>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+</style>

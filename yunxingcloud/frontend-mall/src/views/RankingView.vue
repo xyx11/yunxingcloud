@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
 const { t } = useI18n()
 import { formatPrice, formatCount } from '@/utils/format'
+import type { Product } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
 import request from '@/api/request'
 import { addToCart } from '@/api/cart'
@@ -11,7 +12,7 @@ import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const toast = useToast()
-const ranks = ref<any[]>([])
+const ranks = ref<Product[]>([])
 const loading = ref(true)
 const tab = ref<'sales' | 'new' | 'price'>('sales')
 
@@ -27,7 +28,7 @@ onMounted(async () => {
 })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
-async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
+async function quickAdd(e: Event, p: Product) { e.stopPropagation(); try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
 </script>
 
 <template>

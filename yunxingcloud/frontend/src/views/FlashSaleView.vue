@@ -48,7 +48,7 @@ onMounted(load)
 <template>
   <n-card title="秒杀管理">
     <n-space vertical>
-      <n-button type="primary" @click="add" style="align-self:flex-start">新增秒杀</n-button>
+      <n-button type="primary" @click="add" class="align-start">新增秒杀</n-button>
       <n-dataTable :columns="columns" :data="items" :loading="loading" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="380" placement="right">
@@ -64,3 +64,7 @@ onMounted(load)
     </n-drawer>
   </n-card>
 </template>
+
+<style scoped>
+.align-start { align-self: flex-start; }
+</style>

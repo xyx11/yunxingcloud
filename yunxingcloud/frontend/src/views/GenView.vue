@@ -120,8 +120,8 @@ onMounted(loadTables)
   <div class="view-pad">
     <n-card :title="t('nav.generator')">
       <template #header-extra>
-        <n-button size="small" @click="loadTables" style="margin-right:8px" secondary>{{ t('common.refresh') }}</n-button>
-        <n-input v-model:value="packageName" :placeholder="t('generator.packageName')" style="width:200px;margin-right:8px" />
+        <n-button size="small" @click="loadTables" class="mr-8" secondary>{{ t('common.refresh') }}</n-button>
+        <n-input v-model:value="packageName" :placeholder="t('generator.packageName')" class="w-200 mr-8" />
       </template>
       <n-data-table
         :columns="tableColumns" :data="tables" :loading="loading" size="small" :bordered="false" :pagination="{ pageSize: 10, pageSizes: [10,20,50,100] }"
@@ -129,7 +129,7 @@ onMounted(loadTables)
       />
 
       <!-- 字段查看弹窗 -->
-      <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" style="max-width:700px;width:95%">
+      <n-modal v-model:show="showColumnsModal" :title="`${t('generator.tableColumns')}: ${selectedTable}`" class="modal-lg">
         <n-data-table
           :columns="colsColumns" :data="columns"
           :row-key="(row: ColumnInfo) => row.COLUMN_NAME" :max-height="400"
@@ -137,7 +137,7 @@ onMounted(loadTables)
       </n-modal>
 
       <!-- 代码预览弹窗 -->
-      <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" style="max-width:800px;width:95%">
+      <n-modal v-model:show="showCodeModal" :title="`${t('generator.genCodeTitle')}: ${selectedTable}`" class="modal-xl">
         <n-space vertical class="mb-12">
           <n-space justify="space-between">
             <n-space>
@@ -156,10 +156,18 @@ onMounted(loadTables)
           <n-code
             :code="generatedCode[activeCodeTab] || ''"
             :language="activeCodeTab.startsWith('vue') ? 'html' : 'java'"
-            style="max-height:500px; overflow:auto"
+            class="code-preview"
           />
         </n-spin>
       </n-modal>
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.mr-8 { margin-right: 8px; }
+.w-200 { width: 200px; }
+.modal-lg { max-width: 700px; width: 95%; }
+.modal-xl { max-width: 800px; width: 95%; }
+.code-preview { max-height: 500px; overflow: auto; }
+</style>

@@ -51,12 +51,17 @@ onMounted(load)
       <template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
-          <n-input v-model:value="searchKeyword" placeholder="搜索文件..." size="small" clearable style="width:200px" />
+          <n-input v-model:value="searchKeyword" placeholder="搜索文件..." size="small" clearable class="w-200" />
           <n-button v-if="checkedKeys.length" type="error" size="small" @click="batchDel">批量删除 ({{ checkedKeys.length }})</n-button>
         </n-space>
-        <span style="color:#999;font-size:12px">{{ files.length }} 个文件</span>
+        <span class="file-count">{{ files.length }} 个文件</span>
       </n-space>
       <n-dataTable v-model:checked-row-keys="checkedKeys" :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.filename" :pagination="{pageSize:12}" size="small" />
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-200 { width: 200px; }
+.file-count { color: #999; font-size: 12px; }
+</style>

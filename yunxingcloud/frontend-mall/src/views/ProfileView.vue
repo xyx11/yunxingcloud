@@ -5,7 +5,7 @@ import { getAddresses, createAddress, updateAddress, deleteAddress, setDefaultAd
 import { changePassword } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
-import type { Address } from '@/types'
+import type { Address, Coupon, FavoriteItem } from '@/types'
 import { ToastInjectionKey } from '@/composables/useToast'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -18,9 +18,9 @@ const toast = inject(ToastInjectionKey)!
 type TabKey = 'addresses' | 'coupons' | 'favorites' | 'password'
 
 const activeTab = ref<TabKey>('addresses')
-const addresses = ref<any[]>([])
-const coupons = ref<any[]>([])
-const favorites = ref<any[]>([])
+const addresses = ref<Address[]>([])
+const coupons = ref<Coupon[]>([])
+const favorites = ref<FavoriteItem[]>([])
 const shareCopied = ref(false)
 const editAddr = ref<Address | null>(null)
 const showAddrForm = ref(false)
@@ -66,7 +66,7 @@ async function saveAddress() {
   } catch {}
 }
 
-function editAddress(addr: any) {
+function editAddress(addr: Address) {
   editAddr.value = addr
   addrForm.value = { name: addr.name, phone: addr.phone, province: addr.province || '', city: addr.city || '', district: addr.district || '', detail: addr.detail || '', isDefault: addr.isDefault }
   showAddrForm.value = true
@@ -78,10 +78,10 @@ async function changePwd() {
   if (!pwForm.value.oldPassword || !pwForm.value.newPassword) { toast.error(t('register.fillRequired')); return }
   if (pwForm.value.newPassword !== pwForm.value.confirmPassword) { toast.error(t('register.passwordMismatch')); return }
   try { await changePassword(pwForm.value.oldPassword, pwForm.value.newPassword); toast.success(t('toast.passwordChanged')); pwForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' } }
-  catch (e: any) { toast.error(e.response?.data?.message || t('common.updateFailed')) }
+  catch (e: unknown) { toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || t('common.updateFailed')) }
 }
 
-async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr.isDefault); refreshTab() }
+async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !addr.isDefault); refreshTab() }
 </script>
 
 <template>
@@ -181,7 +181,7 @@ async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr
         <h3 class="tab-title">我的优惠券</h3>
         <div v-if="coupons.length">
           <div v-for="c in coupons" :key="c.id" class="coupon-card">
-            <div class="coupon-icon"><span style="font-size:12px">{{ t('profile.coupons') }}</span><span style="font-size:18px">#{{ c.couponId }}</span></div>
+            <div class="coupon-icon"><span class="fs-12">{{ t('profile.coupons') }}</span><span class="fs-18">#{{ c.couponId }}</span></div>
             <div><div class="coupon-name">优惠券 #{{ c.couponId }}</div><div class="coupon-status">{{ c.status === '0' ? t('profile.unused') : t('profile.used') }}</div></div>
           </div>
         </div>
@@ -280,4 +280,6 @@ async function toggleDefault(addr: any) { await setDefaultAddress(addr.id, !addr
 
 .flex { display: flex; }
 .gap-sm { gap: var(--space-sm); }
+.fs-12 { font-size: 12px; }
+.fs-18 { font-size: 18px; }
 </style>

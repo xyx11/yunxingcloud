@@ -3,6 +3,7 @@ import { useCompare } from '@/composables/useCompare'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { formatPrice } from '@/utils/format'
+import type { CompareItem } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
@@ -12,7 +13,7 @@ const { items, remove, clear } = useCompare()
 const toast = useToast()
 const router = useRouter()
 
-async function quickAdd(p: any) { try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
+async function quickAdd(p: CompareItem) { try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
 
 const specs = ['price', 'sales', 'description']
 const specLabel: Record<string, string> = { price: '价格', sales: '销量', description: '描述' }

@@ -51,7 +51,7 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="捆绑套餐"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增套餐</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索套餐..." size="small" clearable style="width:180px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索套餐..." size="small" clearable class="w-180" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
@@ -66,7 +66,7 @@ onMounted(load)
         </n-form>
       </n-drawer-content>
     </n-drawer>
-    <n-modal v-model:show="showDetail" title="套餐详情" preset="card" style="max-width:450px">
+    <n-modal v-model:show="showDetail" title="套餐详情" preset="card" class="max-w-450">
       <template v-if="detail">
         <p><b>名称:</b> {{ detail.name }}</p>
         <p><b>折扣率:</b> {{ detail.discountRate || 100 }}%</p>
@@ -76,3 +76,8 @@ onMounted(load)
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+.max-w-450 { max-width: 450px; }
+</style>

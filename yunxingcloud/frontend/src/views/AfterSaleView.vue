@@ -13,7 +13,7 @@ const loading = ref(false)
 const items = ref<AfterSale[]>([])
 const rejectForm = ref({ id: 0, remark: '' })
 const showReject = ref(false); const showDetail = ref(false)
-const detailAs = ref<any>(null)
+const detailAs = ref<AfterSale | null>(null)
 
 const typeLabel = (k: string) => ({ refund:{l:t('afterSale.refundOnly'),c:'#d03050'}, return:{l:t('afterSale.returnRefund'),c:'#f0a020'}, exchange:{l:t('afterSale.exchange'),c:'#2080f0'} }[k] || {l:k,c:'#999'})
 const statusLabel = (k: string) => ({ '0':{l:t('afterSale.statusPending'),t:'warning'}, '1':{l:t('afterSale.statusApproved'),t:'success'}, '2':{l:t('afterSale.statusRejected'),t:'error'}, '3':{l:t('afterSale.statusRefunding'),t:'info'}, '4':{l:t('afterSale.statusCompleted'),t:'success'} }[k] || {l:k,t:'default'})
@@ -24,7 +24,7 @@ const columns: DataTableColumns<AfterSale> = [
   { title: t('order.orderNo'), key: 'orderNo', width: 160 },
   { title: t('user.username'), key: 'username', width: 90 },
   { title: t('afterSale.type'), key: 'type', width: 70, render(r:AfterSale){ const tl=typeLabel(r.type); return h(NTag,{size:'small',color:{color:tl.c,textColor:'#fff'}},{default:()=>tl.l}) } },
-  { title: t('afterSale.amount'), key: 'refundAmount', width: 90, render(r:any){ return r.refundAmount?formatPrice(r.refundAmount/100, 2):'-' } },
+  { title: t('afterSale.amount'), key: 'refundAmount', width: 90, render(r: AfterSale){ return r.refundAmount?formatPrice(r.refundAmount/100, 2):'-' } },
   { title: t('order.status'), key: 'status', width: 80, render(r:AfterSale){ const s=statusLabel(r.status||'0'); return h(NTag,{size:'small',type:s.t as any},{default:()=>s.l}) } },
   { title: t('afterSale.reason'), key: 'reason', width: 180, ellipsis:{tooltip:true} },
   { title: t('common.actions'), key:'act', width:180, render(r:AfterSale){
@@ -59,16 +59,22 @@ onMounted(load)
             <n-form-item :label="t('afterSale.amount')"><b>{{ formatPrice((detailAs.refundAmount||0)/100, 2) }}</b></n-form-item>
           </n-form>
           <n-divider />
-          <div style="display:flex;justify-content:space-between;margin:12px 0">
-            <div v-for="(s,i) in statusSteps" :key="i" style="text-align:center;flex:1;position:relative">
+          <div class="status-steps">
+            <div v-for="(s,i) in statusSteps" :key="i" class="status-step">
               <div :style="{width:22,height:22,borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,background:i<=['待审核','已通过','退款中','已完成'].indexOf(statusLabel(detailAs?.status||'0')?.l)+1&&Number(detailAs?.status)>=i?'#18a058':'#e8e8e8',color:i<=['待审核','已通过','退款中','已完成'].indexOf(statusLabel(detailAs?.status||'0')?.l)+1?'#fff':'#999'}">{{ i<=Number(detailAs?.status) ? '✓' : i+1 }}</div>
               <div style="font-size:10px;margin-top:3px;color:Number(detailAs?.status)>=i&&detailAs?.status!=='2'?'#18a058':'#999'">{{ s }}</div>
             </div>
           </div>
           <n-divider />
-          <p style="color:#666;font-size:13px"><b>{{ t('afterSale.reason') }}:</b> {{ detailAs.reason }}</p>
+          <p class="reason-text"><b>{{ t('afterSale.reason') }}:</b> {{ detailAs.reason }}</p>
         </template>
       </n-drawer-content>
     </n-drawer>
   </n-card>
 </template>
+
+<style scoped>
+.status-steps { display: flex; justify-content: space-between; margin: 12px 0; }
+.status-step { text-align: center; flex: 1; position: relative; }
+.reason-text { color: #666; font-size: 13px; }
+</style>

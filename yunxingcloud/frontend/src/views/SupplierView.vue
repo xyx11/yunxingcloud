@@ -8,7 +8,7 @@ import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 
 const notify = useNotify()
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number|null>(null)
 const form = ref({ name:'', contact:'', phone:'', email:'', address:'' })
 const searchKeyword = ref('')
@@ -16,16 +16,16 @@ const searchKeyword = ref('')
 const filtered = computed(() => {
   if (!searchKeyword.value) return items.value
   const kw = searchKeyword.value.toLowerCase()
-  return items.value.filter((s:any) => s.name?.toLowerCase().includes(kw) || s.contact?.toLowerCase().includes(kw))
+  return items.value.filter((s: Record<string, unknown>) => (s.name as string)?.toLowerCase().includes(kw) || (s.contact as string)?.toLowerCase().includes(kw))
 })
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: t('common.name'), key: 'name', width: 160 }, { title: '联系人', key: 'contact', width: 80 },
   { title: '电话', key: 'phone', width: 120 }, { title: '邮箱', key: 'email', width: 160 },
   { title: '地址', key: 'address', width: 200, ellipsis:{tooltip:true} },
-  { title: t('common.actions'), key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
-    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={name:r.name,contact:r.contact||'',phone:r.phone||'',email:r.email||'',address:r.address||''};showModal.value=true}},{default:()=>'编辑'}),
-    h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
+  { title: t('common.actions'), key:'act', width:120, render(r: Record<string, unknown>){ return h(NSpace,{size:'small'},{default:()=>[
+    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id as number;form.value={name:r.name as string,contact:(r.contact as string)||'',phone:(r.phone as string)||'',email:(r.email as string)||'',address:(r.address as string)||''};showModal.value=true}},{default:()=>'编辑'}),
+    h(NPopconfirm,{onPositiveClick:()=>del(r.id as number)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
   ]})}}
 ]
 
@@ -42,7 +42,7 @@ onMounted(load)
 <template>
   <n-card title="供应商管理">
     <n-space vertical>
-      <n-space><n-button type="primary" @click="add">新增供应商</n-button><n-input v-model:value="searchKeyword" placeholder="搜索..." size="small" clearable style="width:160px" /></n-space>
+      <n-space><n-button type="primary" @click="add">新增供应商</n-button><n-input v-model:value="searchKeyword" placeholder="搜索..." size="small" clearable class="w-160" /></n-space>
       <n-dataTable :columns="columns" :data="filtered" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
@@ -59,3 +59,7 @@ onMounted(load)
     </n-drawer>
   </n-card>
 </template>
+
+<style scoped>
+.w-160 { width: 160px; }
+</style>

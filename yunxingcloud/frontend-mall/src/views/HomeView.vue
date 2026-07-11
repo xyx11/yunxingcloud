@@ -1,43 +1,39 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHomeData } from '@/api/product'
-import { addToCart } from '@/api/cart'
-import { useCartFly } from '@/composables/useCartFly'
+import { useI18n } from '@/locales'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
-import { useToast } from '@/composables/useToast'
-import { useI18n } from '@/locales'
-import { formatPrice, formatCount } from '@/utils/format'
+import { formatPrice } from '@/utils/format'
+import type { Product, Banner, Category } from '@/types'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
+import HomeBanner from '@/components/HomeBanner.vue'
+import CategoryNav from '@/components/CategoryNav.vue'
+import ProductSection from '@/components/ProductSection.vue'
 
 const router = useRouter()
-const toast = useToast()
 const { t } = useI18n()
-const { flyToCart } = useCartFly()
 const { items: recentItems } = useRecentlyViewed()
 
-const banners = ref<any[]>([])
-const hotProducts = ref<any[]>([])
-const newProducts = ref<any[]>([])
-const categories = ref<any[]>([])
-const recommended = ref<any[]>([])
-const activeTab = ref<'hot' | 'new' | 'flash'>('hot')
-const currentBanner = ref(0)
+const banners = ref<Banner[]>([])
+const hotProducts = ref<Product[]>([])
+const newProducts = ref<Product[]>([])
+const categories = ref<Category[]>([])
+const recommended = ref<Product[]>([])
+const activeTab = ref<'hot' | 'new'>('hot')
 const loading = ref(true)
 const loadError = ref(false)
-let bannerTimer: ReturnType<typeof setInterval> | null = null
 
 const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
 const flashPrice = (price: number) => Math.floor(price * 0.7)
 
 async function loadData() {
-  loading.value = true
-  loadError.value = false
+  loading.value = true; loadError.value = false
   try {
     const home = await getHomeData()
     const d = home.data
@@ -51,96 +47,37 @@ async function loadData() {
 }
 
 const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
+const tabProducts = computed(() => activeTab.value === 'hot' ? hotProducts.value : newProducts.value)
 
-function startBanner() {
-  bannerTimer = setInterval(() => {
-    if (banners.value.length) currentBanner.value = (currentBanner.value + 1) % banners.value.length
-  }, 4000)
-}
-function stopBanner() { if (bannerTimer) clearInterval(bannerTimer) }
-
-let bannerTouchX = 0
-function onBannerTouchStart(e: TouchEvent) { bannerTouchX = e.touches[0].clientX; stopBanner() }
-function onBannerTouchEnd(e: TouchEvent) {
-  const dx = e.changedTouches[0].clientX - bannerTouchX
-  if (Math.abs(dx) > 40 && banners.value.length > 1) {
-    currentBanner.value = dx > 0
-      ? (currentBanner.value - 1 + banners.value.length) % banners.value.length
-      : (currentBanner.value + 1) % banners.value.length
-  }
-  startBanner()
-}
-
-onMounted(async () => { await loadData(); startBanner() })
-onUnmounted(() => { if (bannerTimer) clearInterval(bannerTimer) })
+onMounted(() => { loadData() })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goProducts(query: Record<string, string>) { router.push({ path: '/products', query }) }
-
-async function quickAdd(e: Event, p: any) {
-  e.stopPropagation()
-  try {
-    await addToCart(p.id, 1)
-    toast.success('已加入购物车')
-    flyToCart(e as MouseEvent)
-  } catch { toast.error('添加失败') }
-}
-
-function productImage(p: any): string {
+function productImage(p: Product): string {
   return p.imageUrl || (p.images?.length ? p.images[0] : '')
 }
 </script>
 
 <template>
   <div>
-    <!-- Pull to refresh -->
     <div v-if="pulling" class="pull-indicator" :style="{ height: pullDistance + 'px' }">
       <span>{{ refreshing ? '⏳ 刷新中...' : '↓ 下拉刷新' }}</span>
     </div>
 
-    <!-- Error -->
     <div v-if="loadError" class="error-state">
       <JdEmpty icon="🔌" title="加载失败" description="请检查网络后重试">
         <JdButton @click="loadData">重新加载</JdButton>
       </JdEmpty>
     </div>
 
-    <!-- Skeleton -->
-    <SkeletonBox v-if="loading && !loadError" variant="card" :columns="4" :count="4" height="360px" style="margin-bottom:24px" />
+    <SkeletonBox v-if="loading && !loadError" variant="card" :columns="4" :count="4" height="360px" class="mb-24" />
 
     <template v-if="!loading && !loadError">
-      <!-- Banners -->
-      <div v-if="banners.length" class="banner-wrapper"
-           @mouseenter="stopBanner"
-           @mouseleave="startBanner"
-           @touchstart.passive="onBannerTouchStart"
-           @touchend.passive="onBannerTouchEnd">
-        <div v-for="(b, i) in banners" :key="b.id" class="banner-slide" :class="{ active: i === currentBanner }"
-             :style="{ background: `linear-gradient(135deg, ${i % 2 ? '#d4000f' : '#f10215'}, ${i % 2 ? '#ff6b6b' : '#f90'})` }">
-          <div class="banner-content">
-            <h2 class="banner-title">{{ b.title }}</h2>
-            <p class="banner-subtitle">{{ b.subtitle || t('product.hotRecommend') }}</p>
-          </div>
-        </div>
-        <div class="banner-dots">
-          <span v-for="(b, i) in banners" :key="b.id" class="banner-dot" :class="{ active: i === currentBanner }"
-                @click="currentBanner = i" />
-        </div>
-      </div>
+      <HomeBanner :banners="banners" />
 
-      <!-- Categories -->
-      <section v-if="categories.length" class="categories-section">
-        <div class="section-header">
-          <span class="section-title">📂 商品分类</span>
-          <span class="section-more" @click="goProducts({})">查看全部 &gt;</span>
-        </div>
-        <div class="categories">
-          <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" @click="goProducts({ categoryId: cat.id })">
-            <div class="cat-icon">{{ cat.icon || '📁' }}</div>
-            <div class="cat-name">{{ cat.name }}</div>
-          </div>
-        </div>
-      </section>
+      <CategoryNav :categories="categories"
+        @select="(id: number) => goProducts({ categoryId: String(id) })"
+        @view-all="goProducts({})" />
 
       <!-- Flash Sale -->
       <section v-if="hotProducts.length >= 3" class="flash-section">
@@ -169,40 +106,12 @@ function productImage(p: any): string {
       <!-- Tab Products -->
       <div class="section-header">
         <div class="tab-group">
-          <span class="tab-item" :class="{ active: activeTab === 'hot' }" @click="activeTab = 'hot'">
-            {{ t('product.hotRecommend') }}
-          </span>
-          <span class="tab-item" :class="{ active: activeTab === 'new' }" @click="activeTab = 'new'">
-            {{ t('product.newArrival') }}
-          </span>
+          <span class="tab-item" :class="{ active: activeTab === 'hot' }" @click="activeTab = 'hot'">{{ t('product.hotRecommend') }}</span>
+          <span class="tab-item" :class="{ active: activeTab === 'new' }" @click="activeTab = 'new'">{{ t('product.newArrival') }}</span>
         </div>
         <span class="section-more" @click="goProducts({})">{{ t('common.allProducts') }} &gt;</span>
       </div>
-
-      <!-- Product Grid -->
-      <div class="product-grid">
-        <div v-for="p in (activeTab === 'hot' ? hotProducts : newProducts)" :key="p.id" class="product-card-home" @click="goDetail(p.id)">
-          <div class="product-img-wrap">
-            <LazyImage :src="productImage(p)" :alt="p.name" height="200px" />
-            <span v-if="activeTab === 'new' || p.isNew" class="tag-new">新品</span>
-            <span v-else class="tag-hot">热卖</span>
-          </div>
-          <div class="product-info">
-            <h4 class="product-name">{{ p.name }}</h4>
-            <div class="product-bottom">
-              <div>
-                <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
-                <span v-if="p.sales" class="product-sales">🔥 {{ formatCount(p.sales) }}人已购</span>
-              </div>
-              <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty -->
-      <JdEmpty v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length"
-               icon="🛍️" :title="t('common.noResults')" />
+      <ProductSection title="" :products="tabProducts" @product-click="goDetail" />
 
       <!-- Recently Viewed -->
       <section v-if="recentItems.length" class="section">
@@ -211,7 +120,7 @@ function productImage(p: any): string {
           <span class="section-more" @click="router.push('/recent')">查看全部 &gt;</span>
         </div>
         <div class="product-grid">
-          <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-home" @click="goDetail(p.id)">
+          <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-recent" @click="goDetail(p.id)">
             <LazyImage :src="productImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
             <div class="product-info">
               <h4 class="product-name">{{ p.name }}</h4>
@@ -223,76 +132,17 @@ function productImage(p: any): string {
       </section>
 
       <!-- Recommended -->
-      <section v-if="recommended.length" class="section">
-        <div class="section-header">
-          <span class="section-title">🤖 为你推荐</span>
-        </div>
-        <div class="product-grid">
-          <div v-for="p in recommended.slice(0, 8)" :key="'rec-' + p.id" class="product-card-home" @click="goDetail(p.id)">
-            <LazyImage :src="productImage(p)" :alt="p.name" height="200px" bg="linear-gradient(135deg,#f8f0ff,#e8e0ff)" />
-            <div class="product-info">
-              <h4 class="product-name">{{ p.name }}</h4>
-              <div class="product-bottom">
-                <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
-                <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProductSection title="🤖 为你推荐" :products="recommended" @product-click="goDetail" />
+
+      <JdEmpty v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length"
+        icon="🛍️" :title="t('common.noResults')" />
     </template>
   </div>
 </template>
 
 <style scoped>
-/* Pull */
 .pull-indicator { text-align: center; overflow: hidden; transition: height .2s; font-size: 13px; color: var(--text-tertiary); }
-
-/* Error */
 .error-state { padding: 80px var(--space-xl); }
-
-/* Banners */
-.banner-wrapper { position: relative; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-xxl); height: 360px; }
-.banner-slide {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity .6s;
-}
-.banner-slide.active { opacity: 1; }
-.banner-content { text-align: center; color: #fff; }
-.banner-title { font-size: 42px; margin-bottom: var(--space-lg); }
-.banner-subtitle { font-size: var(--font-xl); opacity: .9; }
-.banner-dots {
-  position: absolute; bottom: var(--space-lg); left: 50%; transform: translateX(-50%);
-  display: flex; gap: var(--space-sm);
-}
-.banner-dot {
-  width: 10px; height: 10px; border-radius: 50%; cursor: pointer;
-  background: rgba(255,255,255,.5); transition: all .3s;
-}
-.banner-dot.active { background: #fff; transform: scale(1.3); }
-
-/* Categories */
-.categories-section {
-  background: var(--bg-white); border-radius: var(--radius-lg);
-  padding: var(--space-xl); margin-bottom: var(--space-xxl);
-  box-shadow: var(--shadow-sm);
-}
-.categories {
-  display: flex; gap: var(--space-lg); justify-content: center;
-  overflow-x: auto; padding: var(--space-xs) 0; -webkit-overflow-scrolling: touch;
-}
-.categories::-webkit-scrollbar { display: none; }
-.cat-item { text-align: center; cursor: pointer; flex-shrink: 0; width: 72px; transition: transform var(--transition); }
-.cat-item:hover { transform: scale(1.08); }
-.cat-icon {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--jd-red-light), #ffe0e0);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; margin: 0 auto 6px;
-  box-shadow: 0 2px 6px rgba(241,2,21,.08);
-}
-.cat-name { font-size: var(--font-xs); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Flash Sale */
 .flash-section {
@@ -314,17 +164,16 @@ function productImage(p: any): string {
 }
 .flash-price { color: var(--jd-red); font-size: 18px; font-weight: 700; }
 .original-price { color: var(--text-tertiary); font-size: var(--font-xs); text-decoration: line-through; }
+.item-name { font-size: var(--font-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 6px; }
 
-/* Section */
-.section { margin-top: var(--space-xxxl); }
+/* Section header & tabs */
 .section-header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);
 }
 .section-title { font-size: var(--font-xl); font-weight: 700; color: var(--text-primary); }
 .section-more { font-size: var(--font-base); color: var(--text-tertiary); cursor: pointer; }
 .section-more:hover { color: var(--jd-red); }
-
-/* Tabs */
+.section { margin-top: var(--space-xxxl); }
 .tab-group { display: flex; gap: var(--space-xxl); }
 .tab-item {
   font-size: var(--font-xl); font-weight: 700; cursor: pointer;
@@ -333,53 +182,25 @@ function productImage(p: any): string {
 }
 .tab-item.active { color: var(--jd-red); border-bottom-color: var(--jd-red); }
 
-/* Product Grid */
+/* Recently viewed product grid */
 .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
-
-.product-card-home {
+.product-card-recent {
   background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden;
   cursor: pointer; box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition), transform var(--transition);
 }
-.product-card-home:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-4px); }
-
-.product-img-wrap { position: relative; }
-.tag-new {
-  position: absolute; top: 6px; left: 6px; background: var(--green); color: #fff;
-  font-size: 10px; padding: 1px 6px; border-radius: var(--radius-sm); z-index: 1; font-weight: 700;
-}
-.tag-hot {
-  position: absolute; top: 6px; left: 6px; background: var(--jd-red); color: #fff;
-  font-size: 10px; padding: 1px 6px; border-radius: var(--radius-sm); z-index: 1; font-weight: 700;
-}
-
+.product-card-recent:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-4px); }
 .product-info { padding: var(--space-md) var(--space-lg); }
 .product-name {
   font-size: var(--font-md); color: var(--text-primary); margin-bottom: var(--space-sm);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.product-bottom { display: flex; align-items: center; justify-content: space-between; }
 .product-price { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; }
-.product-sales { color: var(--text-tertiary); font-size: var(--font-xs); margin-left: var(--space-xs); }
 .viewed-time { font-size: var(--font-xs); color: var(--text-placeholder); margin-top: 2px; }
 
-.quick-add-btn {
-  width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--jd-red);
-  background: var(--bg-white); color: var(--jd-red); cursor: pointer;
-  font-size: var(--font-lg); display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition-fast); flex-shrink: 0; font-weight: 700; line-height: 1;
-}
-.quick-add-btn:hover { background: var(--jd-red); color: #fff; }
-
-.item-name {
-  font-size: var(--font-base); overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap; margin-bottom: 6px;
-}
+.mb-24 { margin-bottom: 24px; }
 
 @media (max-width: 768px) {
-  .banner-wrapper { height: 200px; border-radius: var(--radius-md); }
-  .banner-title { font-size: var(--font-xxl); }
-  .banner-subtitle { font-size: var(--font-md); }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
   .flash-grid { grid-template-columns: repeat(2, 1fr); }
   .product-price { font-size: var(--font-lg); }

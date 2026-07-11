@@ -9,13 +9,14 @@ import JdEmpty from '@/components/JdEmpty.vue'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
+import type { ViewedProduct } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { items, clear } = useRecentlyViewed()
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
-async function quickAdd(e: Event, p: any) { e.stopPropagation(); try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
+async function quickAdd(e: Event, p: ViewedProduct) { e.stopPropagation(); try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
 </script>
 
 <template>

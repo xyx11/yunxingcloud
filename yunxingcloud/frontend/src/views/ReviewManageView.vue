@@ -54,14 +54,14 @@ onMounted(() => { load(); loadStats() })
       </n-grid>
       <n-space vertical>
         <n-space>
-          <n-input v-model:value="searchKeyword" :placeholder="t('review.searchPlaceholder')" clearable style="width:180px" size="small" />
-          <n-select v-model:value="filterRating" :options="ratingOptions" style="width:110px" size="small" />
+          <n-input v-model:value="searchKeyword" :placeholder="t('review.searchPlaceholder')" clearable class="w-180" size="small" />
+          <n-select v-model:value="filterRating" :options="ratingOptions" class="w-110" size="small" />
           <n-button size="small" @click="load" secondary>{{ t('review.refresh') }}</n-button>
         </n-space>
         <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
       </n-space>
     </n-card>
-    <n-modal v-model:show="showDetail" :title="t('review.detail')" preset="card" style="max-width:500px">
+    <n-modal v-model:show="showDetail" :title="t('review.detail')" preset="card" class="max-w-500">
       <template v-if="detail">
         <p><b>{{ t('review.product') }}</b> {{ detail.productName }}</p>
         <p><b>{{ t('review.user') }}</b> {{ detail.username }}</p>
@@ -72,3 +72,9 @@ onMounted(() => { load(); loadStats() })
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+.w-110 { width: 110px; }
+.max-w-500 { max-width: 500px; }
+</style>

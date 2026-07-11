@@ -15,9 +15,9 @@ const form = ref<Tag>({ name:'', color:'#e4393c', sortOrder:0 })
 
 const columns: DataTableColumns<Tag> = [
   { title: t('common.name'), key: 'name', width: 120 },
-  { title: '颜色', key: 'color', width: 80, render(r:any){ return h(NTag,{size:'small',style:{background:r.color,color:'#fff',border:'none'}},{default:()=>r.name}) } },
+  { title: '颜色', key: 'color', width: 80, render(r: Tag){ return h(NTag,{size:'small',style:{background:r.color,color:'#fff',border:'none'}},{default:()=>r.name}) } },
   { title: t('common.sort'), key: 'sortOrder', width: 60 },
-  { title: t('common.actions'), key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
+  { title: t('common.actions'), key:'act', width:120, render(r: Tag){ return h(NSpace,{size:'small'},{default:()=>[
     h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>'编辑'}),
     h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
   ]})}}

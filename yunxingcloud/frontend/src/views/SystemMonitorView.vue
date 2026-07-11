@@ -117,7 +117,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
 
 <template>
   <div class="view-pad">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <div class="monitor-actions">
       <n-button size="small" @click="loadAll">{{ t('monitor.refresh') }}</n-button>
     </div>
     <n-grid cols="4" x-gap="16" y-gap="16" responsive="screen">
@@ -175,8 +175,8 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
             </n-space>
             <n-space>
               <n-tag type="warning" size="small">{{ t('monitor.announcement') }}</n-tag>
-              <span v-if="!editingAnnouncement" style="font-size:13px">{{ flags.announcement || t('monitor.noAnnouncement') }}</span>
-              <n-input v-else v-model:value="announcementText" size="small" style="width:200px" :placeholder="t('monitor.announcementPlaceholder')" />
+              <span v-if="!editingAnnouncement" class="text-13">{{ flags.announcement || t('monitor.noAnnouncement') }}</span>
+              <n-input v-else v-model:value="announcementText" size="small" class="w-200" :placeholder="t('monitor.announcementPlaceholder')" />
               <n-button size="tiny" @click="editingAnnouncement ? saveAnnouncement() : (editingAnnouncement = true, announcementText = flags.announcement || '')">
                 {{ editingAnnouncement ? t('common.save') : t('common.edit') }}
               </n-button>
@@ -219,7 +219,7 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
         <n-grid-item v-for="(status, svc) in serviceHealth" :key="svc">
           <n-card size="small" :content-style="{padding:'12px',textAlign:'center'}">
             <div :style="{fontSize:'24px',marginBottom:'4px'}">{{ status === 'UP' ? '✅' : '❌' }}</div>
-            <div style="fontSize:13px;fontWeight:600">{{ svc }}</div>
+            <div class="svc-name">{{ svc }}</div>
             <n-tag :type="status==='UP'?'success':'error'" size="small">{{ status }}</n-tag>
           </n-card>
         </n-grid-item>
@@ -227,3 +227,10 @@ onBeforeUnmount(() => { sseSource?.close(); clearInterval(historyTimer) })
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.monitor-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.text-13 { font-size: 13px; }
+.w-200 { width: 200px; }
+.svc-name { font-size: 13px; font-weight: 600; }
+</style>

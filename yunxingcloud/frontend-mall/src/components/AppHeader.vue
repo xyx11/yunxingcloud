@@ -5,13 +5,14 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useI18n } from '@/locales'
 import request from '@/api/request'
+import type { Category } from '@/types'
 
 const router = useRouter()
 const auth = useAuthStore()
 const theme = useThemeStore()
 const { locale, setLocale } = useI18n()
 const searchText = ref('')
-const categories = ref<any[]>([])
+const categories = ref<Category[]>([])
 const showMega = ref(false)
 const voiceSearching = ref(false)
 let megaTimer: ReturnType<typeof setTimeout> | null = null
@@ -33,10 +34,12 @@ async function startVoiceSearch() {
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
   voiceSearching.value = true
   try {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
+    const win = window as unknown as Record<string, unknown>
+    const SRClass = (win.SpeechRecognition || win.webkitSpeechRecognition) as new () => { lang: string; start(): void; onresult: (e: { results: { transcript: string }[][] }) => void; onend: () => void }
+    if (!SRClass) { voiceSearching.value = false; return }
+    const recognition = new SRClass()
     recognition.lang = 'zh-CN'
-    recognition.onresult = (e: any) => { searchText.value = e.results[0][0].transcript; doSearch() }
+    recognition.onresult = (e) => { searchText.value = e.results[0][0].transcript; doSearch() }
     recognition.onend = () => { voiceSearching.value = false }
     recognition.start()
   } catch { voiceSearching.value = false }

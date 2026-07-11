@@ -6,6 +6,7 @@ import { useNotify } from '@/composables/useNotify'
 import { formatPrice } from '@/utils/format'
 
 import { NCard, NDataTable, NButton, NModal, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace, NTag, NInput, NSwitch, NDropdown, NPopover, NCheckbox, NTabs, NTabPane, NDivider, type FormRules, type FormInst } from 'naive-ui'
+import type { DataTableColumn } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
 import request from '@/api/request'
 
@@ -49,7 +50,7 @@ const editForm = ref({ nickname: '', email: '' })
 const saving = ref(false)
 const showDetailModal = ref(false)
 const detailUser = ref<UserInfo | null>(null)
-const custOrders = ref<any[]>([]); const custAddresses = ref<any[]>([]); const custCoupons = ref<any[]>([])
+const custOrders = ref<Record<string, unknown>[]>([]); const custAddresses = ref<Record<string, unknown>[]>([]); const custCoupons = ref<Record<string, unknown>[]>([])
 const custLoading = ref(false)
 
 async function openCustDetail(user: UserInfo) {
@@ -119,14 +120,14 @@ const allColumns = ref([
   { title: t('user.dept'), key: 'departmentName', width: 100, ellipsis: { tooltip: true } },
   { title: t('user.post'), key: 'postId', width: 90, render: (row: UserInfo) => { const p = posts.value.find(x => x.id === row.postId); return h('span', p ? p.postName : '-') } },
   { title: t('user.role'), key: 'roles', width: 150, render: (row: UserInfo) => h(NSpace, { size: 4 }, { default: () => (row.roles || []).map(r => h(NTag, { type: 'info', size: 'small' }, { default: () => r.name })) }) },
-  { title: t('user.lastLogin'), key: 'lastLoginTime', width: 140, render: (row: any) => row.lastLoginTime ? row.lastLoginTime.substring(0,19).replace('T',' ') : '-' },
+  { title: t('user.lastLogin'), key: 'lastLoginTime', width: 140, render: (row: UserInfo) => row.lastLoginTime ? row.lastLoginTime.substring(0,19).replace('T',' ') : '-' },
   { title: t('user.enabled'), key: 'enabled', width: 60, render: (row: UserInfo) => h(NSwitch, { value: row.enabled, size: 'small', onUpdateValue: () => toggleUserById(row) }) },
   { title: t('user.actions'), key: 'actions', width: 80, render: (row: UserInfo) => h(NDropdown, { options: actionOptions(row), onSelect: (k: string) => handleAction(k, row), size: 'small' }, { default: () => h(NButton, { size: 'small' }, { default: () => t('user.moreActions') }) }) },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(allColumns, 'users')
-const columnOptions = computed(() => (allColumns.value as any[])
-  .filter((c: any) => c.key && c.key !== 'actions')
-  .map((c: any) => ({ key: c.key, title: c.title })),
+const columnOptions = computed(() => (allColumns.value as DataTableColumn<UserInfo>[])
+  .filter((c: DataTableColumn<UserInfo>) => c.key && c.key !== 'actions')
+  .map((c: DataTableColumn<UserInfo>) => ({ key: c.key, title: c.title?.toString() || '' })),
 )
 
 async function loadData() {
@@ -144,9 +145,9 @@ async function loadData() {
     total.value = data.total || 0
     allRoles.value = Array.isArray(rres.data) ? rres.data : []
     posts.value = Array.isArray(pres.data) ? pres.data : []
-    dictMap.value['sys_user_source'] = Object.fromEntries((srcDict.data || []).map((d: any) => [d.dictValue, d.dictLabel]))
+    dictMap.value['sys_user_source'] = Object.fromEntries((srcDict.data || []).map((d: Record<string, string>) => [d.dictValue, d.dictLabel]))
     const flat: Dept[] = []
-    function walk(list: any[]) { list.forEach((d: any) => { flat.push({ id: d.id, name: d.name }); if (d.children) walk(d.children) }) }
+    function walk(list: Record<string, unknown>[]) { list.forEach((d) => { flat.push({ id: d.id as number, name: d.name as string }); if (d.children) walk(d.children as Record<string, unknown>[]) }) }
     walk(dres.data); depts.value = flat
   } catch { /* ignore */ }
   loading.value = false
@@ -167,7 +168,7 @@ async function saveAdd() {
     addForm.value = { username: '', password: '', nickname: '', email: '' }
     await loadData()
     notify.success(t('user.createSuccess'))
-  } catch (e: any) { notify.error(e.response?.data?.message || t('user.createFailed')) }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('user.createFailed')) }
   finally { saving.value = false }
 }
 async function saveEdit() {
@@ -181,7 +182,7 @@ async function saveEdit() {
     showEditModal.value = false
     await loadData()
     notify.success(t('user.updateSuccess'))
-  } catch (e: any) { notify.error(e.response?.data?.message || t('user.updateFailed')) }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('user.updateFailed')) }
   finally { saving.value = false }
 }
 async function saveDept() { if (!selectedUser.value) return; await setUserDepartment(selectedUser.value.id, selectedDeptId.value); showDeptModal.value = false; await loadData(); notify.success(t('user.deptAssigned')) }
@@ -191,7 +192,7 @@ async function resetPwd() { if (!selectedUser.value) return; await resetUserPass
 
 function exportCSV() {
   const head = [t('user.username'),t('user.nickname'),t('user.email'),t('user.phone'),t('user.dept'),t('user.role'),t('user.status'),t('user.createdAt')]
-  const rows = users.value.map((u:any) => [u.username||'',u.nickname||'',u.email||'',u.phone||'',u.deptName||'',u.roleNames||'',u.status==='0'?t('user.enabledLabel'):t('user.disabledLabel'),u.createdAt||''])
+  const rows = users.value.map((u: UserInfo) => [u.username||'',u.nickname||'',u.email||'',(u as Record<string, unknown>).phone as string || '',(u as Record<string, unknown>).deptName as string || '',(u as Record<string, unknown>).roleNames as string || '',u.enabled?t('user.enabledLabel'):t('user.disabledLabel'),u.createdAt||''])
   const csv = [head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')
   const blob = new Blob(['﻿'+csv],{type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='users.csv'; a.click()
 }
@@ -211,7 +212,7 @@ onMounted(loadData)
           </n-button>
           <template v-if="showSearch">
             <n-input v-model:value="searchKeyword" :placeholder="t('user.searchPlaceholder')" clearable class="filter-select" size="small" @keyup:enter="searchData" />
-            <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as any},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" class="filter-select-sm" @update:value="searchData" />
+            <n-select v-model:value="filterDept" :options="[{label:t('user.filterDept'),value:null as number | null},...depts.map(d=>({label:d.name,value:d.id}))]" size="small" class="filter-select-sm" @update:value="searchData" />
             <n-select v-model:value="filterRole" :options="[{label:t('user.filterRole'),value:''},...allRoles.map(r=>({label:r.name,value:r.code}))]" size="small" class="filter-select-md" @update:value="searchData" />
             <n-select v-model:value="filterStatus" :options="[{label:t('user.filterStatus'),value:''},{label:t('user.enabledLabel'),value:'true'},{label:t('user.disabledLabel'),value:'false'}]" size="small" class="filter-select-xs" @update:value="searchData" />
             <input type="date" v-model="filterDateFrom" @change="searchData" class="date-input" />

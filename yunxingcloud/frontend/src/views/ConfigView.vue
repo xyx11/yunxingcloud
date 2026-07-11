@@ -10,7 +10,7 @@ import {
 } from 'naive-ui'
 import { useColumnManager } from '@/composables/useColumnManager'
 import { useI18n } from 'vue-i18n'
-import type { DataTableColumns, FormRules, FormInst } from 'naive-ui'
+import type { DataTableColumn, DataTableColumns, FormRules, FormInst } from 'naive-ui'
 
 interface SysConfig {
   id: number; name: string; configKey: string; configValue: string
@@ -71,9 +71,9 @@ const allColumns = ref<DataTableColumns<SysConfig>>([
   },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(allColumns, 'config')
-const columnOptions = computed(() => (allColumns.value as any[])
-  .filter((c: any) => c.key && c.key !== 'actions')
-  .map((c: any) => ({ key: c.key, title: c.title })),
+const columnOptions = computed(() => (allColumns.value as DataTableColumns<SysConfig>)
+  .filter((c: DataTableColumn<SysConfig>) => c.key && c.key !== 'actions')
+  .map((c: DataTableColumn<SysConfig>) => ({ key: c.key, title: c.title?.toString() || '' })),
 )
 
 async function loadConfigs() {
@@ -109,7 +109,7 @@ async function saveConfig() {
     if (form.value.configKey?.startsWith('feature.')) {
       refreshFeatureFlags().catch(() => {})
     }
-  } catch (e: any) { notify.error(e.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
+  } catch (e: unknown) { const err = e as { response?: { data?: { message?: string } } }; notify.error(err.response?.data?.message || t('common.saveFailed')) } finally { saving.value = false }
 }
 
 async function delConfig(id: number) {
@@ -131,7 +131,7 @@ onMounted(loadConfigs)
           <n-button size="small" :type="cfgTypeFilter===''?'primary':'default'" @click="cfgTypeFilter=''">{{ t('common.all') }}</n-button>
           <n-button size="small" :type="cfgTypeFilter==='Y'?'primary':'default'" @click="cfgTypeFilter='Y'">{{ t('config.builtin') }}</n-button>
           <n-button size="small" :type="cfgTypeFilter==='N'?'primary':'default'" @click="cfgTypeFilter='N'">{{ t('config.userConfig') }}</n-button>
-          <n-input v-model:value="cfgSearch" :placeholder="t('config.searchPlaceholder')" size="small" clearable style="width:160px" />
+          <n-input v-model:value="cfgSearch" :placeholder="t('config.searchPlaceholder')" size="small" clearable class="w-160" />
           <n-button type="primary" size="small" @click="() => {}">{{ t('common.search') }}</n-button>
           <n-button size="small" @click="cfgSearch = ''; cfgTypeFilter = ''">{{ t('common.reset') }}</n-button>
         </n-space>
@@ -173,3 +173,7 @@ onMounted(loadConfigs)
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-160 { width: 160px; }
+</style>

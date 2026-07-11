@@ -8,19 +8,19 @@ import request from '@/api/request'
 import { useNotify } from '@/composables/useNotify'
 
 const notify = useNotify()
-const items = ref<any[]>([])
+const items = ref<Record<string, unknown>[]>([])
 const showModal = ref(false); const editingId = ref<number|null>(null)
 const form = ref({ name:'', minPoints:0, discountRate:100, freeShipping:false, birthdayGift:false, prioritySupport:false, sortOrder:0 })
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: t('memberTier.name'), key: 'name', width: 80 },
   { title: t('memberTier.minPoints'), key: 'minPoints', width: 100 },
-  { title: t('memberTier.discountRate'), key: 'discountRate', width: 80, render(r:any){ return r.discountRate+'%' } },
-  { title: t('memberTier.freeShipping'), key: 'freeShipping', width: 60, render(r:any){ return r.freeShipping?'✓':'' } },
-  { title: t('memberTier.birthdayGift'), key: 'birthdayGift', width: 60, render(r:any){ return r.birthdayGift?'✓':'' } },
-  { title: t('common.actions'), key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
-    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>t('common.edit')}),
-    h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>t('common.delete')}),default:()=>t('common.confirmDelete')})
+  { title: t('memberTier.discountRate'), key: 'discountRate', width: 80, render(r: Record<string, unknown>){ return (r.discountRate as number)+'%' } },
+  { title: t('memberTier.freeShipping'), key: 'freeShipping', width: 60, render(r: Record<string, unknown>){ return Boolean(r.freeShipping)?'✓':'' } },
+  { title: t('memberTier.birthdayGift'), key: 'birthdayGift', width: 60, render(r: Record<string, unknown>){ return Boolean(r.birthdayGift)?'✓':'' } },
+  { title: t('common.actions'), key:'act', width:120, render(r: Record<string, unknown>){ return h(NSpace,{size:'small'},{default:()=>[
+    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id as number;form.value={...r as Record<string, unknown>};showModal.value=true}},{default:()=>t('common.edit')}),
+    h(NPopconfirm,{onPositiveClick:()=>del(r.id as number)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>t('common.delete')}),default:()=>t('common.confirmDelete')})
   ]})}}
 ]
 

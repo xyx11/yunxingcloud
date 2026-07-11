@@ -80,11 +80,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <n-modal v-model:show="visible" :closable="true" :mask-closable="true" style="width:520px;top:15vh;">
+  <n-modal v-model:show="visible" :closable="true" :mask-closable="true" class="palette-modal">
     <div class="palette">
       <n-input v-model:value="query" :placeholder="t('nav.searchPlaceholder')" size="large" :autofocus="true" clearable>
         <template #prefix>🔍</template>
-        <template #suffix><n-tag size="small" :bordered="false" style="opacity:.5">Ctrl+K / ?</n-tag></template>
+        <template #suffix><n-tag size="small" :bordered="false" class="opacity-5">Ctrl+K / ?</n-tag></template>
       </n-input>
       <div class="results" v-if="filtered.length">
         <div
@@ -94,7 +94,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         >
           <span class="icon">{{ cmd.icon }}</span>
           <span class="label">{{ cmd.label }}</span>
-          <n-tag size="tiny" :bordered="false" style="opacity:.6;margin-left:auto;">{{ cmd.tag }}</n-tag>
+          <n-tag size="tiny" :bordered="false" class="cmd-tag">{{ cmd.tag }}</n-tag>
         </div>
       </div>
       <div v-else class="empty">{{ t('nav.noMatchResults') }}</div>
@@ -116,4 +116,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .cp-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 6px; cursor: pointer; transition: background .15s; margin: 0 8px; }
 .cp-desc { font-size: 12px; color: #999; }
 .cp-hint { font-size: 10px; color: #999; }
+.palette-modal { width: 520px; top: 15vh; }
+.opacity-5 { opacity: .5; }
+.cmd-tag { opacity: .6; margin-left: auto; }
 </style>

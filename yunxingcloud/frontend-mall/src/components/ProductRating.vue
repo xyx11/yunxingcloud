@@ -33,18 +33,25 @@ const starList = computed<StarItem[]>(() => {
 </script>
 
 <template>
-  <span style="display:inline-flex;align-items:center;gap:1px" role="img" :aria-label="`${rating} 星`">
+  <span class="star-container" role="img" :aria-label="`${rating} 星`">
     <span v-for="s in starList" :key="s.key" :style="[starStyle, {
       color: s.type === 'empty' ? '#ddd' : '#f5a623',
       position: 'relative',
       display: 'inline-block'
     }]">
       <template v-if="s.type === 'half'">
-        <span style="position:absolute;left:0;top:0;overflow:hidden;width:50%;color:#f5a623">★</span>
-        <span style="color:#ddd">★</span>
+        <span class="star-half">★</span>
+        <span class="star-empty-bg">★</span>
       </template>
       <template v-else>★</template>
     </span>
-    <span v-if="count !== undefined && showCount" style="color:#999;font-size:12px;margin-left:4px">({{ count }})</span>
+    <span v-if="count !== undefined && showCount" class="rating-count">({{ count }})</span>
   </span>
 </template>
+
+<style scoped>
+.star-container { display: inline-flex; align-items: center; gap: 1px; }
+.star-half { position: absolute; left: 0; top: 0; overflow: hidden; width: 50%; color: #f5a623; }
+.star-empty-bg { color: #ddd; }
+.rating-count { color: #999; font-size: 12px; margin-left: 4px; }
+</style>

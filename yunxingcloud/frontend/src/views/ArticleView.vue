@@ -31,8 +31,8 @@ function handleUpload(options: UploadCustomRequestOptions) {
 
 const columns: DataTableColumns<Article> = [
   { title: t('common.title'), key: 'title', width: 200 },
-  { title: t('product.category'), key: 'category', width: 70, render(r: any) { return catOpts.find(o => o.value === r.category)?.label || r.category } },
-  { title: '状态', key: 'status', width: 70, render(r: any) { return h(NTag, { size: 'small', type: r.status === '1' ? 'success' : 'default' }, { default: () => r.status === '1' ? '已发布' : '草稿' }) } },
+  { title: t('product.category'), key: 'category', width: 70, render(r: Article) { return catOpts.find(o => o.value === r.category)?.label || r.category } },
+  { title: '状态', key: 'status', width: 70, render(r: Article) { return h(NTag, { size: 'small', type: r.status === '1' ? 'success' : 'default' }, { default: () => r.status === '1' ? '已发布' : '草稿' }) } },
   { title: '浏览', key: 'viewCount', width: 60 },
   { title: t('common.actions'), key: 'act', width: 140, render(r: Article) { return h(NSpace, { size: 'small' }, { default: () => [
     h(NButton, { size: 'small', onClick: () => edit(r) }, { default: () => t('common.edit') }),
@@ -47,7 +47,7 @@ async function save() {
 }
 async function del(id: number) { try { await request.delete(`/api/articles/${id}`); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.deleteFailed')) } }
 function add() { editingId.value = null; form.value = { title: '', content: '', category: 'news', status: '0', coverImage: '' }; showModal.value = true }
-function edit(r: Article) { editingId.value = r.id!; form.value = { ...r, coverImage: (r as any).coverImage || '' }; showModal.value = true }
+function edit(r: Article) { editingId.value = r.id!; form.value = { ...r, coverImage: (r as { coverImage?: string }).coverImage || '' }; showModal.value = true }
 onMounted(load)
 </script>
 <template>

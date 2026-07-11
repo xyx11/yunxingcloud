@@ -11,19 +11,19 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const overview = ref<any>({})
-const orderTrend = ref<any[]>([])
-const topProducts = ref<any[]>([])
-const dailyRevenue = ref<any[]>([])
+const overview = ref<Record<string, unknown>>({})
+const orderTrend = ref<Record<string, unknown>[]>([])
+const topProducts = ref<Record<string, unknown>[]>([])
+const dailyRevenue = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 
 const trendOption = ref({
   tooltip: { trigger: 'axis' },
   grid: { left: 50, right: 20, top: 10, bottom: 30 },
-  xAxis: { type: 'category', data: [] as any[] },
+  xAxis: { type: 'category', data: [] as string[] },
   yAxis: { type: 'value' },
   series: [
-    { name: '订单数', data: [] as any[], type: 'line', smooth: true, itemStyle: { color: '#667eea' }, areaStyle: { color: 'rgba(102,126,234,0.1)' } },
+    { name: '订单数', data: [] as number[], type: 'line', smooth: true, itemStyle: { color: '#667eea' }, areaStyle: { color: 'rgba(102,126,234,0.1)' } },
   ],
 })
 
@@ -37,11 +37,11 @@ const revenueOption = ref({
   ],
 })
 
-const topColumns: DataTableColumns<any> = [
-  { title: '排名', key: 'rank', width: 50, render: (_: any, i: number) => i + 1 },
+const topColumns: DataTableColumns<Record<string, unknown>> = [
+  { title: '排名', key: 'rank', width: 50, render: (_: Record<string, unknown>, i: number) => i + 1 },
   { title: '商品', key: 'productName', width: 200, ellipsis: { tooltip: true } },
   { title: '销量', key: 'sales', width: 80 },
-  { title: '营收', key: 'revenue', width: 100, render: (r: any) => '¥' + ((r.revenue || 0) / 100).toFixed(2) },
+  { title: '营收', key: 'revenue', width: 100, render: (r: Record<string, unknown>) => '¥' + (((r.revenue as number) || 0) / 100).toFixed(2) },
 ]
 
 async function load() {
@@ -60,8 +60,8 @@ async function load() {
     dailyRevenue.value = d.data || {}
 
     // Build trend chart
-    const labels = (orderTrend.value as any[]).map((x: any) => x.date || '')
-    const counts = (orderTrend.value as any[]).map((x: any) => x.count || 0)
+    const labels = orderTrend.value.map((x) => (x.date as string) || '')
+    const counts = orderTrend.value.map((x) => (x.count as number) || 0)
     trendOption.value.xAxis.data = labels
     trendOption.value.series[0].data = counts
     trendOption.value = { ...trendOption.value }

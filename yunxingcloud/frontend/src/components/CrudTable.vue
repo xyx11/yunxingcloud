@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, h } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DataTableColumn } from 'naive-ui'
 import {
   NCard, NDataTable, NButton, NModal, NForm,
   NInput, NSpace, NPopover, NPopconfirm, NCheckbox,
@@ -8,14 +9,16 @@ import {
 
 const { t } = useI18n()
 
+type RowData = Record<string, unknown>
+
 const props = withDefaults(defineProps<{
   title: string
-  columns: any[]
-  data: any[]
+  columns: DataTableColumn<RowData>[]
+  data: RowData[]
   loading?: boolean
   saving?: boolean
   showModal?: boolean
-  editing?: any
+  editing?: RowData | null
   searchable?: boolean
   creatable?: boolean
   deletable?: boolean
@@ -34,7 +37,7 @@ const emit = defineEmits<{
   'update:searchKeyword': [value: string]
   'update:showModal': [value: boolean]
   'add': []
-  'edit': [row: any]
+  'edit': [row: RowData]
   'save': []
   'delete': [id: number]
   'batchDelete': [ids: number[]]
@@ -50,13 +53,13 @@ const searchKeyword = computed({
   set: (val) => emit('update:searchKeyword', val),
 })
 
-const allColKeys = computed(() => props.columns.map((c: any) => c.key || c.title))
+const allColKeys = computed(() => props.columns.map((c: DataTableColumn<RowData>) => c.key || c.title))
 const visibleKeys = ref<string[]>([])
-watch(() => props.columns, (cols) => {
-  if (visibleKeys.value.length === 0) visibleKeys.value = cols.map((c: any) => c.key || c.title)
+watch(() => props.columns, (cols: DataTableColumn<RowData>[]) => {
+  if (visibleKeys.value.length === 0) visibleKeys.value = cols.map((c: DataTableColumn<RowData>) => c.key || String(c.title))
 }, { immediate: true })
 
-const visibleCols = computed(() => props.columns.filter((c: any) => visibleKeys.value.includes(c.key || c.title)))
+const visibleCols = computed(() => props.columns.filter((c: DataTableColumn<RowData>) => visibleKeys.value.includes(c.key || String(c.title))))
 
 function toggleCol(key: string) {
   const i = visibleKeys.value.indexOf(key)
@@ -68,7 +71,7 @@ const displayColumns = computed(() => {
   if (props.deletable) {
     cols.push({
       title: '', key: '_actions', width: 60, fixed: 'right' as const,
-      render: (row: any) => h(NPopconfirm, { onPositiveClick: () => emit('delete', row[props.rowKey]) },
+      render: (row: RowData) => h(NPopconfirm, { onPositiveClick: () => emit('delete', row[props.rowKey] as number) },
         { trigger: () => h(NButton, { size: 'tiny', type: 'error', text: true }, { default: () => t('common.delete') }),
           default: () => t('common.confirmDelete') })
     })
@@ -130,9 +133,9 @@ const displayColumns = computed(() => {
         size="small"
         :bordered="false"
         :pagination="{ pageSize, pageSizes: [10,20,50,100] }"
-        :row-key="(row: any) => row[rowKey]"
+        :row-key="(row: RowData) => row[rowKey] as string | number"
         v-model:checked-row-keys="checkedRowKeys"
-        :row-props="editable ? (row: any) => ({ style: 'cursor:pointer', onClick: () => emit('edit', row) }) : undefined"
+        :row-props="editable ? (row: RowData) => ({ style: 'cursor:pointer', onClick: () => emit('edit', row) }) : undefined"
       >
         <template #empty>{{ t('common.noData') }}</template>
       </n-dataTable>

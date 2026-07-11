@@ -20,9 +20,9 @@ withDefaults(defineProps<{
     <div v-for="i in (count || 4)" :key="i" class="sk-card">
       <div class="sk-image" />
       <div class="sk-card-body">
-        <div class="sk-line" style="width:80%;height:14px;margin-bottom:8px" />
-        <div class="sk-line" style="width:50%;height:18px;margin-bottom:6px" />
-        <div class="sk-line" style="width:35%;height:12px" />
+        <div class="sk-line sk-card-line-1" />
+        <div class="sk-line sk-card-line-2" />
+        <div class="sk-line sk-card-line-3" />
       </div>
     </div>
   </div>
@@ -30,11 +30,11 @@ withDefaults(defineProps<{
   <!-- List Item -->
   <div v-else-if="variant === 'list-item'" class="sk-list">
     <div v-for="i in (count || 4)" :key="i" class="sk-list-item">
-      <div class="sk-image" style="width:80px;height:80px;border-radius:8px" />
+      <div class="sk-image sk-list-img" />
       <div class="sk-list-body">
-        <div class="sk-line" style="width:90%;height:14px;margin-bottom:8px" />
-        <div class="sk-line" style="width:60%;height:12px;margin-bottom:6px" />
-        <div class="sk-line" style="width:30%;height:16px" />
+        <div class="sk-line sk-list-line-1" />
+        <div class="sk-line sk-list-line-2" />
+        <div class="sk-line sk-list-line-3" />
       </div>
     </div>
   </div>
@@ -93,6 +93,15 @@ withDefaults(defineProps<{
   animation: shimmer 1.5s infinite;
   border-radius: 50%;
 }
+
+.sk-card-line-1 { width: 80%; height: 14px; margin-bottom: 8px; }
+.sk-card-line-2 { width: 50%; height: 18px; margin-bottom: 6px; }
+.sk-card-line-3 { width: 35%; height: 12px; }
+
+.sk-list-img { width: 80px; height: 80px; border-radius: 8px; }
+.sk-list-line-1 { width: 90%; height: 14px; margin-bottom: 8px; }
+.sk-list-line-2 { width: 60%; height: 12px; margin-bottom: 6px; }
+.sk-list-line-3 { width: 30%; height: 16px; }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }

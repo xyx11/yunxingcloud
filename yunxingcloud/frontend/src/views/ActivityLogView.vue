@@ -32,10 +32,14 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="活动日志"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索用户/操作..." size="small" clearable style="width:180px" />
+        <n-input v-model:value="searchKeyword" placeholder="搜索用户/操作..." size="small" clearable class="w-180" />
         <n-button size="small" @click="load" secondary>刷新</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any,i:number)=>i" :pagination="{pageSize:15}" size="small" />
     </n-card>
   </div>
 </template>
+
+<style scoped>
+.w-180 { width: 180px; }
+</style>

@@ -10,16 +10,14 @@ import { logout } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useLiveStatsStore } from '@/stores/liveStats'
 import { useTagsViewStore } from '@/stores/tagsView'
-import {
-  NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NLayoutFooter,
-  NButton, NBreadcrumb, NBreadcrumbItem, NDropdown, NAvatar, NBadge,
-  NIcon, NPopover, NInput,
-} from 'naive-ui'
+import { NLayout, NLayoutContent, NLayoutFooter, NIcon } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
-
 import { useKeyboard } from '@/composables/useKeyboard'
 import CommandPalette from '@/components/CommandPalette.vue'
 import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
+import SideMenu from '@/components/SideMenu.vue'
+import TopHeader from '@/components/TopHeader.vue'
+import TagsBar from '@/components/TagsBar.vue'
 import { useI18n } from 'vue-i18n'
 import { switchLocale } from '@/locales'
 
@@ -51,26 +49,7 @@ const watermarkText = computed(() => {
   const time = new Date().toLocaleDateString(loc)
   return Array(12).fill(`${name} ${time}`).join('    ')
 })
-const ctxMenuTag = ref('')
-const ctxMenuX = ref(0)
-const ctxMenuY = ref(0)
 
-function handleCtxMenu(k: string) {
-  const path = ctxMenuTag.value
-  if (k === 'refresh') router.go(0)
-  else if (k === 'close') tagsViewStore.removeTag(path)
-  else if (k === 'other') tagsViewStore.closeOther(path)
-  else if (k === 'closeLeft') {
-    const tags = tagsViewStore.tags; const idx = tags.findIndex(t => t.path === path)
-    for (let i = idx - 1; i >= 1; i--) tagsViewStore.removeTag(tags[i].path)
-  }
-  else if (k === 'closeRight') {
-    const tags = [...tagsViewStore.tags]; const idx = tags.findIndex(t => t.path === path)
-    for (let i = tags.length - 1; i > idx; i--) tagsViewStore.removeTag(tags[i].path)
-  }
-  ctxMenuTag.value = ''
-  router.push(path)
-}
 const searchQuery = ref("")
 const searchResults = ref<Record<string, any[]>>({})
 const showSearchResults = ref(false)
@@ -113,7 +92,6 @@ const hasSearchResults = computed(() => {
 })
 
 const showBackTop = ref(false)
-
 function onResize() {
   isMobile.value = window.innerWidth < 768
   if (window.innerWidth < 768) {
@@ -125,10 +103,8 @@ function onResize() {
     if (localStorage.getItem('sidebarCollapsed') === 'true') { collapsed.value = false; localStorage.removeItem('sidebarCollapsed') }
   }
 }
-
-function onScroll() {
-  showBackTop.value = window.scrollY > 300
-}
+function onScroll() { showBackTop.value = window.scrollY > 300 }
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
 let _statsTimer: ReturnType<typeof setInterval>
 let _unreadTimer: ReturnType<typeof setInterval>
@@ -143,10 +119,6 @@ onBeforeUnmount(() => {
   if (_statsTimer) clearInterval(_statsTimer)
   if (_unreadTimer) clearInterval(_unreadTimer)
 })
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
 
 function toggleTheme() {
   isDark.value = !isDark.value
@@ -163,6 +135,12 @@ function toggleSidebar() {
 function toggleFullscreen() {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen()
   else document.exitFullscreen()
+}
+
+async function handleLogout() {
+  try { await logout() } catch { /* ignore */ }
+  authStore.clear()
+  router.push('/login')
 }
 
 const currentKey = ref('home')
@@ -343,35 +321,27 @@ watch(currentKey, (key) => {
   router.push(target).catch(() => {})
 })
 
-
-async function handleLogout() {
-  try { await logout() } catch { /* ignore */ }
-  authStore.clear()
-  router.push('/login')
+function handleNavigate(key: string) {
+  currentKey.value = key
+  router.push(key === 'home' ? '/' : '/' + key).catch(() => {})
 }
 
-const userMenuOptions = computed(() => [
-  { label: t('nav.profile'), key: 'profile' },
-  { label: t('nav.logout'), key: 'logout' },
-])
-
-const contextMenuOptions = computed(() => [
-  { label: t('nav.closeCurrent'), key: 'close' },
-  { label: t('nav.closeOthers'), key: 'other' },
-  { label: t('nav.closeAll'), key: 'all' },
-])
-
-const ctxMenuDropdownOptions = computed(() => [
-  { label: t('common.refresh'), key: 'refresh' },
-  { label: t('common.close'), key: 'close' },
-  { label: t('nav.closeLeft'), key: 'closeLeft' },
-  { label: t('nav.closeRight'), key: 'closeRight' },
-  { label: t('nav.closeOthers'), key: 'other' },
-])
-
-function handleUserMenu(key: string) {
-  if (key === 'profile') router.push('/profile')
-  if (key === 'logout') handleLogout()
+function handleTagAction(action: string, path: string) {
+  if (action === 'refresh') { router.go(0); return }
+  else if (action === 'close') tagsViewStore.removeTag(path)
+  else if (action === 'other') tagsViewStore.closeOther(path)
+  else if (action === 'all') { tagsViewStore.closeAll(); return }
+  else if (action === 'closeLeft') {
+    const tags = tagsViewStore.tags
+    const idx = tags.findIndex(t => t.path === path)
+    for (let i = idx - 1; i >= 1; i--) tagsViewStore.removeTag(tags[i].path)
+  }
+  else if (action === 'closeRight') {
+    const tags = [...tagsViewStore.tags]
+    const idx = tags.findIndex(t => t.path === path)
+    for (let i = tags.length - 1; i > idx; i--) tagsViewStore.removeTag(tags[i].path)
+  }
+  router.push(path)
 }
 
 useKeyboard({
@@ -379,7 +349,7 @@ useKeyboard({
   'Ctrl+u': () => router.push('/users'),
   'Ctrl+r': () => router.push('/roles'),
   'Ctrl+m': () => router.push('/menus'),
-  '/': () => { const active = document.activeElement; if (!active || active.tagName !== 'INPUT') { const inp = document.querySelector<HTMLInputElement>('.search-input input, [placeholder*="搜索"]'); inp?.focus() } },
+  '/': () => { const active = document.activeElement; if (!active || active.tagName !== 'INPUT') { const inp = document.querySelector<HTMLInputElement>('.search-input-width input, [placeholder*="搜索"]'); inp?.focus() } },
 })
 </script>
 
@@ -387,151 +357,48 @@ useKeyboard({
   <AnnouncementBanner />
   <div v-if="isMobile && mobileOverlay" class="mobile-backdrop" @click="mobileOverlay = false" />
   <n-layout class="app-layout" :has-sider="true">
-    <n-layout-sider
-      bordered :collapsed="isMobile ? false : collapsed" collapse-mode="width" :width="220"
-      :style="isMobile ? { position: 'fixed', left: mobileOverlay ? '0' : '-220px', top: 0, bottom: 0, zIndex: 100, transition: 'left 0.3s' } : {}"
-    >
-      <div class="logo">
-        <span v-if="!collapsed" class="logo-text">YXCLOUD</span>
-        <span v-else class="logo-text-collapsed">YC</span>
-        <span v-if="!collapsed" class="logo-version">管理后台 v2.4</span>
-      </div>
-      <div class="custom-menu menu-scroll" :class="{ collapsed }">
-        <template v-for="item in menuOptions" :key="item.key">
-          <template v-if="item.children">
-            <div v-show="!collapsed" class="menu-group-title menu-group-header" @click="toggleGroup(item.key)">
-              <span>{{ item.label }}</span>
-              <span style="font-size:10px;transition:transform .2s" :style="{transform: collapsedGroups.has(String(item.key))?'rotate(-90deg)':'rotate(0)'}">▼</span>
-            </div>
-            <div v-show="!collapsed && !collapsedGroups.has(String(item.key))">
-            <div
-              v-for="child in item.children"
-              :key="child.key"
-              :class="['menu-item', { active: currentKey === child.key }]"
-              @click="currentKey = String(child.key); router.push(child.key === 'home' ? '/' : '/' + String(child.key)).catch(()=>{})"
-            >
-              <span v-if="child.icon" class="menu-icon"><component :is="child.icon" /></span>
-              <span v-show="!collapsed" class="menu-label">{{ child.label }}</span>
-            </div>
-            </div>
-          </template>
-        </template>
-      </div>
-    </n-layout-sider>
+    <SideMenu
+      :collapsed="collapsed"
+      :isMobile="isMobile"
+      :mobileOverlay="mobileOverlay"
+      :menuOptions="menuOptions"
+      :collapsedGroups="collapsedGroups"
+      :currentKey="currentKey"
+      @toggle-group="toggleGroup"
+      @navigate="handleNavigate"
+    />
     <n-layout>
-      <n-layout-header class="header">
-        <div class="header-left">
-          <n-button text class="sidebar-toggle" @click="toggleSidebar">
-            {{ collapsed ? '▶' : '◀' }}
-          </n-button>
-          <span v-if="collapsed" class="mobile-title">{{ pageTitle }}</span>
-          <n-popover trigger="manual" :show="showSearchResults" placement="bottom-start" :width="320" @clickoutside="showSearchResults = false">
-            <template #trigger>
-              <n-input
-                v-model:value="searchQuery" class="search-input-width" :placeholder="t('nav.searchPlaceholder')" size="small" clearable
-                @keyup:enter="globalSearch" @clear="showSearchResults = false" @focus="searchQuery && globalSearch()"
-              >
-                <template #prefix>🔍</template>
-              </n-input>
-            </template>
-            <div v-if="!searchQuery && searchHistory.length && !showSearchResults" class="search-history">
-              <div class="search-section-title">{{ t('nav.recentSearches') }}</div>
-              <div v-for="item in searchHistory" :key="item" class="search-item search-item-start" @click="searchQuery = item; globalSearch()">{{ item }}</div>
-            </div>
-            <div v-if="hasSearchResults" class="search-results">
-              <div v-if="searchResults.users?.length" class="search-section">
-                <div class="search-section-label">{{ t('nav.users') }}</div>
-                <div v-for="u in searchResults.users" :key="u.id" class="search-item" @click="navigateFromSearch('users', u)">
-                  <span>{{ u.username }}</span><span class="search-item-detail">{{ u.nickname }} {{ u.email }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.roles?.length" class="search-section">
-                <div class="search-section-label">{{ t('nav.roles') }}</div>
-                <div v-for="r in searchResults.roles" :key="r.id" class="search-item" @click="navigateFromSearch('roles', r)">
-                  <span>{{ r.name }}</span><span class="search-item-detail">{{ r.code }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.menus?.length" class="search-section">
-                <div class="search-section-label">{{ t('nav.menus') }}</div>
-                <div v-for="m in searchResults.menus" :key="m.id" class="search-item" @click="navigateFromSearch('menus', m)">
-                  <span>{{ m.name }}</span><span class="search-item-detail">{{ m.path }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.configs?.length">
-                <div class="search-section-label">{{ t('nav.config') }}</div>
-                <div v-for="c in searchResults.configs" :key="c.id" class="search-item" @click="navigateFromSearch('configs', c)">
-                  <span>{{ c.name }}</span><span class="search-item-detail">{{ c.config_key }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.dict?.length">
-                <div class="search-section-label">{{ t('nav.dict') }}</div>
-                <div v-for="d in searchResults.dict" :key="d.id" class="search-item" @click="navigateFromSearch('dict', d)">
-                  <span>{{ d.dict_name }}</span><span class="search-item-detail">{{ d.dict_type }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.notices?.length">
-                <div class="search-section-label">{{ t('nav.notice') }}</div>
-                <div v-for="n in searchResults.notices" :key="n.id" class="search-item" @click="navigateFromSearch('notices', n)">
-                  <span>{{ n.notice_title }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.posts?.length">
-                <div class="search-section-label">{{ t('nav.posts') }}</div>
-                <div v-for="p in searchResults.posts" :key="p.id" class="search-item" @click="navigateFromSearch('posts', p)">
-                  <span>{{ p.post_name }}</span><span class="search-item-detail">{{ p.post_code }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.departments?.length">
-                <div class="search-section-label">{{ t('nav.departments') }}</div>
-                <div v-for="d in searchResults.departments" :key="d.id" class="search-item" @click="navigateFromSearch('departments', d)">
-                  <span>{{ d.name }}</span>
-                </div>
-              </div>
-              <div v-if="searchResults.total" class="search-result-total">{{ t('nav.searchResults', { count: searchResults.total }) }}</div>
-            </div>
-            <div v-else class="search-no-results">{{ t('nav.noResults') }}</div>
-          </n-popover>
-          <n-breadcrumb>
-            <n-breadcrumb-item v-for="b in breadcrumbs" :key="b.path" @click="router.push(b.path)">
-              {{ b.label }}
-            </n-breadcrumb-item>
-          </n-breadcrumb>
-        </div>
-        <div class="header-right">
-          <n-button text class="header-icon-btn" @click="toggleFullscreen" :title="t('nav.fullscreen')">⛶</n-button>
-          <n-button text size="small" class="header-locale-btn" @click="switchLocale(locale === 'zh' ? 'en' : 'zh')">
-            {{ locale === 'zh' ? 'EN' : '中' }}
-          </n-button>
-          <n-button text class="header-theme-btn" @click="toggleTheme">
-            {{ isDark ? '☀️' : '🌙' }}
-          </n-button>
-          <n-badge :value="unreadCount" :max="99" class="header-badge">
-            <n-button text class="header-icon-btn" @click="router.push('/messages')" :title="t('nav.openMessages')">📬</n-button>
-          </n-badge>
-          <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
-            <div class="user-area">
-              <n-avatar size="small" round style="background:#667eea;">{{ authStore.username?.charAt(0)?.toUpperCase() }}</n-avatar>
-              <span>{{ authStore.username }}</span>
-            </div>
-          </n-dropdown>
-        </div>
-      </n-layout-header>
-      <div class="tags-view" v-if="tagsViewStore.tags.length">
-        <span
-          v-for="tag in tagsViewStore.tags" :key="tag.path"
-          :class="['tag-item', { active: tagsViewStore.activePath === tag.path }]"
-          @click="router.push(tag.path)"
-          @contextmenu.prevent="ctxMenuTag = tag.path; ctxMenuX = $event.clientX; ctxMenuY = $event.clientY"
-        >
-          {{ tag.title }}
-          <span v-if="tag.path !== '/'" class="tag-close" @click.stop="tagsViewStore.removeTag(tag.path)">×</span>
-        </span>
-        <n-dropdown trigger="click" :options="contextMenuOptions" @select="(k:string) => { if(k==='close') tagsViewStore.removeTag(tagsViewStore.activePath); if(k==='other') tagsViewStore.closeOther(tagsViewStore.activePath); if(k==='all') tagsViewStore.closeAll(); router.push(tagsViewStore.activePath) }">
-          <span class="tag-close-all">▼</span>
-        </n-dropdown>
-        <n-dropdown v-if="ctxMenuTag" trigger="manual" :show="!!ctxMenuTag" :x="ctxMenuX" :y="ctxMenuY" :options="ctxMenuDropdownOptions" @select="handleCtxMenu" @clickoutside="ctxMenuTag = ''" placement="bottom-start" />
-      </div>
-      <div v-if="routeLoading" style="position:fixed;top:0;left:0;right:0;z-index:9999;height:2px;background:linear-gradient(90deg,#667eea,#764ba2);animation:loadingBar 0.6s ease-out;transition:opacity 0.2s"></div>
+      <TopHeader
+        :collapsed="collapsed"
+        :isDark="isDark"
+        :username="authStore.username"
+        :unreadCount="unreadCount"
+        :pageTitle="pageTitle"
+        :locale="locale"
+        :breadcrumbs="breadcrumbs"
+        v-model:searchQuery="searchQuery"
+        :showSearchResults="showSearchResults"
+        :searchResults="searchResults"
+        :searchHistory="searchHistory"
+        :hasSearchResults="hasSearchResults"
+        @toggle-collapse="toggleSidebar"
+        @toggle-theme="toggleTheme"
+        @toggle-fullscreen="toggleFullscreen"
+        @switch-locale="switchLocale(locale === 'zh' ? 'en' : 'zh')"
+        @logout="handleLogout"
+        @profile="() => router.push('/profile')"
+        @open-messages="() => router.push('/messages')"
+        @search="globalSearch"
+        @clear-search="showSearchResults = false"
+        @navigate-from-search="navigateFromSearch"
+      />
+      <TagsBar
+        :tags="tagsViewStore.tags"
+        :activeTag="tagsViewStore.activePath"
+        @tag-action="handleTagAction"
+        @click-tag="(path: string) => router.push(path)"
+      />
+      <div v-if="routeLoading" class="loading-bar" />
       <n-layout-content :style="{ padding:'20px', background: isDark ? '#101014' : '#f0f2f5', minHeight:'calc(100vh - 96px)' }" class="content-area">
         <router-view v-slot="{ Component, route: currentRoute }">
           <transition name="page" mode="out-in">
@@ -541,7 +408,7 @@ useKeyboard({
       </n-layout-content>
       <n-layout-footer class="footer">
         yunxingcloud {{ new Date().getFullYear() }} · {{ t('footer') }} · {{ t('footerRunning') }} {{ liveStats.uptime }} · {{ liveStatsStore.activeSessions || liveStats.sessions }} {{ t('footerOnline') }}<template v-if="appVersion"> · v{{ appVersion }}</template>
-        <div style="margin-top:4px"><a href="https://beian.miit.gov.cn/" target="_blank" class="footer-icp">湘ICP备2026022380号-1</a></div>
+        <div class="mt-4"><a href="https://beian.miit.gov.cn/" target="_blank" class="footer-icp">湘ICP备2026022380号-1</a></div>
       </n-layout-footer>
     </n-layout>
   </n-layout>
@@ -563,29 +430,10 @@ useKeyboard({
 .page-enter-from { opacity: 0; transform: translateY(8px); }
 .page-leave-to { opacity: 0; transform: translateY(-8px); }
 @keyframes loadingBar { 0% { width:0; opacity:1 } 70% { width:70%; opacity:1 } 100% { width:90%; opacity:0 } }
-</style>
-
-<style scoped>
-.logo {
-  height: 56px; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 1px;
-  user-select: none;
-}
-.header {
-  height: 52px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; background: var(--n-color, #fff); box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  border-bottom: 1px solid var(--n-border-color, #f0f0f0);
-}
-.header-left { display: flex; align-items: center; gap: 16px; }
-.header-right { display: flex; align-items: center; }
-.user-area { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.app-layout { min-height: 100vh; }
 .footer { text-align: center; font-size: 12px; color: #999; padding: 12px; background: var(--n-color, #fff); border-top:1px solid var(--n-border-color, #eee); }
-.search-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 13px;
-}
-.search-item:hover { background: var(--n-action-color, #f0f0f0); }
+.footer-icp { color: #999; text-decoration: none; }
+.mt-4 { margin-top: 4px; }
 .back-top {
   position: fixed; bottom: 32px; right: 32px; width: 40px; height: 40px;
   background: #667eea; color: #fff; border-radius: 50%; display: flex;
@@ -593,92 +441,13 @@ useKeyboard({
   box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000; transition: transform 0.2s;
 }
 .back-top:hover { transform: scale(1.1); }
-.tags-view {
-  display: flex; align-items: center; gap: 2px; padding: 4px 16px;
-  background: var(--n-color, #fff); border-bottom: 1px solid var(--n-border-color, #eee);
-  overflow-x: auto; white-space: nowrap;
+.mobile-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99; }
+.loading-bar {
+  position:fixed;top:0;left:0;right:0;z-index:9999;height:2px;
+  background:linear-gradient(90deg,#667eea,#764ba2);
+  animation:loadingBar 0.6s ease-out;transition:opacity 0.2s;
 }
-.tag-item {
-  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
-  font-size: 12px; border-radius: 3px; cursor: pointer; color: #666;
-  border: 1px solid transparent; transition: all 0.2s;
-}
-.tag-item:hover { background: rgba(102,126,234,0.08); }
-.tag-item.active { background: rgba(102,126,234,0.12); color: var(--primary); border-color: var(--primary); }
-.tag-close { font-size: 14px; line-height: 1; opacity: 0.5; }
-.tag-close:hover { opacity: 1; color: #f5576c; }
-.tag-close-all { font-size: 10px; cursor: pointer; padding: 4px 6px; opacity: 0.5; }
-.tag-close-all:hover { opacity: 1; }
-.mobile-title { font-size: 14px; font-weight: 500; color: var(--n-text-color, #333); display: none; }
-@media (max-width: 768px) { .mobile-title { display: inline; } }
-
 @media (max-width: 768px) {
-  .header { padding: 0 10px; flex-wrap: wrap; height: auto; min-height: 44px; }
-  .header-left { gap: 8px; }
-  .header-right { gap: 4px; }
-  .user-area span { display: none; }
-  .logo { font-size: 14px; height: 44px; }
   .content-area { padding: 8px !important; }
 }
-
-.mobile-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99; }
-.custom-menu { padding: 8px 0; overflow-x: hidden; }
-.custom-menu.collapsed .menu-item { padding: 10px; justify-content: center; }
-.custom-menu.collapsed .menu-icon { font-size: 20px; }
-.menu-group { margin-bottom: 4px; }
-.menu-group-title {
-  padding: 8px 20px; font-size: 11px; font-weight: 600;
-  color: var(--n-text-color-3, #999); white-space: nowrap;
-}
-.menu-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 24px; font-size: 14px; cursor: pointer;
-  color: var(--n-text-color, #333); white-space: nowrap;
-  transition: all 0.15s ease; border-left: 3px solid transparent;
-}
-.menu-item:hover { background: rgba(102,126,234,0.08); }
-.menu-item.active {
-  color: #667eea; background: rgba(102,126,234,0.12);
-  border-left-color: #667eea; font-weight: 500;
-}
-.menu-icon { font-size: 18px; display: flex; align-items: center; flex-shrink: 0; }
-.menu-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-
-/* Layout */
-.app-layout { min-height: 100vh; }
-.sidebar-toggle { font-size: 18px; }
-.search-input-width { width: 160px; }
-
-/* Logo */
-.logo-text { font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #f10215, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.logo-text-collapsed { font-size: 16px; font-weight: 800; color: #f10215; }
-.logo-version { font-size: 10px; color: #999; display: block; margin-top: 2px; }
-
-/* Menu */
-.menu-scroll { overflow-y: auto; max-height: calc(100vh - 110px); padding-right: 4px; }
-.menu-group-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-
-/* Search Results */
-.search-history { max-height: 200px; overflow-y: auto; }
-.search-results { max-height: 360px; overflow-y: auto; }
-.search-section { margin-bottom: 8px; }
-.search-section-title { font-size: 11px; color: #999; padding: 2px 8px; }
-.search-section-label { font-size: 12px; color: #999; padding: 4px 0; }
-.search-item-detail { color: #999; font-size: 12px; }
-.search-item-start { justify-content: flex-start; }
-
-
-/* Search */
-.search-result-total { font-size: 11px; color: #999; text-align: center; padding: 4px 0; border-top: 1px solid var(--n-border-color, #eee); }
-.search-no-results { color: #999; padding: 8px; text-align: center; }
-
-/* Header */
-.header-icon-btn { font-size: 18px; }
-.header-locale-btn { margin-right: 4px; font-size: 12px; }
-.header-theme-btn { font-size: 18px; margin-right: 4px; }
-.header-badge { margin-right: 12px; }
-
-/* Footer */
-.footer-icp { color: #999; text-decoration: none; }
-
 </style>

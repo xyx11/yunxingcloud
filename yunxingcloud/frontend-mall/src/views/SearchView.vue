@@ -6,13 +6,14 @@ import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
+import type { Product } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const results = ref<any[]>([])
+const results = ref<Product[]>([])
 const totalPages = ref(0)
 const page = ref(0)
 const loading = ref(false)
@@ -25,7 +26,7 @@ const searchFocused = ref(false)
 
 const hotKeywords = ref(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
 const history = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
-const suggestions = ref<any[]>([])
+const suggestions = ref<Product[]>([])
 let suggestTimer: ReturnType<typeof setTimeout> | null = null
 
 function onInput() {
@@ -63,9 +64,9 @@ function cancelSearch() { searchQuery.value = ''; searchInput.value = ''; result
 function setSort(s: string) {
   sortBy.value = sortBy.value === s ? '' : s
   const sorted = [...results.value]
-  if (s === 'price_asc') sorted.sort((a: any, b: any) => a.price - b.price)
-  else if (s === 'price_desc') sorted.sort((a: any, b: any) => b.price - a.price)
-  else if (s === 'sales') sorted.sort((a: any, b: any) => (b.sales || 0) - (a.sales || 0))
+  if (s === 'price_asc') sorted.sort((a: Product, b: Product) => a.price - b.price)
+  else if (s === 'price_desc') sorted.sort((a: Product, b: Product) => b.price - a.price)
+  else if (s === 'sales') sorted.sort((a: Product, b: Product) => (b.sales || 0) - (a.sales || 0))
   results.value = sorted
 }
 
@@ -79,9 +80,9 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 function clearHistory() { history.value = []; localStorage.removeItem('searchHistory') }
 function removeHistoryItem(kw: string) { history.value = history.value.filter(h => h !== kw); localStorage.setItem('searchHistory', JSON.stringify(history.value)) }
 
-async function quickAdd(e: Event, p: any) {
+async function quickAdd(e: Event, p: Product) {
   e.stopPropagation()
-  try { await addToCart(p.id, 1); toast.success('已加入购物车'); p._added = true; setTimeout(() => p._added = false, 1500) } catch { toast.error('添加失败') }
+  try { await addToCart(p.id, 1); toast.success('已加入购物车'); (p as Product)._added = true; setTimeout(() => (p as Product)._added = false, 1500) } catch { toast.error('添加失败') }
 }
 </script>
 
@@ -143,7 +144,7 @@ async function quickAdd(e: Event, p: any) {
       <div v-if="loading" class="results-grid">
         <div v-for="i in 8" :key="i" class="sk-card">
           <div class="sk-img" />
-          <div class="sk-body"><div class="sk-line" style="width:70%;height:16px" /><div class="sk-line" style="width:40%;height:20px" /></div>
+          <div class="sk-body"><div class="sk-line sk-line-w70" /><div class="sk-line sk-line-w40" /></div>
         </div>
       </div>
 
@@ -158,8 +159,8 @@ async function quickAdd(e: Event, p: any) {
                 <span class="result-price">{{ formatPrice(p.price / 100, 2) }}</span>
                 <span class="result-sales">已售 {{ p.sales || 0 }}</span>
               </div>
-              <button class="add-btn" :class="{ added: (p as any)._added }" @click="(e: Event) => quickAdd(e, p)">
-                {{ (p as any)._added ? '✓' : '+' }}
+              <button class="add-btn" :class="{ added: (p as Product)._added }" @click="(e: Event) => quickAdd(e, p)">
+                {{ (p as Product)._added ? '✓' : '+' }}
               </button>
             </div>
           </div>
@@ -260,6 +261,9 @@ async function quickAdd(e: Event, p: any) {
 .retry-tag:hover { background: var(--jd-red); color: #fff; }
 
 .mobile-cancel { display: none; }
+
+.sk-line-w70 { width: 70%; height: 16px; }
+.sk-line-w40 { width: 40%; height: 20px; }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
