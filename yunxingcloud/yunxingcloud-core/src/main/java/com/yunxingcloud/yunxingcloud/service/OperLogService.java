@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class OperLogService {
@@ -78,31 +79,21 @@ public class OperLogService {
             LocalDateTime e = endTime != null && !endTime.isEmpty() ? LocalDateTime.parse(endTime) : null;
             logs = logs.stream().filter(l -> l.getOperTime() != null && !l.getOperTime().isBefore(s) && (e == null || !l.getOperTime().isAfter(e))).collect(Collectors.toList());
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID,Title,BizType,Operator,IP,URL,Status,Cost(ms),OperTime\n");
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        for (SysOperLog log : logs) {
-            sb.append(String.join(",",
-                String.valueOf(log.getId()),
-                csvEscape(log.getTitle()),
-                csvEscape(log.getBusinessType()),
-                csvEscape(log.getOperName()),
-                csvEscape(log.getOperIp()),
-                csvEscape(log.getOperUrl()),
-                log.getStatus() != null && log.getStatus() == 0 ? "Success" : "Failure",
-                String.valueOf(log.getCostTime() != null ? log.getCostTime() : 0),
-                log.getOperTime() != null ? log.getOperTime().format(fmt) : ""
-            )).append("\n");
-        }
-        return sb.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private String csvEscape(String val) {
-        if (val == null) return "";
-        if (val.contains(",") || val.contains("\"") || val.contains("\n")) {
-            return "\"" + val.replace("\"", "\"\"") + "\"";
-        }
-        return val;
+        List<String[]> rows = logs.stream()
+                .map(log -> new String[]{
+                        String.valueOf(log.getId()),
+                        log.getTitle(),
+                        log.getBusinessType(),
+                        log.getOperName(),
+                        log.getOperIp(),
+                        log.getOperUrl(),
+                        log.getStatus() != null && log.getStatus() == 0 ? "Success" : "Failure",
+                        String.valueOf(log.getCostTime() != null ? log.getCostTime() : 0),
+                        log.getOperTime() != null ? log.getOperTime().format(fmt) : ""
+                })
+                .toList();
+        return CsvUtils.toCsv(new String[]{"ID", "Title", "BizType", "Operator", "IP", "URL", "Status", "Cost(ms)", "OperTime"}, rows).getBytes(StandardCharsets.UTF_8);
     }
 
     @Transactional

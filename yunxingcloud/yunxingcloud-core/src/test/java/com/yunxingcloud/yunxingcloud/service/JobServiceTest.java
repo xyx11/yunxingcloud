@@ -26,7 +26,7 @@ class JobServiceTest {
 
     @BeforeEach
     void setUp() {
-        jobService = new JobService(jobRepository, jobLogRepository);
+        jobService = new JobService(jobRepository, jobLogRepository, null);
     }
 
     @Test void shouldFindAllJobs() {

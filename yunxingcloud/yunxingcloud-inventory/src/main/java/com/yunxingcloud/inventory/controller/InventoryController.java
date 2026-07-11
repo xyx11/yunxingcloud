@@ -56,6 +56,7 @@ public class InventoryController {
         int qty = Integer.parseInt(body.get("quantity").toString());
         String name = (String) body.getOrDefault("productName", "");
         String remark = (String) body.getOrDefault("remark", "手动入库");
+        log.info("入库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark);
         return ResponseEntity.ok(service.stockIn(productId, name, warehouseId, qty, remark));
     }
 
@@ -66,8 +67,8 @@ public class InventoryController {
         Long warehouseId = Long.valueOf(body.get("warehouseId").toString());
         int qty = Integer.parseInt(body.get("quantity").toString());
         String remark = (String) body.getOrDefault("remark", "手动出库");
-        try { return ResponseEntity.ok(service.stockOut(productId, warehouseId, qty, remark)); }
-        catch (IllegalArgumentException e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        try { log.info("出库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark); return ResponseEntity.ok(service.stockOut(productId, warehouseId, qty, remark)); }
+        catch (IllegalArgumentException e) { log.warn("出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
 
     @Operation(summary = "库存预警")
@@ -90,8 +91,8 @@ public class InventoryController {
         int qty = Integer.parseInt(body.get("quantity").toString());
         Long orderId = body.containsKey("orderId") ? Long.valueOf(body.get("orderId").toString()) : null;
         String name = (String) body.getOrDefault("productName", "");
-        try { service.orderOut(productId, warehouseId, qty, orderId, name); return ResponseEntity.ok(Map.of("success", true)); }
-        catch (Exception e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        try { log.info("订单出库: productId={}, warehouseId={}, qty={}, orderId={}", productId, warehouseId, qty, orderId); service.orderOut(productId, warehouseId, qty, orderId, name); return ResponseEntity.ok(Map.of("success", true)); }
+        catch (Exception e) { log.warn("订单出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
 
     @PostMapping("/api/inventory/order-back")
@@ -100,6 +101,7 @@ public class InventoryController {
         Long warehouseId = Long.valueOf(body.get("warehouseId").toString());
         int qty = Integer.parseInt(body.get("quantity").toString());
         Long orderId = body.containsKey("orderId") ? Long.valueOf(body.get("orderId").toString()) : null;
+        log.info("订单退货入库: productId={}, warehouseId={}, qty={}, orderId={}", productId, warehouseId, qty, orderId);
         service.orderBack(productId, warehouseId, qty, orderId);
         return ResponseEntity.ok(Map.of("success", true));
     }

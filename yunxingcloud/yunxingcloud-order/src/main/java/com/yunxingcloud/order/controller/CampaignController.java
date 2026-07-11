@@ -10,6 +10,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -17,6 +20,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/campaigns")
 public class CampaignController {
+
+    private static final Logger log = LoggerFactory.getLogger(CampaignController.class);
 
     private final CampaignRepository repo;
     private final CampaignService service;
@@ -35,14 +40,20 @@ public class CampaignController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Campaign c) { return ResponseEntity.ok(repo.save(c)); }
+    public ResponseEntity<?> create(@RequestBody Campaign c) {
+        var saved = repo.save(c);
+        log.info("Campaign created: id={}", saved.getId());
+        return ResponseEntity.ok(saved);
+    }
 
     @GetMapping("/{id}/calculate")
     public ResponseEntity<?> calculate(@PathVariable Long id, @RequestParam Long amount) {
         try {
             long discount = service.calculateDiscount(id, amount, user());
+            log.info("User {} calculated campaign {} discount: amount={}, discount={}", user(), id, amount, discount);
             return ResponseEntity.ok(Map.of("discount", discount, "finalAmount", amount - discount));
         } catch (Exception e) {
+            log.warn("User {} failed to calculate campaign {} discount: {}", user(), id, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }

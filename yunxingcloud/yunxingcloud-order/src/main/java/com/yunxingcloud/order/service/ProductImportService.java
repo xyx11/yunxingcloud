@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class ProductImportService {
@@ -50,19 +51,16 @@ public class ProductImportService {
 
     /** CSV 导出 */
     public byte[] exportCsv() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID,名称,描述,价格(元),库存,销量,状态\n");
-        for (Product p : repo.findAll()) {
-            sb.append(String.format("%d,\"%s\",\"%s\",%.2f,%d,%d,%s\n",
-                    p.getId(),
-                    p.getName() != null ? p.getName() : "",
-                    p.getDescription() != null ? p.getDescription().replace("\"", "\"\"") : "",
-                    p.getPrice() / 100.0,
-                    p.getStock(),
-                    p.getSales() != null ? p.getSales() : 0,
-                    "0".equals(p.getStatus()) ? "上架" : "下架"));
-        }
-        return sb.toString().getBytes(StandardCharsets.UTF_8);
+        List<String[]> rows = repo.findAll().stream()
+                .map(p -> new String[]{String.valueOf(p.getId()),
+                        p.getName() != null ? p.getName() : "",
+                        p.getDescription() != null ? p.getDescription() : "",
+                        String.format("%.2f", p.getPrice() / 100.0),
+                        String.valueOf(p.getStock()),
+                        String.valueOf(p.getSales() != null ? p.getSales() : 0),
+                        "0".equals(p.getStatus()) ? "上架" : "下架"})
+                .toList();
+        return CsvUtils.toCsv(new String[]{"ID", "名称", "描述", "价格(元)", "库存", "销量", "状态"}, rows).getBytes(StandardCharsets.UTF_8);
     }
 
     private Long parsePrice(String v) {

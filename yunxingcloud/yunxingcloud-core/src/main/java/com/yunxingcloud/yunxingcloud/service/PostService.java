@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class PostService {
@@ -60,11 +61,11 @@ public class PostService {
     }
 
     public String exportCsv() {
-        StringBuilder sb = new StringBuilder("岗位编码,岗位名称,排序,状态\n");
-        postRepository.findAll().forEach(p -> sb.append(String.format("%s,%s,%d,%s\n",
-                p.getPostCode(), p.getPostName(),
-                p.getSortOrder() != null ? p.getSortOrder() : 0,
-                "0".equals(p.getStatus()) ? "正常" : "停用")));
-        return sb.toString();
+        List<String[]> rows = postRepository.findAll().stream()
+                .map(p -> new String[]{p.getPostCode(), p.getPostName(),
+                        String.valueOf(p.getSortOrder() != null ? p.getSortOrder() : 0),
+                        "0".equals(p.getStatus()) ? "正常" : "停用"})
+                .toList();
+        return CsvUtils.toCsv(new String[]{"岗位编码", "岗位名称", "排序", "状态"}, rows);
     }
 }

@@ -14,7 +14,7 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
     @Override
     public ClientConfiguration clientConfiguration() {
         return ClientConfiguration.builder()
-                .connectedTo("localhost:9200")
+                .connectedTo("${spring.elasticsearch.uris:localhost:9200}")
                 .build();
     }
 }

@@ -10,12 +10,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 @Tag(name = "售后管理", description = "退换货/售后工单处理")
 @RestController
 @RequestMapping("/api/after-sale")
 public class AfterSaleController {
+
+    private static final Logger log = LoggerFactory.getLogger(AfterSaleController.class);
 
     private final AfterSaleRepository afterSaleRepo;
     private final AfterSaleService service;
@@ -42,18 +47,24 @@ public class AfterSaleController {
                 (String) body.get("type"), (String) body.get("reason"),
                 body.containsKey("refundAmount") ? Long.valueOf(body.get("refundAmount").toString()) : null,
                 (String) body.getOrDefault("evidenceUrls", ""));
+        log.info("User {} applied after-sale for order {}, type={}, reason={}", user(),
+                body.get("orderId"), body.get("type"), body.get("reason"));
         return ResponseEntity.ok(as);
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/approve")
     public ResponseEntity<?> approve(@PathVariable Long id, @RequestBody(required = false) Map<String, String> body) {
-        return ResponseEntity.ok(service.approve(id, body != null ? body.getOrDefault("remark", "") : ""));
+        var result = service.approve(id, body != null ? body.getOrDefault("remark", "") : "");
+        log.info("Admin approved after-sale {}, remark={}", id, body != null ? body.get("remark") : "");
+        return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/reject")
     public ResponseEntity<?> reject(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(service.reject(id, body.getOrDefault("remark", "")));
+        var result = service.reject(id, body.getOrDefault("remark", ""));
+        log.info("Admin rejected after-sale {}, remark={}", id, body.get("remark"));
+        return ResponseEntity.ok(result);
     }
 }

@@ -10,12 +10,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "审批管理", description = "审批流程处理")
 @RestController
 @RequestMapping("/api/approval")
 public class ApprovalController {
+
+    private static final Logger log = LoggerFactory.getLogger(ApprovalController.class);
 
     private final ApprovalService approvalService;
 
@@ -42,6 +47,7 @@ public class ApprovalController {
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/approve")
     public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        log.info("审批通过: approvalId={}, approver={}", id, currentUser());
         return approvalService.approve(id, body.get("remark"))
                 .map(a -> ResponseEntity.ok(Map.of("success", (Object) true)))
                 .orElse(ResponseEntity.notFound().build());
@@ -50,6 +56,7 @@ public class ApprovalController {
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/reject")
     public ResponseEntity<Map<String, Object>> reject(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        log.info("审批驳回: approvalId={}, approver={}", id, currentUser());
         return approvalService.reject(id, body.get("remark"))
                 .map(a -> ResponseEntity.ok(Map.of("success", (Object) true)))
                 .orElse(ResponseEntity.notFound().build());

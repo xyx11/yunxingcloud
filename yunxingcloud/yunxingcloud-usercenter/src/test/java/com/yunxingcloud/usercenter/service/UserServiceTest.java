@@ -19,12 +19,13 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private com.yunxingcloud.common.core.I18nService i18n;
 
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, passwordEncoder);
+        userService = new UserService(userRepository, passwordEncoder, i18n);
     }
 
     @Test void shouldFindByUsername() {

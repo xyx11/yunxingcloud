@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class ConfigService {
@@ -65,10 +66,10 @@ public class ConfigService {
     }
 
     public String exportCsv() {
-        StringBuilder sb = new StringBuilder("名称,键名,键值,系统内置,创建时间\n");
-        configRepository.findAll().forEach(c -> sb.append(String.format("%s,%s,%s,%s,%s\n",
-                c.getName(), c.getConfigKey(), c.getConfigValue(),
-                "Y".equals(c.getConfigType()) ? "是" : "否", c.getCreatedAt())));
-        return sb.toString();
+        List<String[]> rows = configRepository.findAll().stream()
+                .map(c -> new String[]{c.getName(), c.getConfigKey(), c.getConfigValue(),
+                        "Y".equals(c.getConfigType()) ? "是" : "否", c.getCreatedAt() != null ? c.getCreatedAt().toString() : ""})
+                .toList();
+        return CsvUtils.toCsv(new String[]{"名称", "键名", "键值", "系统内置", "创建时间"}, rows);
     }
 }

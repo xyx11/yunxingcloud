@@ -10,12 +10,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 @Tag(name = "发票管理", description = "发票申请与查询")
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {
+
+    private static final Logger log = LoggerFactory.getLogger(InvoiceController.class);
 
     private final InvoiceRepository invoiceRepo;
     private final InvoiceService service;
@@ -41,13 +46,15 @@ public class InvoiceController {
                 Long.valueOf(body.get("orderId").toString()), user(),
                 (String) body.get("type"), (String) body.getOrDefault("title", ""),
                 (String) body.getOrDefault("taxNo", ""), (String) body.getOrDefault("email", ""));
+        log.info("User {} applied invoice for order {}, type={}", user(), body.get("orderId"), body.get("type"));
         return ResponseEntity.ok(inv);
     }
 
     @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{id}/issue")
     public ResponseEntity<?> issue(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(service.issue(id,
-                body.get("invoiceNo"), body.get("invoiceUrl")));
+        var result = service.issue(id, body.get("invoiceNo"), body.get("invoiceUrl"));
+        log.info("Admin issued invoice {}, invoiceNo={}", id, body.get("invoiceNo"));
+        return ResponseEntity.ok(result);
     }
 }

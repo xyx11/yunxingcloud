@@ -11,10 +11,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Tag(name = "消息管理", description = "站内信发送与查询")
 @RestController
 @RequestMapping("/api/messages")
 public class MessageController {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageController.class);
 
     private final MessageService messageService;
 
@@ -40,6 +45,7 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<Message> send(@RequestBody Message msg) {
         msg.setFromUser(currentUser());
+        log.info("发送消息: from={}, to={}, title={}", currentUser(), msg.getToUser(), msg.getTitle());
         return ResponseEntity.ok(messageService.send(msg));
     }
 

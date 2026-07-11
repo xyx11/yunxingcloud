@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class NoticeService {
@@ -55,12 +56,12 @@ public class NoticeService {
     }
 
     public String exportCsv() {
-        StringBuilder sb = new StringBuilder("标题,类型,状态,创建时间\n");
-        noticeRepository.findAll().forEach(n -> sb.append(String.format("%s,%s,%s,%s\n",
-                n.getNoticeTitle(),
-                "1".equals(n.getNoticeType()) ? "通知" : "公告",
-                "0".equals(n.getStatus()) ? "正常" : "关闭",
-                n.getCreatedAt())));
-        return sb.toString();
+        List<String[]> rows = noticeRepository.findAll().stream()
+                .map(n -> new String[]{n.getNoticeTitle(),
+                        "1".equals(n.getNoticeType()) ? "通知" : "公告",
+                        "0".equals(n.getStatus()) ? "正常" : "关闭",
+                        n.getCreatedAt() != null ? n.getCreatedAt().toString() : ""})
+                .toList();
+        return CsvUtils.toCsv(new String[]{"标题", "类型", "状态", "创建时间"}, rows);
     }
 }

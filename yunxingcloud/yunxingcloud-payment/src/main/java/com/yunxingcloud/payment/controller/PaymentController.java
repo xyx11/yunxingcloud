@@ -14,10 +14,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Tag(name = "支付管理", description = "支付创建与查询")
 @RestController
 @RequestMapping("/api/payment")
 public class PaymentController {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentOrderRepository orderRepo;
     private final PaymentService paymentService;
@@ -50,6 +55,7 @@ public class PaymentController {
         String title = (String) body.get("title");
         Long amount = Long.valueOf(body.get("amount").toString());
         String channel = (String) body.get("channel");
+        log.info("创建支付订单: title={}, amount={}, channel={}", title, amount, channel);
         return ResponseEntity.ok(paymentService.create(title, amount, channel));
     }
 
@@ -66,7 +72,13 @@ public class PaymentController {
     public ResponseEntity<?> refund(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long refundAmount = Long.valueOf(body.get("refundAmount").toString());
         String reason = (String) body.getOrDefault("reason", "");
-        return ResponseEntity.ok(paymentService.refund(id, refundAmount, reason));
+        log.info("申请退款: orderId={}, refundAmount={}, reason={}", id, refundAmount, reason);
+        try {
+            return ResponseEntity.ok(paymentService.refund(id, refundAmount, reason));
+        } catch (Exception e) {
+            log.warn("退款操作失败: orderId={}, amount={}, reason={}, error={}", id, refundAmount, reason, e.getMessage());
+            throw e;
+        }
     }
 
     @PreAuthorize("hasAuthority('ticket:read')")

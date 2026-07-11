@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class DictService {
@@ -99,11 +100,11 @@ public class DictService {
     }
 
     public String exportCsv() {
-        StringBuilder sb = new StringBuilder("字典类型,字典标签,字典键值,排序\n");
-        dictDataRepository.findAll().forEach(d -> sb.append(String.format("%s,%s,%s,%d\n",
-                d.getDictType(), d.getDictLabel(), d.getDictValue(),
-                d.getSortOrder() != null ? d.getSortOrder() : 0)));
-        return sb.toString();
+        List<String[]> rows = dictDataRepository.findAll().stream()
+                .map(d -> new String[]{d.getDictType(), d.getDictLabel(), d.getDictValue(),
+                        String.valueOf(d.getSortOrder() != null ? d.getSortOrder() : 0)})
+                .toList();
+        return CsvUtils.toCsv(new String[]{"字典类型", "字典标签", "字典键值", "排序"}, rows);
     }
 
     @Transactional

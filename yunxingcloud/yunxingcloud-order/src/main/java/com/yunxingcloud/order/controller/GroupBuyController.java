@@ -10,12 +10,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 @Tag(name = "拼团管理", description = "拼团活动管理")
 @RestController
 @RequestMapping("/api/group-buy")
 public class GroupBuyController {
+
+    private static final Logger log = LoggerFactory.getLogger(GroupBuyController.class);
 
     private final GroupBuyRepository groupBuyRepo;
     private final GroupBuyService service;
@@ -32,22 +37,31 @@ public class GroupBuyController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody GroupBuy gb) { return ResponseEntity.ok(groupBuyRepo.save(gb)); }
+    public ResponseEntity<?> create(@RequestBody GroupBuy gb) {
+        var saved = groupBuyRepo.save(gb);
+        log.info("Group buy created: id={}", saved.getId());
+        return ResponseEntity.ok(saved);
+    }
 
     @PostMapping("/{id}/open")
     public ResponseEntity<?> openGroup(@PathVariable Long id, @RequestParam Long orderId) {
-        return ResponseEntity.ok(service.createGroup(id, orderId, user()));
+        var group = service.createGroup(id, orderId, user());
+        log.info("User {} opened group buy {} with order {}", user(), id, orderId);
+        return ResponseEntity.ok(group);
     }
 
     @PostMapping("/{groupId}/join")
     public ResponseEntity<?> join(@PathVariable Long groupId, @RequestParam Long orderId) {
-        return ResponseEntity.ok(service.joinGroup(groupId, orderId, user()));
+        var result = service.joinGroup(groupId, orderId, user());
+        log.info("User {} joined group buy group {} with order {}", user(), groupId, orderId);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/expire")
     @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<?> expireTimeout() {
         service.expireTimeoutGroups();
+        log.info("Admin expired timeout group buys");
         return ResponseEntity.ok(Map.of("success", true));
     }
 }
