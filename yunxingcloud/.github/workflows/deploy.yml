@@ -8,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: yunxingcloud
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -17,6 +20,9 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: yunxingcloud
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +32,7 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: '20', cache: npm, cache-dependency-path: frontend/package-lock.json }
+        with: { node-version: '20', cache: npm, cache-dependency-path: yunxingcloud/frontend/package-lock.json }
 
       - name: Build Admin Frontend
         run: cd frontend && npm ci && npm run build
@@ -44,15 +50,15 @@ jobs:
           username: ${{ secrets.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
           source: |
-            yunxingcloud-core/target/yunxingcloud-core-[0-9]*.jar
-            yunxingcloud-usercenter/target/yunxingcloud-usercenter-[0-9]*.jar
-            yunxingcloud-gateway/target/yunxingcloud-gateway-[0-9]*.jar
-            yunxingcloud-payment/target/yunxingcloud-payment-[0-9]*.jar
-            yunxingcloud-order/target/yunxingcloud-order-[0-9]*.jar
-            yunxingcloud-inventory/target/yunxingcloud-inventory-[0-9]*.jar
-            frontend-mall/dist/
+            yunxingcloud/yunxingcloud-core/target/yunxingcloud-core-[0-9]*.jar
+            yunxingcloud/yunxingcloud-usercenter/target/yunxingcloud-usercenter-[0-9]*.jar
+            yunxingcloud/yunxingcloud-gateway/target/yunxingcloud-gateway-[0-9]*.jar
+            yunxingcloud/yunxingcloud-payment/target/yunxingcloud-payment-[0-9]*.jar
+            yunxingcloud/yunxingcloud-order/target/yunxingcloud-order-[0-9]*.jar
+            yunxingcloud/yunxingcloud-inventory/target/yunxingcloud-inventory-[0-9]*.jar
+            yunxingcloud/frontend-mall/dist/
           target: /opt/yunxingcloud/app/
-          strip_components: 0
+          strip_components: 1
 
       - name: Restart Services
         uses: appleboy/ssh-action@v1.0.3
