@@ -8,6 +8,9 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "实时大屏", description = "实时数据大屏")
 @RestController
 @RequestMapping("/api/realtime")
 public class RealtimeDashboardController {

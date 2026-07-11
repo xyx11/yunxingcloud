@@ -8,6 +8,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "数据大屏", description = "数据大屏展示")
 @RestController
 @RequestMapping("/api/dashboard")
 public class DataScreenController {

@@ -3,112 +3,48 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
-import com.yunxingcloud.common.core.PasswordValidator;
 import com.yunxingcloud.common.core.I18nService;
-import com.yunxingcloud.yunxingcloud.entity.PasswordResetToken;
-import com.yunxingcloud.yunxingcloud.entity.User;
-import com.yunxingcloud.yunxingcloud.repository.PasswordResetTokenRepository;
-import com.yunxingcloud.yunxingcloud.repository.UserRepository;
-import com.yunxingcloud.yunxingcloud.service.EmailService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.yunxingcloud.yunxingcloud.service.PasswordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "密码管理", description = "忘记密码/重置密码/修改密码")
 @RestController
 @RequestMapping("/api/password")
 public class PasswordController {
 
-    private static final Logger log = LoggerFactory.getLogger(PasswordController.class);
-
-    private final UserRepository userRepository;
-    private final PasswordResetTokenRepository tokenRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final PasswordService passwordService;
     private final I18nService i18n;
 
-    public PasswordController(UserRepository userRepository,
-                               PasswordResetTokenRepository tokenRepository,
-                               PasswordEncoder passwordEncoder,
-                               EmailService emailService,
-                               I18nService i18n) {
-        this.userRepository = userRepository;
-        this.tokenRepository = tokenRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
+    public PasswordController(PasswordService passwordService, I18nService i18n) {
+        this.passwordService = passwordService;
         this.i18n = i18n;
     }
 
     @PostMapping("/forgot")
     @SentinelResource(value = "passwordForgotFlow", blockHandler = "forgotPasswordBlockHandler")
     public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.blank_email")));
+        Map<String, Object> result = passwordService.forgotPassword(body.get("email"));
+        if (Boolean.FALSE.equals(result.get("success"))) {
+            return ResponseEntity.badRequest().body(result);
         }
-
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.email_sent")));
-        }
-
-        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
-        PasswordResetToken resetToken = new PasswordResetToken(user.getId(), token);
-        tokenRepository.save(resetToken);
-
-        boolean sent = emailService.sendPasswordResetEmail(email, token);
-        if (!sent) {
-            log.info("[DEV] 密码重置令牌: token={} (邮件未发送)", token);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", i18n.msg("password.email_sent"),
-                    "token", token
-            ));
-        }
-        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.email_sent")));
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/reset")
     @SentinelResource(value = "passwordResetFlow", blockHandler = "resetPasswordBlockHandler")
     public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> body) {
-        String token = body.get("token");
-        String newPassword = body.get("newPassword");
-
-        if (token == null || token.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.invalid_token")));
+        Map<String, Object> result = passwordService.resetPassword(body.get("token"), body.get("newPassword"));
+        if (Boolean.FALSE.equals(result.get("success"))) {
+            return ResponseEntity.badRequest().body(result);
         }
-
-        PasswordResetToken resetToken = tokenRepository.findByToken(token).orElse(null);
-        if (resetToken == null || !resetToken.isValid()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.invalid_token")));
-        }
-
-        List<String> pwErrors = PasswordValidator.validate(newPassword);
-        if (!pwErrors.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, "message", i18n.msg("password.weak"),
-                "details", String.join("; ", pwErrors)));
-        }
-
-        User user = userRepository.findById(resetToken.getUserId()).orElse(null);
-        if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.not_found")));
-        }
-
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        resetToken.setUsed(true);
-        tokenRepository.save(resetToken);
-
-        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.reset_success")));
+        return ResponseEntity.ok(result);
     }
 
     public ResponseEntity<Map<String, Object>> forgotPasswordBlockHandler(Map<String, String> body,
@@ -137,35 +73,12 @@ public class PasswordController {
 
     @PostMapping("/change")
     public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> body) {
-        String oldPassword = body.get("oldPassword");
-        String newPassword = body.get("newPassword");
-
-        if (oldPassword == null || oldPassword.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
-        }
-        if (newPassword == null || newPassword.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("common.bad_request")));
-        }
-
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username).orElse(null);
-        if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.not_found")));
+        Map<String, Object> result = passwordService.changePassword(username,
+                body.get("oldPassword"), body.get("newPassword"));
+        if (Boolean.FALSE.equals(result.get("success"))) {
+            return ResponseEntity.badRequest().body(result);
         }
-
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("password.old_wrong")));
-        }
-
-        List<String> pwErrors = PasswordValidator.validate(newPassword);
-        if (!pwErrors.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, "message", i18n.msg("password.weak"),
-                "details", String.join("; ", pwErrors)));
-        }
-
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("password.change_success")));
+        return ResponseEntity.ok(result);
     }
 }

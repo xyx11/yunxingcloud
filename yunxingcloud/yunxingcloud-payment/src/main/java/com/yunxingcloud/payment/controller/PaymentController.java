@@ -9,9 +9,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "支付管理", description = "支付创建与查询")
 @RestController
 @RequestMapping("/api/payment")
 public class PaymentController {
@@ -31,6 +34,7 @@ public class PaymentController {
     }
 
     @PreAuthorize("hasAuthority('ticket:read')")
+    @Operation(summary = "查询支付状态")
     @GetMapping("/orders/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
         return orderRepo.findById(id)
@@ -40,6 +44,7 @@ public class PaymentController {
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @Log(title = "支付管理", businessType = BusinessType.INSERT)
+    @Operation(summary = "创建支付")
     @PostMapping("/orders")
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         String title = (String) body.get("title");
@@ -56,6 +61,7 @@ public class PaymentController {
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
+    @Operation(summary = "申请退款")
     @PostMapping("/orders/{id}/refund")
     public ResponseEntity<?> refund(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long refundAmount = Long.valueOf(body.get("refundAmount").toString());

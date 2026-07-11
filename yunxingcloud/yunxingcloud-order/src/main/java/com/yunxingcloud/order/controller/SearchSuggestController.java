@@ -1,10 +1,13 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.SearchSuggestService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Tag(name = "搜索建议", description = "搜索联想与热搜词")
 @RestController
 @RequestMapping("/api/search")
 public class SearchSuggestController {

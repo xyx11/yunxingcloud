@@ -8,6 +8,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "全局仪表盘", description = "全局仪表盘数据")
 @RestController
 @RequestMapping("/api/global-dashboard")
 public class GlobalDashboardController {

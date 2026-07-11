@@ -4,9 +4,12 @@ import com.yunxingcloud.inventory.service.InventoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "库存调拨", description = "仓库间库存调拨")
 @RestController
 @RequestMapping("/api/inventory")
 public class TransferController {
@@ -16,6 +19,7 @@ public class TransferController {
     public TransferController(InventoryService service) { this.service = service; }
 
     @PreAuthorize("hasAuthority('ticket:write')")
+    @Operation(summary = "库存调拨")
     @PostMapping("/transfer")
     public ResponseEntity<?> transfer(@RequestBody Map<String, Object> body) {
         Long productId = Long.valueOf(body.get("productId").toString());

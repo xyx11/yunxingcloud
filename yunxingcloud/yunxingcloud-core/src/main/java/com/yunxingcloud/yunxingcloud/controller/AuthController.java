@@ -4,28 +4,18 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.yunxingcloud.common.core.I18nService;
-import com.yunxingcloud.yunxingcloud.config.JwtTokenService;
-import com.yunxingcloud.yunxingcloud.event.AuditEvent;
-import org.springframework.context.ApplicationEventPublisher;
+import com.yunxingcloud.yunxingcloud.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.yunxingcloud.yunxingcloud.config.RateLimitService;
-import com.yunxingcloud.yunxingcloud.config.TokenBlacklist;
-import com.yunxingcloud.yunxingcloud.config.TokenStore;
-import com.yunxingcloud.yunxingcloud.entity.User;
-import com.yunxingcloud.yunxingcloud.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,30 +28,11 @@ public class AuthController {
 
     private static final String ANONYMOUS_USER = "anonymousUser";
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenService jwtTokenService;
-    private final TokenBlacklist tokenBlacklist;
-    private final RateLimitService rateLimitService;
-    private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final TokenStore tokenStore;
+    private final AuthService authService;
     private final I18nService i18n;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          JwtTokenService jwtTokenService,
-                          TokenBlacklist tokenBlacklist,
-                          RateLimitService rateLimitService,
-                          UserRepository userRepository,
-                          ApplicationEventPublisher eventPublisher,
-                          TokenStore tokenStore,
-                          I18nService i18n) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenService = jwtTokenService;
-        this.tokenBlacklist = tokenBlacklist;
-        this.rateLimitService = rateLimitService;
-        this.userRepository = userRepository;
-        this.eventPublisher = eventPublisher;
-        this.tokenStore = tokenStore;
+    public AuthController(AuthService authService, I18nService i18n) {
+        this.authService = authService;
         this.i18n = i18n;
     }
 
@@ -71,59 +42,32 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
-        if (!rateLimitService.isAllowed(ip)) {
+        if (authService.isRateLimited(ip)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of(
                     "success", false, "message", i18n.msg("ratelimit.too_many_requests")
             ));
         }
 
-        if (request.getCode() != null && !request.getCode().isEmpty()) {
-            String sessionCaptcha = CaptchaController.getCaptcha(httpRequest.getSession());
-            if (sessionCaptcha == null || !sessionCaptcha.equalsIgnoreCase(request.getCode())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                        "success", false, "message", i18n.msg("auth.captcha_error")
-                ));
-            }
+        String captchaError = authService.validateCaptcha(request.getCode(), httpRequest.getSession());
+        if (captchaError != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "success", false, "message", captchaError
+            ));
         }
 
-        String password = request.getPassword();
-        try {
-            password = CaptchaController.decryptRSA(password);
-        } catch (Exception ignored) {}
+        String password = authService.decryptPassword(request.getPassword());
 
-        // check account lockout
-        var userOpt = userRepository.findByUsername(request.getUsername());
-        if (userOpt.isPresent() && userOpt.get().isLocked()) {
+        String lockError = authService.checkAccountLocked(request.getUsername());
+        if (lockError != null) {
             return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of(
-                    "success", false, "message", i18n.msg("auth.account_locked")
+                    "success", false, "message", lockError
             ));
         }
 
         try {
-            UsernamePasswordAuthenticationToken token =
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), password);
-            Authentication auth = authenticationManager.authenticate(token);
-
-            // reset failed attempts & update last login time on success
-            userOpt.ifPresent(u -> { u.onLoginSuccess(); u.setLastLoginTime(java.time.LocalDateTime.now()); userRepository.save(u); });
-
-            String accessToken = jwtTokenService.createAccessToken(auth.getName(),
-                    auth.getAuthorities().stream().map(Object::toString).toList());
-            tokenStore.add(accessToken, auth.getName(), System.currentTimeMillis() + JwtTokenService.ACCESS_EXPIRATION * 1000);
-            eventPublisher.publishEvent(new AuditEvent("LOGIN_SUCCESS", auth.getName(), ip));
-            String refreshToken = jwtTokenService.createRefreshToken(auth.getName());
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "username", auth.getName(),
-                    "accessToken", accessToken,
-                    "refreshToken", refreshToken,
-                    "tokenType", "Bearer",
-                    "expiresIn", JwtTokenService.ACCESS_EXPIRATION
-            ));
+            return ResponseEntity.ok(authService.login(request.getUsername(), password, ip));
         } catch (BadCredentialsException e) {
-            userOpt.ifPresent(u -> { u.onLoginFailed(); userRepository.save(u); });
-            eventPublisher.publishEvent(new AuditEvent("LOGIN_FAILED", request.getUsername(), ip));
+            authService.handleLoginFailed(request.getUsername(), ip);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "success", false, "message", i18n.msg("auth.bad_credentials")
             ));
@@ -150,23 +94,11 @@ public class AuthController {
     @PostMapping("/refresh")
     @SentinelResource(value = "refreshFlow", blockHandler = "refreshBlockHandler")
     public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> body) {
-        String refreshToken = body.get("refreshToken");
-        if (refreshToken == null || !jwtTokenService.validateToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false, "message", i18n.msg("auth.token_invalid")
-            ));
+        Map<String, Object> result = authService.refreshToken(body.get("refreshToken"));
+        if (Boolean.FALSE.equals(result.get("success"))) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
         }
-        String username = jwtTokenService.getUsernameFromToken(refreshToken);
-        String newAccessToken = jwtTokenService.createAccessToken(username);
-        String newRefreshToken = jwtTokenService.createRefreshToken(username);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "accessToken", newAccessToken,
-                "refreshToken", newRefreshToken,
-                "tokenType", "Bearer",
-                "expiresIn", JwtTokenService.ACCESS_EXPIRATION
-        ));
+        return ResponseEntity.ok(result);
     }
 
     public ResponseEntity<Map<String, Object>> refreshBlockHandler(Map<String, String> body,
@@ -183,13 +115,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
-            tokenBlacklist.add(bearer.substring(7));
-            tokenStore.remove(bearer.substring(7));
-            String username = jwtTokenService.getUsernameFromToken(bearer.substring(7));
-            eventPublisher.publishEvent(new AuditEvent("LOGOUT", username, request.getRemoteAddr()));
-        }
+        authService.logout(request.getHeader("Authorization"), request.getRemoteAddr());
         return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("auth.logout_success")));
     }
 
@@ -200,11 +126,7 @@ public class AuthController {
                 || ANONYMOUS_USER.equals(auth.getPrincipal())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(Map.of(
-                "username", auth.getName(),
-                "authorities", auth.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority).toList()
-        ));
+        return ResponseEntity.ok(authService.getCurrentUser(auth));
     }
 
     @GetMapping("/csrf")

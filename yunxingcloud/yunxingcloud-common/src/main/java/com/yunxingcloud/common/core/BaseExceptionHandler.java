@@ -70,6 +70,13 @@ public abstract class BaseExceptionHandler {
                 .body(Map.of("success", false, "message", "服务暂时不可用，请稍后重试"));
     }
 
+    @ExceptionHandler(com.alibaba.csp.sentinel.slots.block.BlockException.class)
+    public ResponseEntity<?> handleBlockException(com.alibaba.csp.sentinel.slots.block.BlockException e) {
+        log.warn("Sentinel 流控/降级: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("success", false, "message", "请求过于频繁，请稍后再试"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
         log.error("未处理异常: {}", e.getMessage(), e);

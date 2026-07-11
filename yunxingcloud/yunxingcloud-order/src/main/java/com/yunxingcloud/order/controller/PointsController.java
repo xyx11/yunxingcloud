@@ -2,6 +2,8 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.PointsAccount;
 import com.yunxingcloud.order.entity.PointsRecord;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.yunxingcloud.order.repository.PointsAccountRepository;
 import com.yunxingcloud.order.repository.PointsRecordRepository;
 import com.yunxingcloud.order.service.PointsService;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "积分管理", description = "用户积分管理")
 @RestController
 @RequestMapping("/api/points")
 public class PointsController {

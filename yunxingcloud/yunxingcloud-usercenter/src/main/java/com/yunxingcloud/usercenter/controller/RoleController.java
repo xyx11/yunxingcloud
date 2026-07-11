@@ -6,10 +6,13 @@ import com.yunxingcloud.usercenter.repository.RoleRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "用户角色", description = "用户中心角色查询")
 @RestController
 @RequestMapping("/api/roles")
 public class RoleController {
@@ -22,12 +25,14 @@ public class RoleController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "查询角色列表")
     @GetMapping
     @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<List<Role>> list() {
         return ResponseEntity.ok(roleRepository.findAll());
     }
 
+    @Operation(summary = "查询角色详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<Role> getById(@PathVariable Long id) {

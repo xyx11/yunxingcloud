@@ -4,10 +4,13 @@ import com.yunxingcloud.payment.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Tag(name = "支付回调", description = "微信/支付宝支付回调")
 @RestController
 @RequestMapping("/api/payment/callback")
 public class PaymentCallbackController {
@@ -18,6 +21,7 @@ public class PaymentCallbackController {
         this.paymentService = paymentService;
     }
 
+    @Operation(summary = "微信支付回调")
     @PostMapping("/wechat")
     public ResponseEntity<?> wechatCallback(HttpServletRequest request, @RequestBody(required = false) String body) {
         Map<String, String> params = new HashMap<>();
@@ -26,6 +30,7 @@ public class PaymentCallbackController {
         return ResponseEntity.ok(Map.of("code", "SUCCESS", "message", "OK"));
     }
 
+    @Operation(summary = "支付宝回调")
     @PostMapping("/alipay")
     public ResponseEntity<?> alipayCallback(HttpServletRequest request, @RequestBody(required = false) String body) {
         Map<String, String> params = new HashMap<>();

@@ -3,17 +3,14 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.dto.ProductDTO;
 import com.yunxingcloud.order.entity.Product;
 import com.yunxingcloud.order.service.ProductAdminService;
-import jakarta.persistence.criteria.Predicate;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
+@Tag(name = "商品管理", description = "商品查询与管理")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -30,22 +27,7 @@ public class ProductController {
                                   @RequestParam(required = false) String sort,
                                   @RequestParam(defaultValue = "0") int page,
                                   @RequestParam(defaultValue = "20") int size) {
-        Sort s = switch (sort != null ? sort : "") {
-            case "price_asc" -> Sort.by("price");
-            case "price_desc" -> Sort.by(Sort.Direction.DESC, "price");
-            case "sales" -> Sort.by(Sort.Direction.DESC, "sales");
-            default -> Sort.by(Sort.Direction.DESC, "createdAt");
-        };
-        Specification<Product> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.equal(root.get("status"), "0"));
-            if (categoryId != null) predicates.add(cb.equal(root.get("categoryId"), categoryId));
-            if (brandId != null) predicates.add(cb.equal(root.get("brandId"), brandId));
-            if (minPrice != null) predicates.add(cb.ge(root.get("price"), minPrice));
-            if (maxPrice != null) predicates.add(cb.le(root.get("price"), maxPrice));
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-        return ResponseEntity.ok(productService.list(spec, page, size, s));
+        return ResponseEntity.ok(productService.list(categoryId, brandId, minPrice, maxPrice, sort, page, size));
     }
 
     @GetMapping("/hot")
@@ -61,17 +43,7 @@ public class ProductController {
                                     @RequestParam(required = false) Long maxPrice,
                                     @RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "20") int size) {
-        Specification<Product> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.equal(root.get("status"), "0"));
-            if (q != null && !q.isBlank())
-                predicates.add(cb.like(root.get("name"), "%" + q.trim() + "%"));
-            if (categoryId != null) predicates.add(cb.equal(root.get("categoryId"), categoryId));
-            if (minPrice != null) predicates.add(cb.ge(root.get("price"), minPrice));
-            if (maxPrice != null) predicates.add(cb.le(root.get("price"), maxPrice));
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-        return ResponseEntity.ok(productService.search(spec, page, size));
+        return ResponseEntity.ok(productService.search(q, categoryId, minPrice, maxPrice, page, size));
     }
 
     @GetMapping("/{id}/related")

@@ -31,11 +31,13 @@ public class DictController {
 
     // ---- Dict Type endpoints ----
 
+    @Operation(summary = "查询字典类型列表")
     @GetMapping("/types")
     public ResponseEntity<List<SysDictType>> listTypes() {
         return ResponseEntity.ok(dictService.listTypes());
     }
 
+    @Operation(summary = "查询字典类型详情")
     @GetMapping("/types/{id}")
     public ResponseEntity<SysDictType> getType(@PathVariable Long id) {
         return dictService.getType(id)
@@ -43,6 +45,7 @@ public class DictController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增字典类型")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.INSERT)
     @PostMapping("/types")
@@ -54,6 +57,7 @@ public class DictController {
         }
     }
 
+    @Operation(summary = "修改字典类型")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.UPDATE)
     @PutMapping("/types/{id}")
@@ -65,6 +69,7 @@ public class DictController {
         }
     }
 
+    @Operation(summary = "删除字典类型")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/types/{id}")
@@ -79,16 +84,19 @@ public class DictController {
 
     // ---- Dict Data endpoints ----
 
+    @Operation(summary = "查询全部字典数据")
     @GetMapping("/data")
     public ResponseEntity<List<SysDictData>> listAllData() {
         return ResponseEntity.ok(dictService.listAllData());
     }
 
+    @Operation(summary = "按类型查询字典数据")
     @GetMapping("/data/{dictType}")
     public ResponseEntity<List<SysDictData>> listDataByType(@PathVariable String dictType) {
         return ResponseEntity.ok(dictService.listDataByType(dictType));
     }
 
+    @Operation(summary = "新增字典数据")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.INSERT)
     @PostMapping("/data")
@@ -96,6 +104,7 @@ public class DictController {
         return ResponseEntity.ok(dictService.createData(data));
     }
 
+    @Operation(summary = "修改字典数据")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.UPDATE)
     @PutMapping("/data/{id}")
@@ -107,6 +116,7 @@ public class DictController {
         }
     }
 
+    @Operation(summary = "删除字典数据")
     @PreAuthorize("hasAuthority('dict:write')")
     @Log(title = "字典管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/data/{id}")
@@ -119,6 +129,7 @@ public class DictController {
         }
     }
 
+    @Operation(summary = "导出字典CSV")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
         String csv = dictService.exportCsv();
@@ -128,6 +139,7 @@ public class DictController {
                 .body(csv.getBytes(StandardCharsets.UTF_8));
     }
 
+    @Operation(summary = "导入字典数据")
     @PreAuthorize("hasAuthority('dict:write')")
     @PostMapping("/import")
     public ResponseEntity<Map<String, Object>> importData(@RequestBody List<Map<String, String>> items) {

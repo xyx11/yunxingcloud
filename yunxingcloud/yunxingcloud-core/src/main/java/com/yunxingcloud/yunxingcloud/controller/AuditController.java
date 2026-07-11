@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "审计日志", description = "审计日志查询")
 @RestController
 @RequestMapping("/api/audit")
 public class AuditController {

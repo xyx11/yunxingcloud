@@ -1,6 +1,5 @@
 package com.yunxingcloud.yunxingcloud.config;
 
-import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.yunxingcloud.common.core.BaseExceptionHandler;
 import org.slf4j.Logger;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -62,11 +61,6 @@ public class GlobalExceptionHandler extends BaseExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("success", false, "message", detail));
     }
 
-    @ExceptionHandler(BlockException.class)
-    public ResponseEntity<Map<String, Object>> handleBlock(BlockException e) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of("success", false, "message", msg("ratelimit.too_many_requests")));
-    }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {

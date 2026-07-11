@@ -4,6 +4,8 @@ import com.yunxingcloud.api.client.PaymentClient;
 import com.yunxingcloud.order.entity.OrderHead;
 import com.yunxingcloud.order.repository.OrderHeadRepository;
 import com.yunxingcloud.order.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+@Tag(name = "订单管理", description = "订单CRUD与状态流转")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {

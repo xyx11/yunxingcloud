@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "审批管理", description = "审批流程处理")
 @RestController
 @RequestMapping("/api/approval")
 public class ApprovalController {

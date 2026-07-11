@@ -3,6 +3,8 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.entity.Invoice;
 import com.yunxingcloud.order.repository.InvoiceRepository;
 import com.yunxingcloud.order.service.InvoiceService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "发票管理", description = "发票申请与查询")
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {

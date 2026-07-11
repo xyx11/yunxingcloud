@@ -6,6 +6,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "灵活查询", description = "动态SQL查询")
 @RestController
 @RequestMapping("/api/query")
 public class FlexQueryController {

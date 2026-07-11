@@ -4,6 +4,7 @@ import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysNotice;
 import com.yunxingcloud.yunxingcloud.service.NoticeService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,11 +25,13 @@ public class NoticeController {
         this.noticeService = noticeService;
     }
 
+    @Operation(summary = "查询通知列表")
     @GetMapping
     public ResponseEntity<List<SysNotice>> list() {
         return ResponseEntity.ok(noticeService.list());
     }
 
+    @Operation(summary = "查询通知详情")
     @GetMapping("/{id}")
     public ResponseEntity<SysNotice> get(@PathVariable Long id) {
         return noticeService.get(id)
@@ -36,11 +39,13 @@ public class NoticeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "查询最新通知")
     @GetMapping("/latest")
     public ResponseEntity<List<SysNotice>> latest() {
         return ResponseEntity.ok(noticeService.latest());
     }
 
+    @Operation(summary = "新增通知")
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.INSERT)
     @PostMapping
@@ -48,6 +53,7 @@ public class NoticeController {
         return ResponseEntity.ok(noticeService.create(notice));
     }
 
+    @Operation(summary = "修改通知")
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
@@ -59,6 +65,7 @@ public class NoticeController {
         }
     }
 
+    @Operation(summary = "删除通知")
     @PreAuthorize("hasAuthority('notice:write')")
     @Log(title = "通知公告", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
@@ -71,6 +78,7 @@ public class NoticeController {
         }
     }
 
+    @Operation(summary = "导出通知CSV")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
         String csv = noticeService.exportCsv();

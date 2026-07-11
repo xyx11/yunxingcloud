@@ -9,6 +9,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "系统日志", description = "系统日志查询")
 @RestController
 @RequestMapping("/api/system/logs")
 @PreAuthorize("hasAuthority('config:write')")

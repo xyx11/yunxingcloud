@@ -5,6 +5,7 @@ import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.SysPost;
 import com.yunxingcloud.yunxingcloud.service.PostService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,12 +27,14 @@ public class PostController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "查询岗位列表")
     @PreAuthorize("hasAuthority('post:read')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> list() {
         return ResponseEntity.ok(postService.list());
     }
 
+    @Operation(summary = "查询岗位详情")
     @PreAuthorize("hasAuthority('post:read')")
     @GetMapping("/{id}")
     public ResponseEntity<SysPost> get(@PathVariable Long id) {
@@ -40,6 +43,7 @@ public class PostController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增岗位")
     @PreAuthorize("hasAuthority('post:write')")
     @Log(title = "岗位管理", businessType = BusinessType.INSERT)
     @PostMapping
@@ -51,6 +55,7 @@ public class PostController {
         }
     }
 
+    @Operation(summary = "修改岗位")
     @PreAuthorize("hasAuthority('post:write')")
     @Log(title = "岗位管理", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
@@ -62,6 +67,7 @@ public class PostController {
         }
     }
 
+    @Operation(summary = "删除岗位")
     @PreAuthorize("hasAuthority('post:write')")
     @Log(title = "岗位管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")

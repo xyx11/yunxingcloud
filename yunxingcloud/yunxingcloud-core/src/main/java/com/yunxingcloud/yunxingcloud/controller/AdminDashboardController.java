@@ -6,6 +6,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "管理仪表盘", description = "管理后台仪表盘")
 @RestController
 @RequestMapping("/api/admin/dashboard")
 public class AdminDashboardController {

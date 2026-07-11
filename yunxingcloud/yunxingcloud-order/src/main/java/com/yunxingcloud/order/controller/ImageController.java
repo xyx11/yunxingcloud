@@ -1,6 +1,8 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.ImageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+@Tag(name = "图片管理", description = "商品图片上传与管理")
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {

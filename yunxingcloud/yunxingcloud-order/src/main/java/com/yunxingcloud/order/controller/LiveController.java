@@ -1,11 +1,14 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.LiveService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "直播管理", description = "直播带货管理")
 @RestController
 @RequestMapping("/api/live")
 public class LiveController {

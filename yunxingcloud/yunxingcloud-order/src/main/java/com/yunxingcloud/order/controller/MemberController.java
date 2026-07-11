@@ -3,11 +3,14 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.entity.MemberTier;
 import com.yunxingcloud.order.repository.MemberTierRepository;
 import com.yunxingcloud.order.service.MemberService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "会员管理", description = "会员等级与权益")
 @RestController
 @RequestMapping("/api/member")
 public class MemberController {

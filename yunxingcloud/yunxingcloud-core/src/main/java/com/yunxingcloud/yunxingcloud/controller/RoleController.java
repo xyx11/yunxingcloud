@@ -2,6 +2,8 @@ package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.service.RoleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "角色管理", description = "角色CRUD")
 @RestController
 @RequestMapping("/api/roles")
 public class RoleController {

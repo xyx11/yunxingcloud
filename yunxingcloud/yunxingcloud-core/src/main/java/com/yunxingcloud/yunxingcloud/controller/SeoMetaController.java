@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "SEO元数据", description = "SEO元数据管理")
 @RestController
 @RequestMapping("/api/seo")
 public class SeoMetaController {

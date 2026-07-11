@@ -2,10 +2,13 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.ChatMessage;
 import com.yunxingcloud.order.service.ChatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "客服聊天", description = "客服消息管理")
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {

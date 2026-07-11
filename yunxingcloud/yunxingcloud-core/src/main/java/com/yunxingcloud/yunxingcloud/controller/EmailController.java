@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "邮件管理", description = "邮件发送与测试")
 @RestController
 @RequestMapping("/api/email")
 public class EmailController {

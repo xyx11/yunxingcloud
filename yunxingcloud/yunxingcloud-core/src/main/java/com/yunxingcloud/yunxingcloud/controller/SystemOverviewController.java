@@ -6,6 +6,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "系统概览", description = "系统概览数据")
 @RestController
 @RequestMapping("/api/system")
 public class SystemOverviewController {

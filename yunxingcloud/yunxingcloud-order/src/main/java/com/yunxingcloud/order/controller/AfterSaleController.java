@@ -3,6 +3,8 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.entity.AfterSale;
 import com.yunxingcloud.order.repository.AfterSaleRepository;
 import com.yunxingcloud.order.service.AfterSaleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "售后管理", description = "退换货/售后工单处理")
 @RestController
 @RequestMapping("/api/after-sale")
 public class AfterSaleController {

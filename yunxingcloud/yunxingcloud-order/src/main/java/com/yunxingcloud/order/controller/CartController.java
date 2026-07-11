@@ -1,12 +1,15 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.CartService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "购物车", description = "购物车管理")
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {

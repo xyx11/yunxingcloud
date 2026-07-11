@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "API文档", description = "API文档入口")
 @RestController
 @RequestMapping("/api")
 public class ApiDocController {

@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "全局搜索", description = "跨模块搜索")
 @RestController
 @RequestMapping("/api/search")
 public class SearchController {

@@ -8,10 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "用户信息", description = "当前用户信息查询")
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -26,6 +29,7 @@ public class UserController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "查询当前用户")
     @GetMapping
     public ResponseEntity<Map<String, Object>> currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

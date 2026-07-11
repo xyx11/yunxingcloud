@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "用户同意", description = "用户隐私同意记录")
 @RestController
 @RequestMapping("/api/oauth2/consent")
 public class ConsentController {

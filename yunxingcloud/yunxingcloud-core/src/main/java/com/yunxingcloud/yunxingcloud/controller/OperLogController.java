@@ -1,34 +1,26 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
-import com.yunxingcloud.common.core.I18nService;
-import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
-import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import com.yunxingcloud.yunxingcloud.service.OperLogService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "操作日志", description = "操作日志查询与导出")
 @RestController
 @RequestMapping("/api/operlog")
 public class OperLogController {
 
-    private final SysOperLogRepository logRepository;
-    private final I18nService i18n;
+    private final OperLogService operLogService;
 
-    public OperLogController(SysOperLogRepository logRepository, I18nService i18n) {
-        this.logRepository = logRepository;
-        this.i18n = i18n;
+    public OperLogController(OperLogService operLogService) {
+        this.operLogService = operLogService;
     }
 
     @GetMapping
@@ -41,34 +33,8 @@ public class OperLogController {
             @RequestParam(required = false) String endTime,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        PageRequest pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "operTime"));
-        Page<SysOperLog> result;
-        if (keyword != null && !keyword.isEmpty()) {
-            result = logRepository.findByTitleContaining(keyword, pageable);
-        } else if ((type != null && !type.isEmpty()) && (user != null && !user.isEmpty())) {
-            result = logRepository.findByBusinessTypeAndOperNameContaining(type, user, pageable);
-        } else if (type != null && !type.isEmpty()) {
-            result = logRepository.findByBusinessType(type, pageable);
-        } else if (user != null && !user.isEmpty()) {
-            result = logRepository.findByOperNameContaining(user, pageable);
-        } else {
-            result = logRepository.findAll(pageable);
-        }
-
-        // 日期范围 + 方法筛选(Java侧过滤，操作日志量通常不大)
-        var items = result.getContent().stream().filter(log -> {
-            if (method != null && !method.isEmpty() && !method.equals(log.getMethod())) return false;
-            if (startTime != null && log.getOperTime() != null && log.getOperTime().isBefore(java.time.LocalDateTime.parse(startTime))) return false;
-            if (endTime != null && log.getOperTime() != null && log.getOperTime().isAfter(java.time.LocalDateTime.parse(endTime))) return false;
-            return true;
-        }).toList();
-
-        return ResponseEntity.ok(Map.of(
-            "items", items,
-            "total", result.getTotalElements(),
-            "page", page,
-            "pageSize", pageSize
-        ));
+        return ResponseEntity.ok(operLogService.list(type, user, keyword, method,
+                startTime, endTime, page, pageSize));
     }
 
     @GetMapping("/export")
@@ -78,76 +44,30 @@ public class OperLogController {
             @RequestParam(required = false) String method,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        PageRequest limit = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "operTime"));
-        List<SysOperLog> logs;
-        if (type != null && !type.isEmpty() && user != null && !user.isEmpty()) {
-            logs = logRepository.findByBusinessTypeAndOperNameContaining(type, user, limit).getContent();
-        } else if (type != null && !type.isEmpty()) {
-            logs = logRepository.findByBusinessType(type, limit).getContent();
-        } else if (user != null && !user.isEmpty()) {
-            logs = logRepository.findByOperNameContaining(user, limit).getContent();
-        } else {
-            logs = logRepository.findAll(limit).getContent();
-        }
-        // 方法/日期范围过滤
-        if (method != null && !method.isEmpty()) {
-            logs = logs.stream().filter(l -> method.equals(l.getMethod())).collect(Collectors.toList());
-        }
-        if (startTime != null && !startTime.isEmpty()) {
-            LocalDateTime s = LocalDateTime.parse(startTime);
-            LocalDateTime e = endTime != null && !endTime.isEmpty() ? LocalDateTime.parse(endTime) : null;
-            logs = logs.stream().filter(l -> l.getOperTime() != null && !l.getOperTime().isBefore(s) && (e == null || !l.getOperTime().isAfter(e))).collect(Collectors.toList());
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID,Title,BizType,Operator,IP,URL,Status,Cost(ms),OperTime\n");
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        for (SysOperLog log : logs) {
-            sb.append(String.join(",",
-                String.valueOf(log.getId()),
-                csvEscape(log.getTitle()),
-                csvEscape(log.getBusinessType()),
-                csvEscape(log.getOperName()),
-                csvEscape(log.getOperIp()),
-                csvEscape(log.getOperUrl()),
-                log.getStatus() != null && log.getStatus() == 0 ? "Success" : "Failure",
-                String.valueOf(log.getCostTime() != null ? log.getCostTime() : 0),
-                log.getOperTime() != null ? log.getOperTime().format(fmt) : ""
-            )).append("\n");
-        }
-        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = operLogService.exportCsv(type, user, method, startTime, endTime);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=operlog.csv")
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(bytes);
     }
 
-    private String csvEscape(String val) {
-        if (val == null) return "";
-        if (val.contains(",") || val.contains("\"") || val.contains("\n")) {
-            return "\"" + val.replace("\"", "\"\"") + "\"";
-        }
-        return val;
-    }
-
     @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        logRepository.deleteById(id);
+        operLogService.delete(id);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/clean")
     public ResponseEntity<Map<String, Object>> clean() {
-        logRepository.deleteAll();
-        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("operlog.cleaned")));
+        return ResponseEntity.ok(operLogService.clean());
     }
 
     @PreAuthorize("hasAuthority('operlog:write')")
     @DeleteMapping("/batch")
     public ResponseEntity<Map<String, Object>> batchDelete(@RequestBody Map<String, List<Long>> body) {
         List<Long> ids = body.getOrDefault("ids", List.of());
-        logRepository.deleteAllById(ids);
-        return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("operlog.batch_delete", ids.size())));
+        return ResponseEntity.ok(operLogService.batchDelete(ids));
     }
 }

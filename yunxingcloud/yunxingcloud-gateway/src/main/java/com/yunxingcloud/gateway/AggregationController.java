@@ -5,10 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 
+@Tag(name = "API聚合", description = "网关API聚合查询")
 @RestController
 @RequestMapping("/api/aggregate")
 public class AggregationController {
@@ -23,6 +26,7 @@ public class AggregationController {
     /**
      * 订单详情聚合：订单 + 支付 + 物流 一次返回
      */
+    @Operation(summary = "聚合查询")
     @GetMapping("/order/{id}")
     public Mono<ResponseEntity<?>> orderDetail(@PathVariable Long id,
                                                 @RequestHeader("Authorization") String auth) {

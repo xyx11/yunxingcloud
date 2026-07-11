@@ -10,6 +10,9 @@ import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "服务端推送", description = "SSE服务端推送")
 @RestController
 @RequestMapping("/api/sse")
 public class SseController {

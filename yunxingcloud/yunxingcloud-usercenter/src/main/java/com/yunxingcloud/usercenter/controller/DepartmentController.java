@@ -7,10 +7,13 @@ import com.yunxingcloud.usercenter.service.DeptRoleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "用户部门", description = "用户中心部门查询")
 @RestController
 @RequestMapping("/api/departments")
 public class DepartmentController {
@@ -24,12 +27,14 @@ public class DepartmentController {
         this.deptRoleService = deptRoleService;
     }
 
+    @Operation(summary = "查询部门树")
     @GetMapping
     @PreAuthorize("hasAuthority('dept:read')")
     public ResponseEntity<List<Department>> tree() {
         return ResponseEntity.ok(deptRoleService.getDepartmentTree());
     }
 
+    @Operation(summary = "查询部门详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('dept:read')")
     public ResponseEntity<Department> getById(@PathVariable Long id) {

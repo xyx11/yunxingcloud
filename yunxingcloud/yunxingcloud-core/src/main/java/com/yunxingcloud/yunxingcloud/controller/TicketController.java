@@ -4,6 +4,7 @@ import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysTicket;
 import com.yunxingcloud.yunxingcloud.service.TicketService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,12 +35,14 @@ public class TicketController {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
+    @Operation(summary = "查询工单列表")
     @PreAuthorize("hasAuthority('ticket:read')")
     @GetMapping
     public ResponseEntity<java.util.List<SysTicket>> list() {
         return ResponseEntity.ok(ticketService.list(isAdmin(), currentUser()));
     }
 
+    @Operation(summary = "查询工单详情")
     @PreAuthorize("hasAuthority('ticket:read')")
     @GetMapping("/{id}")
     public ResponseEntity<SysTicket> get(@PathVariable Long id) {
@@ -48,6 +51,7 @@ public class TicketController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增工单")
     @PreAuthorize("hasAuthority('ticket:write')")
     @Log(title = "工单管理", businessType = BusinessType.INSERT)
     @PostMapping
@@ -57,6 +61,7 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.create(ticket));
     }
 
+    @Operation(summary = "修改工单")
     @PreAuthorize("hasAuthority('ticket:write')")
     @Log(title = "工单管理", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
@@ -70,6 +75,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "删除工单")
     @PreAuthorize("hasAuthority('ticket:write')")
     @Log(title = "工单管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")

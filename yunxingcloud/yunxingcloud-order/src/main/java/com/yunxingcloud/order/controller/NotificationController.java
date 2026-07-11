@@ -2,6 +2,8 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.Notification;
 import com.yunxingcloud.order.service.NotificationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "通知管理", description = "系统通知推送")
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {

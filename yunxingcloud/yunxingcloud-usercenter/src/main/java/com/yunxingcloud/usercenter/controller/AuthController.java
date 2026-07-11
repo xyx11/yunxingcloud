@@ -1,61 +1,41 @@
 package com.yunxingcloud.usercenter.controller;
 
 import com.yunxingcloud.common.core.I18nService;
+import com.yunxingcloud.usercenter.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "用户认证", description = "用户登录认证")
 @RestController
 @RequestMapping("/api")
 public class AuthController {
 
-    private static final String SAVED_REQUEST_ATTR = "SPRING_SECURITY_SAVED_REQUEST";
-
-    private final AuthenticationManager authenticationManager;
+    private final AuthService authService;
     private final I18nService i18n;
-    private final HttpSessionSecurityContextRepository securityContextRepository =
-            new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager, I18nService i18n) {
-        this.authenticationManager = authenticationManager;
+    public AuthController(AuthService authService, I18nService i18n) {
+        this.authService = authService;
         this.i18n = i18n;
     }
 
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest,
                                                       HttpServletResponse httpResponse) {
         try {
-            UsernamePasswordAuthenticationToken token =
-                    new UsernamePasswordAuthenticationToken(request.username(), request.password());
-            Authentication auth = authenticationManager.authenticate(token);
-
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(auth);
-            SecurityContextHolder.setContext(context);
-            securityContextRepository.saveContext(context, httpRequest, httpResponse);
-
-            String redirectUrl = getSavedRequestUrl(httpRequest);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "username", auth.getName(),
-                    "redirectUrl", redirectUrl != null ? redirectUrl : "/"
-            ));
+            return ResponseEntity.ok(authService.login(request.username(), request.password(),
+                    httpRequest, httpResponse));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "success", false, "message", i18n.msg("auth.bad_credentials")
@@ -69,17 +49,6 @@ public class AuthController {
                     "success", false, "message", i18n.msg("auth.login_failed")
             ));
         }
-    }
-
-    private String getSavedRequestUrl(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            SavedRequest savedRequest = (SavedRequest) session.getAttribute(SAVED_REQUEST_ATTR);
-            if (savedRequest != null) {
-                return savedRequest.getRedirectUrl();
-            }
-        }
-        return null;
     }
 
     record LoginRequest(String username, String password) {}

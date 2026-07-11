@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "系统配置", description = "系统配置管理")
 @RestController
 @RequestMapping("/api/system-config")
 public class SystemConfigController {

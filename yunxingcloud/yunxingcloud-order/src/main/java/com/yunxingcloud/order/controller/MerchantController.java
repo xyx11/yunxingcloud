@@ -2,12 +2,15 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.Merchant;
 import com.yunxingcloud.order.service.MerchantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "商家管理", description = "商家入驻与管理")
 @RestController
 @RequestMapping("/api/merchant")
 public class MerchantController {

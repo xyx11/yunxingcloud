@@ -7,6 +7,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "数据导出", description = "数据导出管理")
 @RestController
 @RequestMapping("/api/export")
 public class DataExportController {

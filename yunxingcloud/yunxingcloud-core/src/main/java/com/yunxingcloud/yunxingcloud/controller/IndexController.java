@@ -3,6 +3,9 @@ package com.yunxingcloud.yunxingcloud.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "首页", description = "系统首页")
 @Controller
 public class IndexController {
 

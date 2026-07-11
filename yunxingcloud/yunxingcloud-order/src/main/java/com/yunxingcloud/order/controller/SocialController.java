@@ -3,12 +3,15 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.entity.ShareRecord;
 import com.yunxingcloud.order.entity.Wishlist;
 import com.yunxingcloud.order.service.SocialService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "社交功能", description = "社交分享与互动")
 @RestController
 @RequestMapping("/api/social")
 public class SocialController {

@@ -4,6 +4,7 @@ import com.yunxingcloud.common.annotation.Log;
 import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.yunxingcloud.entity.SysMenu;
 import com.yunxingcloud.yunxingcloud.service.MenuService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,22 +21,26 @@ public class MenuController {
 
     public MenuController(MenuService menuService) { this.menuService = menuService; }
 
+    @Operation(summary = "查询菜单树")
     @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping("/tree")
     public ResponseEntity<List<SysMenu>> tree() {
         return ResponseEntity.ok(menuService.tree());
     }
 
+    @Operation(summary = "查询菜单列表")
     @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping
     public ResponseEntity<List<SysMenu>> list() { return ResponseEntity.ok(menuService.list()); }
 
+    @Operation(summary = "查询菜单详情")
     @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping("/{id}")
     public ResponseEntity<SysMenu> getById(@PathVariable Long id) {
         return menuService.getById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增菜单")
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
     @PreAuthorize("hasAuthority('menu:write')")
     @PostMapping
@@ -43,6 +48,7 @@ public class MenuController {
         return ResponseEntity.ok(menuService.create(menu));
     }
 
+    @Operation(summary = "修改菜单")
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
     @PreAuthorize("hasAuthority('menu:write')")
     @PutMapping("/{id}")
@@ -54,6 +60,7 @@ public class MenuController {
         }
     }
 
+    @Operation(summary = "删除菜单")
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
     @PreAuthorize("hasAuthority('menu:write')")
     @DeleteMapping("/{id}")

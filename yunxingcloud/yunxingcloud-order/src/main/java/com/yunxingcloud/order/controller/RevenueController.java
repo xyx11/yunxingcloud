@@ -1,9 +1,12 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.RevenueService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "营收管理", description = "营收数据与报表")
 @RestController
 @RequestMapping("/api/revenue")
 public class RevenueController {

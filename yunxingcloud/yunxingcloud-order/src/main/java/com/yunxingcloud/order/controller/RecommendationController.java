@@ -2,6 +2,8 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.Product;
 import com.yunxingcloud.order.service.RecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "商品推荐", description = "商品推荐引擎")
 @RestController
 @RequestMapping("/api/recommend")
 public class RecommendationController {

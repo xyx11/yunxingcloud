@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
@@ -18,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Tag(name = "库存管理", description = "入库/出库/库存查询")
 @RestController
 public class InventoryController {
 
@@ -38,12 +41,14 @@ public class InventoryController {
     @PostMapping("/api/warehouses")
     public ResponseEntity<?> addWarehouse(@Valid @RequestBody WarehouseDTO dto) { Warehouse wh = new Warehouse(); wh.setName(dto.getName()); wh.setAddress(dto.getAddress()); wh.setStatus(dto.getStatus()); return ResponseEntity.ok(whService.create(wh)); }
 
+    @Operation(summary = "查询库存")
     @GetMapping("/api/inventory")
     public ResponseEntity<?> list(@RequestParam(required = false) Long warehouseId) {
         if (warehouseId != null) return ResponseEntity.ok(stockRepo.findByWarehouseId(warehouseId));
         return ResponseEntity.ok(stockRepo.findAll());
     }
 
+    @Operation(summary = "入库")
     @PostMapping("/api/inventory/stock-in")
     public ResponseEntity<?> stockIn(@RequestBody Map<String, Object> body) {
         Long productId = Long.valueOf(body.get("productId").toString());
@@ -54,6 +59,7 @@ public class InventoryController {
         return ResponseEntity.ok(service.stockIn(productId, name, warehouseId, qty, remark));
     }
 
+    @Operation(summary = "出库")
     @PostMapping("/api/inventory/stock-out")
     public ResponseEntity<?> stockOut(@RequestBody Map<String, Object> body) {
         Long productId = Long.valueOf(body.get("productId").toString());
@@ -64,6 +70,7 @@ public class InventoryController {
         catch (IllegalArgumentException e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
 
+    @Operation(summary = "库存预警")
     @GetMapping("/api/inventory/alerts")
     public ResponseEntity<?> alerts() { return ResponseEntity.ok(service.alerts()); }
 

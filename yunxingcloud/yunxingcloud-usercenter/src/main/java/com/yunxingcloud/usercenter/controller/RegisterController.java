@@ -10,10 +10,13 @@ import com.yunxingcloud.usercenter.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "用户注册", description = "新用户注册")
 @RestController
 @RequestMapping("/api")
 public class RegisterController {
@@ -26,6 +29,7 @@ public class RegisterController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "用户注册")
     @PostMapping("/register")
     @SentinelResource(value = "registerFlow", blockHandler = "registerBlockHandler")
     public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest request) {

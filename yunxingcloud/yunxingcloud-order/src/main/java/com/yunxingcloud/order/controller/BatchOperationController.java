@@ -1,12 +1,15 @@
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.BatchOperationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Tag(name = "批量操作", description = "批量处理工具")
 @RestController
 @RequestMapping("/api/batch")
 public class BatchOperationController {

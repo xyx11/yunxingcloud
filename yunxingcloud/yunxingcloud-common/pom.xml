@@ -49,5 +49,11 @@
             <version>7.4</version>
             <optional>true</optional>
         </dependency>
+        <!-- Sentinel 流控/降级异常处理 (BlockException) -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-core</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

@@ -3,6 +3,8 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.order.entity.GroupBuy;
 import com.yunxingcloud.order.repository.GroupBuyRepository;
 import com.yunxingcloud.order.service.GroupBuyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "拼团管理", description = "拼团活动管理")
 @RestController
 @RequestMapping("/api/group-buy")
 public class GroupBuyController {

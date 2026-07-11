@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 
@@ -29,11 +30,13 @@ public class ConfigController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "查询参数配置列表")
     @GetMapping
     public ResponseEntity<List<SysConfig>> list() {
         return ResponseEntity.ok(configService.list());
     }
 
+    @Operation(summary = "按Key查询配置")
     @GetMapping("/key/{key}")
     public ResponseEntity<SysConfig> getByKey(@PathVariable String key) {
         return configService.getByKey(key)
@@ -41,6 +44,7 @@ public class ConfigController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增参数配置")
     @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @PostMapping
@@ -52,6 +56,7 @@ public class ConfigController {
         }
     }
 
+    @Operation(summary = "修改参数配置")
     @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}")
@@ -63,6 +68,7 @@ public class ConfigController {
         }
     }
 
+    @Operation(summary = "删除参数配置")
     @PreAuthorize("hasAuthority('config:write')")
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
@@ -71,6 +77,7 @@ public class ConfigController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    @Operation(summary = "刷新特性开关")
     @PreAuthorize("hasAuthority('config:write')")
     @PostMapping("/refresh-flags")
     public ResponseEntity<Map<String, Object>> refreshFlags() {
@@ -78,6 +85,7 @@ public class ConfigController {
         return ResponseEntity.ok(Map.of("success", true, "message", i18n.msg("config.flags_refreshed")));
     }
 
+    @Operation(summary = "导出配置CSV")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export() {
         String csv = configService.exportCsv();

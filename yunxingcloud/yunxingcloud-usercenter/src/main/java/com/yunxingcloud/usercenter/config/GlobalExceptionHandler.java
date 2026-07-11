@@ -1,6 +1,5 @@
 package com.yunxingcloud.usercenter.config;
 
-import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.yunxingcloud.common.core.BaseExceptionHandler;
 import com.yunxingcloud.common.core.I18nService;
 import org.slf4j.Logger;
@@ -35,11 +34,6 @@ public class GlobalExceptionHandler extends BaseExceptionHandler {
                 .body(Map.of("success", false, "message", i18n.msg("auth.access_denied")));
     }
 
-    @ExceptionHandler(BlockException.class)
-    public ResponseEntity<Map<String, Object>> handleBlock(BlockException e) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of("success", false, "message", i18n.msg("ratelimit.too_many_requests")));
-    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {

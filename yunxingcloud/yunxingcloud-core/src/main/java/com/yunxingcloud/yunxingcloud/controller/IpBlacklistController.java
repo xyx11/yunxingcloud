@@ -5,6 +5,8 @@ import com.yunxingcloud.common.enums.BusinessType;
 import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.IpBlacklist;
 import com.yunxingcloud.yunxingcloud.service.IpBlacklistService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "IP黑名单", description = "IP黑名单管理")
 @RestController
 @RequestMapping("/api/ip-blacklist")
 public class IpBlacklistController {

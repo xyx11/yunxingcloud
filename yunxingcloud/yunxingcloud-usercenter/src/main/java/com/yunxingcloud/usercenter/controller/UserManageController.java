@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -15,6 +17,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+@Tag(name = "用户管理", description = "用户CRUD管理")
 @RestController
 @RequestMapping("/api/users")
 public class UserManageController {
@@ -34,6 +37,7 @@ public class UserManageController {
         this.i18n = i18n;
     }
 
+    @Operation(summary = "查询用户列表")
     @GetMapping
     @PreAuthorize("hasAuthority('user:read')")
     public ResponseEntity<List<Map<String, Object>>> list() {
@@ -123,6 +127,7 @@ public class UserManageController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增用户")
     @PostMapping
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> body) {
@@ -143,6 +148,7 @@ public class UserManageController {
         return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.create_success")));
     }
 
+    @Operation(summary = "修改用户")
     @PutMapping("/{id}/profile")
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> body) {

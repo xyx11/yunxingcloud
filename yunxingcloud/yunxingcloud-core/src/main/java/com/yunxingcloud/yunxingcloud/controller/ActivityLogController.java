@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "活动日志", description = "用户活动日志查询")
 @RestController
 @RequestMapping("/api/activity")
 public class ActivityLogController {

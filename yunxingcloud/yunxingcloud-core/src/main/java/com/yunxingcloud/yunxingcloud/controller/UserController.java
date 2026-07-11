@@ -3,6 +3,7 @@ package com.yunxingcloud.yunxingcloud.controller;
 import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.yunxingcloud.entity.User;
 import com.yunxingcloud.yunxingcloud.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -63,6 +64,7 @@ public class UserController {
         return ids;
     }
 
+    @Operation(summary = "查询用户列表")
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
@@ -149,6 +151,7 @@ public class UserController {
         return userRepository.findById(id).map(u -> { u.setEnabled(!u.isEnabled()); userRepository.save(u); return ResponseEntity.ok(Map.<String, Object>of("success", true, "enabled", u.isEnabled())); }).orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "新增用户")
     @PreAuthorize("hasAuthority('user:write')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> body) {
@@ -162,6 +165,7 @@ public class UserController {
         return ResponseEntity.ok(Map.<String, Object>of("success", true, "message", i18n.msg("user.create_success")));
     }
 
+    @Operation(summary = "修改个人信息")
     @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("/{id}/profile")
     public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> body) {
@@ -209,6 +213,7 @@ public class UserController {
         return ResponseEntity.ok(Map.of("success", true, "created", created, "skipped", skipped, "message", i18n.msg("user.import_complete", created, skipped)));
     }
 
+    @Operation(summary = "删除用户")
     @PreAuthorize("hasAuthority('admin')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {

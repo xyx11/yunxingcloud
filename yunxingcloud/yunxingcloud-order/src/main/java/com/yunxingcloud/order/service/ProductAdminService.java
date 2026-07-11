@@ -5,6 +5,7 @@ import com.yunxingcloud.order.entity.Product;
 import com.yunxingcloud.order.repository.ProductRepository;
 import com.yunxingcloud.order.repository.ProductReviewRepository;
 import com.yunxingcloud.order.repository.ProductSkuRepository;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,12 +27,51 @@ public class ProductAdminService {
         this.repo = repo; this.skuRepo = skuRepo; this.reviewRepo = reviewRepo;
     }
 
-    public Page<Product> list(Specification<Product> spec, int page, int size, Sort sort) {
-        return repo.findAll(spec, PageRequest.of(page, size, sort));
+    public Page<Product> list(Long categoryId, Long brandId, Long minPrice, Long maxPrice,
+                               String sort, int page, int size) {
+        Sort s = buildSort(sort);
+        Specification<Product> spec = buildListSpec(categoryId, brandId, minPrice, maxPrice);
+        return repo.findAll(spec, PageRequest.of(page, size, s));
     }
 
-    public Page<Product> search(Specification<Product> spec, int page, int size) {
+    public Page<Product> search(String q, Long categoryId, Long minPrice, Long maxPrice,
+                                 int page, int size) {
+        Specification<Product> spec = buildSearchSpec(q, categoryId, minPrice, maxPrice);
         return repo.findAll(spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "sales")));
+    }
+
+    private Sort buildSort(String sort) {
+        return switch (sort != null ? sort : "") {
+            case "price_asc" -> Sort.by("price");
+            case "price_desc" -> Sort.by(Sort.Direction.DESC, "price");
+            case "sales" -> Sort.by(Sort.Direction.DESC, "sales");
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+    }
+
+    private Specification<Product> buildListSpec(Long categoryId, Long brandId, Long minPrice, Long maxPrice) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("status"), "0"));
+            if (categoryId != null) predicates.add(cb.equal(root.get("categoryId"), categoryId));
+            if (brandId != null) predicates.add(cb.equal(root.get("brandId"), brandId));
+            if (minPrice != null) predicates.add(cb.ge(root.get("price"), minPrice));
+            if (maxPrice != null) predicates.add(cb.le(root.get("price"), maxPrice));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<Product> buildSearchSpec(String q, Long categoryId, Long minPrice, Long maxPrice) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("status"), "0"));
+            if (q != null && !q.isBlank())
+                predicates.add(cb.like(root.get("name"), "%" + q.trim() + "%"));
+            if (categoryId != null) predicates.add(cb.equal(root.get("categoryId"), categoryId));
+            if (minPrice != null) predicates.add(cb.ge(root.get("price"), minPrice));
+            if (maxPrice != null) predicates.add(cb.le(root.get("price"), maxPrice));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     public List<Product> hot() {

@@ -1,12 +1,15 @@
 package com.yunxingcloud.yunxingcloud.controller;
 
 import com.yunxingcloud.yunxingcloud.service.OAuth2ClientService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Tag(name = "OAuth2客户端", description = "OAuth2客户端管理")
 @RestController
 @RequestMapping("/api/oauth2/clients")
 public class OAuth2ClientController {

@@ -9,6 +9,8 @@ import com.yunxingcloud.yunxingcloud.entity.SysOperLog;
 import com.yunxingcloud.yunxingcloud.repository.SysJobLogRepository;
 import com.yunxingcloud.yunxingcloud.repository.SysJobRepository;
 import com.yunxingcloud.yunxingcloud.repository.SysOperLogRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Tag(name = "定时任务管理", description = "定时任务CRUD与执行控制")
 @RestController
 @RequestMapping("/api/job")
 public class JobController {

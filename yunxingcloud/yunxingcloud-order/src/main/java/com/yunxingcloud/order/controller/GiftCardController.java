@@ -2,6 +2,8 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.entity.GiftCard;
 import com.yunxingcloud.order.service.GiftCardService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "礼品卡", description = "礼品卡管理")
 @RestController
 @RequestMapping("/api/gift-cards")
 public class GiftCardController {
