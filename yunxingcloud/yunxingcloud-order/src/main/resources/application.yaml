@@ -47,8 +47,10 @@ spring:
       transport:
         dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8082}
       eager: true
-
   data:
+    elasticsearch:
+      repositories:
+        enabled: false
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
