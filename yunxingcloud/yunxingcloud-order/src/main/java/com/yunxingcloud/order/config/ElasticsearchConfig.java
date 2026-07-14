@@ -7,14 +7,23 @@ import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfigurat
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "com.yunxingcloud.order.repository.es")
-@ConditionalOnProperty(name = "app.elasticsearch.enabled", havingValue = "true", matchIfMissing = true)
-public class ElasticsearchConfig extends ElasticsearchConfiguration {
+@ConditionalOnProperty(name = "app.elasticsearch.enabled", havingValue = "true")
+public class ElasticsearchConfig {
 
-    @Override
-    public ClientConfiguration clientConfiguration() {
-        return ClientConfiguration.builder()
-                .connectedTo("${spring.elasticsearch.uris:localhost:9200}")
-                .build();
+    @Configuration
+    @ConditionalOnProperty(name = "app.elasticsearch.enabled", havingValue = "true")
+    @EnableElasticsearchRepositories(basePackages = "com.yunxingcloud.order.repository.es")
+    static class ElasticsearchRepositoryConfig {
+    }
+
+    @Configuration
+    @ConditionalOnProperty(name = "app.elasticsearch.enabled", havingValue = "true")
+    static class ElasticsearchClientConfig extends ElasticsearchConfiguration {
+        @Override
+        public ClientConfiguration clientConfiguration() {
+            return ClientConfiguration.builder()
+                    .connectedTo("localhost:9200")
+                    .build();
+        }
     }
 }
