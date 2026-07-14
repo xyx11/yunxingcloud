@@ -15,8 +15,8 @@ const claiming = ref<Set<number>>(new Set())
 
 async function load() {
   loading.value = true
-  try { const r = await request.get('/coupons/available'); availableCoupons.value = r.data || [] } catch {}
-  try { const r = await request.get('/coupons/my'); myCoupons.value = r.data || [] } catch {}
+  try { const r = await request.get('/coupons/available'); availableCoupons.value = r.data || [] } catch { toast.error('可领优惠券加载失败') }
+  try { const r = await request.get('/coupons/my'); myCoupons.value = r.data || [] } catch { toast.error('我的优惠券加载失败') }
   finally { loading.value = false }
 }
 

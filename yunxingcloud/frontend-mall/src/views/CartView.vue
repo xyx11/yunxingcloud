@@ -17,6 +17,9 @@ const toast = inject(ToastInjectionKey)!
 const items = ref<CartItem[]>([])
 const recs = ref<Product[]>([])
 const loading = ref(true)
+const checkingOut = ref(false)
+const removingIds = ref<Set<number>>(new Set())
+const updatingQty = ref<Set<number>>(new Set())
 const selectedIds = ref<Set<number>>(new Set())
 
 const swipeOffset = ref<Record<number, number>>({})
@@ -53,11 +56,14 @@ const allSelected = computed({
 
 async function load() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data.items || []; recs.value = r.data.recommended || [] } catch {} finally { loading.value = false }
+  try { const r = await getCart(); items.value = r.data.items || []; recs.value = r.data.recommended || [] } catch { toast.error('购物车加载失败') } finally { loading.value = false }
 }
 
 async function remove(id: number) {
+  if (removingIds.value.has(id)) return
+  removingIds.value.add(id)
   try { await removeFromCart(id); selectedIds.value.delete(id); toast.info(t('toast.removed')); load() } catch { toast.error('删除失败') }
+  finally { removingIds.value.delete(id) }
 }
 
 let qtyTimer: ReturnType<typeof setTimeout> | null = null
@@ -65,13 +71,16 @@ async function updateQty(item: CartItem, delta: number) {
   const n = item.quantity + delta; if (n < 1) return
   item.quantity = n
   if (qtyTimer) clearTimeout(qtyTimer)
+  updatingQty.value.add(item.id)
   qtyTimer = setTimeout(async () => {
     try { await removeFromCart(item.id); await addToCart(item.productId, item.quantity); load() } catch { toast.error('更新失败'); load() }
+    finally { setTimeout(() => updatingQty.value.delete(item.id), 100) }
   }, 400)
 }
 
 function checkout() {
   if (selectedIds.value.size === 0) { toast.error(t('checkout.selectAddress')); return }
+  checkingOut.value = true
   router.push('/checkout')
 }
 
@@ -120,12 +129,12 @@ onMounted(load)
           </div>
           <div class="cart-price">{{ formatPrice(item.price / 100, 2) }}</div>
           <div class="qty-control">
-            <button class="qty-btn" @click="updateQty(item, -1)">-</button>
+            <button class="qty-btn" :disabled="updatingQty.has(item.id)" @click="updateQty(item, -1)">-</button>
             <span class="qty-val">{{ item.quantity }}</span>
-            <button class="qty-btn" @click="updateQty(item, 1)">+</button>
+            <button class="qty-btn" :disabled="updatingQty.has(item.id)" @click="updateQty(item, 1)">+</button>
           </div>
           <div class="cart-subtotal">{{ formatPrice(item.price * item.quantity / 100, 2) }}</div>
-          <button class="cart-remove" @click="remove(item.id)" aria-label="删除">✕</button>
+          <button class="cart-remove" :disabled="removingIds.has(item.id)" @click="remove(item.id)" aria-label="删除">{{ removingIds.has(item.id) ? '⏳' : '✕' }}</button>
         </div>
       </div>
 
@@ -142,7 +151,7 @@ onMounted(load)
             <span class="total-label">{{ t('cart.total') }}：</span>
             <span class="total-num">{{ formatPrice(total / 100, 2) }}</span>
           </div>
-          <JdButton size="lg" @click="checkout">{{ t('cart.checkout') }}</JdButton>
+          <JdButton size="lg" :loading="checkingOut" :disabled="checkingOut" @click="checkout">{{ t('cart.checkout') }}</JdButton>
         </div>
       </div>
     </template>
@@ -242,10 +251,18 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 
 @media (max-width: 768px) {
   .cart-page { padding: var(--space-md); }
-  .header-col--qty, .header-col--subtotal, .header-col--actions { display: none; }
-  .cart-header { font-size: var(--font-sm); }
-  .cart-item { flex-wrap: wrap; gap: var(--space-sm); }
-  .cart-name { flex-basis: calc(100% - 120px); }
+  .cart-header { display: none; }
+  .cart-item { flex-wrap: wrap; gap: var(--space-sm); padding: var(--space-md) 0; position: relative; }
+  .cart-check { position: absolute; top: var(--space-md); left: 0; z-index: 2; }
+  .cart-img { margin-left: var(--space-xl); }
+  .cart-name { flex-basis: calc(100% - 120px); padding: 0 var(--space-md); }
+  .cart-price { display: none; }
+  .qty-control { margin: 0; }
+  .cart-subtotal { width: auto; margin-left: auto; font-size: var(--font-md); }
+  .cart-remove { width: auto; padding: 4px 8px; }
+  .cart-footer { flex-direction: column; gap: var(--space-md); }
+  .footer-left { width: 100%; justify-content: space-between; }
+  .footer-right { width: 100%; justify-content: space-between; }
   .recs-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

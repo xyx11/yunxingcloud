@@ -31,8 +31,8 @@ const invoice = ref({ type: 'personal', title: '', taxNo: '', email: '' })
 
 async function load() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data || [] } catch {}
-  try { const r = await getAddresses(); addresses.value = r.data || [] } catch {}
+  try { const r = await getCart(); items.value = r.data || [] } catch { toast.error('购物车加载失败') }
+  try { const r = await getAddresses(); addresses.value = r.data || [] } catch { toast.error('地址加载失败') }
   finally { loading.value = false }
 }
 
@@ -41,7 +41,7 @@ function selectAddress(addr: Address) {
   receiver.value = { name: addr.name, phone: addr.phone, address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(' ') }
 }
 
-async function loadCoupons() { try { const r = await getMyCoupons(); myCoupons.value = (r.data || []).filter((c: Coupon) => c.status === '0' || c.status === 'available') } catch {} }
+async function loadCoupons() { try { const r = await getMyCoupons(); myCoupons.value = (r.data || []).filter((c: Coupon) => c.status === '0' || c.status === 'available') } catch { toast.error('优惠券加载失败') } }
 
 function selectCoupon(c: Coupon) { selectedCoupon.value = c; couponApplied.value = true; showCoupons.value = false; toast.success('优惠券已选用') }
 
@@ -153,8 +153,8 @@ onMounted(() => { load(); loadCoupons() })
           </div>
         </div>
 
-        <JdButton block size="lg" :loading="submitting" @click="submit">
-          {{ submitting ? '提交中...' : t('order.submitOrder') }}
+        <JdButton block size="lg" :loading="submitting" :disabled="submitting" @click="submit">
+          {{ t('order.submitOrder') }}
         </JdButton>
       </div>
     </template>
@@ -223,4 +223,17 @@ onMounted(() => { load(); loadCoupons() })
 .radio-label { font-size: var(--font-base); cursor: pointer; display: flex; align-items: center; gap: 4px; }
 .radio-label input { accent-color: var(--jd-red); }
 .invoice-form .field-full { margin-top: var(--space-sm); }
+
+@media (max-width: 768px) {
+  .checkout-page { padding: 0 var(--space-md); }
+  .card { padding: var(--space-md); }
+  .receiver-grid { grid-template-columns: 1fr; }
+  .product-row { flex-wrap: wrap; gap: var(--space-sm); }
+  .product-name { flex-basis: calc(100% - 80px); font-size: var(--font-sm); }
+  .payment-options { flex-wrap: wrap; }
+  .payment-option { flex: 1; min-width: 120px; justify-content: center; }
+  .total-row { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
+  .total-price { font-size: var(--font-h2); }
+  .invoice-type { flex-wrap: wrap; }
+}
 </style>

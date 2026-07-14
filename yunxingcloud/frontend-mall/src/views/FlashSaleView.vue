@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
@@ -22,13 +23,14 @@ interface FlashSaleItem {
   sold?: number
 }
 
+const toast = useToast()
 const { t } = useI18n()
 const router = useRouter()
 const sales = ref<FlashSaleItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
-  try { const r = await request.get('/flash-sale'); sales.value = r.data || [] } catch {}
+  try { const r = await request.get('/flash-sale'); sales.value = r.data || [] } catch { toast.error('秒杀列表加载失败') }
   finally { loading.value = false }
 })
 

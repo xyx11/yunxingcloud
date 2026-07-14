@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
+import { useToast } from '@/composables/useToast'
 const { t } = useI18n()
+const toast = useToast()
 import request from '@/api/request'
 import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
@@ -29,7 +31,7 @@ const groups = ref<GroupBuyItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
-  try { const r = await request.get('/group-buy'); groups.value = r.data || [] } catch {}
+  try { const r = await request.get('/group-buy'); groups.value = r.data || [] } catch { toast.error('拼团列表加载失败') }
   finally { loading.value = false }
 })
 

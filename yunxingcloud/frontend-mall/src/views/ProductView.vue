@@ -51,6 +51,8 @@ const qty = ref(1)
 const favorited = ref(false)
 const alertSet = ref(false)
 const loading = ref(true)
+const addingToCart = ref(false)
+const buyingNow = ref(false)
 const shareMenu = ref(false)
 const showFloatingBar = ref(false)
 const images = ref<string[]>([])
@@ -88,10 +90,10 @@ onMounted(async () => {
     if (product.value) {
       add({ id: product.value.id, name: product.value.name, price: product.value.price, imageUrl: product.value.imageUrl })
     }
-  } catch {} finally { loading.value = false }
+  } catch { toast.error(t('product.loadFail') || '商品详情加载失败') } finally { loading.value = false }
 
   if (auth.isLoggedIn) {
-    try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch {}
+    try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch { toast.error('收藏状态获取失败') }
   }
 
   window.addEventListener('scroll', onScroll)
@@ -114,18 +116,23 @@ onUnmounted(() => {
 
 async function onAddToCart(e?: MouseEvent) {
   if (!auth.isLoggedIn) { router.push('/login'); return }
-  if (!product.value) return
+  if (!product.value || addingToCart.value) return
+  addingToCart.value = true
   try {
     await addToCart(product.value.id, qty.value)
     toast.success(t('toast.addedToCart'))
     if (e) flyToCart(e)
   } catch { toast.error(t('toast.addCartFail')) }
+  finally { addingToCart.value = false }
 }
 
 async function buyNow() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
-  if (!product.value) return
-  try { await addToCart(product.value.id, qty.value); router.push('/cart') } catch {}
+  if (!product.value || buyingNow.value) return
+  buyingNow.value = true
+  try { await addToCart(product.value.id, qty.value); router.push('/cart') }
+  catch { toast.error(t('toast.addCartFail')) }
+  finally { buyingNow.value = false }
 }
 
 async function toggleFavorite() {
@@ -135,7 +142,7 @@ async function toggleFavorite() {
     if (favorited.value) { await removeFavorite(product.value.id); toast.info(t('product.unfavorite')) }
     else { await addFavorite(product.value.id); toast.success(t('product.favorite')) }
     favorited.value = !favorited.value
-  } catch {}
+  } catch { toast.error('操作失败，请重试') }
 }
 
 function onSetPriceAlert() {
@@ -215,8 +222,8 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 
       <!-- Actions -->
       <div class="action-row">
-        <JdButton type="outline" size="lg" class="flex-1" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
-        <JdButton size="lg" class="flex-1" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
+        <JdButton type="outline" size="lg" class="flex-1" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
+        <JdButton size="lg" class="flex-1" :loading="buyingNow" :disabled="buyingNow" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
         <button class="icon-btn" :class="{ active: favorited }" @click="toggleFavorite" aria-label="收藏">{{ favorited ? '❤️' : '🤍' }}</button>
         <button class="icon-btn" @click="shareProduct" aria-label="分享">📤</button>
       </div>
@@ -296,15 +303,15 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     <LazyImage :src="images[0]" :alt="product.name" height="48px" width="48px" rounded="6px" />
     <div class="floating-name">{{ product.name }}</div>
     <span class="floating-price">{{ formatPrice(displayPrice / 100, 2) }}</span>
-    <JdButton type="outline" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
-    <JdButton @click="buyNow">{{ t('product.buyNow') }}</JdButton>
+    <JdButton type="outline" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
+    <JdButton :loading="buyingNow" :disabled="buyingNow" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
   </div>
 
   <!-- Mobile Sticky Bar -->
   <div v-if="product" class="mobile-bar">
     <div class="mobile-bar-price">{{ formatPrice(displayPrice / 100, 2) }}</div>
-    <JdButton type="outline" class="flex-1" @click="() => onAddToCart()">加入购物车</JdButton>
-    <JdButton class="flex-1" @click="buyNow">立即购买</JdButton>
+    <JdButton type="outline" class="flex-1" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">加入购物车</JdButton>
+    <JdButton class="flex-1" :loading="buyingNow" :disabled="buyingNow" @click="buyNow">立即购买</JdButton>
   </div>
 </template>
 
@@ -401,6 +408,9 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
   .pdp-main { flex-direction: column; padding: var(--space-md); }
   .related-grid { grid-template-columns: repeat(2, 1fr); }
   .pdp-section { padding: var(--space-md); }
+  .spec-grid { grid-template-columns: 1fr; }
+  .action-row { flex-wrap: wrap; }
+  .action-row .icon-btn { width: 40px; height: 40px; }
   .mobile-bar { display: flex; }
   .floating-bar { display: none; }
 }

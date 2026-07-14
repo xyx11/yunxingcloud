@@ -91,8 +91,8 @@ async function doRegister() {
         <p class="benefits-item">· {{ t('register.benefit3') }}</p>
       </div>
 
-      <JdButton block size="lg" :loading="loading" @click="doRegister">
-        {{ loading ? t('register.submitting') : t('register.submit') }}
+      <JdButton block size="lg" :loading="loading" :disabled="loading" @click="doRegister">
+        {{ t('register.submit') }}
       </JdButton>
 
       <p class="login-link">

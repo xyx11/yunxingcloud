@@ -48,9 +48,9 @@ async function loadTab() {
   const key = activeTab.value
   if (tabCache[key]) { loading.value = false; return }
   loading.value = true
-  if (key === 'addresses') { try { const r = await getAddresses(); addresses.value = r.data || [] } catch {} }
-  else if (key === 'coupons') { try { const r = await getMyCoupons(); coupons.value = r.data || [] } catch {} }
-  else if (key === 'favorites') { try { const r = await getFavorites(); favorites.value = r.data || [] } catch {} }
+  if (key === 'addresses') { try { const r = await getAddresses(); addresses.value = r.data || [] } catch { toast.error('地址加载失败') } }
+  else if (key === 'coupons') { try { const r = await getMyCoupons(); coupons.value = r.data || [] } catch { toast.error('优惠券加载失败') } }
+  else if (key === 'favorites') { try { const r = await getFavorites(); favorites.value = r.data || [] } catch { toast.error('收藏加载失败') } }
   tabCache[key] = true
   loading.value = false
 }
@@ -63,7 +63,7 @@ async function saveAddress() {
     else { await createAddress(addrForm.value) }
     toast.success(editAddr.value ? t('common.updated') : t('common.added'))
     showAddrForm.value = false; editAddr.value = null; refreshTab()
-  } catch {}
+  } catch { toast.error('地址保存失败') }
 }
 
 function editAddress(addr: Address) {

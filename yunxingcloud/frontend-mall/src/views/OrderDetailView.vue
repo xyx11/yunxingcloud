@@ -37,13 +37,13 @@ const statusMap: Record<string, { label: string; bg: string }> = {
 const stepLabels = ['下单', t('orderDetail.statusPaid'), t('orderDetail.statusShipped'), t('orderDetail.statusDone')]
 
 onMounted(async () => {
-  try { const r = await getOrderById(Number(route.params.id)); order.value = r.data.order; lines.value = r.data.lines || [] } catch {} finally { loading.value = false }
-  try { const r = await request.get(`/orders/${route.params.id}/shipment`); shipment.value = r.data } catch {}
+  try { const r = await getOrderById(Number(route.params.id)); order.value = r.data.order; lines.value = r.data.lines || [] } catch { toast.error('订单信息加载失败') } finally { loading.value = false }
+  try { const r = await request.get(`/orders/${route.params.id}/shipment`); shipment.value = r.data } catch { toast.error('物流信息加载失败') }
 })
 
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
 async function cancel() { confirmShow.value = true }
-async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch {} }
+async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch { toast.error('取消订单失败') } }
 
 async function confirmReceive() {
   if (receiving.value || !order.value) return; receiving.value = true

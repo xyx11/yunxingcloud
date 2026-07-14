@@ -34,7 +34,7 @@ function onInput() {
   const q = searchInput.value.trim()
   if (!q) { suggestions.value = []; suggestIndex.value = -1; return }
   suggestTimer = setTimeout(async () => {
-    try { const r = await searchProducts(q, 0, 5); suggestions.value = (r.data.content || r.data || []).slice(0, 5); suggestIndex.value = -1 } catch { suggestions.value = [] }
+    try { const r = await searchProducts(q, 0, 5); suggestions.value = (r.data.content || r.data || []).slice(0, 5); suggestIndex.value = -1 } catch { toast.error('搜索建议加载失败'); suggestions.value = [] }
   }, 200)
 }
 
@@ -54,7 +54,7 @@ async function doSearch() {
   const q = searchInput.value.trim(); searchQuery.value = q; loading.value = true; suggestions.value = []
   const h = [q, ...history.value.filter(h => h !== q)].slice(0, 10); history.value = h
   localStorage.setItem('searchHistory', JSON.stringify(h)); showHistory.value = false
-  try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; router.replace({ query: { q } }) } catch { results.value = [] } finally { loading.value = false }
+  try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; router.replace({ query: { q } }) } catch { toast.error('搜索失败，请重试'); results.value = [] } finally { loading.value = false }
 }
 
 function loadMore() { page.value++; doSearch() }

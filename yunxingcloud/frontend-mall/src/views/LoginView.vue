@@ -84,8 +84,8 @@ const oauthProviders = [
         <span class="forgot-link" @click="router.push('/forgot-password')">{{ t('login.forgotPassword') }}</span>
       </div>
 
-      <JdButton block size="lg" :loading="loading" @click="doLogin">
-        {{ loading ? t('login.submitting') : t('login.submit') }}
+      <JdButton block size="lg" :loading="loading" :disabled="loading" @click="doLogin">
+        {{ t('login.submit') }}
       </JdButton>
 
       <!-- OAuth -->

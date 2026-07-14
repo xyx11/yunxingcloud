@@ -41,8 +41,8 @@ const priceRanges = [
 ]
 
 onMounted(async () => {
-  try { const r = await getCategories(); categories.value = r.data || [] } catch {}
-  try { const r = await getBrands(); brands.value = r.data || [] } catch {}
+  try { const r = await getCategories(); categories.value = r.data || [] } catch { toast.error('分类加载失败') }
+  try { const r = await getBrands(); brands.value = r.data || [] } catch { toast.error('品牌加载失败') }
   filters.value.categoryId = (route.query.categoryId as string) || ''
   loadProducts()
   window.addEventListener('scroll', onScroll)
@@ -75,7 +75,7 @@ async function loadProducts() {
     const r = await getProducts(params)
     products.value = r.data.content || r.data || []
     totalPages.value = r.data.totalPages || 0
-  } catch { products.value = [] } finally { loading.value = false }
+  } catch { toast.error('商品列表加载失败'); products.value = [] } finally { loading.value = false }
 }
 
 function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
@@ -96,7 +96,7 @@ async function loadMore(nextPage?: number) {
     products.value = [...products.value, ...(data.content || data || [])]
     totalPages.value = data.totalPages || 0
     currentPage.value = page
-  } catch {} finally { loadingMore.value = false }
+  } catch { toast.error('加载更多失败') } finally { loadingMore.value = false }
 }
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
