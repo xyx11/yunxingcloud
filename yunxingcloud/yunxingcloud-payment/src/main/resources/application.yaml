@@ -10,12 +10,12 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:yunxingcloud123}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     open-in-view: false
 
