@@ -183,6 +183,7 @@ export interface Review {
   username: string
   rating: number
   content: string
+  images?: string[]
   createdAt: string
 }
 

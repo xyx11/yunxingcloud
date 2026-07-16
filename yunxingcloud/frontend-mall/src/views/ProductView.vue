@@ -37,15 +37,42 @@ const reviews = ref<Review[]>([])
 const reviewSort = ref<'newest' | 'highest' | 'lowest'>('newest')
 const reviewShow = ref(3)
 const reviewForm = ref({ rating: 0, content: '' })
+const reviewImages = ref<File[]>([])
+const reviewPreviews = ref<string[]>([])
 const reviewSubmitting = ref(false)
+const MAX_REVIEW_IMAGES = 5
+
+function handleReviewImages(e: Event) {
+  const files = (e.target as HTMLInputElement).files
+  if (!files) return
+  for (let i = 0; i < files.length && reviewImages.value.length < MAX_REVIEW_IMAGES; i++) {
+    reviewImages.value.push(files[i])
+    reviewPreviews.value.push(URL.createObjectURL(files[i]))
+  }
+  ;(e.target as HTMLInputElement).value = ''
+}
+function removeReviewImage(i: number) {
+  URL.revokeObjectURL(reviewPreviews.value[i])
+  reviewImages.value.splice(i, 1)
+  reviewPreviews.value.splice(i, 1)
+}
 
 async function submitProductReview() {
   if (!product.value || !reviewForm.value.rating || !reviewForm.value.content) return
   reviewSubmitting.value = true
   try {
-    await request.post(`/products/${product.value.id}/reviews`, { rating: reviewForm.value.rating, content: reviewForm.value.content })
+    let imageUrls: string[] = []
+    if (reviewImages.value.length) {
+      const fd = new FormData()
+      reviewImages.value.forEach((f) => fd.append('files', f))
+      const uploadRes = await request.post('/api/files/upload/review-images', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      imageUrls = uploadRes.data || []
+    }
+    await request.post(`/products/${product.value.id}/reviews`, { rating: reviewForm.value.rating, content: reviewForm.value.content, images: imageUrls })
     toast.success('评价成功')
     reviewForm.value = { rating: 0, content: '' }
+    reviewImages.value.forEach((_, i) => URL.revokeObjectURL(reviewPreviews.value[i]))
+    reviewImages.value = []; reviewPreviews.value = []
     const res = await getProductDetail(Number(product.value.id)); reviews.value = res.data.reviews || []
   } catch { toast.error('评价失败') } finally { reviewSubmitting.value = false }
 }
@@ -72,6 +99,7 @@ const showFloatingBar = ref(false)
 const images = ref<string[]>([])
 const alertPrice = ref('')
 const showPriceAlert = ref(false)
+const previewImage = ref('')
 const viewerCount = ref(Math.floor(Math.random() * 200) + 50)
 let viewerTimer: ReturnType<typeof setInterval> | null = null
 
@@ -264,6 +292,9 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
           <span class="review-date">{{ formatRelativeTime(r.createdAt) }}</span>
         </div>
         <p class="review-content">{{ r.content }}</p>
+        <div v-if="r.images?.length" class="review-images">
+          <img v-for="(img, j) in r.images" :key="j" :src="img" class="review-thumb" @click.stop="previewImage = img" />
+        </div>
       </div>
       <div v-if="reviewShow < reviews.length" class="review-more">
         <button class="review-more-btn" @click="showMoreReviews">加载更多评论 ({{ reviews.length - reviewShow }}条)</button>
@@ -278,7 +309,22 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
         <span v-for="i in 5" :key="i" class="write-star" :class="{ active: i <= reviewForm.rating }" @click="reviewForm.rating = i">{{ i <= reviewForm.rating ? '★' : '☆' }}</span>
       </div>
       <textarea v-model="reviewForm.content" class="write-review-textarea" placeholder="分享你的使用体验..." />
+      <!-- Image picker -->
+      <div class="write-review-images">
+        <div v-for="(preview, i) in reviewPreviews" :key="i" class="review-img-preview">
+          <img :src="preview" />
+          <button class="review-img-remove" @click="removeReviewImage(i)">✕</button>
+        </div>
+        <label v-if="reviewImages.length < MAX_REVIEW_IMAGES" class="review-img-add">
+          <input type="file" accept="image/*" multiple hidden @change="handleReviewImages" />
+          <span>+</span>
+        </label>
+      </div>
       <JdButton size="sm" :loading="reviewSubmitting" @click="submitProductReview">提交评价</JdButton>
+    </div>
+    <!-- Image lightbox -->
+    <div v-if="previewImage" class="img-lightbox" @click="previewImage = ''">
+      <img :src="previewImage" />
     </div>
   </div>
 
@@ -409,6 +455,17 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 .review-stars { color: var(--orange); font-size: var(--font-md); }
 .review-date { color: var(--text-tertiary); font-size: var(--font-sm); }
 .review-content { font-size: var(--font-md); color: var(--text-primary); line-height: 1.6; }
+.review-images { display: flex; gap: 6px; margin-top: var(--space-sm); flex-wrap: wrap; }
+.review-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--border-light); transition: transform .2s; }
+.review-thumb:hover { transform: scale(1.05); }
+.write-review-images { display: flex; gap: 8px; margin-bottom: var(--space-sm); flex-wrap: wrap; }
+.review-img-preview { position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-light); }
+.review-img-preview img { width: 100%; height: 100%; object-fit: cover; }
+.review-img-remove { position: absolute; top: 0; right: 0; width: 20px; height: 20px; background: rgba(0,0,0,.5); color: #fff; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.review-img-add { width: 80px; height: 80px; border: 2px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-tertiary); font-size: 28px; transition: border-color .2s; }
+.review-img-add:hover { border-color: var(--jd-red); color: var(--jd-red); }
+.img-lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.85); z-index: 1000; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.img-lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
 
 /* Specs */
 .spec-grid { display: grid; grid-template-columns: 1fr 1fr; font-size: var(--font-base); }

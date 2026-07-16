@@ -82,6 +82,23 @@ public class FileService {
         }
     }
 
+    public List<String> uploadMultiple(List<MultipartFile> files, String subDir) throws IOException {
+        Path targetDir = uploadDir.resolve(subDir);
+        Files.createDirectories(targetDir);
+        List<String> urls = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+            if (file.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("图片大小不能超过5MB");
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) continue;
+            String ext = getExtension(file.getOriginalFilename());
+            String name = UUID.randomUUID().toString().substring(0, 8) + ext;
+            file.transferTo(targetDir.resolve(name).toFile());
+            urls.add("/uploads/" + subDir + "/" + name);
+        }
+        return urls;
+    }
+
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return ".png";
         String ext = filename.substring(filename.lastIndexOf("."));

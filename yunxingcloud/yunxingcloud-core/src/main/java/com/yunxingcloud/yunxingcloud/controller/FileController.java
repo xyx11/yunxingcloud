@@ -51,4 +51,21 @@ public class FileController {
         }
         return ResponseEntity.ok(result);
     }
+
+    // Public endpoint for review image upload (no auth required)
+    @PostMapping("/upload/review-images")
+    public ResponseEntity<?> uploadReviewImages(@RequestParam("files") List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "请选择图片"));
+        }
+        if (files.size() > 5) {
+            return ResponseEntity.badRequest().body(Map.of("message", "最多上传5张图片"));
+        }
+        try {
+            List<String> urls = fileService.uploadMultiple(files, "reviews");
+            return ResponseEntity.ok(urls);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "上传失败: " + e.getMessage()));
+        }
+    }
 }
