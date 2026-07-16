@@ -128,6 +128,7 @@ export default {
     detail: '详细地址',
     unused: '未使用',
     used: '已使用',
+    cancel: '取消', edit: '编辑', delete: '删除', default: '默认',
     currentPassword: '当前密码',
     confirmChange: '确认修改',
     memberLabel: '会员',
