@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, watch, ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { createEditor, createToolbar, type IDomEditor } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'
 
-const props = defineProps<{ modelValue: string }>()
+const { t } = useI18n()
+const props = withDefaults(defineProps<{ modelValue: string; placeholder?: string }>(), { placeholder: '' })
 const emit = defineEmits<{ (e: 'update:modelValue', val: string): void }>()
 
 const editorBox = ref<HTMLDivElement>()
@@ -14,7 +16,7 @@ onMounted(() => {
   if (!editorBox.value) return
 
   const editorConfig = {
-    placeholder: '请输入商品描述...',
+    placeholder: props.placeholder || t('editor.placeholder'),
     onChange(ed: IDomEditor) {
       emit('update:modelValue', ed.getHtml())
     },

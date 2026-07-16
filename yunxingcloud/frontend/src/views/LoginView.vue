@@ -80,7 +80,7 @@ async function handleLogin() {
     }
     if (model.value.rememberMe) {
       Cookies.set('username', model.value.username, { expires: 30 })
-      Cookies.set('encPassword', model.value.password, { expires: 30 })
+      Cookies.set('encPassword', password, { expires: 30 })
       Cookies.set('rememberMe', 'true', { expires: 30 })
     } else {
       Cookies.remove('username'); Cookies.remove('encPassword'); Cookies.remove('rememberMe')

@@ -71,9 +71,9 @@ const allColumns = ref<DataTableColumns<SysConfig>>([
   },
 ])
 const { visibleColumns, toggleColumn, hiddenKeys } = useColumnManager(allColumns, 'config')
-const columnOptions = computed(() => (allColumns.value as DataTableColumns<SysConfig>)
-  .filter((c: DataTableColumn<SysConfig>) => c.key && c.key !== 'actions')
-  .map((c: DataTableColumn<SysConfig>) => ({ key: c.key, title: c.title?.toString() || '' })),
+const columnOptions = computed(() => (allColumns.value as any[])
+  .filter((c: any) => c.key && c.key !== 'actions')
+  .map((c: any) => ({ key: c.key, title: c.title?.toString() || '' })),
 )
 
 async function loadConfigs() {

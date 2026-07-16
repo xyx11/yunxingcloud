@@ -25,7 +25,6 @@ defineEmits<{
     <div class="logo">
       <span v-if="!collapsed" class="logo-text">YXCLOUD</span>
       <span v-else class="logo-text-collapsed">YC</span>
-      <span v-if="!collapsed" class="logo-version">管理后台 v2.4</span>
     </div>
     <div class="custom-menu menu-scroll" :class="{ collapsed }">
       <template v-for="item in menuOptions" :key="item.key">

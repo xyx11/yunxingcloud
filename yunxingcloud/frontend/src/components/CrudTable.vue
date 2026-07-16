@@ -53,13 +53,13 @@ const searchKeyword = computed({
   set: (val) => emit('update:searchKeyword', val),
 })
 
-const allColKeys = computed(() => props.columns.map((c: DataTableColumn<RowData>) => c.key || c.title))
+const allColKeys = computed(() => props.columns.map((c: any) => c.key || c.title))
 const visibleKeys = ref<string[]>([])
-watch(() => props.columns, (cols: DataTableColumn<RowData>[]) => {
-  if (visibleKeys.value.length === 0) visibleKeys.value = cols.map((c: DataTableColumn<RowData>) => c.key || String(c.title))
+watch(() => props.columns, (cols: any[]) => {
+  if (visibleKeys.value.length === 0) visibleKeys.value = cols.map((c: any) => c.key || String(c.title))
 }, { immediate: true })
 
-const visibleCols = computed(() => props.columns.filter((c: DataTableColumn<RowData>) => visibleKeys.value.includes(c.key || String(c.title))))
+const visibleCols = computed(() => props.columns.filter((c: any) => visibleKeys.value.includes(c.key || String(c.title))))
 
 function toggleCol(key: string) {
   const i = visibleKeys.value.indexOf(key)

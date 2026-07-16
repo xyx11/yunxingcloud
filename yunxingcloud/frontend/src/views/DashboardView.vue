@@ -83,7 +83,7 @@ async function refreshDashboard() {
     try {
       const [d, r] = await Promise.all([fetchDepartments().catch(()=>({data:[]})), fetchRoles().catch(()=>({data:[]}))])
       stats.value.deptCount = Array.isArray(d.data) ? d.data.length : 0; stats.value.roleCount = Array.isArray(r.data) ? r.data.length : 0
-    } catch {}
+    } catch { /* ignore - stats are optional */ }
     try {
       const [s, o, inv] = await Promise.all([
         import('@/api/analytics').then(m => m.fetchSalesOverview().catch(()=>({data:{}}))),

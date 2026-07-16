@@ -502,4 +502,5 @@ export default {
   notFound: { title: '页面未找到', subtitle: '您访问的页面不存在或已被移除', backHome: '返回首页' },
   consent: { title: '授权确认', prompt: '正在请求以下访问权限：', approve: '确认授权', deny: '拒绝',
     openid: '使用您的身份进行登录', profile: '读取您的基本资料', email: '读取您的邮箱地址' },
+  editor: { placeholder: '请输入内容...' },
 }

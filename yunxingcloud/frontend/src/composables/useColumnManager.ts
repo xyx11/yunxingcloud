@@ -23,7 +23,7 @@ export function useColumnManager<T>(
   }, { deep: true })
 
   const visibleColumns = computed(() =>
-    allColumnsRef.value.filter((col: DataTableColumn<T>) => {
+    allColumnsRef.value.filter((col: any) => {
       if (!col.key) return true
       return !hiddenKeys.value.has(col.key)
     }),

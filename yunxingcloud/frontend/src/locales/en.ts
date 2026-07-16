@@ -507,4 +507,5 @@ export default {
   notFound: { title: 'Page Not Found', subtitle: 'The page you are looking for does not exist or has been removed.', backHome: 'Back to Home' },
   consent: { title: 'Authorization', prompt: 'is requesting the following permissions:', approve: 'Authorize', deny: 'Deny',
     openid: 'Use your identity to log in', profile: 'Read your basic profile', email: 'Read your email address' },
+  editor: { placeholder: 'Please enter content...' },
 }
