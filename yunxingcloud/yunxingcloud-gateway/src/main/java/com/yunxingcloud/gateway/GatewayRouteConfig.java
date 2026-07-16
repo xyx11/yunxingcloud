@@ -44,7 +44,8 @@ public class GatewayRouteConfig {
                         .uri(uri("yunxingcloud-usercenter", 8081)))
                 // Order -> order service
                 .route("order-api", r -> r
-                        .path("/api/products/**", "/api/cart/**", "/api/orders/**",
+                        .path("/api/home/**", "/api/search/**",
+                              "/api/products/**", "/api/cart/**", "/api/orders/**",
                               "/api/categories/**", "/api/brands/**", "/api/coupons/**",
                               "/api/addresses/**", "/api/shipments/**", "/api/skus/**",
                               "/api/banners/**", "/api/favorites/**",

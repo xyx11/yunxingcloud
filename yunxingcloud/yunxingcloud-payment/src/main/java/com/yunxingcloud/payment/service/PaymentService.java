@@ -13,8 +13,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentOrderRepository orderRepo;
     private final PaymentRecordRepository recordRepo;
@@ -90,6 +94,17 @@ public class PaymentService {
             String tradeNo = params.getOrDefault("trade_no", params.getOrDefault("transaction_id", ""));
             if (!tradeNo.isEmpty()) order.setTradeNo(tradeNo);
             orderRepo.save(order);
+            syncOrderStatus(orderNo, "2");
+        }
+    }
+
+    private void syncOrderStatus(String orderNo, String status) {
+        try {
+            var rest = new org.springframework.web.client.RestTemplate();
+            String url = "http://yunxingcloud-order/api/orders/internal/by-order-no/" + orderNo + "/status?status=" + status;
+            rest.put(url, null);
+        } catch (Exception e) {
+            log.warn("Failed to sync order status for {}: {}", orderNo, e.getMessage());
         }
     }
 

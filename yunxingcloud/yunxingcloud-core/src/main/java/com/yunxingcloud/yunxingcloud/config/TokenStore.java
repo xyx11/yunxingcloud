@@ -1,5 +1,7 @@
 package com.yunxingcloud.yunxingcloud.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -11,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class TokenStore {
+    private static final Logger log = LoggerFactory.getLogger(TokenStore.class);
 
     private static final String REDIS_KEY = "token:store";
 
@@ -26,6 +29,7 @@ public class TokenStore {
         try {
             redisTemplate.opsForHash().put(REDIS_KEY, token, info);
         } catch (Exception e) {
+            log.warn("TokenStore Redis operation failed, using fallback: {}", e.getMessage());
             fallback.put(token, info);
         }
     }
@@ -49,6 +53,7 @@ public class TokenStore {
         try {
             redisTemplate.opsForHash().delete(REDIS_KEY, token);
         } catch (Exception e) {
+            log.warn("TokenStore Redis operation failed, using fallback: {}", e.getMessage());
             fallback.remove(token);
         }
     }

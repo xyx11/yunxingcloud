@@ -24,11 +24,8 @@ public class CartService {
 
     public Map<String, Object> list(String username) {
         var items = cartRepo.findByUsernameOrderByCreatedAtDesc(username);
-        if (items.isEmpty()) {
-            var recs = productRepo.findByStatus("0", PageRequest.of(0, 4, Sort.by(Sort.Direction.DESC, "sales")));
-            return Map.of("items", items, "recommended", recs);
-        }
-        return Map.of("items", (Object) items);
+        var recs = items.isEmpty() ? productRepo.findByStatus("0", PageRequest.of(0, 4, Sort.by(Sort.Direction.DESC, "sales"))) : Collections.emptyList();
+        return Map.of("items", (Object) items, "recommended", recs);
     }
 
     @Transactional

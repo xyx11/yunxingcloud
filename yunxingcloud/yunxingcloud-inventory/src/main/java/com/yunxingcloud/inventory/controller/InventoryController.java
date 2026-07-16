@@ -35,6 +35,12 @@ public class InventoryController {
         this.whService = whService; this.stockRepo = stockRepo; this.logRepo = logRepo; this.service = service;
     }
 
+    private String require(Map<String, Object> body, String key) {
+        Object v = body.get(key);
+        if (v == null) throw new IllegalArgumentException("缺少参数: " + key);
+        return v.toString();
+    }
+
     @GetMapping("/api/warehouses")
     public ResponseEntity<?> warehouses() { return ResponseEntity.ok(whService.findAll()); }
 
@@ -51,24 +57,29 @@ public class InventoryController {
     @Operation(summary = "入库")
     @PostMapping("/api/inventory/stock-in")
     public ResponseEntity<?> stockIn(@RequestBody Map<String, Object> body) {
-        Long productId = Long.valueOf(body.get("productId").toString());
-        Long warehouseId = Long.valueOf(body.get("warehouseId").toString());
-        int qty = Integer.parseInt(body.get("quantity").toString());
-        String name = (String) body.getOrDefault("productName", "");
-        String remark = (String) body.getOrDefault("remark", "手动入库");
-        log.info("入库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark);
-        return ResponseEntity.ok(service.stockIn(productId, name, warehouseId, qty, remark));
+        try {
+            Long productId = Long.valueOf(require(body, "productId"));
+            Long warehouseId = Long.valueOf(require(body, "warehouseId"));
+            int qty = Integer.parseInt(require(body, "quantity"));
+            String name = (String) body.getOrDefault("productName", "");
+            String remark = (String) body.getOrDefault("remark", "手动入库");
+            log.info("入库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark);
+            return ResponseEntity.ok(service.stockIn(productId, name, warehouseId, qty, remark));
+        } catch (Exception e) { log.warn("入库参数错误: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", "参数错误: " + e.getMessage())); }
     }
 
     @Operation(summary = "出库")
     @PostMapping("/api/inventory/stock-out")
     public ResponseEntity<?> stockOut(@RequestBody Map<String, Object> body) {
-        Long productId = Long.valueOf(body.get("productId").toString());
-        Long warehouseId = Long.valueOf(body.get("warehouseId").toString());
-        int qty = Integer.parseInt(body.get("quantity").toString());
-        String remark = (String) body.getOrDefault("remark", "手动出库");
-        try { log.info("出库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark); return ResponseEntity.ok(service.stockOut(productId, warehouseId, qty, remark)); }
-        catch (IllegalArgumentException e) { log.warn("出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        try {
+            Long productId = Long.valueOf(require(body, "productId"));
+            Long warehouseId = Long.valueOf(require(body, "warehouseId"));
+            int qty = Integer.parseInt(require(body, "quantity"));
+            String remark = (String) body.getOrDefault("remark", "手动出库");
+            log.info("出库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark);
+            return ResponseEntity.ok(service.stockOut(productId, warehouseId, qty, remark));
+        } catch (IllegalArgumentException e) { log.warn("出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        catch (Exception e) { log.warn("出库参数错误: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", "参数错误: " + e.getMessage())); }
     }
 
     @Operation(summary = "库存预警")
@@ -115,17 +126,22 @@ public class InventoryController {
             try {
                 emitter.send(SseEmitter.event().name("alerts").data(service.alerts()));
             } catch (Exception e) {
-                scheduler.shutdown();
-                try { emitter.completeWithError(e); } catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
+                try { emitter.completeWithError(e); } catch (Exception ignored) {}
             }
         };
 
-        push.run(); // 初始立即推送
-        scheduler.scheduleAtFixedRate(push, 30, 30, TimeUnit.SECONDS);
+        Runnable cleanup = () -> { try { scheduler.shutdown(); } catch (Exception ignored) {} };
+        emitter.onCompletion(cleanup);
+        emitter.onTimeout(cleanup);
+        emitter.onError(e -> cleanup.run());
 
-        emitter.onCompletion(scheduler::shutdown);
-        emitter.onTimeout(scheduler::shutdown);
-        emitter.onError(e -> scheduler.shutdown());
+        try {
+            push.run();
+            scheduler.scheduleAtFixedRate(push, 30, 30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            scheduler.shutdown();
+            throw e;
+        }
 
         return emitter;
     }

@@ -30,7 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final SecretKey key;
 
-    public JwtAuthFilter(@Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024-very-long-secret-key-min-256-bits}") String secret) {
+    public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -40,8 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
         if (token != null) {
             try {
-                Claims claims = Jwts.parser().verifyWith(key).build()
-                        .parseSignedClaims(token).getPayload();
+                Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
                 String username = claims.getSubject();
                 String authStr = claims.get("authorities", String.class);
                 List<SimpleGrantedAuthority> authorities = (authStr != null && !authStr.isEmpty())
@@ -56,9 +55,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private String extractToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
-        }
+        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) return bearer.substring(7);
         return null;
     }
 }

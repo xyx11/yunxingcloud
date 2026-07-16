@@ -18,6 +18,7 @@ import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class UserService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -294,9 +295,19 @@ public class UserService {
     @Transactional
     public Map<String, Object> resetUserPassword(Long id) {
         return userRepository.findById(id).map(u -> {
-            u.setPassword(passwordEncoder.encode("123456"));
+            String newPwd = generateRandomPassword();
+            u.setPassword(passwordEncoder.encode(newPwd));
             userRepository.save(u);
+            log.info("用户 {} 密码已重置，新密码: {}", u.getUsername(), newPwd);
             return Map.<String, Object>of("success", true, "message", i18n.msg("user.pwd_reset"));
         }).orElse(null);
+    }
+
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) sb.append(chars.charAt(random.nextInt(chars.length())));
+        return sb.toString();
     }
 }

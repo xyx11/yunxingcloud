@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface FlashSaleRepository extends JpaRepository<FlashSale, Long> {
     List<FlashSale> findByStatusAndStartTimeBefore(String status, java.time.LocalDateTime time);
+    List<FlashSale> findByStatusAndEndTimeBefore(String status, java.time.LocalDateTime time);
 
     @Modifying
     @Query("UPDATE FlashSale f SET f.sold = f.sold + 1 WHERE f.id = :id AND f.sold < f.stock")

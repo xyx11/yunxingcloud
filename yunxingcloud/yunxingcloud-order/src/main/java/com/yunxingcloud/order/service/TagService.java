@@ -37,9 +37,9 @@ public class TagService {
 
     public List<ProductTag> tagsOfProduct(Long productId) {
         List<ProductTagRelation> rels = relationRepo.findByProductId(productId);
-        List<ProductTag> tags = new ArrayList<>();
-        for (ProductTagRelation r : rels) tagRepo.findById(r.getTagId()).ifPresent(tags::add);
-        return tags;
+        if (rels.isEmpty()) return Collections.emptyList();
+        List<Long> ids = rels.stream().map(ProductTagRelation::getTagId).toList();
+        return tagRepo.findAllById(ids);
     }
 
     @Transactional
@@ -59,8 +59,8 @@ public class TagService {
 
     public List<Product> productsByTag(Long tagId) {
         List<ProductTagRelation> rels = relationRepo.findByTagId(tagId);
-        List<Product> products = new ArrayList<>();
-        for (ProductTagRelation r : rels) productRepo.findById(r.getProductId()).ifPresent(products::add);
-        return products;
+        if (rels.isEmpty()) return Collections.emptyList();
+        List<Long> ids = rels.stream().map(ProductTagRelation::getProductId).toList();
+        return productRepo.findAllById(ids);
     }
 }

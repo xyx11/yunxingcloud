@@ -42,6 +42,8 @@ public class InvoiceController {
 
     @PostMapping
     public ResponseEntity<?> apply(@RequestBody Map<String, Object> body) {
+        if (body.get("orderId") == null)
+            return ResponseEntity.badRequest().body(Map.of("message", "缺少订单ID"));
         Invoice inv = service.apply(
                 Long.valueOf(body.get("orderId").toString()), user(),
                 (String) body.get("type"), (String) body.getOrDefault("title", ""),

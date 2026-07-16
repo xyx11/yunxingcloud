@@ -21,14 +21,14 @@ public class VersionRouteConfig {
                 // v2 → 订单服务新版
                 .route("v2-orders", r -> r
                         .path("/api/v2/orders/**")
-                        .filters(f -> f.setPath("/api/orders/${remaining}")
+                        .filters(f -> f.rewritePath("/api/v2/orders/(?<remaining>.*)", "/api/orders/${remaining}")
                                 .addResponseHeader("X-API-Version", "v2"))
                         .uri("lb://yunxingcloud-order"))
 
                 // v2 → 支付服务新版
                 .route("v2-payment", r -> r
                         .path("/api/v2/payment/**")
-                        .filters(f -> f.setPath("/api/payment/${remaining}")
+                        .filters(f -> f.rewritePath("/api/v2/payment/(?<remaining>.*)", "/api/payment/${remaining}")
                                 .addResponseHeader("X-API-Version", "v2"))
                         .uri("lb://yunxingcloud-payment"))
 

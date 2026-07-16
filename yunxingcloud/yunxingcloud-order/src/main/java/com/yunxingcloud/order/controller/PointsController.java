@@ -42,6 +42,8 @@ public class PointsController {
 
     @PostMapping("/redeem")
     public ResponseEntity<?> redeem(@RequestBody Map<String, String> body) {
+        if (!body.containsKey("points") || !body.containsKey("orderId"))
+            return ResponseEntity.badRequest().body(Map.of("message", "缺少参数"));
         Long points = Long.valueOf(body.get("points"));
         Long orderId = Long.valueOf(body.get("orderId"));
         long deductedCents = service.redeem(user(), points, orderId);

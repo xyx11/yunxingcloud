@@ -20,6 +20,13 @@ spring:
         response-timeout: 30s
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            max-age: 3600
 
     sentinel:
       transport:
@@ -51,6 +58,9 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+
+jwt:
+  secret: ${JWT_SECRET}
 
 logging:
   level:

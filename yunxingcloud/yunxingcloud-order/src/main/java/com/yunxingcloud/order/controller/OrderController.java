@@ -64,24 +64,25 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/pay")
-    public ResponseEntity<?> pay(@PathVariable Long id) {
+    public ResponseEntity<?> pay(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
         return orderRepo.findById(id).map(order -> {
             if (!order.getUsername().equals(user()) && !isAdmin())
                 return ResponseEntity.status(403).build();
             if (!"0".equals(order.getStatus()))
                 return ResponseEntity.badRequest().body(Map.of("message", "当前状态不可支付"));
-            // Call Payment service via Feign
+            String channel = body != null && body.containsKey("channel") ? body.get("channel").toString() : "wechat";
             Map<String, Object> payOrder = Map.of(
                     "title", "订单" + order.getOrderNo(),
                     "amount", order.getTotalAmount(),
-                    "channel", "wechat");
+                    "channel", channel);
             try {
                 Map<String, Object> result = paymentClient.createOrder(payOrder);
                 if (result != null && result.get("id") != null) {
                     order.setPaymentOrderId(Long.valueOf(result.get("id").toString()));
-                    order.setStatus("1");
                     orderRepo.save(order);
                     paymentClient.pay(Long.valueOf(result.get("id").toString()), null);
+                    order.setStatus("1");
+                    orderRepo.save(order);
                     return ResponseEntity.ok(result);
                 } else {
                     return ResponseEntity.status(502).body(Map.of("message", "创建支付订单失败"));
@@ -90,6 +91,16 @@ public class OrderController {
                 log.warn("Payment service unavailable for order {}: {}", order.getOrderNo(), e.getMessage());
                 return ResponseEntity.status(503).body(Map.of("message", "支付服务暂不可用，请稍后重试"));
             }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/internal/by-order-no/{orderNo}/status")
+    public ResponseEntity<?> updateStatusByOrderNo(@PathVariable String orderNo, @RequestParam String status) {
+        return orderRepo.findByOrderNo(orderNo).map(order -> {
+            order.setStatus(status);
+            orderRepo.save(order);
+            log.info("订单 {} 状态由回调更新为 {}", orderNo, status);
+            return ResponseEntity.ok(Map.of("success", true));
         }).orElse(ResponseEntity.notFound().build());
     }
 

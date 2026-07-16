@@ -30,6 +30,8 @@ public class OrderHead {
     private String receiverPhone;
     @Column(name = "receiver_address", length = 500)
     private String receiverAddress;
+    @Column(name = "delivery_time_slot", length = 50)
+    private String deliveryTimeSlot;
     @Column(length = 500)
     private String remark;
     @Column(name = "expire_at")
@@ -70,6 +72,8 @@ public class OrderHead {
     public void setReceiverPhone(String receiverPhone) { this.receiverPhone = receiverPhone; }
     public String getReceiverAddress() { return receiverAddress; }
     public void setReceiverAddress(String receiverAddress) { this.receiverAddress = receiverAddress; }
+    public String getDeliveryTimeSlot() { return deliveryTimeSlot; }
+    public void setDeliveryTimeSlot(String deliveryTimeSlot) { this.deliveryTimeSlot = deliveryTimeSlot; }
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
     public LocalDateTime getExpireAt() { return expireAt; }

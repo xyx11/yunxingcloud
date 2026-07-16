@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/banners/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/skus/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/orders/internal/**").permitAll()
                 // 其余全部需要认证（Cart/Order/Coupon/Address/Shipment/Favorites + 所有写操作）
                 .anyRequest().authenticated()
             )

@@ -1,6 +1,8 @@
 package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.order.repository.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -41,11 +43,7 @@ public class AnalyticsService {
     /** 商品销量排行 */
     public List<Map<String, Object>> topProducts(int limit) {
         List<Map<String, Object>> result = new ArrayList<>();
-        productRepo.findAll().stream()
-                .sorted((a, b) -> Integer.compare(
-                                    b.getSales() != null ? b.getSales() : 0,
-                                    a.getSales() != null ? a.getSales() : 0))
-                .limit(limit)
+        productRepo.findByStatus("0", PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "sales")))
                 .forEach(p -> result.add(Map.of(
                         "id", p.getId(), "name", p.getName(),
                         "sales", p.getSales() != null ? p.getSales() : 0,

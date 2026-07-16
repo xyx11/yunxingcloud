@@ -21,8 +21,9 @@ public class CompareService {
 
     public List<Map<String, Object>> list(String username) {
         List<CompareList> items = compareRepo.findByUsernameOrderByCreatedAtDesc(username);
-        List<Product> products = new ArrayList<>();
-        for (CompareList c : items) productRepo.findById(c.getProductId()).ifPresent(products::add);
+        if (items.isEmpty()) return Collections.emptyList();
+        List<Long> ids = items.stream().map(CompareList::getProductId).toList();
+        List<Product> products = productRepo.findAllById(ids);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Product p : products) {
             result.add(Map.of("id", p.getId(), "name", p.getName(),

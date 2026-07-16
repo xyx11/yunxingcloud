@@ -30,9 +30,10 @@ public class NotificationService {
 
     @Transactional
     public void markAllRead(String username) {
-        repo.findByUsernameOrUsernameOrderByCreatedAtDesc(username, "ALL").stream()
-                .filter(n -> !n.getIsRead())
-                .forEach(n -> { n.setIsRead(true); n.setReadAt(LocalDateTime.now()); repo.save(n); });
+        var unread = repo.findByUsernameOrUsernameOrderByCreatedAtDesc(username, "ALL").stream()
+                .filter(n -> !n.getIsRead()).toList();
+        unread.forEach(n -> { n.setIsRead(true); n.setReadAt(LocalDateTime.now()); });
+        if (!unread.isEmpty()) repo.saveAll(unread);
     }
 
     @Transactional

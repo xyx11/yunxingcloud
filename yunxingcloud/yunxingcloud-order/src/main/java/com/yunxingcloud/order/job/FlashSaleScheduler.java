@@ -38,13 +38,11 @@ public class FlashSaleScheduler {
         }
 
         // 自动结束
-        List<FlashSale> ending = flashRepo.findByStatusAndStartTimeBefore("1", now);
+        List<FlashSale> ending = flashRepo.findByStatusAndEndTimeBefore("1", now);
         for (FlashSale fs : ending) {
-            if (fs.getEndTime().isBefore(now)) {
-                fs.setStatus("2");
-                flashRepo.save(fs);
-                log.info("秒杀结束: id={} sold={}", fs.getId(), fs.getSold());
-            }
+            fs.setStatus("2");
+            flashRepo.save(fs);
+            log.info("秒杀结束: id={} sold={}", fs.getId(), fs.getSold());
         }
     }
 }

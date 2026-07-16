@@ -52,11 +52,15 @@ public class PaymentController {
     @Operation(summary = "创建支付")
     @PostMapping("/orders")
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-        String title = (String) body.get("title");
-        Long amount = Long.valueOf(body.get("amount").toString());
-        String channel = (String) body.get("channel");
-        log.info("创建支付订单: title={}, amount={}, channel={}", title, amount, channel);
-        return ResponseEntity.ok(paymentService.create(title, amount, channel));
+        try {
+            String title = (String) body.getOrDefault("title", "未命名订单");
+            Long amount = Long.valueOf(body.get("amount").toString());
+            String channel = (String) body.getOrDefault("channel", "wechat");
+            log.info("创建支付订单: title={}, amount={}, channel={}", title, amount, channel);
+            return ResponseEntity.ok(paymentService.create(title, amount, channel));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "参数错误: " + e.getMessage()));
+        }
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
@@ -70,14 +74,18 @@ public class PaymentController {
     @Operation(summary = "申请退款")
     @PostMapping("/orders/{id}/refund")
     public ResponseEntity<?> refund(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        Long refundAmount = Long.valueOf(body.get("refundAmount").toString());
-        String reason = (String) body.getOrDefault("reason", "");
-        log.info("申请退款: orderId={}, refundAmount={}, reason={}", id, refundAmount, reason);
         try {
-            return ResponseEntity.ok(paymentService.refund(id, refundAmount, reason));
+            Long refundAmount = Long.valueOf(body.get("refundAmount").toString());
+            String reason = (String) body.getOrDefault("reason", "");
+            log.info("申请退款: orderId={}, refundAmount={}, reason={}", id, refundAmount, reason);
+            try {
+                return ResponseEntity.ok(paymentService.refund(id, refundAmount, reason));
+            } catch (Exception e) {
+                log.warn("退款操作失败: orderId={}, amount={}, reason={}, error={}", id, refundAmount, reason, e.getMessage());
+                throw e;
+            }
         } catch (Exception e) {
-            log.warn("退款操作失败: orderId={}, amount={}, reason={}, error={}", id, refundAmount, reason, e.getMessage());
-            throw e;
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "参数错误: " + e.getMessage()));
         }
     }
 
