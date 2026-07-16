@@ -17,7 +17,7 @@ services:
     image: mysql:8.0
     <<: *defaults
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: yunxingcloud_core
     volumes:
       - mysql_data:/var/lib/mysql
@@ -98,7 +98,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -134,7 +134,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       NACOS_SERVER: nacos:8848
       SENTINEL_DASHBOARD: sentinel:8082
@@ -164,7 +164,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       NACOS_SERVER: nacos:8848
       SENTINEL_DASHBOARD: sentinel:8082
@@ -194,7 +194,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       NACOS_SERVER: nacos:8848
       SENTINEL_DASHBOARD: sentinel:8082
@@ -224,7 +224,7 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-changeme}
       NACOS_SERVER: nacos:8848
       SENTINEL_DASHBOARD: sentinel:8082

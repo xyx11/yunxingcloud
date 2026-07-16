@@ -42,7 +42,7 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "{{ $labels.job }} QPS 异常波动"
-          description: "当前 QPS 是半小时前的 {{ $value }}x"
+          description: "当前 QPS 是 1 小时前的 {{ $value }}x"
 
       # --- 慢请求 ---
       - alert: SlowRequests

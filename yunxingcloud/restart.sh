@@ -21,6 +21,8 @@ echo "========== 重启 yunxingcloud (6 微服务) =========="
 # 1. 停止
 echo "1. 停止旧服务..."
 for p in "${PORTS[@]}"; do
+    lsof -ti :"$p" | xargs kill 2>/dev/null || true
+    sleep 3
     lsof -ti :"$p" | xargs kill -9 2>/dev/null || true
 done
 sleep 2

@@ -27,7 +27,7 @@ services:
       - "8082:8082"
     environment:
       SENTINEL_AUTH_USERNAME: admin
-      SENTINEL_AUTH_PASSWORD: admin
+      SENTINEL_AUTH_PASSWORD: ${SENTINEL_PASSWORD:-admin}
     networks:
       - yunxingcloud
 
@@ -36,7 +36,7 @@ services:
     container_name: yunxingcloud-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: yunxingcloud_core
     ports:
       - "3306:3306"
@@ -104,10 +104,10 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID:-test-client}
-      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET:-change-me}
+      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
       NACOS_SERVER: nacos:8848
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -140,8 +140,8 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       NACOS_SERVER: nacos:8848
@@ -178,6 +178,7 @@ services:
       - "8090:8090"
     environment:
       NACOS_SERVER: nacos:8848
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - yunxingcloud
     healthcheck:
@@ -213,8 +214,8 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       NACOS_SERVER: nacos:8848
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -247,8 +248,8 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       NACOS_SERVER: nacos:8848
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -284,8 +285,8 @@ services:
     environment:
       DB_URL: jdbc:mysql://mysql:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-yunxingcloud123}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       NACOS_SERVER: nacos:8848
       REDIS_HOST: redis
       REDIS_PORT: 6379

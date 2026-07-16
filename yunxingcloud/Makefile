@@ -20,7 +20,7 @@ dev-inventory:
 	./mvnw spring-boot:run -pl yunxingcloud-inventory -Dspring-boot.run.profiles=dev
 
 dev-gateway:
-	./mvnw spring-boot:run -pl yunxingcloud-gateway
+	./mvnw spring-boot:run -pl yunxingcloud-gateway -Dspring-boot.run.profiles=dev
 
 dev-all:
 	@echo "按依赖顺序启动全部 6 服务..."

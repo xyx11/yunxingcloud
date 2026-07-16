@@ -62,7 +62,7 @@ playwright-report/
 Thumbs.db
 
 ### Env ###
-.env
-.env.local
+.env*
+!.env.example
 .DS_Store
 deploy.conf

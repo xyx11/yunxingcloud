@@ -28,6 +28,11 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: yunxingcloud-core
+                name: yunxingcloud-gateway
                 port:
-                  number: 8080
+                  number: 8090
+  tls:
+    - hosts:
+        - api.yunxingcloud.local
+        - admin.yunxingcloud.local
+      secretName: yunxingcloud-tls

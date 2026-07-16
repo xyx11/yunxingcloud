@@ -1,3 +1,5 @@
+# NOTE: image tags use "latest" for development convenience.
+# In production, replace with specific version tags (e.g., :v1.2.3) and use imagePullPolicy: Always.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

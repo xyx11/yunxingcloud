@@ -26,6 +26,7 @@ RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 ARG SERVICE=yunxingcloud-core
 ARG PORT=8080
+ENV PORT=${PORT}
 COPY --from=backend-builder /build/${SERVICE}/target/*.jar app.jar
 RUN mkdir -p uploads/backup logs && chown -R app:app /app
 USER app
@@ -34,7 +35,7 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=90s \
   CMD curl -f http://localhost:${PORT}/actuator/health || exit 1
 ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 # OpenTelemetry Java Agent (可选, 通过 OTEL_ENABLED=true 启用)
-ADD --chown=app:app https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar /app/otel/
+ADD --chown=app:app https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.12.0/opentelemetry-javaagent.jar /app/otel/
 ENV OTEL_ENABLED=false
 ENTRYPOINT ["sh", "-c", "if [ \"$OTEL_ENABLED\" = \"true\" ]; then \
   java $JAVA_OPTS -javaagent:/app/otel/opentelemetry-javaagent.jar -jar app.jar; \
