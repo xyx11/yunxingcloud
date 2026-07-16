@@ -100,7 +100,8 @@ async function submitReview() {
       <div class="shipment-info">
         <span>{{ t('orderDetail.carrier') }}：{{ shipment.carrier || '-' }}</span>
         <span>{{ t('orderDetail.trackingNo') }}：{{ shipment.trackingNo || '-' }}</span>
-        <span v-if="order.status==='2'" class="eta">📦 预计 {{ new Date(Date.now()+3*86400000).toLocaleDateString('zh-CN',{month:'long',day:'numeric'}) }} 送达</span>
+        <JdButton v-if="shipment.trackingNo" type="outline" size="xs" @click="router.push('/logistics?orderId=' + order.id)">📦 {{ t('orderDetail.viewLogistics') }}</JdButton>
+        <span v-if="order.status==='2'" class="eta">预计 {{ new Date(Date.now()+3*86400000).toLocaleDateString('zh-CN',{month:'long',day:'numeric'}) }} 送达</span>
       </div>
     </div>
 

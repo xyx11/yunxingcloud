@@ -152,6 +152,13 @@ export default {
   countdown: {
     ended: 'Ended',
   },
+  logistics: {
+    title: 'Tracking', placeholder: 'Enter tracking number', track: 'Track',
+    carrier: 'Carrier', trackingNo: 'Tracking No.', copyNo: 'Copy', copied: 'Copied',
+    unknown: 'Unknown', querying: 'Querying...', noData: 'No tracking info',
+    delivered: 'Delivered', delivering: 'Out for Delivery', inTransit: 'In Transit',
+    loadFail: 'Failed to load tracking', trackFail: 'Failed to track',
+  },
   rating: {
     title: 'Review',
     placeholder: 'Share your experience...',
@@ -405,7 +412,8 @@ export default {
     stepShipped: 'Shipped',
     stepDone: 'Done',
     cancelOrder: 'Cancel',
-    toPay: 'Pay',
+    toPay: 'Pay', viewLogistics: 'View Tracking',
+    carrier: 'Carrier', trackingNo: 'Tracking No.',
     confirmReceive: 'Confirm',
     processing: 'Processing...',
     review: 'Review',

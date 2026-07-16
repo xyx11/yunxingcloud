@@ -1,53 +1,93 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 import JdButton from '@/components/JdButton.vue'
 
 const route = useRoute()
+const { t } = useI18n()
 const toast = inject(ToastInjectionKey)!
 const traces = ref<any[]>([])
 const trackingNo = ref('')
 const carrier = ref('')
+const estimatedDelivery = ref('')
 const copying = ref(false)
 const loading = ref(false)
+
+const statusIcon = (status: string): string => {
+  const s = (status || '').toLowerCase()
+  if (s.includes('签收') || s.includes('delivered') || s.includes('signed')) return '✅'
+  if (s.includes('派送') || s.includes('delivering') || s.includes('out for delivery')) return '📮'
+  if (s.includes('到达') || s.includes('arrived') || s.includes('arrival')) return '🏢'
+  if (s.includes('运输') || s.includes('transit') || s.includes('departed')) return '🚚'
+  if (s.includes('揽件') || s.includes('pickup') || s.includes('collected')) return '📦'
+  return '📍'
+}
+
+const packageStatus = computed(() => {
+  if (!traces.value.length) return null
+  const latest = traces.value[0]?.status || traces.value[0]?.description || ''
+  if (/签收|delivered|signed/i.test(latest)) return { icon: '✅', text: t('logistics.delivered'), cls: 'delivered' }
+  if (/派送|delivering|out for delivery/i.test(latest)) return { icon: '📮', text: t('logistics.delivering'), cls: 'delivering' }
+  return { icon: '🚚', text: t('logistics.inTransit'), cls: 'transit' }
+})
 
 onMounted(async () => {
   const orderId = route.query.orderId
   if (orderId) {
     loading.value = true
-    try { const r = await request.get('/logistics/order/' + orderId); traces.value = r.data?.traces || r.data || []; carrier.value = r.data?.carrier || ''; trackingNo.value = r.data?.trackingNo || '' } catch { toast.error('物流信息加载失败') } finally { loading.value = false }
+    try {
+      const r = await request.get('/logistics/order/' + orderId)
+      traces.value = r.data?.traces || r.data || []
+      carrier.value = r.data?.carrier || ''
+      trackingNo.value = r.data?.trackingNo || ''
+      estimatedDelivery.value = r.data?.estimatedDelivery || ''
+    } catch { toast.error(t('logistics.loadFail')) } finally { loading.value = false }
   }
 })
 
-async function track() { if(!trackingNo.value.trim())return; loading.value=true; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{toast.error('物流查询失败')} finally{loading.value=false} }
-async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success('已复制'); setTimeout(() => copying.value = false, 1500) } catch {} }
+async function track() {
+  if (!trackingNo.value.trim()) return
+  loading.value = true
+  try { const r = await request.get('/logistics/track/' + trackingNo.value.trim()); traces.value = r.data || [] } catch { toast.error(t('logistics.trackFail')) } finally { loading.value = false }
+}
+async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success(t('toast.copied')); setTimeout(() => copying.value = false, 1500) } catch {} }
 </script>
 
 <template>
   <div class="log-page">
     <div class="log-card">
-      <h2 class="log-title">物流追踪</h2>
+      <h2 class="log-title">{{ t('logistics.title') }}</h2>
       <div class="log-search">
-        <input v-model="trackingNo" placeholder="输入快递单号" class="log-input" />
-        <JdButton @click="track">查询</JdButton>
+        <input v-model="trackingNo" :placeholder="t('logistics.placeholder')" class="log-input" @keyup.enter="track" />
+        <JdButton @click="track">{{ t('logistics.track') }}</JdButton>
+      </div>
+
+      <!-- Status Banner -->
+      <div v-if="packageStatus" class="log-status" :class="packageStatus.cls">
+        <span class="log-status-icon">{{ packageStatus.icon }}</span>
+        <div>
+          <div class="log-status-text">{{ packageStatus.text }}</div>
+          <div v-if="estimatedDelivery" class="log-status-eta">预计送达: {{ estimatedDelivery }}</div>
+        </div>
       </div>
 
       <div v-if="carrier || trackingNo" class="log-info">
         <div>
-          <span class="log-info-text">快递公司：<b>{{ carrier || '未知' }}</b></span>
-          <span class="log-info-text">单号：<b>{{ trackingNo }}</b></span>
+          <span class="log-info-text">{{ t('logistics.carrier') }}：<b>{{ carrier || t('logistics.unknown') }}</b></span>
+          <span class="log-info-text">{{ t('logistics.trackingNo') }}：<b>{{ trackingNo }}</b></span>
         </div>
-        <JdButton type="ghost" size="sm" @click="copyNo">{{ copying ? '✓ 已复制' : '复制单号' }}</JdButton>
+        <JdButton type="ghost" size="sm" @click="copyNo">{{ copying ? t('logistics.copied') : t('logistics.copyNo') }}</JdButton>
       </div>
 
-      <div v-if="loading" class="log-loading"><div class="spinner" /><span>查询物流信息...</span></div>
+      <div v-if="loading" class="log-loading"><div class="spinner" /><span>{{ t('logistics.querying') }}</span></div>
 
       <div v-else-if="traces.length" class="log-timeline">
         <div v-for="(trace, i) in traces" :key="trace.id || i" class="log-trace">
           <div class="trace-dot-col">
-            <div class="trace-dot" :class="{ active: i === 0 }">{{ i === 0 ? '✓' : '' }}</div>
+            <div class="trace-dot" :class="{ active: i === 0 }">{{ statusIcon(trace.status || trace.description) }}</div>
             <div v-if="i < traces.length - 1" class="trace-line" :class="{ active: i === 0 }" />
           </div>
           <div class="trace-body">
@@ -58,7 +98,7 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
         </div>
       </div>
 
-      <div v-else class="log-empty">暂无物流信息</div>
+      <div v-else-if="!loading && (carrier || trackingNo)" class="log-empty">{{ t('logistics.noData') }}</div>
     </div>
   </div>
 </template>
@@ -70,6 +110,14 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
 .log-search { display: flex; gap: var(--space-sm); margin-bottom: var(--space-xl); }
 .log-input { flex: 1; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); background: var(--bg-white); color: var(--text-primary); }
 
+.log-status { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-lg); border-radius: var(--radius-md); margin-bottom: var(--space-lg); }
+.log-status.delivered { background: #e8f5e9; }
+.log-status.delivering { background: #fff3e0; }
+.log-status.transit { background: #e3f2fd; }
+.log-status-icon { font-size: 28px; }
+.log-status-text { font-weight: 700; font-size: var(--font-md); }
+.log-status-eta { font-size: var(--font-sm); color: var(--text-secondary); margin-top: 2px; }
+
 .log-info { background: var(--bg-hover); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: center; }
 .log-info-text { font-size: var(--font-base); color: var(--text-secondary); margin-right: var(--space-lg); }
 
@@ -79,7 +127,7 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
 .log-timeline { display: flex; flex-direction: column; }
 .log-trace { display: flex; gap: var(--space-lg); position: relative; }
 .trace-dot-col { display: flex; flex-direction: column; align-items: center; }
-.trace-dot { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #fff; background: var(--border); }
+.trace-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; background: var(--bg-hover); }
 .trace-dot.active { background: var(--jd-red); }
 .trace-line { width: 2px; flex: 1; min-height: 30px; background: var(--border-light); }
 .trace-line.active { background: var(--jd-red); }
