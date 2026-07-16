@@ -24,6 +24,23 @@ const sortBy = ref('')
 const suggestIndex = ref(-1)
 const searchFocused = ref(false)
 const searchError = ref(false)
+const priceFilter = ref('')
+const priceRanges = [
+  { key: '', label: '全部' },
+  { key: '0-100', label: '¥0-100' },
+  { key: '100-500', label: '¥100-500' },
+  { key: '500-1000', label: '¥500-1000' },
+  { key: '1000+', label: '¥1000+' },
+]
+function filteredResults() {
+  if (!priceFilter.value) return results.value
+  const [min, max] = priceFilter.value.split('-').map(Number)
+  return results.value.filter(p => {
+    const price = p.price / 100
+    if (max) return price >= min && price <= max
+    return price >= min
+  })
+}
 
 const hotKeywords = ref<string[]>(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
 
@@ -139,7 +156,10 @@ async function quickAdd(e: Event, p: Product) {
     <!-- Search Results -->
     <div v-if="searchQuery">
       <div class="results-header">
-        <h2 class="results-title">"{{ searchQuery }}" 共 {{ results.length }} 件</h2>
+        <h2 class="results-title">{{ t('search.resultCount', { n: String(results.length) }) }}</h2>
+        <div class="price-filter">
+          <span v-for="pr in priceRanges" :key="pr.key" class="price-tag" :class="{ active: priceFilter === pr.key }" @click="priceFilter = pr.key">{{ pr.label }}</span>
+        </div>
         <div class="sort-row">
           <span class="sort-opt" :class="{ active: !sortBy }" @click="setSort('')">综合</span>
           <span class="sort-opt" :class="{ active: sortBy === 'sales' }" @click="setSort('sales')">销量</span>
@@ -157,8 +177,8 @@ async function quickAdd(e: Event, p: Product) {
       </div>
 
       <!-- Results -->
-      <div v-else-if="results.length" class="results-grid">
-        <div v-for="p in results" :key="p.id" class="result-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
+      <div v-else-if="filteredResults().length" class="results-grid">
+        <div v-for="p in filteredResults()" :key="p.id" class="result-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
           <div class="result-info">
             <h4 class="result-name" v-html="highlightName(p.name)" />
@@ -240,6 +260,11 @@ async function quickAdd(e: Event, p: Product) {
 /* Results */
 .results-header { margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm); }
 .results-title { font-size: var(--font-lg); color: var(--text-primary); }
+.price-filter { display: flex; gap: var(--space-sm); margin-bottom: var(--space-sm); flex-wrap: wrap; }
+.price-tag { font-size: var(--font-sm); padding: 4px 12px; border-radius: var(--radius-round); cursor: pointer; color: var(--text-secondary); border: 1px solid var(--border); transition: all var(--transition-fast); }
+.price-tag.active { color: var(--jd-red); border-color: var(--jd-red); background: var(--jd-red-light); }
+.price-tag:hover:not(.active) { border-color: var(--jd-red); color: var(--jd-red); }
+
 .sort-row { display: flex; gap: var(--space-md); font-size: var(--font-base); }
 .sort-opt { cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--text-secondary); transition: all var(--transition-fast); }
 .sort-opt.active { color: var(--jd-red); background: var(--jd-red-light); }
