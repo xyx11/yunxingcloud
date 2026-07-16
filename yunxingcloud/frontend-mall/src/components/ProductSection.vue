@@ -46,7 +46,7 @@ async function quickAdd(e: Event, p: Product) {
   <section class="section">
     <div v-if="title" class="section-header">
       <span class="section-title">{{ title }}</span>
-      <span class="section-more" @click="emit('view-all')">查看全部 &gt;</span>
+      <button class="section-more" @click="emit('view-all')">查看全部 &gt;</button>
     </div>
 
     <SkeletonBox v-if="loading && !products.length" variant="card" :columns="columns" :count="columns" height="360px" />
@@ -54,7 +54,7 @@ async function quickAdd(e: Event, p: Product) {
     <JdEmpty v-else-if="!products.length" icon="🛍️" title="暂无商品" />
 
     <div v-else class="product-grid" :style="{ '--cols': columns }">
-      <div v-for="p in products" :key="p.id" class="product-card" @click="emit('product-click', p.id)">
+      <div v-for="p in products" :key="p.id" class="product-card" role="button" tabindex="0" @click="emit('product-click', p.id)" @keydown.enter.prevent="emit('product-click', p.id)" @keydown.space.prevent="emit('product-click', p.id)">
         <div class="product-img-wrap">
           <LazyImage :src="productImage(p)" :alt="p.name" height="200px" />
           <span v-if="p.isNew" class="tag-new">新品</span>

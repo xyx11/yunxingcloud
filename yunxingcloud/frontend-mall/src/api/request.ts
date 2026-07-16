@@ -21,8 +21,9 @@ request.interceptors.response.use(
     }
     if (err.response?.status === 401) {
       localStorage.removeItem('accessToken')
-      if (window.location.pathname !== '/mall/login' && !window.location.pathname.startsWith('/mall/login')) {
-        window.location.href = '/mall/login'
+      if (window.location.pathname !== '/login') {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.href = '/login?redirect=' + redirect
       }
     }
     if (err.response?.status >= 500) {

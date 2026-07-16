@@ -47,7 +47,7 @@ describe('useCompare', () => {
   })
 
   it('limits to MAX_COMPARE (3)', () => {
-    const { toggle, items, overflowCount } = useCompare()
+    const { toggle, items } = useCompare()
     toggle({ id: 1, name: 'A', price: 1 })
     toggle({ id: 2, name: 'B', price: 2 })
     toggle({ id: 3, name: 'C', price: 3 })

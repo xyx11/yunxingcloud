@@ -85,4 +85,12 @@ async function activate() { try{loading.value=true;const r=await request.post('/
 .flex-1 { flex: 1; }
 
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+
+@media (max-width: 768px) {
+  .gc-page { padding: 0 var(--space-md) 80px; }
+  .gc-hero { padding: 20px; }
+  .gc-hero-title { font-size: var(--font-xl); }
+  .gc-form { padding: 20px; }
+  .gc-btns { flex-direction: column; }
+}
 </style>

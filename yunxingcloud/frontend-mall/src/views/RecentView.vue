@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useI18n } from '@/locales'
-const { t } = useI18n()
 import { formatPrice, formatRelativeTime } from '@/utils/format'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -26,7 +24,7 @@ async function quickAdd(e: Event, p: ViewedProduct) { e.stopPropagation(); try {
       <button v-if="items.length" class="rc-clear" @click="clear">清空记录</button>
     </div>
     <div v-if="items.length" class="rc-grid">
-      <div v-for="p in items" :key="p.id" class="rc-card" @click="goDetail(p.id)">
+      <div v-for="p in items" :key="p.id" class="rc-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
         <LazyImage :src="p.imageUrl || ''" :alt="p.name" height="180px" />
         <div class="rc-info">
           <h4 class="rc-name">{{ p.name }}</h4>

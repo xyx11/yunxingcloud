@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue'
 import JdButton from '@/components/JdButton.vue'
+import { useI18n } from '@/locales'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   show: boolean
@@ -9,9 +12,9 @@ const props = withDefaults(defineProps<{
   confirmText?: string
   cancelText?: string
 }>(), {
-  title: '提示',
-  confirmText: '确定',
-  cancelText: '取消',
+  title: '',
+  confirmText: '',
+  cancelText: '',
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
@@ -28,11 +31,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <Teleport to="body">
     <div v-if="show" class="cd-overlay" @click.self="emit('cancel')">
       <div class="cd-dialog" role="dialog" aria-modal="true">
-        <h3 class="cd-title">{{ title }}</h3>
+        <h3 class="cd-title">{{ title || t('common.prompt') }}</h3>
         <p class="cd-message">{{ message }}</p>
         <div class="cd-actions">
-          <JdButton type="outline" @click="emit('cancel')">{{ cancelText }}</JdButton>
-          <JdButton @click="emit('confirm')">{{ confirmText }}</JdButton>
+          <JdButton type="outline" @click="emit('cancel')">{{ cancelText || t('common.cancel') }}</JdButton>
+          <JdButton @click="emit('confirm')">{{ confirmText || t('common.confirm') }}</JdButton>
         </div>
       </div>
     </div>

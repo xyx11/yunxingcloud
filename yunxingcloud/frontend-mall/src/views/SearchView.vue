@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { searchProducts } from '@/api/product'
+import { searchProducts, getSearchSuggestions, getHotKeywords } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
@@ -23,8 +23,13 @@ const showHistory = ref(false)
 const sortBy = ref('')
 const suggestIndex = ref(-1)
 const searchFocused = ref(false)
+const searchError = ref(false)
 
-const hotKeywords = ref(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
+const hotKeywords = ref<string[]>(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
+
+async function loadHotKeywords() {
+  try { const r = await getHotKeywords(); const data = r.data || []; if (data.length) hotKeywords.value = data } catch {}
+}
 const history = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
 const suggestions = ref<Product[]>([])
 let suggestTimer: ReturnType<typeof setTimeout> | null = null
@@ -34,7 +39,7 @@ function onInput() {
   const q = searchInput.value.trim()
   if (!q) { suggestions.value = []; suggestIndex.value = -1; return }
   suggestTimer = setTimeout(async () => {
-    try { const r = await searchProducts(q, 0, 5); suggestions.value = (r.data.content || r.data || []).slice(0, 5); suggestIndex.value = -1 } catch { toast.error('搜索建议加载失败'); suggestions.value = [] }
+    try { const r = await getSearchSuggestions(q); suggestions.value = (r.data || []).slice(0, 5); suggestIndex.value = -1 } catch { suggestions.value = [] }
   }, 200)
 }
 
@@ -45,16 +50,16 @@ function onKeydown(e: KeyboardEvent) {
   else if (e.key === 'Enter' && suggestIndex.value >= 0) { e.preventDefault(); searchKeyword(suggestions.value[suggestIndex.value].name) }
 }
 
-onMounted(() => { searchQuery.value = (route.query.q as string) || ''; searchInput.value = searchQuery.value; if (searchQuery.value) doSearch() })
+onMounted(() => { searchQuery.value = (route.query.q as string) || ''; searchInput.value = searchQuery.value; if (searchQuery.value) doSearch(); loadHotKeywords() })
 onUnmounted(() => { if (suggestTimer) clearTimeout(suggestTimer) })
 watch(() => route.query.q, (q) => { searchQuery.value = (q as string) || ''; searchInput.value = searchQuery.value; page.value = 0; if (searchQuery.value) doSearch() })
 
 async function doSearch() {
   if (!searchInput.value.trim()) return
-  const q = searchInput.value.trim(); searchQuery.value = q; loading.value = true; suggestions.value = []
+  const q = searchInput.value.trim(); searchQuery.value = q; loading.value = true; suggestions.value = []; searchError.value = false
   const h = [q, ...history.value.filter(h => h !== q)].slice(0, 10); history.value = h
   localStorage.setItem('searchHistory', JSON.stringify(h)); showHistory.value = false
-  try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; router.replace({ query: { q } }) } catch { toast.error('搜索失败，请重试'); results.value = [] } finally { loading.value = false }
+  try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; searchError.value = false; router.replace({ query: { q } }) } catch { toast.error('搜索失败，请重试'); results.value = []; searchError.value = true } finally { loading.value = false }
 }
 
 function loadMore() { page.value++; doSearch() }
@@ -70,9 +75,12 @@ function setSort(s: string) {
   results.value = sorted
 }
 
+function escapeHtml(s: string): string { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+
 function highlightName(name: string): string {
-  if (!searchQuery.value) return name
-  return name.replace(new RegExp(`(${searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>')
+  if (!searchQuery.value) return escapeHtml(name)
+  const escaped = escapeHtml(name)
+  return escaped.replace(new RegExp(`(${searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>')
 }
 
 function searchKeyword(kw: string) { searchInput.value = kw; searchQuery.value = kw; doSearch() }
@@ -98,7 +106,7 @@ async function quickAdd(e: Event, p: Product) {
 
       <!-- Suggestions -->
       <div v-if="suggestions.length" class="suggestions">
-        <div v-for="(s, i) in suggestions" :key="s.id" class="suggest-item" :class="{ active: i === suggestIndex }" @click="searchKeyword(s.name)">
+        <div v-for="(s, i) in suggestions" :key="s.id" class="suggest-item" :class="{ active: i === suggestIndex }" role="button" tabindex="0" @click="searchKeyword(s.name)" @keydown.enter.prevent="searchKeyword(s.name)" @keydown.space.prevent="searchKeyword(s.name)">
           <span class="suggest-icon">🔍</span>
           <span v-html="highlightName(s.name)" />
           <span class="suggest-price">{{ formatPrice(s.price / 100, 2) }}</span>
@@ -150,7 +158,7 @@ async function quickAdd(e: Event, p: Product) {
 
       <!-- Results -->
       <div v-else-if="results.length" class="results-grid">
-        <div v-for="p in results" :key="p.id" class="result-card" @click="goDetail(p.id)">
+        <div v-for="p in results" :key="p.id" class="result-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
           <div class="result-info">
             <h4 class="result-name" v-html="highlightName(p.name)" />
@@ -165,6 +173,14 @@ async function quickAdd(e: Event, p: Product) {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="searchError" class="no-results">
+        <p class="no-results-icon">🔌</p>
+        <p class="no-results-text">{{ t('search.networkError') }}</p>
+        <p class="no-results-hint">{{ t('search.retryHint') }}</p>
+        <button class="load-more-btn" @click="doSearch">{{ t('search.retry') }}</button>
       </div>
 
       <!-- Empty Results -->
@@ -244,7 +260,7 @@ async function quickAdd(e: Event, p: Product) {
 .result-price { color: var(--jd-red); font-size: var(--font-lg); font-weight: 700; }
 .result-sales { color: var(--text-tertiary); font-size: var(--font-xs); margin-left: var(--space-xs); }
 
-.add-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--jd-red); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); flex-shrink: 0; }
+.add-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--jd-red); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); flex-shrink: 0; }
 .add-btn:hover { background: var(--jd-red); color: #fff; }
 .add-btn.added { background: var(--jd-red); color: #fff; }
 

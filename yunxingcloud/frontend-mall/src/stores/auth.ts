@@ -33,7 +33,14 @@ export const useAuthStore = defineStore('auth', () => {
     safeRemove('user')
   }
 
+  function setToken(t: string, u: { username: string; nickname?: string }) {
+    token.value = t
+    safeSet('accessToken', t)
+    user.value = { username: u.username, nickname: u.nickname }
+    safeSet('user', JSON.stringify({ username: u.username, nickname: u.nickname }))
+  }
+
   const isLoggedIn = computed(() => !!token.value)
 
-  return { user, token, login, register, logout, isLoggedIn }
+  return { user, token, login, register, logout, setToken, isLoggedIn }
 })

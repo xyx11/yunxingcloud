@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { ref, inject, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
 import JdButton from '@/components/JdButton.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
-const toast = inject(ToastInjectionKey)!
 const { t } = useI18n()
 const form = ref({ username: '', password: '', confirmPassword: '', email: '' })
 const error = ref('')
@@ -150,4 +148,10 @@ async function doRegister() {
 .success-desc { color: var(--text-secondary); font-size: var(--font-md); margin-bottom: var(--space-xxl); }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .register-page { max-width: 100%; padding: 0 var(--space-md) 80px; }
+  .register-card { padding: var(--space-xl); }
+  .success-card { max-width: 90%; padding: 24px; }
+}
 </style>

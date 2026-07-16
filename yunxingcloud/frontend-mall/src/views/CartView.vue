@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCart, addToCart, removeFromCart } from '@/api/cart'
 import { useI18n } from '@/locales'
@@ -69,22 +69,25 @@ async function remove(id: number) {
 let qtyTimer: ReturnType<typeof setTimeout> | null = null
 async function updateQty(item: CartItem, delta: number) {
   const n = item.quantity + delta; if (n < 1) return
+  const prev = item.quantity
   item.quantity = n
   if (qtyTimer) clearTimeout(qtyTimer)
   updatingQty.value.add(item.id)
   qtyTimer = setTimeout(async () => {
-    try { await removeFromCart(item.id); await addToCart(item.productId, item.quantity); load() } catch { toast.error('更新失败'); load() }
+    try { await removeFromCart(item.id); await addToCart(item.productId, item.quantity); load() }
+    catch { item.quantity = prev; toast.error('更新失败'); load() }
     finally { setTimeout(() => updatingQty.value.delete(item.id), 100) }
   }, 400)
 }
 
 function checkout() {
-  if (selectedIds.value.size === 0) { toast.error(t('checkout.selectAddress')); return }
+  if (selectedIds.value.size === 0) { toast.error(t('cart.noSelection') || '请选择商品'); return }
   checkingOut.value = true
   router.push('/checkout')
 }
 
 onMounted(load)
+onBeforeUnmount(() => { if (qtyTimer) clearTimeout(qtyTimer) })
 </script>
 
 <template>
@@ -112,7 +115,7 @@ onMounted(load)
       </div>
 
       <div v-for="item in items" :key="item.id" class="cart-item-wrapper">
-        <div class="cart-item-swipe-bg" :class="{ reveal: (swipeOffset[item.id] || 0) < -40 }" @click="remove(item.id)">删除</div>
+        <div class="cart-item-swipe-bg" :class="{ reveal: (swipeOffset[item.id] || 0) < -40 }" role="button" tabindex="0" @click="remove(item.id)" @keydown.enter.prevent="remove(item.id)" @keydown.space.prevent="remove(item.id)">删除</div>
         <div
           class="cart-item"
           :style="{ transform: 'translateX(' + (swipeOffset[item.id] || 0) + 'px)' }"
@@ -166,7 +169,7 @@ onMounted(load)
       <div v-if="recs.length" class="recs-section">
         <h3 class="recs-title">🔥 为你推荐</h3>
         <div class="recs-grid">
-          <div v-for="p in recs" :key="p.id" class="recs-item" @click="router.push('/product/' + p.id)">
+          <div v-for="p in recs" :key="p.id" class="recs-item" role="button" tabindex="0" @click="router.push('/product/' + p.id)" @keydown.enter.prevent="router.push('/product/' + p.id)" @keydown.space.prevent="router.push('/product/' + p.id)">
             <LazyImage :src="p.imageUrl || ''" alt="" height="120px" />
             <div class="recs-info">
               <div class="recs-name">{{ p.name }}</div>
@@ -219,7 +222,7 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 .cart-price { width: 80px; text-align: center; color: var(--text-secondary); font-size: var(--font-md); }
 
 .qty-control { display: flex; align-items: center; margin: 0 40px; }
-.qty-btn { width: 28px; height: 28px; border: 1px solid var(--border); background: var(--bg-white); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; }
+.qty-btn { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--bg-white); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; }
 .qty-btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 .qty-btn:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 .qty-btn:hover { background: var(--bg-hover); }
@@ -250,7 +253,7 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 .recs-price { color: var(--jd-red); font-weight: 700; font-size: var(--font-md); }
 
 @media (max-width: 768px) {
-  .cart-page { padding: var(--space-md); }
+  .cart-page { padding: var(--space-md); padding-bottom: 80px; }
   .cart-header { display: none; }
   .cart-item { flex-wrap: wrap; gap: var(--space-sm); padding: var(--space-md) 0; position: relative; }
   .cart-check { position: absolute; top: var(--space-md); left: 0; z-index: 2; }
@@ -258,6 +261,7 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
   .cart-name { flex-basis: calc(100% - 120px); padding: 0 var(--space-md); }
   .cart-price { display: none; }
   .qty-control { margin: 0; }
+  .qty-btn { width: 40px; height: 40px; font-size: var(--font-lg); }
   .cart-subtotal { width: auto; margin-left: auto; font-size: var(--font-md); }
   .cart-remove { width: auto; padding: 4px 8px; }
   .cart-footer { flex-direction: column; gap: var(--space-md); }

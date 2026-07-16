@@ -27,9 +27,9 @@ async function quickAdd() { if (!props.product) return
   try { await addToCart(Number(props.product.id), qty.value); toast.success('已加入购物车'); emit('close') } catch { toast.error('添加失败') } finally { adding.value = false }
 }
 
-function goDetail() { router.push(`/product/${props.product.id}`); emit('close') }
+function goDetail() { if (!props.product) return; router.push(`/product/${props.product.id}`); emit('close') }
 
-const isOutOfStock = () => (props.product.stock || 0) <= 0
+const isOutOfStock = () => (props.product?.stock || 0) <= 0
 </script>
 
 <template>
@@ -80,7 +80,7 @@ const isOutOfStock = () => (props.product.stock || 0) <= 0
   background: var(--bg-page);
 }
 .qv-close {
-  position: absolute; top: 10px; right: 10px; width: 28px; height: 28px;
+  position: absolute; top: 10px; right: 10px; width: 36px; height: 36px;
   border-radius: 50%; background: rgba(0,0,0,.4); color: #fff; border: none;
   cursor: pointer; font-size: 14px; display: flex; align-items: center;
   justify-content: center; z-index: 1;

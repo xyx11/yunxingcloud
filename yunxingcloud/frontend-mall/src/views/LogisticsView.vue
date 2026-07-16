@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from '@/locales'
-const { t } = useI18n()
 import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 import JdButton from '@/components/JdButton.vue'
@@ -19,11 +17,11 @@ onMounted(async () => {
   const orderId = route.query.orderId
   if (orderId) {
     loading.value = true
-    try { const r = await request.get('/logistics/order/' + orderId); traces.value = r.data?.traces || r.data || []; carrier.value = r.data?.carrier || ''; trackingNo.value = r.data?.trackingNo || '' } catch {} finally { loading.value = false }
+    try { const r = await request.get('/logistics/order/' + orderId); traces.value = r.data?.traces || r.data || []; carrier.value = r.data?.carrier || ''; trackingNo.value = r.data?.trackingNo || '' } catch { toast.error('物流信息加载失败') } finally { loading.value = false }
   }
 })
 
-async function track() { if(!trackingNo.value.trim())return; loading.value=true; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{} finally{loading.value=false} }
+async function track() { if(!trackingNo.value.trim())return; loading.value=true; try{const r=await request.get('/logistics/track/'+trackingNo.value.trim());traces.value=r.data||[]}catch{toast.error('物流查询失败')} finally{loading.value=false} }
 async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success('已复制'); setTimeout(() => copying.value = false, 1500) } catch {} }
 </script>
 
@@ -94,4 +92,14 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
 .log-empty { text-align: center; color: var(--text-tertiary); padding: 40px; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .log-page { padding: 0 var(--space-md) 80px; }
+  .log-card { padding: var(--space-lg); }
+  .log-track-form { flex-direction: column; }
+  .log-track-form input { flex: unset; }
+  .log-title { font-size: var(--font-lg); }
+  .trace-status { font-size: var(--font-sm); }
+  .trace-meta { font-size: 11px; }
+}
 </style>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { watch } from 'vue'
+import { useI18n } from '@/locales'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   visible: boolean
@@ -39,7 +42,7 @@ watch(() => props.visible, (v) => {
       <div class="modal-content" :style="{ maxWidth: width }">
         <div v-if="title || closable" class="modal-header">
           <h3 v-if="title" class="modal-title">{{ title }}</h3>
-          <button v-if="closable" class="modal-close" @click="close" aria-label="关闭">✕</button>
+          <button v-if="closable" class="modal-close" @click="close" :aria-label="t('common.close')">✕</button>
         </div>
         <div class="modal-body">
           <slot />

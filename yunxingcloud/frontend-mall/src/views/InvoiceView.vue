@@ -16,7 +16,7 @@ const submitting = ref(false)
 const form = ref({ orderNo: '', type: 'personal', title: '', taxNo: '', email: '' })
 
 onMounted(async () => {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch {}
+  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch { toast.error('发票列表加载失败') }
   finally { loading.value = false }
 })
 
@@ -29,7 +29,7 @@ async function submit() {
 }
 
 async function load() {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch {}
+  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch { toast.error('发票列表加载失败') }
 }
 
 const badgeTypeMap: Record<string, 'orange' | 'green' | 'blue'> = {
@@ -112,4 +112,12 @@ const statusMap: Record<string, { label: string }> = {
 .skeleton-line { height: 16px; width: 50%; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) {
+  .invoice-page { padding: 0 var(--space-md) 80px; }
+  .invoice-header { flex-direction: column; gap: var(--space-sm); align-items: flex-start; }
+  .invoice-form { padding: var(--space-lg); }
+  .invoice-type-row { flex-wrap: wrap; }
+  .invoice-card { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
+}
 </style>

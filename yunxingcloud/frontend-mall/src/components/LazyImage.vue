@@ -8,11 +8,17 @@ const props = withDefaults(defineProps<{
   height?: number | string
   rounded?: string
   bg?: string
+  srcset?: string
+  sizes?: string
+  webp?: boolean
 }>(), {
   src: '',
   alt: '',
   rounded: '0',
   bg: 'var(--border-light)',
+  srcset: '',
+  sizes: '',
+  webp: false,
 })
 
 const loaded = ref(false)
@@ -59,10 +65,27 @@ function onLoad() { loaded.value = true }
     class="lazy-image"
     :style="{ background: bg, borderRadius: rounded }"
   >
+    <picture v-if="hasSrc() && inView && webp">
+      <source :srcset="srcset || src.replace(/\.(png|jpg|jpeg)$/i, '.webp')" type="image/webp" />
+      <img
+        :src="src"
+        :alt="alt"
+        :srcset="srcset || undefined"
+        :sizes="sizes || undefined"
+        loading="lazy"
+        :width="width"
+        :height="height"
+        @load="onLoad"
+        @error="onError"
+        :class="{ 'img-loaded': loaded }"
+      />
+    </picture>
     <img
-      v-if="hasSrc() && inView"
+      v-else-if="hasSrc() && inView"
       :src="src"
       :alt="alt"
+      :srcset="srcset || undefined"
+      :sizes="sizes || undefined"
       loading="lazy"
       :width="width"
       :height="height"

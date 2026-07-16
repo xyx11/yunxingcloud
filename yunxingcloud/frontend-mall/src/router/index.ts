@@ -24,6 +24,15 @@ const FlashSaleView = () => import('@/views/FlashSaleView.vue')
 const InvoiceView = () => import('@/views/InvoiceView.vue')
 const RecentView = () => import('@/views/RecentView.vue')
 const RankingView = () => import('@/views/RankingView.vue')
+const NotificationsView = () => import('@/views/NotificationsView.vue')
+const OAuthCallbackView = () => import('@/views/OAuthCallbackView.vue')
+const PresaleView = () => import('@/views/PresaleView.vue')
+const LiveView = () => import('@/views/LiveView.vue')
+const BrandsView = () => import('@/views/BrandsView.vue')
+const BrandDetailView = () => import('@/views/BrandDetailView.vue')
+const MerchantApplyView = () => import('@/views/MerchantApplyView.vue')
+const BundleListView = () => import('@/views/BundleListView.vue')
+const CompareView = () => import('@/views/CompareView.vue')
 const HelpView = () => import('@/views/HelpView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
@@ -49,6 +58,64 @@ const pageTitles: Record<string, string> = {
   '/recent': '最近浏览 - YXCLOUD',
   '/ranking': '排行榜 - YXCLOUD',
   '/help': '帮助中心 - YXCLOUD',
+}
+
+const pageDescriptions: Record<string, string> = {
+  '/': 'YXCLOUD 商城是您的一站式购物平台，提供海量商品、限时秒杀、拼团优惠。支持微信/支付宝支付，全国包邮。',
+  '/products': '浏览 YXCLOUD 全部商品，按分类筛选，发现心仪好物。',
+  '/search': '在 YXCLOUD 搜索商品，查找你想要的。',
+  '/cart': '查看 YXCLOUD 购物车中的商品。',
+  '/checkout': '结算订单 - YXCLOUD',
+  '/orders': '查看我的订单列表 - YXCLOUD',
+  '/login': '登录 YXCLOUD 商城账号。',
+  '/register': '注册 YXCLOUD 商城新账号。',
+  '/profile': '管理个人信息、收货地址和账户设置 - YXCLOUD',
+  '/points': '积分中心 - YXCLOUD',
+  '/gift-card': '礼品卡 - YXCLOUD',
+  '/wishlist': '收藏夹 - YXCLOUD',
+  '/coupons': '领取和查看优惠券 - YXCLOUD',
+  '/group-buy': '拼团专区，和朋友一起拼更优惠 - YXCLOUD',
+  '/flash-sale': '限时秒杀，超低价抢购 - YXCLOUD',
+  '/ranking': '热门商品排行榜 - YXCLOUD',
+  '/notifications': '消息通知中心 - YXCLOUD',
+  '/presale': '预售专区，抢先预订享优惠 - YXCLOUD',
+  '/live': '直播精选，主播带你挑好物 - YXCLOUD',
+  '/brands': '品牌专区，发现品质好货 - YXCLOUD',
+  '/bundles': '超值套餐，搭配购买更划算 - YXCLOUD',
+  '/merchant/apply': '商家入驻 - YXCLOUD',
+  '/help': '帮助中心 - YXCLOUD',
+}
+
+function resolveTitle(path: string): string {
+  if (pageTitles[path]) return pageTitles[path]
+  if (path.startsWith('/product/')) return '商品详情 - YXCLOUD'
+  if (path.startsWith('/order/')) return '订单详情 - YXCLOUD'
+  if (path.startsWith('/brand/')) return '品牌商品 - YXCLOUD'
+  if (path.startsWith('/pay/')) return '支付订单 - YXCLOUD'
+  if (path.startsWith('/bundle/')) return '套餐详情 - YXCLOUD'
+  if (path.startsWith('/presale/')) return '预售详情 - YXCLOUD'
+  if (path.startsWith('/live/')) return '直播间 - YXCLOUD'
+  return 'YXCLOUD 商城'
+}
+
+function resolveDescription(path: string): string {
+  if (pageDescriptions[path]) return pageDescriptions[path]
+  if (path.startsWith('/product/')) return '查看商品详情、评价、规格参数 - YXCLOUD 商城'
+  if (path.startsWith('/order/')) return '查看订单详情和物流信息 - YXCLOUD 商城'
+  if (path.startsWith('/brand/')) return '浏览品牌商品列表 - YXCLOUD 商城'
+  if (path.startsWith('/search')) return '搜索 YXCLOUD 商城海量商品'
+  return '品质生活，一站购齐 - YXCLOUD 商城'
+}
+
+function updateMetaDescription(path: string) {
+  const desc = resolveDescription(path)
+  let el = document.querySelector('meta[name="description"]')
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute('name', 'description')
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', desc)
 }
 
 // Track page load progress
@@ -78,7 +145,7 @@ function finishProgress() {
 
 const router = createRouter({
   history: createWebHistory('/'),
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) return savedPosition
     return { top: 0, behavior: 'smooth' }
   },
@@ -107,15 +174,23 @@ const router = createRouter({
     { path: '/invoices', component: InvoiceView },
     { path: '/recent', component: RecentView },
     { path: '/ranking', component: RankingView },
+    { path: '/notifications', component: NotificationsView },
+    { path: '/oauth2/callback', component: OAuthCallbackView },
+    { path: '/presale', component: PresaleView },
+    { path: '/live', component: LiveView },
+    { path: '/brands', component: BrandsView },
+    { path: '/brand/:id', component: BrandDetailView },
+    { path: '/merchant/apply', component: MerchantApplyView },
+    { path: '/bundles', component: BundleListView },
     { path: '/help', component: HelpView },
+    { path: '/compare', component: CompareView },
     { path: '/:pathMatch(.*)*', component: NotFoundView },
   ],
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach((to, _from) => {
   // SEO: dynamic title
-  const title = pageTitles[to.path] || 'YXCLOUD 商城'
-  document.title = title
+  document.title = resolveTitle(to.path)
 
   // NProgress-style loading bar
   startProgress()
@@ -124,11 +199,12 @@ router.beforeEach((to, from) => {
   const protectedPaths = ['/orders', '/profile', '/checkout', '/cart']
   const needsAuth = protectedPaths.includes(to.path) || to.path.startsWith('/order/') || to.path.startsWith('/pay/')
   if (needsAuth && !localStorage.getItem('accessToken')) {
-    return '/login'
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
 })
 
-router.afterEach(() => {
+router.afterEach((to) => {
+  updateMetaDescription(to.path)
   finishProgress()
 })
 

@@ -217,4 +217,22 @@ async function submitReview() {
 .review-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) {
+  .order-page { padding: 0 var(--space-md); }
+  .back-nav { padding: 0 var(--space-md); }
+  .card { padding: var(--space-lg); }
+  .order-header { flex-direction: column; align-items: flex-start; gap: var(--space-xs); }
+  .steps { flex-wrap: wrap; justify-content: center; gap: var(--space-sm); }
+  .step { flex: 0 1 auto; min-width: 60px; }
+  .step-line { display: none; }
+  .shipment-info { flex-direction: column; align-items: flex-start; gap: var(--space-xs); }
+  .eta { margin-left: 0; }
+  .item-row { flex-wrap: wrap; gap: var(--space-sm); }
+  .item-row > :last-child { margin-left: auto; }
+  .action-row { flex-direction: column; }
+  .action-row > * { width: 100%; }
+  .total-price { font-size: var(--font-xl); }
+  .review-modal { width: 100%; padding: var(--space-lg); }
+}
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useI18n } from '@/locales'
@@ -68,6 +68,9 @@ defineProps<{ cartCount?: number }>()
   <div class="top-bar">
     <span>欢迎来到 YXCLOUD 商城</span>
     <div class="top-bar-links">
+      <button class="lang-btn" @click="theme.toggle()" :title="theme.isDark ? '切换到浅色' : '切换到深色'">
+        {{ theme.isDark ? '☀️' : '🌙' }}
+      </button>
       <button class="lang-btn" @click="setLocale(locale==='zh'?'en':'zh')" :title="locale==='zh'?'Switch to English':'切换到中文'">
         {{ locale === 'zh' ? 'EN' : '中' }}
       </button>
@@ -121,7 +124,7 @@ defineProps<{ cartCount?: number }>()
     <div class="mega-menu-wrapper" @mouseenter="openMega" @mouseleave="closeMega">
       <span class="all-categories" @click="goTo('/products')">📂 全部商品分类</span>
       <div v-if="showMega && categories.length" class="mega-dropdown">
-        <div v-for="cat in categories" :key="cat.id" class="mega-item" @click="goCategory(cat.id)">
+        <div v-for="cat in categories" :key="cat.id" class="mega-item" role="button" tabindex="0" @click="goCategory(cat.id)" @keydown.enter.prevent="goCategory(cat.id)" @keydown.space.prevent="goCategory(cat.id)">
           <span>{{ cat.icon || '📁' }}</span>
           <span>{{ cat.name }}</span>
         </div>

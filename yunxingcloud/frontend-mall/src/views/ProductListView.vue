@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCategories, getBrands, getProducts } from '@/api/product'
+import { getCategories, getBrands, getProducts, getTags } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
@@ -32,7 +32,8 @@ const loadingMore = ref(false)
 const quickViewProduct = ref<Product | null>(null)
 const showFilter = ref(false)
 
-const filters = ref({ categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' })
+const filters = ref({ categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '', tagId: '' })
+const tags = ref<any[]>([])
 const priceRanges = [
   { label: t('sort.under100'), min: '', max: '100' },
   { label: t('sort.r100500'), min: '100', max: '500' },
@@ -43,6 +44,7 @@ const priceRanges = [
 onMounted(async () => {
   try { const r = await getCategories(); categories.value = r.data || [] } catch { toast.error('分类加载失败') }
   try { const r = await getBrands(); brands.value = r.data || [] } catch { toast.error('品牌加载失败') }
+  try { const r = await getTags(); tags.value = r.data || [] } catch {}
   filters.value.categoryId = (route.query.categoryId as string) || ''
   loadProducts()
   window.addEventListener('scroll', onScroll)
@@ -70,6 +72,7 @@ async function loadProducts() {
     if (filters.value.sort) params.sort = filters.value.sort
     if (filters.value.categoryId) params.categoryId = filters.value.categoryId
     if (filters.value.brandId) params.brandId = filters.value.brandId
+    if (filters.value.tagId) params.tagId = filters.value.tagId
     if (filters.value.minPrice) params.minPrice = Number(filters.value.minPrice) * 100
     if (filters.value.maxPrice) params.maxPrice = Number(filters.value.maxPrice) * 100
     const r = await getProducts(params)
@@ -78,8 +81,7 @@ async function loadProducts() {
   } catch { toast.error('商品列表加载失败'); products.value = [] } finally { loading.value = false }
 }
 
-function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
-function clearFilters() { filters.value = { categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '' }; router.push({ query: {} }); loadProducts(); window.scrollTo(0, 0) }
+function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; if (filters.value.tagId) q.tagId = filters.value.tagId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
 function setSort(s: string) { filters.value.sort = filters.value.sort === s ? '' : s; currentPage.value = 0; products.value = []; loadProducts(); window.scrollTo(0, 0) }
 
 async function loadMore(nextPage?: number) {
@@ -135,6 +137,15 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
         </div>
       </div>
 
+      <!-- Tags -->
+      <div v-if="tags.length" class="filter-block">
+        <h4 class="filter-title">标签</h4>
+        <div v-for="t in tags" :key="t.id" class="filter-item">
+          <span class="filter-link" :class="{ active: filters.tagId === t.id + '' }"
+                @click="filters.tagId = filters.tagId === t.id + '' ? '' : t.id + ''; applyFilters()">{{ t.name }}</span>
+        </div>
+      </div>
+
       <!-- Price Range -->
       <div class="filter-card">
         <h4 class="filter-title">{{ t('common.priceRange') }}</h4>
@@ -168,7 +179,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
       <SkeletonBox v-if="loading" variant="card" :columns="3" :count="6" height="280px" />
 
       <div v-else class="product-grid">
-        <div v-for="p in products" :key="p.id" class="product-card" @click="goDetail(p.id)">
+        <div v-for="p in products" :key="p.id" class="product-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <div class="card-img-wrap">
             <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
             <JdBadge v-if="p.isNew" type="green" class="card-badge-tl">新品</JdBadge>
@@ -305,9 +316,9 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .card-img-wrap { height: 180px; position: relative; }
 .card-badge-tl { position: absolute; top: 6px; left: 6px; z-index: 1; }
 .card-badge-tr { position: absolute; top: 6px; right: 50px; z-index: 1; }
-.compare-btn { position: absolute; top: 6px; right: 6px; padding: 1px 8px; border: 1px solid var(--jd-red); border-radius: var(--radius-round); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: 10px; z-index: 1; transition: all var(--transition-fast); }
+.compare-btn { position: absolute; top: 6px; right: 6px; padding: 3px 10px; border: 1px solid var(--jd-red); border-radius: var(--radius-round); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: 12px; z-index: 1; transition: all var(--transition-fast); }
 .compare-btn.active { background: var(--jd-red); color: #fff; }
-.preview-btn { position: absolute; bottom: 60px; right: 6px; padding: 2px 8px; border: 1px solid var(--blue); border-radius: var(--radius-round); background: var(--bg-white); color: var(--blue); cursor: pointer; font-size: 10px; z-index: 1; transition: all var(--transition-fast); }
+.preview-btn { position: absolute; bottom: 60px; right: 6px; padding: 3px 10px; border: 1px solid var(--blue); border-radius: var(--radius-round); background: var(--bg-white); color: var(--blue); cursor: pointer; font-size: 12px; z-index: 1; transition: all var(--transition-fast); }
 .preview-btn:hover { background: var(--blue); color: #fff; }
 
 .card-info { padding: var(--space-md); }

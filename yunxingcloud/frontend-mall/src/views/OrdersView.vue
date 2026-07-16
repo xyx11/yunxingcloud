@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getOrders, cancelOrder } from '@/api/order'
 import { useI18n } from '@/locales'
@@ -38,12 +38,12 @@ const tabs = [
   { key: '3', label: t('order.statusDone') },
 ]
 
-const filteredOrders = () => activeTab.value === 'all' ? orders.value : orders.value.filter(o => o.status === activeTab.value)
+const filteredOrders = computed(() => activeTab.value === 'all' ? orders.value : orders.value.filter(o => o.status === activeTab.value))
 
 async function load() { loading.value = true; loadError.value = false; try { const r = await getOrders(); orders.value = r.data || [] } catch { loadError.value = true } finally { loading.value = false } }
 function pay(id: number) { router.push(`/pay/${id}`) }
 function askCancel(id: number) { confirmId.value = id; confirmShow.value = true }
-async function doCancel() { if (canceling.value.has(confirmId.value)) return; canceling.value.add(confirmId.value); try { await cancelOrder(confirmId.value); toast.info(t('toast.orderCanceled')); load() } catch {} finally { canceling.value.delete(confirmId.value); confirmShow.value = false } }
+async function doCancel() { if (canceling.value.has(confirmId.value)) return; canceling.value.add(confirmId.value); try { await cancelOrder(confirmId.value); toast.info(t('toast.orderCanceled')); load() } catch { toast.error(t('toast.updateFailed')) } finally { canceling.value.delete(confirmId.value); confirmShow.value = false } }
 function goDetail(id: number) { router.push(`/order/${id}`) }
 onMounted(load)
 </script>
@@ -63,8 +63,8 @@ onMounted(load)
       </div>
     </div>
 
-    <div v-else-if="filteredOrders().length" class="orders-list">
-      <div v-for="o in filteredOrders()" :key="o.id" class="order-card" @click="goDetail(o.id)">
+    <div v-else-if="filteredOrders.length" class="orders-list">
+      <div v-for="o in filteredOrders" :key="o.id" class="order-card" role="button" tabindex="0" @click="goDetail(o.id)" @keydown.enter.prevent="goDetail(o.id)" @keydown.space.prevent="goDetail(o.id)">
         <div class="order-header">
           <div>
             <span class="order-no-label">{{ t('order.orderNo') }}：</span>
@@ -123,4 +123,16 @@ onMounted(load)
 
 .sk-spacer { margin-top: var(--space-sm); }
 .error-state { padding: 60px var(--space-xl); }
+
+@media (max-width: 768px) {
+  .page-title { font-size: var(--font-lg); padding: 0 var(--space-md); }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { flex-shrink: 0; min-width: fit-content; padding: var(--space-sm) var(--space-md); font-size: var(--font-sm); }
+  .order-card { padding: var(--space-md); }
+  .order-body { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
+  .order-amount { font-size: var(--font-lg); }
+  .order-actions { justify-content: flex-start; }
+  .order-header { flex-wrap: wrap; gap: var(--space-xs); }
+  .order-date { margin-left: 0; display: block; }
+}
 </style>

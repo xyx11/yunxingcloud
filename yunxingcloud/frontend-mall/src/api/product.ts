@@ -38,3 +38,13 @@ export const getHomeData = () => request.get('/home')
 
 // Recommendations
 export const getRecommend = () => request.get('/recommend/hot')
+export const getAlsoBought = (productId: number, limit?: number) => request.get(`/recommend/also-bought/${productId}`, { params: { limit: limit || 4 } })
+export const getForYou = (limit?: number) => request.get('/recommend/for-you', { params: { limit: limit || 8 } })
+export const getHotKeywords = () => request.get('/search/hot-keywords')
+
+// Tags
+export const getTags = () => request.get('/tags')
+export const getProductsByTag = (tagId: number, page?: number, size?: number) => request.get(`/tags/filter/${tagId}`, { params: { page: page || 0, size: size || 20 } })
+
+// Search suggestions
+export const getSearchSuggestions = (q: string) => request.get('/search/suggest', { params: { q, limit: 10 } })

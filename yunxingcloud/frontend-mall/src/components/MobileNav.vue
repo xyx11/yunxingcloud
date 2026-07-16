@@ -1,19 +1,35 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from '@/locales'
 
 defineProps<{ cartCount: number }>()
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
-const tabItems = [
-  { path: '/', label: '首页', icon: '🏠' },
-  { path: '/products', label: '分类', icon: '📂' },
-  { path: '/cart', label: '购物车', icon: '🛒' },
-  { path: '/profile', label: '我的', icon: '👤' },
+const tabItems: { path: string; label: string; icon: string }[] = [
+  { path: '/', label: '', icon: '🏠' },
+  { path: '/products', label: '', icon: '📂' },
+  { path: '/live', label: '', icon: '📺' },
+  { path: '/brands', label: '', icon: '🏷️' },
+  { path: '/notifications', label: '', icon: '🔔' },
+  { path: '/cart', label: '', icon: '🛒' },
+  { path: '/profile', label: '', icon: '👤' },
 ]
 
+const i18nKey: Record<string, string> = {
+  '/': 'nav.home',
+  '/products': 'nav.products',
+  '/live': 'nav.live',
+  '/brands': 'nav.brands',
+  '/notifications': 'nav.notifications',
+  '/cart': 'nav.cart',
+  '/profile': 'nav.profile',
+}
+
 function goTo(path: string) { router.push(path) }
+function getLabel(path: string) { return t(i18nKey[path] as any) || '' }
 </script>
 
 <template>
@@ -31,7 +47,7 @@ function goTo(path: string) { router.push(path) }
         <span v-if="t.path==='/cart' && cartCount > 0" class="nav-badge">
           {{ cartCount > 99 ? '99+' : cartCount }}
         </span>
-        <span class="nav-label" :class="{ 'nav-label--active': route.path === t.path }">{{ t.label }}</span>
+        <span class="nav-label" :class="{ 'nav-label--active': route.path === t.path }">{{ getLabel(t.path) }}</span>
       </div>
     </div>
   </nav>
@@ -53,17 +69,24 @@ function goTo(path: string) { router.push(path) }
 }
 .mobile-nav-inner {
   display: flex;
-  justify-content: space-around;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   max-width: 500px;
   margin: 0 auto;
+  justify-content: center;
+  gap: 2px;
 }
+.mobile-nav-inner::-webkit-scrollbar { display: none; }
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  padding: 4px 14px;
+  padding: 6px 10px;
+  min-height: 44px;
+  justify-content: center;
   position: relative;
   transition: transform var(--transition-fast);
   -webkit-tap-highlight-color: transparent;
@@ -78,15 +101,15 @@ function goTo(path: string) { router.push(path) }
   background: var(--jd-red);
   color: #fff;
   border-radius: var(--radius-round);
-  font-size: 9px;
+  font-size: 11px;
   padding: 0 5px;
-  min-width: 14px;
+  min-width: 16px;
   text-align: center;
-  line-height: 15px;
+  line-height: 17px;
   font-weight: 700;
 }
 .nav-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
 }

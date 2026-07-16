@@ -33,8 +33,14 @@ const displayStock = computed(() =>
 
 <template>
   <h1 class="pdp-name">
-    {{ product.name }}<span class="jd-tag">自营</span>
+    {{ product.name }}
+    <span class="jd-tag">自营</span>
+    <span v-if="product.isNew" class="badge-new">新品</span>
+    <span v-if="product.isHot" class="badge-hot">热卖</span>
   </h1>
+  <div v-if="product.tags?.length" class="pdp-tags">
+    <span v-for="t in (typeof product.tags === 'string' ? product.tags.split(',').filter(Boolean) : product.tags)" :key="t" class="pdp-tag">{{ t }}</span>
+  </div>
   <p class="pdp-desc">{{ product.description || '' }}</p>
 
   <div class="pdp-rating">
@@ -51,6 +57,7 @@ const displayStock = computed(() =>
     <div class="price-row">
       <span class="price-label">{{ t('product.price') }}</span>
       <span class="price-value">{{ formatPrice(displayPrice / 100, 2) }}</span>
+      <span v-if="product.originalPrice && product.originalPrice > displayPrice" class="price-original">{{ formatPrice(product.originalPrice / 100) }}</span>
       <span
         v-if="displayStock > 0 && displayStock <= 10"
         class="stock-warn"
@@ -165,7 +172,10 @@ const displayStock = computed(() =>
 .text-red {
   color: var(--jd-red);
 }
-.text-blue {
-  color: var(--blue);
-}
+.text-blue { color: var(--blue); }
+.badge-new { font-size: var(--font-xs); background: var(--green); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: 6px; font-weight: 400; }
+.badge-hot { font-size: var(--font-xs); background: var(--jd-red); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: 4px; font-weight: 400; }
+.pdp-tags { display: flex; gap: 6px; margin-bottom: var(--space-sm); flex-wrap: wrap; }
+.pdp-tag { font-size: 11px; padding: 2px 8px; border: 1px solid var(--jd-red); color: var(--jd-red); border-radius: var(--radius-round); }
+.price-original { color: var(--text-tertiary); font-size: var(--font-md); text-decoration: line-through; }
 </style>

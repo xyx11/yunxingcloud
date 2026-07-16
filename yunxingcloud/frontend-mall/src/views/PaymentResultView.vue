@@ -34,7 +34,7 @@ onMounted(async () => {
       const r = await getOrderById(Number(orderId.value))
       orderInfo.value = r.data.order
       orderNo.value = orderInfo.value?.orderNo || ''
-    } catch {}
+    } catch { /* order might not be ready yet, non-critical */ }
   }
   loading.value = false
   if (status.value === 'success') startCountdown()
@@ -97,11 +97,11 @@ onMounted(async () => {
   align-items: center; justify-content: center; font-size: 40px;
   margin: 0 auto 20px; animation: popIn .4s ease-out;
 }
-.result-icon.success { background: #d4edda; color: #28a745; }
-.result-icon.fail { background: #f8d7da; color: #dc3545; }
+.result-icon.success { background: var(--green-bg); color: var(--green); }
+.result-icon.fail { background: var(--jd-red-light); color: var(--jd-red); }
 .result-title { font-size: 22px; margin-bottom: 8px; }
-.result-title.success { color: #155724; }
-.result-title.fail { color: #721c24; }
+.result-title.success { color: var(--green); }
+.result-title.fail { color: var(--jd-red); }
 .result-desc { color: var(--text-secondary); font-size: var(--font-md); margin-bottom: 24px; }
 .order-info {
   background: var(--bg-page); border-radius: var(--radius-md); padding: var(--space-lg);

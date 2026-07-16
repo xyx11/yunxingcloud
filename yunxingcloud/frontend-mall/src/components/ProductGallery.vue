@@ -79,9 +79,10 @@ onUnmounted(() => {
         @click.stop="activeImage = activeImage < images.length - 1 ? activeImage + 1 : 0"
         aria-label="下一张"
       >›</button>
-      <img
+      <LazyImage
         v-if="images[activeImage] && images[activeImage] !== '\u{1F4E6}'"
         :src="images[activeImage]"
+        :alt="productName"
         class="fs-img"
       />
       <span v-else class="fs-placeholder">📦</span>
@@ -228,5 +229,11 @@ onUnmounted(() => {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .gallery { width: 100%; }
+  .thumb { width: 48px; height: 48px; }
+  .fs-close { width: 44px; height: 44px; font-size: var(--font-xl); }
 }
 </style>

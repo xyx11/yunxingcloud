@@ -13,10 +13,9 @@ const { t } = useI18n()
 
 const form = ref({
   username: (() => { try { return localStorage.getItem('mall_remember_user') || '' } catch { return '' } })(),
-  password: (() => { try { return localStorage.getItem('mall_remember_pass') || '' } catch { return '' } })(),
+  password: '',
 })
 const rememberMe = ref(!!form.value.username)
-const rememberPassword = ref(!!form.value.password)
 const error = ref('')
 const loading = ref(false)
 
@@ -26,7 +25,7 @@ async function doLogin() {
   loading.value = true
   try {
     await auth.login(form.value.username, form.value.password)
-    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user'); if (rememberPassword.value) localStorage.setItem('mall_remember_pass', form.value.password); else localStorage.removeItem('mall_remember_pass') } catch {}
+    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user'); localStorage.removeItem('mall_remember_pass') } catch {}
     toast.success(t('toast.loginSuccess'))
     const redirect = router.currentRoute.value.query.redirect as string
     router.push(redirect || '/')
@@ -77,9 +76,6 @@ const oauthProviders = [
       <div class="login-options">
         <label class="remember-label">
           <input type="checkbox" v-model="rememberMe" /> {{ t('login.rememberUser') }}
-        </label>
-        <label class="remember-label">
-          <input type="checkbox" v-model="rememberPassword" /> 记住密码
         </label>
         <span class="forgot-link" @click="router.push('/forgot-password')">{{ t('login.forgotPassword') }}</span>
       </div>

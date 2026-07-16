@@ -3,6 +3,7 @@ import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCart } from '@/api/cart'
 import { submitOrder, getAddresses, getMyCoupons } from '@/api/order'
+import request from '@/api/request'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
 import LazyImage from '@/components/LazyImage.vue'
@@ -18,6 +19,7 @@ const items = ref<CartItem[]>([])
 const addresses = ref<Address[]>([])
 const loading = ref(true)
 const total = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
+const actualTotal = computed(() => Math.max(0, total.value - (selectedCoupon.value?.amount || 0) - campaignDiscount.value * 100))
 const selectedAddr = ref<Address | null>(null)
 const receiver = ref({ name: '', phone: '', address: '' })
 const selectedCoupon = ref<Coupon | null>(null)
@@ -25,13 +27,20 @@ const couponApplied = ref(false)
 const myCoupons = ref<Coupon[]>([])
 const showCoupons = ref(false)
 const paymentMethod = ref('wechat')
+const deliveryTimeSlot = ref('')
+const deliverySlots = ['不限', '上午 9:00-12:00', '下午 14:00-18:00', '晚间 18:00-21:00']
 const submitting = ref(false)
 const showInvoice = ref(false)
 const invoice = ref({ type: 'personal', title: '', taxNo: '', email: '' })
+const campaignDiscount = ref(0)
+
+async function loadCampaignDiscount() {
+  try { const r = await request.get('/campaigns'); const campaigns: { type: string; threshold?: number; discount?: number }[] = r.data || []; for (const c of campaigns) { if (c.type === 'full_reduction' && total.value >= (c.threshold || 0)) { campaignDiscount.value = c.discount || 0 } } } catch {}
+}
 
 async function load() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data || [] } catch { toast.error('购物车加载失败') }
+  try { const r = await getCart(); items.value = r.data.items || [] } catch { toast.error('购物车加载失败') }
   try { const r = await getAddresses(); addresses.value = r.data || [] } catch { toast.error('地址加载失败') }
   finally { loading.value = false }
 }
@@ -48,12 +57,12 @@ function selectCoupon(c: Coupon) { selectedCoupon.value = c; couponApplied.value
 async function submit() {
   if (!receiver.value.name || !receiver.value.phone || !receiver.value.address) { toast.error(t('checkout.selectAddress')); return }
   submitting.value = true
-  try { const res = await submitOrder({ ...receiver.value, couponCode: String(selectedCoupon.value?.couponId ?? ''), paymentMethod: paymentMethod.value }); toast.success(t('toast.orderPlaced')); const resData = res.data as { id?: number; data?: { id?: number } }; const orderId = resData.id || resData.data?.id; router.push(orderId ? '/order/' + orderId : '/orders') }
+  try { const res = await submitOrder({ ...receiver.value, couponCode: String(selectedCoupon.value?.couponId ?? ''), paymentMethod: paymentMethod.value, deliveryTimeSlot: deliveryTimeSlot.value }); toast.success(t('toast.orderPlaced')); const resData = res.data as { id?: number; data?: { id?: number } }; const orderId = resData.id || resData.data?.id; router.push(orderId ? '/order/' + orderId : '/orders') }
   catch (e: unknown) { toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || t('toast.orderFail')) }
   finally { submitting.value = false }
 }
 
-onMounted(() => { load(); loadCoupons() })
+onMounted(() => { load(); loadCoupons(); loadCampaignDiscount() })
 </script>
 
 <template>
@@ -71,7 +80,7 @@ onMounted(() => { load(); loadCoupons() })
       <div class="card">
         <h3 class="section-title">{{ t('checkout.receiverInfo') }}</h3>
         <div v-if="addresses.length" class="addr-list">
-          <div v-for="addr in addresses" :key="addr.id" class="addr-item" :class="{ selected: selectedAddr?.id === addr.id }" @click="selectAddress(addr)">
+          <div v-for="addr in addresses" :key="addr.id" class="addr-item" :class="{ selected: selectedAddr?.id === addr.id }" role="button" tabindex="0" @click="selectAddress(addr)" @keydown.enter.prevent="selectAddress(addr)" @keydown.space.prevent="selectAddress(addr)">
             <div class="addr-item-name">{{ addr.name }} <span class="addr-item-phone">{{ addr.phone }}</span></div>
             <div class="addr-item-detail">{{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detail }}</div>
             <span v-if="addr.isDefault" class="default-addr-badge">默认地址</span>
@@ -105,7 +114,7 @@ onMounted(() => { load(); loadCoupons() })
               <button class="coupon-remove" @click="selectedCoupon = null; couponApplied = false">移除</button>
             </div>
             <div v-if="showCoupons && myCoupons.length" class="coupon-dropdown">
-              <div v-for="c in myCoupons" :key="c.id" class="coupon-item" @click="selectCoupon(c)">
+              <div v-for="c in myCoupons" :key="c.id" class="coupon-item" role="button" tabindex="0" @click="selectCoupon(c)" @keydown.enter.prevent="selectCoupon(c)" @keydown.space.prevent="selectCoupon(c)">
                 <span class="coupon-amount">{{ formatPrice((c.amount || 0) / 100) }}</span>
                 <span class="coupon-cond" v-if="c.minAmount">满{{ formatPrice(c.minAmount / 100) }}可用</span>
                 <span class="coupon-use">使用</span>
@@ -126,22 +135,29 @@ onMounted(() => { load(); loadCoupons() })
               </span>
             </div>
           </div>
+
+          <div class="delivery-row">
+            <span class="delivery-label">配送时段</span>
+            <div class="delivery-options">
+              <span v-for="s in deliverySlots" :key="s" class="delivery-option" :class="{ selected: deliveryTimeSlot === s }" @click="deliveryTimeSlot = deliveryTimeSlot === s ? '' : s">{{ s }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="price-summary">
           <div class="price-line"><span>商品总额</span><span>{{ formatPrice(total / 100, 2) }}</span></div>
-          <div class="price-line"><span>优惠</span><span class="discount">{{ couponApplied ? '-' + formatPrice((selectedCoupon?.amount || total / 10) / 100, 2) : formatPrice(0, 2) }}</span></div>
+          <div class="price-line"><span>优惠</span><span class="discount">{{ couponApplied || campaignDiscount ? '-' + formatPrice(((selectedCoupon?.amount || 0) + campaignDiscount * 100) / 100, 2) : formatPrice(0, 2) }}</span></div>
           <div class="price-line"><span>运费</span><span class="free-shipping">免运费</span></div>
         </div>
 
         <div class="total-row">
           <span class="total-label">{{ t('checkout.totalItems', { n: items.length }) }}</span>
-          <div><span class="total-prefix">{{ t('checkout.actualPay') }}：</span><span class="total-price">{{ formatPrice(total / 100, 2) }}</span></div>
+          <div><span class="total-prefix">{{ t('checkout.actualPay') }}：</span><span class="total-price">{{ formatPrice(actualTotal / 100, 2) }}</span></div>
         </div>
 
         <!-- Invoice -->
         <div class="invoice-section">
-          <div class="invoice-toggle" @click="showInvoice = !showInvoice">{{ showInvoice ? '▼' : '▶' }} 发票信息</div>
+          <div class="invoice-toggle" role="button" tabindex="0" @click="showInvoice = !showInvoice" @keydown.enter.prevent="showInvoice = !showInvoice" @keydown.space.prevent="showInvoice = !showInvoice">{{ showInvoice ? '▼' : '▶' }} 发票信息</div>
           <div v-if="showInvoice" class="invoice-form">
             <div class="invoice-type">
               <label class="radio-label"><input type="radio" v-model="invoice.type" value="personal" /> 个人</label>
@@ -225,7 +241,7 @@ onMounted(() => { load(); loadCoupons() })
 .invoice-form .field-full { margin-top: var(--space-sm); }
 
 @media (max-width: 768px) {
-  .checkout-page { padding: 0 var(--space-md); }
+  .checkout-page { padding: 0 var(--space-md) 80px; }
   .card { padding: var(--space-md); }
   .receiver-grid { grid-template-columns: 1fr; }
   .product-row { flex-wrap: wrap; gap: var(--space-sm); }

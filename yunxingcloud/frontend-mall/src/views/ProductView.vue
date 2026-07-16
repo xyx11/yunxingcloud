@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getProductDetail } from '@/api/product'
+import { getProductDetail, getAlsoBought } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
@@ -36,6 +36,19 @@ const skus = ref<Sku[]>([])
 const reviews = ref<Review[]>([])
 const reviewSort = ref<'newest' | 'highest' | 'lowest'>('newest')
 const reviewShow = ref(3)
+const reviewForm = ref({ rating: 0, content: '' })
+const reviewSubmitting = ref(false)
+
+async function submitProductReview() {
+  if (!product.value || !reviewForm.value.rating || !reviewForm.value.content) return
+  reviewSubmitting.value = true
+  try {
+    await request.post(`/products/${product.value.id}/reviews`, { rating: reviewForm.value.rating, content: reviewForm.value.content })
+    toast.success('评价成功')
+    reviewForm.value = { rating: 0, content: '' }
+    const res = await getProductDetail(Number(product.value.id)); reviews.value = res.data.reviews || []
+  } catch { toast.error('评价失败') } finally { reviewSubmitting.value = false }
+}
 const sortedReviews = computed(() => {
   const arr = [...reviews.value]
   if (reviewSort.value === 'newest') arr.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
@@ -46,6 +59,7 @@ const sortedReviews = computed(() => {
 function showMoreReviews() { reviewShow.value = Math.min(reviewShow.value + 3, reviews.value.length) }
 
 const related = ref<Product[]>([])
+const alsoBought = ref<Product[]>([])
 const selectedSku = ref<Sku | null>(null)
 const qty = ref(1)
 const favorited = ref(false)
@@ -86,6 +100,7 @@ onMounted(async () => {
     skus.value = res.data.skus || []
     reviews.value = res.data.reviews || []
     related.value = res.data.related || []
+    try { const r = await getAlsoBought(Number(id), 4); alsoBought.value = r.data || [] } catch {}
     const { add } = useRecentlyViewed()
     if (product.value) {
       add({ id: product.value.id, name: product.value.name, price: product.value.price, imageUrl: product.value.imageUrl })
@@ -255,6 +270,16 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
       </div>
     </div>
     <div v-else class="empty-text">{{ t('product.noReviews') }}</div>
+
+    <!-- Write Review -->
+    <div v-if="auth.isLoggedIn" class="write-review">
+      <h4 class="write-review-title">写评价</h4>
+      <div class="write-review-stars">
+        <span v-for="i in 5" :key="i" class="write-star" :class="{ active: i <= reviewForm.rating }" @click="reviewForm.rating = i">{{ i <= reviewForm.rating ? '★' : '☆' }}</span>
+      </div>
+      <textarea v-model="reviewForm.content" class="write-review-textarea" placeholder="分享你的使用体验..." />
+      <JdButton size="sm" :loading="reviewSubmitting" @click="submitProductReview">提交评价</JdButton>
+    </div>
   </div>
 
   <!-- Specs -->
@@ -272,7 +297,21 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
   <div v-if="related.length" class="pdp-section">
     <h3 class="section-title">{{ t('product.relatedProducts') }}</h3>
     <div class="related-grid">
-      <div v-for="p in related" :key="p.id" class="related-card" @click="goDetail(p.id)">
+      <div v-for="p in related" :key="p.id" class="related-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
+        <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
+        <div class="related-info">
+          <h5 class="related-name">{{ p.name }}</h5>
+          <span class="related-price">{{ formatPrice(p.price / 100, 2) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Also Bought -->
+  <div v-if="alsoBought.length" class="pdp-section">
+    <h3 class="section-title">买了又买</h3>
+    <div class="related-grid">
+      <div v-for="p in alsoBought" :key="p.id" class="related-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
         <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
         <div class="related-info">
           <h5 class="related-name">{{ p.name }}</h5>
@@ -357,6 +396,12 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 .review-more { text-align: center; padding: var(--space-lg) 0; }
 .review-more-btn { padding: var(--space-md) 32px; border: 1px solid var(--border); background: var(--bg-white); border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-md); color: var(--text-secondary); transition: all var(--transition-fast); }
 .review-more-btn:hover { border-color: var(--jd-red); color: var(--jd-red); }
+.write-review { margin-top: var(--space-xl); padding: var(--space-lg); background: var(--bg-hover); border-radius: var(--radius-md); }
+.write-review-title { font-size: var(--font-md); font-weight: 600; margin-bottom: var(--space-sm); }
+.write-review-stars { margin-bottom: var(--space-sm); display: flex; gap: 4px; }
+.write-star { font-size: 24px; cursor: pointer; color: var(--border); transition: color .2s; }
+.write-star.active { color: var(--orange); }
+.write-review-textarea { width: 100%; height: 80px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-sm); }
 .review-item { padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); }
 .review-header { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); }
 .review-user { display: flex; align-items: center; gap: var(--space-sm); }
@@ -395,7 +440,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 .floating-price { color: var(--jd-red); font-size: var(--font-title); font-weight: 700; white-space: nowrap; }
 
 /* Mobile Bar */
-.mobile-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-white); border-top: 1px solid var(--border-light); padding: var(--space-md) var(--space-lg); z-index: 200; align-items: center; gap: var(--space-md); box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+.mobile-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-white); border-top: 1px solid var(--border-light); padding: var(--space-md) var(--space-lg); z-index: 210; align-items: center; gap: var(--space-md); box-shadow: 0 -2px 8px rgba(0,0,0,.06); padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px)); }
 .mobile-bar-price { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; white-space: nowrap; }
 
 .flex-1 { flex: 1; }

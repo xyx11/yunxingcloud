@@ -18,14 +18,16 @@ const { flyToCart } = useCartFly()
 const { t } = useI18n()
 const items = ref<FavoriteItem[]>([])
 const loading = ref(true)
+const loadError = ref(false)
 
 async function load() {
   loading.value = true
-  try { const r = await getFavorites(); items.value = r.data || [] } catch {} finally { loading.value = false }
+  loadError.value = false
+  try { const r = await getFavorites(); items.value = r.data || [] } catch { loadError.value = true; toast.error('收藏加载失败') } finally { loading.value = false }
 }
 
 async function unfav(productId: number) {
-  try { await removeFavorite(productId); items.value = items.value.filter(i => i.productId !== productId && i.id !== productId); toast.info(t('product.unfavorite')) } catch {}
+  try { await removeFavorite(productId); items.value = items.value.filter(i => i.productId !== productId && i.id !== productId); toast.info(t('product.unfavorite')) } catch { toast.error('操作失败') }
 }
 
 async function quickAdd(e: Event, p: FavoriteItem) {
@@ -49,7 +51,7 @@ onMounted(load)
     </div>
 
     <div v-else-if="items.length" class="wl-grid">
-      <div v-for="p in items" :key="p.id" class="wl-card" @click="goDetail(p.productId || p.id)">
+      <div v-for="p in items" :key="p.id" class="wl-card" role="button" tabindex="0" @click="goDetail(p.productId || p.id)" @keydown.enter.prevent="goDetail(p.productId || p.id)" @keydown.space.prevent="goDetail(p.productId || p.id)">
         <button class="wl-unfav" @click.stop="unfav(p.productId || p.id)" aria-label="取消收藏">❤️</button>
         <LazyImage :src="p.imageUrl || ''" :alt="p.productName || p.name" height="180px" />
         <div class="wl-info">
@@ -62,6 +64,9 @@ onMounted(load)
       </div>
     </div>
 
+    <JdEmpty v-else-if="loadError" icon="🔌" title="加载失败">
+      <JdButton @click="load">重新加载</JdButton>
+    </JdEmpty>
     <JdEmpty v-else icon="💝" :title="t('wishlist.noItems')">
       <JdButton @click="router.push('/')">{{ t('wishlist.goBrowse') }}</JdButton>
     </JdEmpty>

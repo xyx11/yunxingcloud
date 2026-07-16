@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Sku } from '@/types'
 import { formatPrice } from '@/utils/format'
+import { useI18n } from '@/locales'
+
+const { t } = useI18n()
 
 defineProps<{
   skus: Sku[]
@@ -29,7 +32,7 @@ const SKU_COLORS: Record<string, string> = {
 
 <template>
   <div class="sku-section">
-    <div class="sku-label">选择规格</div>
+    <div class="sku-label">{{ t('product.chooseSpecs') }}</div>
     <div class="sku-grid">
       <span
         v-for="sku in skus"
@@ -39,12 +42,12 @@ const SKU_COLORS: Record<string, string> = {
         @click="emit('update:modelValue', sku)"
       >
         <span
-          v-if="(sku as Sku).specs"
+          v-if="sku.specs"
           class="sku-color"
           :style="{
             background:
               SKU_COLORS[
-                ((sku as Sku).specs || '')
+                (sku.specs || '')
                   .match(/红|蓝|绿|黄|紫|黑|白|灰|粉|金|银|橙/)?.[0] || ''
               ] || '#ddd',
           }"

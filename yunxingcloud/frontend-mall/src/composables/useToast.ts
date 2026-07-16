@@ -21,6 +21,7 @@ const icons: Record<string, string> = {
 export function useToast() {
   function show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration = 3000) {
     const id = nextId++
+    if (toasts.value.length >= 5) toasts.value.shift()
     toasts.value.push({ id, message, type })
     if (duration > 0) {
       setTimeout(() => {

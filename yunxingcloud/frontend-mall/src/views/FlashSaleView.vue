@@ -54,7 +54,7 @@ const stockPct = (s: FlashSaleItem) => Math.max(0, Math.round(((s.stock - (s.sol
     </div>
 
     <div v-else-if="sales.length" class="flash-grid">
-      <div v-for="s in sales" :key="s.id" class="flash-card" @click="goProduct(s.productId)">
+      <div v-for="s in sales" :key="s.id" class="flash-card" role="button" tabindex="0" @click="goProduct(s.productId)" @keydown.enter.prevent="goProduct(s.productId)" @keydown.space.prevent="goProduct(s.productId)">
         <div class="flash-img">
           <LazyImage :src="s.imageUrl || ''" :alt="s.productName" height="200px" bg="linear-gradient(135deg,#1a1a1a,#333)" />
           <div class="flash-countdown">

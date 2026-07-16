@@ -2,16 +2,19 @@
 import { ref, onMounted } from 'vue'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
+import { useToast } from '@/composables/useToast'
 import { formatRelativeTime } from '@/utils/format'
+import JdEmpty from '@/components/JdEmpty.vue'
 
 const { t } = useI18n()
+const toast = useToast()
 const account = ref<{balance:number,totalEarned:number,totalSpent:number} | null>(null)
 const records = ref<any[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
-  try { const r = await request.get('/points/account'); account.value = r.data } catch {}
-  try { const r = await request.get('/points/records'); records.value = r.data || [] } catch {}
+  try { const r = await request.get('/points/account'); account.value = r.data } catch { toast.error('积分信息加载失败') }
+  try { const r = await request.get('/points/records'); records.value = r.data || [] } catch { toast.error('积分记录加载失败') }
   finally { loading.value = false }
 })
 
@@ -56,14 +59,14 @@ const actions = [
           <span class="pts-row-amount" :class="{ plus: r.amount > 0 }">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }}</span>
         </div>
       </div>
-      <div v-else class="pts-empty">{{ t('points.noRecords') }}</div>
+      <JdEmpty v-else icon="📋" :title="t('points.noRecords')" />
     </div>
   </div>
 </template>
 
 <style scoped>
 .pts-page { max-width: 600px; margin: 0 auto; }
-.pts-hero { background: linear-gradient(135deg, #ff9800, #ffc107); color: #fff; border-radius: var(--radius-xl); padding: 36px; margin-bottom: var(--space-xxl); text-align: center; box-shadow: 0 8px 32px rgba(255,152,0,.25); position: relative; overflow: hidden; }
+.pts-hero { background: linear-gradient(135deg, var(--orange), #ffc107); color: #fff; border-radius: var(--radius-xl); padding: 36px; margin-bottom: var(--space-xxl); text-align: center; box-shadow: 0 8px 32px rgba(255,152,0,.25); position: relative; overflow: hidden; }
 .pts-hero-bg { position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.1); }
 .pts-hero-bg--small { top: auto; bottom: -20px; right: auto; left: -20px; width: 80px; height: 80px; background: rgba(255,255,255,.08); }
 .pts-hero-content { position: relative; z-index: 1; }
@@ -91,4 +94,17 @@ const actions = [
 .pts-empty { text-align: center; color: var(--text-tertiary); padding: var(--space-xl); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) {
+  .pts-page { padding: 0 var(--space-md) 80px; }
+  .pts-hero { padding: 24px; }
+  .pts-balance { font-size: 40px; }
+  .pts-stats { gap: var(--space-lg); font-size: 13px; }
+  .pts-actions { grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); }
+  .pts-action { padding: var(--space-md); }
+  .pts-action-icon { font-size: var(--font-xxl); }
+  .pts-action-label { font-size: 12px; }
+  .pts-action-desc { font-size: 11px; }
+  .pts-card { padding: var(--space-lg); }
+}
 </style>

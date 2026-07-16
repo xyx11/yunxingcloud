@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
@@ -8,8 +7,6 @@ import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 
-const route = useRoute()
-const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
 const records = ref<any[]>([])
@@ -47,7 +44,7 @@ const badgeTypeMap: Record<string, 'orange' | 'green' | 'red' | 'blue'> = {
 }
 
 onMounted(async () => {
-  try { const r = await request.get('/after-sale'); records.value = r.data || [] } catch {}
+  try { const r = await request.get('/after-sale'); records.value = r.data || [] } catch { toast.error('售后记录加载失败') }
   finally { loading.value = false }
 })
 
@@ -71,7 +68,7 @@ async function submit() {
       <div class="after-sale-form-group">
         <label class="after-sale-label">{{ t('afterSale.type') }}</label>
         <div class="after-sale-type-grid">
-          <div v-for="tp in types" :key="tp.value" @click="form.type=tp.value"
+          <div v-for="tp in types" :key="tp.value" role="button" tabindex="0" @click="form.type=tp.value" @keydown.enter.prevent="form.type=tp.value" @keydown.space.prevent="form.type=tp.value"
                class="after-sale-type-item" :class="{ active: form.type === tp.value }">
             <div class="after-sale-type-icon">{{ tp.icon }}</div>
             <div class="after-sale-type-name">{{ tp.label() }}</div>
@@ -139,4 +136,17 @@ async function submit() {
 .after-sale-card-time { color: var(--text-placeholder); font-size: var(--font-xs); margin-top: var(--space-sm); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) {
+  .after-sale-page { padding: 0 var(--space-md) 80px; }
+  .after-sale-header { flex-direction: column; gap: var(--space-sm); align-items: flex-start; }
+  .after-sale-form { padding: var(--space-lg); }
+  .after-sale-type-grid { grid-template-columns: repeat(3, 1fr); }
+  .after-sale-type-item { padding: var(--space-sm); }
+  .after-sale-type-icon { font-size: var(--font-lg); }
+  .after-sale-type-name { font-size: 13px; }
+  .after-sale-type-desc { font-size: 11px; }
+  .after-sale-card-top { flex-direction: column; gap: 4px; }
+  .after-sale-card { padding: var(--space-md); }
+}
 </style>

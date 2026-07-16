@@ -16,4 +16,9 @@ const router = useRouter()
 .nf-code { font-size: 80px; font-weight: 800; color: var(--jd-red); margin-bottom: 16px; line-height: 1; }
 .nf-title { font-size: var(--font-xl); color: var(--text-primary); margin-bottom: 8px; }
 .nf-desc { color: var(--text-tertiary); font-size: var(--font-md); margin-bottom: 24px; }
+
+@media (max-width: 768px) {
+  .nf-page { padding: 60px 20px; }
+  .nf-code { font-size: 60px; }
+}
 </style>

@@ -51,7 +51,7 @@ const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMember
     </div>
 
     <div v-else-if="groups.length" class="gb-grid">
-      <div v-for="g in groups" :key="g.id" class="gb-card" @click="goProduct(g.productId)">
+      <div v-for="g in groups" :key="g.id" class="gb-card" role="button" tabindex="0" @click="goProduct(g.productId)" @keydown.enter.prevent="goProduct(g.productId)" @keydown.space.prevent="goProduct(g.productId)">
         <div class="gb-img">
           <LazyImage :src="g.imageUrl || ''" :alt="g.productName" height="200px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
           <JdBadge class="gb-badge-tl">{{ g.minMembers }}人团</JdBadge>
@@ -103,4 +103,15 @@ const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMember
 .sk-line { height: 16px; width: 60%; background: var(--border-light); border-radius: var(--radius-sm); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+@media (max-width: 768px) {
+  .gb-page { padding: 0 var(--space-md); }
+  .gb-hero { padding: var(--space-xl); }
+  .gb-hero-title { font-size: var(--font-xl); }
+  .gb-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
+  .gb-img { height: 140px; }
+  .gb-info { padding: var(--space-md); }
+  .gb-name { font-size: 14px; }
+  .gb-price { font-size: var(--font-lg); }
+}
 </style>

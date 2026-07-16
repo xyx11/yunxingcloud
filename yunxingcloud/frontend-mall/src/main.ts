@@ -15,4 +15,15 @@ const toast = useGlobalToast()
 app.config.globalProperties.$toast = toast
 app.provide(ToastInjectionKey, toast)
 
+app.config.errorHandler = (err, _vm, info) => {
+  console.error('[Vue Error]', info, err)
+}
+
 app.mount('#app')
+
+// PWA: register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}

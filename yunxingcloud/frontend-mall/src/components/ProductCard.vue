@@ -41,7 +41,11 @@ function defaultImage(name: string): string {
   <div
     class="product-card"
     :class="{ 'product-card--list': layout === 'list' }"
+    role="button"
+    tabindex="0"
     @click="emit('click', product.id)"
+    @keydown.enter.prevent="emit('click', product.id)"
+    @keydown.space.prevent="emit('click', product.id)"
   >
     <div class="card-image">
       <LazyImage

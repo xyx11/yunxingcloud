@@ -1,26 +1,38 @@
 <script setup lang="ts">
 import { useCompare } from '@/composables/useCompare'
-import { addToCart } from '@/api/cart'
-import { useToast } from '@/composables/useToast'
 import { formatPrice } from '@/utils/format'
-import type { CompareItem } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from '@/locales'
-const { t } = useI18n()
+import JdButton from '@/components/JdButton.vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const { items, remove, clear } = useCompare()
-const toast = useToast()
 const router = useRouter()
-
-async function quickAdd(p: CompareItem) { try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
-
-const specs = ['price', 'sales', 'description']
-const specLabel: Record<string, string> = { price: '价格', sales: '销量', description: '描述' }
+const route = useRoute()
+const isFullscreen = route.path === '/compare'
 </script>
 
 <template>
-  <div v-if="items.length" class="compare-bar">
+  <!-- Fullscreen compare page -->
+  <div v-if="isFullscreen" class="compare-page">
+    <div class="compare-back">
+      <button class="back-btn" @click="router.back()">← 返回</button>
+    </div>
+    <h2 class="compare-page-title">商品对比</h2>
+    <div v-if="items.length" class="compare-page-grid">
+      <div v-for="p in items" :key="p.id" class="compare-page-card">
+        <button class="compare-page-remove" @click="remove(p.id)" aria-label="移除">✕</button>
+        <LazyImage :src="p.imageUrl || ''" :alt="p.name" height="200px" />
+        <h3 class="compare-page-name">{{ p.name }}</h3>
+        <div class="compare-page-price">{{ formatPrice(p.price / 100, 2) }}</div>
+        <div class="compare-page-sales">已售 {{ p.sales || 0 }} 件</div>
+        <JdButton size="sm" @click="router.push('/product/' + p.id)">查看详情</JdButton>
+      </div>
+    </div>
+    <div v-else class="compare-page-empty">暂无对比商品，去逛逛吧</div>
+  </div>
+
+  <!-- Floating bar -->
+  <div v-else-if="items.length" class="compare-bar">
     <div class="compare-header">
       <h3 class="compare-title">商品对比 ({{ items.length }}/3)</h3>
       <div class="compare-header-actions">
@@ -45,7 +57,7 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
 
 <style scoped>
 .compare-bar {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200;
+  position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 210;
   background: var(--bg-white); border-radius: var(--radius-xl);
   box-shadow: 0 8px 40px rgba(0,0,0,.15); padding: 20px 24px;
   max-width: 900px; width: calc(100% - 40px);
@@ -67,7 +79,7 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
 .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .compare-item { text-align: center; position: relative; }
 .compare-item-remove {
-  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
+  position: absolute; top: -8px; right: -8px; width: 28px; height: 28px;
   border-radius: 50%; background: #f44336; color: #fff; border: none;
   cursor: pointer; font-size: 11px; line-height: 20px;
 }
@@ -84,10 +96,24 @@ const specLabel: Record<string, string> = { price: '价格', sales: '销量', de
 }
 [data-theme="dark"] .compare-empty { border-color: var(--border-light); }
 
+.compare-page { max-width: 900px; margin: 0 auto; padding: var(--space-xxl) var(--space-md); }
+.compare-back { margin-bottom: var(--space-lg); }
+.back-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: var(--font-md); }
+.compare-page-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-xl); }
+.compare-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-lg); }
+.compare-page-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); text-align: center; position: relative; box-shadow: var(--shadow-sm); }
+.compare-page-remove { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; background: var(--jd-red); color: #fff; border: none; cursor: pointer; font-size: 12px; }
+.compare-page-name { font-size: var(--font-md); font-weight: 600; margin: var(--space-sm) 0; }
+.compare-page-price { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-xs); }
+.compare-page-sales { color: var(--text-tertiary); font-size: var(--font-sm); margin-bottom: var(--space-md); }
+.compare-page-empty { text-align: center; padding: 80px var(--space-md); color: var(--text-tertiary); }
+
 @media (max-width: 768px) {
   .compare-bar { padding: 12px 16px; border-radius: var(--radius-lg); }
   .compare-grid { gap: 8px; }
   .compare-item-name { font-size: 11px; }
   .compare-item-price { font-size: 14px; }
+  .compare-page { padding: var(--space-lg) var(--space-md) 80px; }
+  .compare-page-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
 }
 </style>

@@ -15,10 +15,10 @@ const emit = defineEmits<{
   <section v-if="categories.length" class="categories-section">
     <div class="section-header">
       <span class="section-title">📂 商品分类</span>
-      <span class="section-more" @click="emit('view-all')">查看全部 &gt;</span>
+      <button class="section-more" @click="emit('view-all')">查看全部 &gt;</button>
     </div>
     <div class="categories">
-      <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" @click="emit('select', cat.id)">
+      <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" role="button" tabindex="0" @click="emit('select', cat.id)" @keydown.enter.prevent="emit('select', cat.id)" @keydown.space.prevent="emit('select', cat.id)">
         <div class="cat-icon">{{ cat.icon || '📁' }}</div>
         <div class="cat-name">{{ cat.name }}</div>
       </div>

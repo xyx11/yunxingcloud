@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from '@/locales'
-const { t } = useI18n()
 import { formatPrice, formatCount } from '@/utils/format'
 import type { Product } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
-import request from '@/api/request'
+import { getHotProducts, getNewProducts, getProducts } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 
@@ -22,10 +20,20 @@ const tabs = [
   { key: 'price' as const, label: '好价榜', icon: '💰' },
 ]
 
-onMounted(async () => {
-  try { const r = await request.get('/products/hot'); ranks.value = (r.data || []).slice(0, 20) } catch {}
+async function loadRank() {
+  loading.value = true
+  try {
+    let r
+    if (tab.value === 'sales') r = await getHotProducts()
+    else if (tab.value === 'new') r = await getNewProducts()
+    else r = await getProducts({ sort: 'price', size: 20 })
+    ranks.value = (r.data || []).slice(0, 20)
+  } catch { toast.error('排行榜加载失败') }
   finally { loading.value = false }
-})
+}
+
+onMounted(loadRank)
+watch(tab, loadRank)
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 async function quickAdd(e: Event, p: Product) { e.stopPropagation(); try { await addToCart(p.id, 1); toast.success('已加入购物车') } catch { toast.error('添加失败') } }
@@ -45,8 +53,8 @@ async function quickAdd(e: Event, p: Product) { e.stopPropagation(); try { await
     <div v-if="loading" class="rank-list">
       <div v-for="i in 10" :key="i" class="rank-skel" />
     </div>
-    <div v-else class="rank-list">
-      <div v-for="(p, i) in ranks" :key="p.id" class="rank-item" @click="goDetail(p.id)">
+    <div v-else-if="ranks.length" class="rank-list">
+      <div v-for="(p, i) in ranks" :key="p.id" class="rank-item" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
         <span class="rank-medal">{{ i < 3 ? ['🥇','🥈','🥉'][i] : i + 1 }}</span>
         <LazyImage :src="p.imageUrl || ''" alt="" height="60px" width="60px" rounded="6px" />
         <div class="rank-info">
@@ -59,6 +67,7 @@ async function quickAdd(e: Event, p: Product) { e.stopPropagation(); try { await
         </div>
       </div>
     </div>
+    <div v-else class="rank-empty">暂无排行数据</div>
   </div>
 </template>
 

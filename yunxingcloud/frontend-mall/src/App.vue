@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, onErrorCaptured, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGlobalToast } from '@/composables/useToast'
 import { useNotification } from '@/composables/useNotification'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import MobileNav from '@/components/MobileNav.vue'
-import CompareFloatingBar from '@/views/CompareView.vue'
 import { useThemeStore } from '@/stores/theme'
+import { useNetworkStatus } from '@/composables/useNetworkStatus'
+
+const CompareFloatingBar = defineAsyncComponent(() => import('@/views/CompareView.vue'))
+const ChatWidget = defineAsyncComponent(() => import('@/components/ChatWidget.vue'))
 
 const router = useRouter()
 useThemeStore()
+const { isOnline } = useNetworkStatus()
+
+// PWA install prompt
+const installPrompt = ref<any>(null)
+const showInstall = ref(false)
+function onBeforeInstall(e: Event) { e.preventDefault(); installPrompt.value = e; showInstall.value = true }
+async function doInstall() { if (installPrompt.value) { installPrompt.value.prompt(); const r = await installPrompt.value.userChoice; if (r.outcome === 'accepted') showInstall.value = false; installPrompt.value = null } }
+window.addEventListener('beforeinstallprompt', onBeforeInstall)
 const toast = useGlobalToast()
 const cartCount = ref(0)
 const showBackTop = ref(false)
@@ -34,6 +45,10 @@ async function enablePush() {
 
 useThemeStore() // 初始化并应用主题
 
+const appError = ref<string | null>(null)
+onErrorCaptured((err) => { appError.value = err instanceof Error ? err.message : String(err); return false })
+
+
 onMounted(() => {
   updateCartCount()
   window.addEventListener('scroll', onScroll)
@@ -51,7 +66,25 @@ onUnmounted(() => {
   <div>
     <AppHeader :key="'header'" :cart-count="cartCount" />
 
+    <!-- Offline banner -->
+    <div v-if="!isOnline" class="offline-banner">当前处于离线模式，部分功能不可用</div>
+
+    <!-- Install prompt -->
+    <div v-if="showInstall" class="install-banner">
+      <span>将此应用添加到主屏幕，随时随地购物</span>
+      <button class="install-btn" @click="doInstall">安装</button>
+      <button class="install-close" @click="showInstall = false">✕</button>
+    </div>
+
     <!-- Main Content -->
+    <div v-if="appError" class="error-boundary">
+      <div class="error-boundary-card">
+        <h2>页面出错了</h2>
+        <p>{{ appError }}</p>
+        <button class="error-boundary-btn" @click="appError = null; router.go(0)">重新加载</button>
+      </div>
+    </div>
+
     <a href="#main-content" class="skip-link">跳转到主要内容</a>
     <main id="main-content" class="main-content" role="main" tabindex="-1">
       <router-view v-slot="{ Component, route: r }">
@@ -102,6 +135,9 @@ onUnmounted(() => {
 
     <!-- Compare -->
     <CompareFloatingBar />
+
+    <!-- Chat -->
+    <ChatWidget />
 
     <!-- Toast -->
     <TransitionGroup name="toast" tag="div" class="toast-container">
@@ -227,6 +263,32 @@ onUnmounted(() => {
 
 .toast-enter-active { animation: fadeIn .3s; }
 .toast-leave-active { animation: fadeIn .2s reverse; }
+
+.error-boundary { display: flex; justify-content: center; align-items: center; min-height: 60vh; padding: var(--space-xxl); }
+.error-boundary-card { text-align: center; background: var(--bg-white); padding: var(--space-xxxl); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); max-width: 400px; }
+.error-boundary-card h2 { font-size: var(--font-xl); color: var(--jd-red); margin-bottom: var(--space-md); }
+.error-boundary-card p { color: var(--text-secondary); font-size: var(--font-base); margin-bottom: var(--space-xl); word-break: break-word; }
+.error-boundary-btn { padding: 10px 24px; background: var(--jd-red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-md); }
+
+/* Offline banner */
+.offline-banner {
+  text-align: center; padding: var(--space-sm); background: #fff3cd;
+  color: #856404; font-size: 13px; font-weight: 600;
+}
+
+/* Install banner */
+.install-banner {
+  display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-lg);
+  background: var(--jd-red); color: #fff; font-size: 14px;
+}
+.install-banner span { flex: 1; }
+.install-btn {
+  padding: 4px 16px; background: #fff; color: var(--jd-red); border: none;
+  border-radius: var(--radius-round); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.install-close {
+  background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 16px;
+}
 
 @media (max-width: 768px) {
   .main-content { padding: var(--space-sm) var(--space-sm) calc(70px + env(safe-area-inset-bottom, 0px)); }

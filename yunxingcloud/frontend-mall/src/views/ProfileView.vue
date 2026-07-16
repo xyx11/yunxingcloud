@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
 import type { Address, Coupon, FavoriteItem } from '@/types'
 import { ToastInjectionKey } from '@/composables/useToast'
+import request from '@/api/request'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
 
@@ -25,6 +26,30 @@ const shareCopied = ref(false)
 const editAddr = ref<Address | null>(null)
 const showAddrForm = ref(false)
 const loading = ref(true)
+const memberTier = ref('')
+const memberPoints = ref(0)
+const showFeedback = ref(false)
+const feedbackForm = ref({ content: '', contact: '' })
+const feedbackSent = ref(false)
+
+async function submitFeedback() {
+  if (!feedbackForm.value.content.trim()) return
+  try { await request.post('/feedback', { type: 'suggestion', content: feedbackForm.value.content, contact: feedbackForm.value.contact }); feedbackSent.value = true } catch { toast.error('提交失败') }
+}
+
+const tierProgress = ref(0)
+const nextTierName = ref('')
+
+async function loadMemberTier() {
+  try {
+    const r = await request.get('/member/tiers'); const tiers = r.data || []
+    if (tiers.length) {
+      const current = tiers[0]; memberTier.value = current.name || ''
+      if (tiers.length > 1) { nextTierName.value = tiers[1].name || ''; tierProgress.value = Math.min(100, Math.round((memberPoints.value || 0) / Math.max(1, tiers[1].pointsRequired || 1000) * 100)) }
+    }
+  } catch {}
+  try { const p = await request.get('/points/account'); memberPoints.value = p.data?.balance ?? 0 } catch {}
+}
 
 const pwForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const addrForm = ref({ name: '', phone: '', province: '', city: '', district: '', detail: '', isDefault: false })
@@ -40,7 +65,7 @@ async function copyShareLink() {
   try { await navigator.clipboard.writeText(window.location.origin + '/register?ref=' + (auth.user?.username || '')); shareCopied.value = true; toast.success(t('profile.inviteCopied')); setTimeout(() => shareCopied.value = false, 2000) } catch {}
 }
 
-onMounted(async () => { if (!auth.isLoggedIn) { router.push('/login'); return }; loadTab() })
+onMounted(async () => { if (!auth.isLoggedIn) { router.push('/login'); return }; loadTab(); loadMemberTier() })
 
 const tabCache: Record<string, boolean> = {}
 
@@ -91,7 +116,11 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
       <div class="avatar">{{ auth.user?.username?.charAt(0)?.toUpperCase() }}</div>
       <div>
         <h2 class="username">{{ auth.user?.username }}</h2>
-        <p class="member-tag">{{ t('profile.member') }}</p>
+        <p class="member-tag">{{ memberTier || t('profile.memberLabel') }}{{ memberPoints ? ' · ' + memberPoints + '积分' : '' }}</p>
+        <div v-if="nextTierName" class="tier-progress">
+          <div class="tier-progress-bar"><div class="tier-progress-fill" :style="{ width: tierProgress + '%' }" /></div>
+          <span class="tier-progress-label">距{{ nextTierName }}还差{{ tierProgress }}%</span>
+        </div>
       </div>
     </div>
 
@@ -106,9 +135,26 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
       </button>
     </div>
 
+    <!-- Feedback -->
+    <div class="invite-bar" @click="showFeedback = !showFeedback">
+      <div>
+        <div class="invite-title">💬 意见反馈</div>
+        <div class="invite-desc">告诉我们你的想法和建议</div>
+      </div>
+      <button class="invite-btn">{{ showFeedback ? '收起' : '反馈' }}</button>
+    </div>
+    <div v-if="showFeedback" class="feedback-form">
+      <div v-if="feedbackSent" class="feedback-success">✅ 感谢你的反馈！</div>
+      <template v-else>
+        <textarea v-model="feedbackForm.content" placeholder="请描述你的建议或遇到的问题..." class="feedback-textarea" />
+        <input v-model="feedbackForm.contact" placeholder="联系方式（选填）" class="field-input field-full" />
+        <JdButton size="sm" @click="submitFeedback">提交</JdButton>
+      </template>
+    </div>
+
     <!-- Quick Links -->
     <div class="quick-links">
-      <div v-for="l in quickLinks" :key="l.path" class="quick-item" @click="router.push(l.path)">
+      <div v-for="l in quickLinks" :key="l.path" class="quick-item" role="button" tabindex="0" @click="router.push(l.path)" @keydown.enter.prevent="router.push(l.path)" @keydown.space.prevent="router.push(l.path)">
         <div class="quick-icon">{{ l.icon }}</div>
         <div class="quick-label">{{ l.label }}</div>
       </div>
@@ -161,6 +207,7 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
             </div>
           </div>
         </div>
+        <div v-if="loading" class="sk-box"><div class="sk-line" /><div class="sk-line w60" /><div class="sk-line w40" /></div>
         <div v-else-if="!loading" class="empty-text">{{ t('profile.noAddresses') }}</div>
       </div>
 
@@ -168,11 +215,12 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
       <div v-if="activeTab==='favorites'">
         <h3 class="tab-title">{{ t('profile.favorites') }}</h3>
         <div v-if="favorites.length" class="fav-grid">
-          <div v-for="f in favorites" :key="f.id" class="fav-card" @click="router.push(`/product/${f.productId}`)">
+          <div v-for="f in favorites" :key="f.id" class="fav-card" role="button" tabindex="0" @click="router.push(`/product/${f.productId}`)" @keydown.enter.prevent="router.push(`/product/${f.productId}`)" @keydown.space.prevent="router.push(`/product/${f.productId}`)">
             <LazyImage :src="f.imageUrl || ''" alt="" height="100px" rounded="6px" />
             <div class="fav-name">{{ f.productName || '商品 #' + f.productId }}</div>
           </div>
         </div>
+        <div v-if="loading" class="sk-box"><div class="sk-line" /><div class="sk-line w60" /></div>
         <div v-else-if="!loading" class="empty-text">{{ t('profile.noFavorites') }}</div>
       </div>
 
@@ -185,6 +233,7 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
             <div><div class="coupon-name">优惠券 #{{ c.couponId }}</div><div class="coupon-status">{{ c.status === '0' ? t('profile.unused') : t('profile.used') }}</div></div>
           </div>
         </div>
+        <div v-if="loading" class="sk-box"><div class="sk-line" /><div class="sk-line w60" /></div>
         <div v-else-if="!loading" class="empty-text">{{ t('profile.noCoupons') }}</div>
       </div>
 
@@ -282,4 +331,36 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
 .gap-sm { gap: var(--space-sm); }
 .fs-12 { font-size: 12px; }
 .fs-18 { font-size: 18px; }
+
+@media (max-width: 768px) {
+  .profile-page { padding: 0 var(--space-md) 80px; }
+  .profile-header { flex-direction: column; text-align: center; padding: var(--space-lg); }
+  .quick-links { grid-template-columns: repeat(4, 1fr); gap: var(--space-xs); }
+  .quick-label { font-size: 11px; }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { flex-shrink: 0; min-width: fit-content; padding: var(--space-sm) var(--space-md); font-size: var(--font-sm); }
+  .tab-content { padding: var(--space-lg); }
+  .tab-header { flex-direction: column; gap: var(--space-sm); }
+  .addr-form-grid { grid-template-columns: 1fr; }
+  .addr-form-footer { flex-direction: column; gap: var(--space-sm); }
+  .fav-grid { grid-template-columns: repeat(2, 1fr); }
+  .coupon-card { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
+  .addr-actions { flex-wrap: wrap; }
+  .action-btn { padding: 4px 14px; font-size: var(--font-md); }
+  .invite-bar { flex-direction: column; gap: var(--space-sm); text-align: center; }
+}
+
+.sk-box { padding: var(--space-lg) 0; display: flex; flex-direction: column; gap: var(--space-md); }
+.sk-line { height: 16px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); width: 100%; }
+.sk-line.w60 { width: 60%; }
+.sk-line.w40 { width: 40%; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.feedback-form { background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); box-shadow: var(--shadow-sm); }
+.feedback-textarea { width: 100%; height: 80px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-sm); }
+.feedback-success { text-align: center; color: var(--green); font-size: var(--font-md); padding: var(--space-md); }
+.tier-progress { margin-top: var(--space-xs); }
+.tier-progress-bar { height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; margin-bottom: 2px; max-width: 200px; }
+.tier-progress-fill { height: 100%; background: linear-gradient(90deg, var(--jd-red), #ff6b6b); border-radius: 2px; transition: width .6s; }
+.tier-progress-label { font-size: 11px; color: var(--text-tertiary); }
 </style>

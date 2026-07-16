@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getHomeData } from '@/api/product'
+import { getHomeData, getRecommend } from '@/api/product'
+import request from '@/api/request'
 import { useI18n } from '@/locales'
 import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
@@ -28,6 +29,11 @@ const recommended = ref<Product[]>([])
 const activeTab = ref<'hot' | 'new'>('hot')
 const loading = ref(true)
 const loadError = ref(false)
+const campaign = ref<any>(null)
+
+async function loadCampaign() {
+  try { const r = await request.get('/campaigns'); const list = r.data || []; campaign.value = list.length > 0 ? list[0] : null } catch {}
+}
 
 const flashEnd = ref(Date.now() + 6 * 3600 * 1000)
 const flashPrice = (price: number) => Math.floor(price * 0.7)
@@ -42,6 +48,7 @@ async function loadData() {
     newProducts.value = d.newProducts || []
     categories.value = d.categories || []
     recommended.value = d.recommended || []
+    try { const r = await getRecommend(); const recs = r.data; if (recs && recs.length) recommended.value = recs } catch {}
   } catch { loadError.value = true }
   loading.value = false
 }
@@ -49,7 +56,7 @@ async function loadData() {
 const { pulling, refreshing, pullDistance } = usePullRefresh(loadData)
 const tabProducts = computed(() => activeTab.value === 'hot' ? hotProducts.value : newProducts.value)
 
-onMounted(() => { loadData() })
+onMounted(() => { loadData(); loadCampaign() })
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goProducts(query: Record<string, string>) { router.push({ path: '/products', query }) }
@@ -60,6 +67,9 @@ function productImage(p: Product): string {
 
 <template>
   <div>
+    <div v-if="campaign" class="campaign-bar" role="button" tabindex="0" @click="router.push('/products')" @keydown.enter.prevent="router.push('/products')" @keydown.space.prevent="router.push('/products')">
+      🎉 {{ campaign.name }} — {{ campaign.description || '限时优惠，立即抢购' }}
+    </div>
     <div v-if="pulling" class="pull-indicator" :style="{ height: pullDistance + 'px' }">
       <span>{{ refreshing ? '⏳ 刷新中...' : '↓ 下拉刷新' }}</span>
     </div>
@@ -89,7 +99,7 @@ function productImage(p: Product): string {
           <span class="section-more" @click="goProducts({})">{{ t('common.allProducts') }} &gt;</span>
         </div>
         <div class="flash-grid">
-          <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-' + p.id" class="flash-item" @click="goDetail(p.id)">
+          <div v-for="p in hotProducts.slice(0, 4)" :key="'fs-' + p.id" class="flash-item" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
             <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
             <span class="discount-badge">7折</span>
             <div class="flash-item-body">
@@ -120,7 +130,7 @@ function productImage(p: Product): string {
           <span class="section-more" @click="router.push('/recent')">查看全部 &gt;</span>
         </div>
         <div class="product-grid">
-          <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-recent" @click="goDetail(p.id)">
+          <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-recent" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
             <LazyImage :src="productImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
             <div class="product-info">
               <h4 class="product-name">{{ p.name }}</h4>
@@ -132,7 +142,7 @@ function productImage(p: Product): string {
       </section>
 
       <!-- Recommended -->
-      <ProductSection title="🤖 为你推荐" :products="recommended" @product-click="goDetail" />
+      <ProductSection :title="'🤖 ' + t('product.recommended')" :products="recommended" @product-click="goDetail" />
 
       <JdEmpty v-if="activeTab==='hot' && !hotProducts.length && !newProducts.length"
         icon="🛍️" :title="t('common.noResults')" />
@@ -205,4 +215,6 @@ function productImage(p: Product): string {
   .flash-grid { grid-template-columns: repeat(2, 1fr); }
   .product-price { font-size: var(--font-lg); }
 }
+
+.campaign-bar { background: linear-gradient(90deg, var(--jd-red), #ff6b6b); color: #fff; text-align: center; padding: 10px var(--space-md); font-size: var(--font-md); font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

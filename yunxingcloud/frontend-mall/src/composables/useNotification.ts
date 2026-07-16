@@ -12,7 +12,7 @@ export function useNotification() {
       permission.value = result
       if (result === 'granted') {
         const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.subscribe({
+        await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array('BNcEz3WmQHq6WE-D9oJg5E9xRm0KZkPqJfTyHuVxLwYgAsNdFbGnHjMkLpQwErTyUiOpPaSdFgHjKlZxCvBnM')
         })

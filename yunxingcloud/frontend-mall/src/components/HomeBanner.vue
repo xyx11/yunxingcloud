@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from '@/locales'
 import type { Banner } from '@/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   banners: Banner[]
@@ -48,7 +51,7 @@ onUnmounted(() => { stopBanner() })
       :style="{ background: `linear-gradient(135deg, ${i % 2 ? '#d4000f' : '#f10215'}, ${i % 2 ? '#ff6b6b' : '#f90'})` }">
       <div class="banner-content">
         <h2 class="banner-title">{{ b.title }}</h2>
-        <p class="banner-subtitle">{{ b.subtitle || '热门推荐' }}</p>
+        <p class="banner-subtitle">{{ b.subtitle || t('product.hotRecommend') }}</p>
       </div>
     </div>
     <div class="banner-dots">

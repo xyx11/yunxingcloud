@@ -10,13 +10,14 @@ export interface Product {
   description?: string
   sales?: number
   rating?: number
+  reviewCount?: number
   stock?: number
   categoryId?: number
   brandId?: number
   isNew?: boolean
   isHot?: boolean
   badge?: string
-  tags?: string[]
+  tags?: string[] | string
   skus?: Sku[]
   specs?: Spec[]
   _added?: boolean
@@ -30,6 +31,7 @@ export interface Sku {
   productId: number
   name?: string
   specValues: string
+  specs?: string
   price: number
   stock: number
   imageUrl?: string
@@ -62,6 +64,7 @@ export interface CartItem {
   productId: number
   productName: string
   productImage?: string
+  imageUrl?: string
   price: number
   quantity: number
   selected: boolean
@@ -93,6 +96,7 @@ export interface OrderItem {
   productId: number
   productName: string
   productImage?: string
+  imageUrl?: string
   price: number
   quantity: number
   skuInfo?: string
@@ -121,7 +125,7 @@ export interface Coupon {
   minAmount: number
   startTime: string
   endTime: string
-  status: 'available' | 'used' | 'expired'
+  status: string
   couponId?: number
 }
 
@@ -169,7 +173,7 @@ export interface ViewedProduct {
   name: string
   price: number
   imageUrl?: string
-  viewedAt: string
+  viewedAt: string | number
 }
 
 // ===== API / Extra Types =====
