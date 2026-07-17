@@ -37,6 +37,62 @@ onMounted(async () => {
 
 function goProduct(id: number) { router.push(`/product/${id}`) }
 const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
+
+// Share poster
+const showShare = ref(false)
+const sharePoster = ref('')
+const shareGroupName = ref('')
+function share(g: GroupBuyItem) {
+  shareGroupName.value = g.productName || ''
+  drawPoster(g)
+  showShare.value = true
+}
+function drawPoster(g: GroupBuyItem) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 400; canvas.height = 600
+  const ctx = canvas.getContext('2d')!
+  // bg
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 400, 600)
+  // header gradient
+  const grad = ctx.createLinearGradient(0, 0, 400, 0)
+  grad.addColorStop(0, '#f10215'); grad.addColorStop(1, '#ff6b6b')
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 400, 180)
+  // title
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui'; ctx.textAlign = 'center'
+  ctx.fillText('拼团邀请', 200, 60)
+  ctx.font = '16px system-ui'; ctx.fillText('邀请好友一起拼，享超低价', 200, 90)
+  // product name
+  ctx.fillStyle = '#333'; ctx.font = 'bold 20px system-ui'
+  ctx.fillText(g.productName || '拼团商品', 200, 230)
+  // prices
+  ctx.font = 'bold 36px system-ui'; ctx.fillStyle = '#f10215'
+  ctx.fillText('¥' + (g.groupPrice / 100).toFixed(2), 200, 290)
+  ctx.font = '18px system-ui'; ctx.fillStyle = '#999'
+  ctx.fillText('原价 ¥' + (g.originalPrice / 100).toFixed(2), 200, 320)
+  const lw = ctx.measureText('原价 ¥' + (g.originalPrice / 100).toFixed(2))
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(200 - lw.width/2, 316); ctx.lineTo(200 + lw.width/2, 316); ctx.stroke()
+  // progress
+  const pct = Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
+  ctx.fillStyle = '#666'; ctx.font = '16px system-ui'
+  ctx.fillText(`已参团 ${g.currentMembers || 0}/${g.minMembers} (${pct}%)`, 200, 370)
+  ctx.fillStyle = '#eee'; ctx.fillRect(50, 385, 300, 12)
+  ctx.fillStyle = '#f10215'; ctx.fillRect(50, 385, 300 * pct / 100, 12)
+  // QR placeholder
+  ctx.fillStyle = '#f5f5f5'; ctx.fillRect(150, 430, 100, 100)
+  ctx.fillStyle = '#999'; ctx.font = '12px system-ui'; ctx.textAlign = 'center'
+  ctx.fillText('扫码参团', 200, 485)
+  // footer
+  ctx.fillStyle = '#999'; ctx.font = '12px system-ui'
+  ctx.fillText('长按识别二维码 · 邀请好友参团', 200, 570)
+  sharePoster.value = canvas.toDataURL()
+}
+function downloadPoster() {
+  const a = document.createElement('a'); a.href = sharePoster.value; a.download = '拼团海报.png'; a.click()
+}
+async function copyShareLink() {
+  try { await navigator.clipboard.writeText(window.location.origin + '/group-buy'); toast.success(t('toast.copied')) } catch {}
+}
 </script>
 
 <template>
@@ -65,12 +121,28 @@ const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMember
             <span class="gb-members">{{ g.currentMembers || 0 }}/{{ g.minMembers }}{{ t('groupBuy.people', '人') }}</span>
           </div>
           <div class="gb-bar"><div class="gb-bar-fill" :style="{ width: progress(g) + '%' }" /></div>
-          <JdButton block size="sm" @click.stop="goProduct(g.productId)">{{ t('groupBuy.joinGroup') }}</JdButton>
+          <div class="gb-actions">
+            <JdButton size="sm" class="flex-1" @click.stop="goProduct(g.productId)">{{ t('groupBuy.joinGroup') }}</JdButton>
+            <JdButton size="sm" type="outline" @click.stop="share(g)">📤 邀请</JdButton>
+          </div>
         </div>
       </div>
     </div>
 
     <JdEmpty v-else icon="👥" :title="t('groupBuy.empty', '暂无拼团活动')" />
+
+    <!-- Share Modal -->
+    <div v-if="showShare" class="share-overlay" @click.self="showShare = false">
+      <div class="share-modal">
+        <h3 class="share-title">分享拼团 - {{ shareGroupName }}</h3>
+        <img :src="sharePoster" class="share-poster" />
+        <div class="share-btns">
+          <JdButton @click="downloadPoster">下载海报</JdButton>
+          <JdButton type="outline" @click="copyShareLink">复制链接</JdButton>
+          <JdButton type="ghost" @click="showShare = false">关闭</JdButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -103,6 +175,14 @@ const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMember
 .sk-line { height: 16px; width: 60%; background: var(--border-light); border-radius: var(--radius-sm); }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.gb-actions { display: flex; gap: var(--space-sm); }
+.flex-1 { flex: 1; }
+.share-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.6); z-index: 500; display: flex; align-items: center; justify-content: center; }
+.share-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); max-width: 440px; width: 90%; text-align: center; }
+.share-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
+.share-poster { width: 100%; max-width: 360px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+.share-btns { display: flex; gap: var(--space-sm); margin-top: var(--space-lg); justify-content: center; }
 
 @media (max-width: 768px) {
   .gb-page { padding: 0 var(--space-md); }
