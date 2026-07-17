@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
@@ -12,6 +12,34 @@ const myCoupons = ref<any[]>([])
 const activeTab = ref<'available' | 'mine'>('available')
 const loading = ref(true)
 const claiming = ref<Set<number>>(new Set())
+const showExpired = ref(false)
+
+function daysLeft(endTime: string): number {
+  return (new Date(endTime).getTime() - Date.now()) / 86400000
+}
+function expiryLabel(endTime: string): string {
+  const d = daysLeft(endTime)
+  if (d <= 0) return t('coupon.expired')
+  if (d <= 1) return t('coupon.expiringToday')
+  if (d <= 3) return t('coupon.expiringSoon')
+  return ''
+}
+function couponStatus(c: any): string {
+  if (c.status === '1') return t('coupon.statusUsed')
+  if (daysLeft(c.endTime) <= 0) return t('coupon.statusExpired')
+  return t('coupon.statusUnused')
+}
+const sortedMyCoupons = computed(() =>
+  [...myCoupons.value].sort((a, b) => {
+    const aExp = daysLeft(a.endTime) <= 3 ? 0 : a.status === '0' ? 1 : 2
+    const bExp = daysLeft(b.endTime) <= 3 ? 0 : b.status === '0' ? 1 : 2
+    if (aExp !== bExp) return aExp - bExp
+    return new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
+  })
+)
+const filteredMyCoupons = computed(() =>
+  showExpired.value ? sortedMyCoupons.value : sortedMyCoupons.value.filter(c => c.status === '0' || daysLeft(c.endTime) > 0)
+)
 
 async function load() {
   loading.value = true
@@ -22,7 +50,7 @@ async function load() {
 
 async function claim(couponId: number) {
   claiming.value.add(couponId)
-  try { await request.post(`/coupons/${couponId}/claim`); toast.success(t('toast.couponClaimed')) } catch { toast.error('领取失败') }
+  try { await request.post(`/coupons/${couponId}/claim`); toast.success(t('toast.couponClaimed')); load() } catch { toast.error('领取失败') }
   finally { claiming.value.delete(couponId) }
 }
 
@@ -47,7 +75,7 @@ onMounted(load)
       <div v-for="c in availableCoupons" :key="c.id" class="coupon-card">
         <div class="coupon-left">
           <span class="coupon-amount">¥{{ (c.amount / 100).toFixed(0) }}</span>
-          <span class="coupon-type">{{ c.type === 'full_reduction' ? '满减' : c.discount + '折' }}</span>
+          <span class="coupon-type">{{ c.type === 'full_reduction' ? '满减' : (c.discount || '') + '折' }}</span>
         </div>
         <div class="coupon-right">
           <div>
@@ -63,14 +91,19 @@ onMounted(load)
     </div>
 
     <!-- My Coupons -->
-    <div v-else class="cp-grid">
-      <div v-for="c in myCoupons" :key="c.id" class="coupon-card" :class="{ used: c.status === '1' }">
-        <div class="coupon-left" :class="{ used: c.status !== '0' }">
+    <div v-else>
+      <div class="expired-toggle">
+        <label><input type="checkbox" v-model="showExpired" /> {{ t('coupon.showExpired') }} ({{ myCoupons.filter(c => c.status !== '0' || daysLeft(c.endTime) <= 0).length }})</label>
+      </div>
+      <div class="cp-grid">
+      <div v-for="c in filteredMyCoupons" :key="c.id" class="coupon-card" :class="{ used: c.status !== '0' || daysLeft(c.endTime) <= 0 }">
+        <div class="coupon-left" :class="{ used: c.status !== '0' || daysLeft(c.endTime) <= 0 }">
           <span class="coupon-amount">¥{{ (c.amount / 100).toFixed(0) }}</span>
-          <span class="coupon-status">{{ c.status === '1' ? '已使用' : c.status === '0' ? '未使用' : '已过期' }}</span>
+          <span v-if="expiryLabel(c.endTime)" class="coupon-expiry-warn">{{ expiryLabel(c.endTime) }}</span>
+          <span class="coupon-status">{{ couponStatus(c) }}</span>
         </div>
         <div class="coupon-right">
-          <div class="coupon-name">{{ c.name || '优惠券' }}</div>
+          <div class="coupon-name">{{ c.name || t('coupon.name') }}</div>
           <div class="coupon-meta">有效期至 {{ c.endTime?.substring(0, 10) || '-' }}</div>
         </div>
       </div>
@@ -79,6 +112,7 @@ onMounted(load)
         <JdButton size="sm" @click="activeTab = 'available'">{{ t('coupon.goClaim') }}</JdButton>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -102,6 +136,10 @@ onMounted(load)
 .coupon-amount { font-size: var(--font-h1); font-weight: 800; }
 .coupon-type { font-size: var(--font-xs); opacity: .8; margin-top: var(--space-xs); }
 .coupon-status { font-size: 10px; opacity: .8; margin-top: var(--space-xs); }
+.coupon-expiry-warn { font-size: 10px; margin-top: 4px; padding: 2px 6px; background: var(--jd-red); color: #fff; border-radius: var(--radius-sm); font-weight: 700; animation: pulse-warn 1.5s ease-in-out infinite; }
+@keyframes pulse-warn { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+.expired-toggle { margin-bottom: var(--space-md); font-size: var(--font-sm); color: var(--text-secondary); }
+.expired-toggle input { margin-right: 6px; }
 .coupon-right { flex: 1; padding: var(--space-lg); display: flex; flex-direction: column; justify-content: space-between; }
 .coupon-name { font-weight: 600; font-size: var(--font-md); margin-bottom: var(--space-xs); color: var(--text-primary); }
 .coupon-meta { color: var(--text-tertiary); font-size: var(--font-xs); }

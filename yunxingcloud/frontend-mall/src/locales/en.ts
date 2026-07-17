@@ -192,6 +192,9 @@ export default {
     statusUnused: 'Available',
     statusUsed: 'Used',
     statusExpired: 'Expired',
+    expiringSoon: 'Expiring Soon',
+    expiringToday: 'Expires Today',
+    showExpired: 'Show expired/used',
   },
   afterSale: {
     title: 'After-Sale',

@@ -247,7 +247,7 @@ export default {
     goClaim: '去领取',
     statusUnused: '未使用',
     statusUsed: '已使用',
-    statusExpired: '已过期',
+    statusExpired: '已过期', expiringSoon: '即将过期', expiringToday: '今天过期', showExpired: '显示已过期/已使用',
     defaultName: '优惠券',
   },
   afterSale: {
