@@ -1,8 +1,8 @@
 package com.yunxingcloud.gateway;
 
+import com.yunxingcloud.common.core.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,7 +61,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private final SecretKey key;
 
     public JwtAuthGlobalFilter(@Value("${jwt.secret}") String secret) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.key = JwtTokenProvider.createKey(secret);
     }
 
     @Override

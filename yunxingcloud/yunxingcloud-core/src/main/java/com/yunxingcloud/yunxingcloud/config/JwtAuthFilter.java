@@ -1,4 +1,4 @@
-package com.yunxingcloud.order.config;
+package com.yunxingcloud.yunxingcloud.config;
 
 import com.yunxingcloud.common.core.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
@@ -22,7 +22,6 @@ import java.util.List;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
-
     private final SecretKey key;
 
     public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
@@ -38,10 +37,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Claims claims = JwtTokenProvider.parseToken(token, key);
                 String username = JwtTokenProvider.getUsername(claims);
                 List<String> auths = JwtTokenProvider.getAuthorities(claims);
-                List<SimpleGrantedAuthority> authorities = auths.stream()
-                        .map(SimpleGrantedAuthority::new).toList();
                 SecurityContextHolder.getContext().setAuthentication(
-                        new UsernamePasswordAuthenticationToken(username, null, authorities));
+                        new UsernamePasswordAuthenticationToken(username, null,
+                                auths.stream().map(SimpleGrantedAuthority::new).toList()));
             } catch (Exception e) { log.debug("JWT parse skipped: {}", e.getMessage()); }
         }
         chain.doFilter(request, response);
