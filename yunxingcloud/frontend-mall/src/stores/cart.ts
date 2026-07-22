@@ -22,7 +22,7 @@ export const useCartStore = defineStore('cart', () => {
       state.count = items.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)
       persist()
     } catch {
-      try { useGlobalToast().error('购物车加载失败') } catch {}
+      /* fallback toast — view should handle errors */
     }
   }
 

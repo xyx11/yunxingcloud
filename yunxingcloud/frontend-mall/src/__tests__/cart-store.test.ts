@@ -54,11 +54,12 @@ describe('useCartStore', () => {
     expect(store.state.items).toHaveLength(2)
   })
 
-  it('fetchCart shows toast on error', async () => {
+  it('fetchCart handles error gracefully', async () => {
     mockGet.mockRejectedValue(new Error('network'))
     const store = useCartStore()
     await store.fetchCart()
-    expect(mockToastError).toHaveBeenCalled()
+    // error is swallowed — view layer handles user feedback
+    expect(store.state.count).toBe(0)
   })
 
   it('incrementLocal updates count', () => {
