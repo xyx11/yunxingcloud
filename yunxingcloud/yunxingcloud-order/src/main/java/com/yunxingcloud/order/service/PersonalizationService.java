@@ -30,8 +30,9 @@ public class PersonalizationService {
         Set<Long> boughtCategoryIds = new HashSet<>();
         List<OrderHead> orders = orderRepo.findByUsernameOrderByCreatedAtDesc(username);
         Set<Long> productIds = new HashSet<>();
-        for (OrderHead order : orders) {
-            for (OrderLine line : lineRepo.findByOrderId(order.getId())) {
+        if (!orders.isEmpty()) {
+            java.util.List<Long> orderIds = orders.stream().map(OrderHead::getId).toList();
+            for (OrderLine line : lineRepo.findByOrderIdIn(orderIds)) {
                 productIds.add(line.getProductId());
             }
         }

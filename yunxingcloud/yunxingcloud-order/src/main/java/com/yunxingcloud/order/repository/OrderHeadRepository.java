@@ -32,4 +32,7 @@ public interface OrderHeadRepository extends JpaRepository<OrderHead, Long> {
 
     @Query("SELECT COUNT(o) FROM OrderHead o WHERE o.status <> '0' AND o.status <> '4'")
     long paidOrderCount();
+
+    @Query("SELECT o FROM OrderHead o WHERE o.createdAt >= :since ORDER BY o.createdAt DESC")
+    List<OrderHead> findByCreatedAtAfter(java.time.LocalDateTime since);
 }

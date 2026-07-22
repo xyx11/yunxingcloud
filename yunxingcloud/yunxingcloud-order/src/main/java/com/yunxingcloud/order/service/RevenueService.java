@@ -39,8 +39,7 @@ public class RevenueService {
         for (int i = 29; i >= 0; i--) dailyMap.put(LocalDate.now().minusDays(i).toString(), 0L);
         LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
 
-        for (OrderHead o : orderRepo.findAll()) {
-            if (o.getCreatedAt() == null || o.getCreatedAt().toLocalDate().isBefore(thirtyDaysAgo)) continue;
+        for (OrderHead o : orderRepo.findByCreatedAtAfter(thirtyDaysAgo.atStartOfDay())) {
             String day = o.getCreatedAt().toLocalDate().toString();
             Long amount = o.getActualAmount() != null ? o.getActualAmount() : o.getTotalAmount();
             dailyMap.computeIfPresent(day, (k, v) -> v + amount);
