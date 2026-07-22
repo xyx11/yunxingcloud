@@ -48,6 +48,7 @@ public class MallService {
     private void evictCache() { cacheService.evictCatalog(); }
 
     // ===== Home =====
+    @org.springframework.cache.annotation.Cacheable(value = "homeData", unless = "#result == null")
     public Map<String, Object> home() {
         return Map.of(
             "banners", cacheService.getBanners(),

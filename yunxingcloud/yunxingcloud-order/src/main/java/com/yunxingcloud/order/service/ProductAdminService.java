@@ -86,6 +86,7 @@ public class ProductAdminService {
         return repo.findById(id);
     }
 
+    @org.springframework.cache.annotation.Cacheable(value = "productDetail", key = "#id", unless = "#result == null")
     public Map<String, Object> detail(Long id) {
         Product p = repo.findById(id).orElse(null);
         if (p == null) return null;
