@@ -23,7 +23,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private static final Logger log = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
     private static final long TOKEN_EXPIRY = 2 * 60 * 60 * 1000; // 2 hours
 
-    @Value("${jwt.secret:yunxingcloud-oauth2-default-secret-key-min-256-bits}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${app.frontend-url:https://www.yunxingcloud.com}")
