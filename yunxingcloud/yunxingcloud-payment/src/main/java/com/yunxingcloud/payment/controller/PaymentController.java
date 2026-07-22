@@ -81,7 +81,7 @@ public class PaymentController {
             try {
                 return ResponseEntity.ok(paymentService.refund(id, refundAmount, reason));
             } catch (Exception e) {
-                log.warn("退款操作失败: orderId={}, amount={}, reason={}, error={}", id, refundAmount, reason, e.getMessage());
+                log.warn("退款Operation failed: orderId={}, amount={}, reason={}, error={}", id, refundAmount, reason, e.getMessage());
                 throw e;
             }
         } catch (Exception e) {

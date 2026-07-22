@@ -78,7 +78,7 @@ public class InventoryController {
             String remark = (String) body.getOrDefault("remark", "手动出库");
             log.info("出库: productId={}, warehouseId={}, qty={}, remark={}", productId, warehouseId, qty, remark);
             return ResponseEntity.ok(service.stockOut(productId, warehouseId, qty, remark));
-        } catch (IllegalArgumentException e) { log.warn("出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        } catch (IllegalArgumentException e) { log.warn("出库Operation failed: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
         catch (Exception e) { log.warn("出库参数错误: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", "参数错误: " + e.getMessage())); }
     }
 
@@ -103,7 +103,7 @@ public class InventoryController {
         Long orderId = body.containsKey("orderId") ? Long.valueOf(body.get("orderId").toString()) : null;
         String name = (String) body.getOrDefault("productName", "");
         try { log.info("订单出库: productId={}, warehouseId={}, qty={}, orderId={}", productId, warehouseId, qty, orderId); service.orderOut(productId, warehouseId, qty, orderId, name); return ResponseEntity.ok(Map.of("success", true)); }
-        catch (Exception e) { log.warn("订单出库操作失败: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+        catch (Exception e) { log.warn("订单出库Operation failed: {}", e.getMessage()); return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
 
     @PostMapping("/api/inventory/order-back")

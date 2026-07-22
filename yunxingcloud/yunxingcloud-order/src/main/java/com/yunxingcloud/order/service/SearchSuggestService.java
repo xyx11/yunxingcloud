@@ -35,7 +35,7 @@ public class SearchSuggestService {
     public void logSearch(String keyword) {
         if (keyword != null && !keyword.isBlank()) {
             try { jdbc.update("INSERT INTO search_log (keyword, created_at) VALUES (?, NOW())", keyword.trim()); }
-            catch (Exception ignored) { log.warn("操作异常: {}", ignored.getMessage()); }
+            catch (Exception ignored) { log.warn("Operation failed: {}", ignored.getMessage()); }
         }
     }
 

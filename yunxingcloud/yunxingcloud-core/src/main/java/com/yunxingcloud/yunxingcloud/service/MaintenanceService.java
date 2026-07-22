@@ -127,7 +127,7 @@ public class MaintenanceService {
             }
             list.sort((a, b) -> b.get("filename").toString().compareTo(a.get("filename").toString()));
         } catch (Exception ignored) {
-            log.warn("操作异常: {}", ignored.getMessage());
+            log.warn("Operation failed: {}", ignored.getMessage());
         }
         return list;
     }
