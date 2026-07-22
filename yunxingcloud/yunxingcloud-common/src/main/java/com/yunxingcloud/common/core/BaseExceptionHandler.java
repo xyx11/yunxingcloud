@@ -33,27 +33,28 @@ public abstract class BaseExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleBadRequest(RuntimeException e) {
+        log.warn("Bad request: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", e.getMessage()));
+                .body(Map.of("success", false, "message", "Bad request"));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", e.getMessage()));
+                .body(Map.of("success", false, "message", "Missing parameter: " + e.getParameterName()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", e.getMessage()));
+                .body(Map.of("success", false, "message", "Type mismatch: " + e.getName()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
         String detail = e.getBindingResult().getFieldErrors().stream()
                 .map(f -> f.getField() + ": " + f.getDefaultMessage())
-                .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
+                .reduce((a, b) -> a + "; " + b).orElse("Validation failed");
         return ResponseEntity.badRequest()
                 .body(Map.of("success", false, "message", detail));
     }
@@ -61,33 +62,33 @@ public abstract class BaseExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleNotReadable(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", "请求格式错误"));
+                .body(Map.of("success", false, "message", "Invalid request body"));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> handleDataIntegrity(DataIntegrityViolationException e) {
-        log.warn("数据完整性冲突: {}", e.getMessage());
+        log.warn("Data integrity violation: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", "数据冲突，请检查后重试"));
+                .body(Map.of("success", false, "message", "Data conflict, please retry"));
     }
 
     @ExceptionHandler(TransactionException.class)
     public ResponseEntity<?> handleTransaction(TransactionException e) {
-        log.error("事务异常: {}", e.getMessage(), e);
+        log.error("Transaction exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(Map.of("success", false, "message", "服务暂时不可用，请稍后重试"));
+                .body(Map.of("success", false, "message", "Service temporarily unavailable"));
     }
 
     @ExceptionHandler(BlockException.class)
     public ResponseEntity<?> handleBlockException(BlockException e) {
-        log.warn("Sentinel 流控/降级: {}", e.getMessage());
+        log.warn("Sentinel blocked: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of("success", false, "message", "请求过于频繁，请稍后再试"));
+                .body(Map.of("success", false, "message", "Too many requests, please retry later"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
-        log.error("未处理异常: {}", e.getMessage(), e);
+        log.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "message", "Internal server error"));
     }
