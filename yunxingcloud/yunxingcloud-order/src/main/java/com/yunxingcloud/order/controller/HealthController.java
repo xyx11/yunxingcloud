@@ -92,6 +92,32 @@ public class HealthController {
         return ResponseEntity.ok(cacheService.refreshAllCaches());
     }
 
+    @GetMapping("/actuator/health/liveness")
+    @Operation(summary = "K8s Liveness Probe")
+    public ResponseEntity<?> liveness() {
+        return ResponseEntity.ok(Map.of("status", "UP"));
+    }
+
+    @GetMapping("/actuator/health/readiness")
+    @Operation(summary = "K8s Readiness Probe")
+    public ResponseEntity<?> readiness() {
+        boolean dbOk = checkDatabase();
+        return ResponseEntity.status(dbOk ? 200 : 503)
+                .body(Map.of("status", dbOk ? "UP" : "DOWN", "database", dbOk ? "UP" : "DOWN"));
+    }
+
+    @GetMapping("/actuator/metrics")
+    @Operation(summary = "Prometheus Metrics")
+    public ResponseEntity<?> metrics() {
+        var rt = Runtime.getRuntime();
+        return ResponseEntity.ok(Map.of(
+            "jvm.memory.used", rt.totalMemory() - rt.freeMemory(),
+            "jvm.memory.max", rt.maxMemory(),
+            "jvm.threads", Thread.activeCount(),
+            "jvm.uptime.seconds", ManagementFactory.getRuntimeMXBean().getUptime() / 1000
+        ));
+    }
+
     @GetMapping("/api/system/overview")
     @Operation(summary = "系统总览")
     public ResponseEntity<?> overview() {
