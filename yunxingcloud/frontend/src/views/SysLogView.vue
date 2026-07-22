@@ -28,11 +28,13 @@ async function viewFile(name: string) {
 }
 function refresh() { if (activeFile.value) viewFile(activeFile.value) }
 
-// Highlight search keyword in content
+// Highlight search keyword in content (with HTML escaping to prevent XSS)
 const highlightedContent = computed(() => {
-  if (!highlight.value || !content.value) return content.value
+  if (!content.value) return ''
+  const safe = content.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  if (!highlight.value) return safe
   const escaped = highlight.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return content.value.replace(new RegExp(escaped, 'gi'), m => `<mark>${m}</mark>`)
+  return safe.replace(new RegExp(escaped, 'gi'), m => `<mark>${m}</mark>`)
 })
 
 onMounted(loadFiles)
@@ -56,7 +58,7 @@ onMounted(loadFiles)
             <span><b>{{ activeFile || '请选择日志文件' }}</b></span>
             <n-space>
               <n-input v-model:value="highlight" placeholder="高亮关键字" size="small" clearable class="sl-input" />
-              <n-button size="small" @click="refresh" :disabled="!activeFile" secondary>刷新</n-button>
+              <n-button size="small" @click="refresh" :disabled="!activeFile" secondary>{{ t('common.refresh') }}</n-button>
             </n-space>
           </n-space>
           <div class="sl-content">

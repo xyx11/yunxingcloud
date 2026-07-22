@@ -172,7 +172,7 @@ onMounted(() => {
       <n-drawer-content :title="editingId ? t('product.edit') : t('product.add')" closable>
         <template #footer><n-space justify="end"><n-button @click="showModal = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-tabs type="line" size="small" :default-value="'basic'">
-          <n-tab-pane name="basic" tab="基本信息">
+          <n-tab-pane name="basic" :tab="t('product.basicInfo')">
             <n-form :model="form" label-placement="left" label-width="80" size="small">
               <n-form-item :label="t('product.name')"><n-input v-model:value="form.name" /></n-form-item>
               <n-form-item :label="t('product.price') + '(¥)'"><n-input-number v-model:value="form.price" :min="0.01" :step="0.01" /></n-form-item>
@@ -186,7 +186,7 @@ onMounted(() => {
               </n-form-item>
             </n-form>
           </n-tab-pane>
-          <n-tab-pane name="media" tab="图片媒体">
+          <n-tab-pane name="media" :tab="t('product.media')">
             <n-form :model="form" label-placement="left" label-width="80" size="small">
               <n-form-item :label="t('product.imageUrl')"><n-input v-model:value="form.imageUrl" placeholder="https://..." /></n-form-item>
               <n-form-item label="上传主图">
@@ -209,7 +209,7 @@ onMounted(() => {
               </n-form-item>
             </n-form>
           </n-tab-pane>
-          <n-tab-pane name="seo" tab="SEO">
+          <n-tab-pane name="seo" :tab="t('common.seo')">
             <n-form :model="form" label-placement="left" label-width="80" size="small">
               <n-form-item label="SEO标题"><n-input v-model:value="form.metaTitle" placeholder="留空使用商品名称" maxlength="200" /></n-form-item>
               <n-form-item label="SEO描述"><n-input v-model:value="form.metaDescription" type="textarea" placeholder="留空使用商品描述前段" maxlength="500" :autosize="{minRows:3,maxRows:6}" /></n-form-item>
@@ -224,7 +224,7 @@ onMounted(() => {
         <n-form-item label="新状态"><n-select v-model:value="batchForm.status" :options="[{label:'不修改',value:''},...statusOpts]" /></n-form-item>
         <n-form-item label="新分类"><n-select v-model:value="batchForm.categoryId" :options="categoryOpts" placeholder="不修改" clearable /></n-form-item>
       </n-form>
-      <template #footer><n-space justify="end"><n-button @click="showBatchModal=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatch">确认更新 ({{checkedRowKeys.length}}件)</n-button></n-space></template>
+      <template #footer><n-space justify="end"><n-button @click="showBatchModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="batchLoading" @click="doBatch">确认更新 ({{checkedRowKeys.length}}件)</n-button></n-space></template>
     </n-modal>
   </n-card>
 </template>

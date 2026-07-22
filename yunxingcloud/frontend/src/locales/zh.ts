@@ -41,7 +41,7 @@ export default {
     inactive: '未激活', active2: '已激活', used: '已用完', ended2: '已结束',
     notStarted: '未开始', inProgress: '进行中', signed: '已签收', inTransit: '运输中',
     viewAll: '查看全部', noDetail: '暂无详细内容', items: '{0}条', createSuccess: '创建成功', updateSuccess: '更新成功',
-    help: '帮助', uploadFromLocal: '本地上传',
+    help: '帮助', uploadFromLocal: '本地上传', allStatus: '全部状态', exportExcel: '导出 Excel', seo: 'SEO',
   },
   points: {
     available: '积分余额', totalEarned: '累计获得', totalSpent: '累计使用',
@@ -187,6 +187,7 @@ export default {
     receiver: '收货人', address: '地址',
     product: '商品', unitPrice: '单价', quantity: '数量',
     statuses: { '0': '待支付', '1': '已支付', '2': '已发货', '3': '已完成', '4': '已取消' },
+    batchShip: '批量发货', batchCancel: '批量取消',
   },
   product: {
     name: '名称', description: '描述', price: '价格',
@@ -194,6 +195,7 @@ export default {
     searchPlaceholder: '搜索商品',
     add: '新增商品', edit: '编辑商品',
     statuses: { '0': '上架', '1': '下架' },
+    basicInfo: '基本信息', media: '图片媒体',
   },
   inventory: {
     productId: '商品ID', productName: '商品名', warehouseId: '仓库ID',
@@ -201,6 +203,7 @@ export default {
     stockIn: '入库', stockOut: '出库', warehouse: '仓库',
     remark: '备注', lowStockAlert: '{n} 项库存不足',
     stockInSuccess: '入库成功', stockOutSuccess: '出库成功',
+    transfer: '仓库调拨', confirmTransfer: '确认调拨',
   },
   warehouse: {
     name: '名称', address: '地址',
@@ -255,6 +258,7 @@ export default {
     typeRefund: '退款', typeReturn: '退货', typeExchange: '换货',
     statusPending: '待审核', statusApproved: '已通过', statusRejected: '已拒绝',
     statusRefunding: '退款中', statusCompleted: '已完成',
+    totalApps: '总申请', pendingApps: '待处理', approvedApps: '已通过', rejectConfirm: '确认拒绝？',
   },
   chat: {
     title: '客服会话', refresh: '刷新', searchPlaceholder: '搜索会话ID...',

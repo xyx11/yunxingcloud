@@ -84,7 +84,7 @@ async function doBatchCancel() {
   try { const r = await request.put('/api/batch/cancel', { ids: checkedRowKeys.value, reason: batchReason.value }); notify.success(t('order.cancelResult', { canceled: r.data.canceled, total: r.data.total })); checkedRowKeys.value = []; showBatchCancel.value = false; load() }
   catch { notify.error(t('order.batchCancelFailed')) } finally { batchLoading.value = false }
 }
-function exportCSV() { const h=[t('order.orderNo'),t('order.username'),t('order.totalAmount'),t('order.status'),t('common.createdAt')]; const r=items.value.map((i:any)=>[i.orderNo||'',i.username||'',(i.totalAmount/100, 2),i.status||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders.csv'; a.click() }
+function exportCSV() { const h=[t('order.orderNo'),t('order.username'),t('order.totalAmount'),t('order.status'),t('common.createdAt')]; const r=items.value.map((i:any)=>[i.orderNo||'',i.username||'',formatPrice(i.totalAmount/100, 2),i.status||'',i.createdAt||'']); const csv=[h,...r].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const b=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders.csv'; a.click() }
 onMounted(load)
 </script>
 <template>
@@ -145,7 +145,7 @@ onMounted(load)
         <n-form-item :label="t('order.carrier')"><n-input v-model:value="batchCarrier" :placeholder="t('order.carrierPlaceholder')" /></n-form-item>
         <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
       </n-form>
-      <template #footer><n-space justify="end"><n-button @click="showBatchShip=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchShip">确认批量发货</n-button></n-space></template>
+      <template #footer><n-space justify="end"><n-button @click="showBatchShip=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchShip">确认批量发货</n-button></n-space></template>
     </n-modal>
     <!-- 批量取消弹窗 -->
     <n-modal v-model:show="showBatchCancel" title="批量取消" preset="card" class="max-w-400">
@@ -153,7 +153,7 @@ onMounted(load)
         <n-form-item label="取消原因"><n-input v-model:value="batchReason" placeholder="输入取消原因" /></n-form-item>
         <n-form-item :label="t('order.selectedOrders')">{{ checkedRowKeys.length }} {{ t('order.unit') }}</n-form-item>
       </n-form>
-      <template #footer><n-space justify="end"><n-button @click="showBatchCancel=false">取消</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchCancel">确认批量取消</n-button></n-space></template>
+      <template #footer><n-space justify="end"><n-button @click="showBatchCancel=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="batchLoading" @click="doBatchCancel">确认批量取消</n-button></n-space></template>
     </n-modal>
   </n-card>
 </template>

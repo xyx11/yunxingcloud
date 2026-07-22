@@ -45,7 +45,7 @@ onMounted(load)
     <n-dataTable :columns="columns" :data="items" :loading="loading" :pagination="{pageSize:10}" />
     <n-drawer v-model:show="showReject" :width="360" placement="right">
       <n-drawer-content :title="t('afterSale.rejectReason')" closable>
-        <template #footer><n-space justify="end"><n-button @click="showReject=false">取消</n-button><n-button type="error" @click="doReject">确认拒绝</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showReject=false">{{ t('common.cancel') }}</n-button><n-button type="error" @click="doReject">确认拒绝</n-button></n-space></template>
         <n-form label-placement="left" label-width="60" size="small"><n-form-item :label="t('afterSale.reason')"><n-input v-model:value="rejectForm.remark" :placeholder="t('afterSale.rejectPlaceholder')" /></n-form-item></n-form>
       </n-drawer-content>
     </n-drawer>

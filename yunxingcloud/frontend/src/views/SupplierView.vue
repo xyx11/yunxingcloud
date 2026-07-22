@@ -49,7 +49,7 @@ onMounted(load)
     </n-space>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
       <n-drawer-content :title="editingId?'编辑供应商':'新增供应商'" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="70" size="small">
           <n-form-item :label="t('common.name')"><n-input v-model:value="form.name" /></n-form-item>
           <n-form-item label="联系人"><n-input v-model:value="form.contact" /></n-form-item>

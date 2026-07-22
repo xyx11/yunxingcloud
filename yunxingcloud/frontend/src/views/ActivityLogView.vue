@@ -30,10 +30,10 @@ onMounted(load)
 </script>
 <template>
   <div class="view-pad">
-    <n-card title="活动日志"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+    <n-card title="活动日志"><template #header-extra><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button></template>
       <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索用户/操作..." size="small" clearable class="w-180" />
-        <n-button size="small" @click="load" secondary>刷新</n-button>
+        <n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any,i:number)=>i" :pagination="{pageSize:15}" size="small" />
     </n-card>

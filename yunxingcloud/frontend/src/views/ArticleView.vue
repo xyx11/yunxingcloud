@@ -52,12 +52,12 @@ onMounted(load)
 </script>
 <template>
   <n-card title="内容管理">
-    <n-space vertical><n-button type="primary" @click="add">新建文章</n-button>
+    <n-space vertical><n-button type="primary" @click="add">{{ t('article.create') }}</n-button>
       <n-dataTable :columns="columns" :data="items" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="600" placement="right">
       <n-drawer-content title="编辑文章" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="70" size="small">
           <n-form-item :label="t('common.title')"><n-input v-model:value="form.title" /></n-form-item>
           <n-form-item :label="t('product.category')"><n-select v-model:value="form.category" :options="catOpts" /></n-form-item>

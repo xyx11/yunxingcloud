@@ -44,7 +44,7 @@ onMounted(load)
 </script>
 <template>
   <div class="view-pad">
-    <n-card :title="t('invoice.title')"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+    <n-card :title="t('invoice.title')"><template #header-extra><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button></template>
       <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索发票号/订单号/用户..." size="small" clearable class="w-220" />
         <n-select v-model:value="filterStatus" :options="statusOpts" size="small" class="w-90" />

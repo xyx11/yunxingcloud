@@ -47,13 +47,13 @@ onMounted(load)
   <div class="view-pad">
     <n-card title="物流发货管理"><template #header-extra><n-space><n-button size="small" @click="showTrack=true">单号追踪</n-button><n-button type="primary" size="small" @click="add">+ 录入发货</n-button></n-space></template>
       <n-space class="mb-12">
-        <n-input v-model:value="searchKeyword" placeholder="搜索快递..." size="small" clearable class="w-180"/><n-button size="small" @click="load" secondary>刷新</n-button>
+        <n-input v-model:value="searchKeyword" placeholder="搜索快递..." size="small" clearable class="w-180"/><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small"/>
     </n-card>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
       <n-drawer-content title="录入发货" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="80" size="small">
           <n-form-item label="订单ID"><n-input v-model:value="form.orderId"/></n-form-item>
           <n-form-item :label="t('order.carrier')"><n-select v-model:value="form.carrier" :options="[{label:'顺丰速运',value:'顺丰速运'},{label:'中通快递',value:'中通快递'},{label:'圆通速递',value:'圆通速递'},{label:'韵达快递',value:'韵达快递'},{label:'EMS',value:'EMS'}]"/></n-form-item>

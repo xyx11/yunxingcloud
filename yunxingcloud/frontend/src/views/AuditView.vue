@@ -38,7 +38,7 @@ onMounted(load)
 </script>
 <template>
   <div class="view-pad">
-    <n-card title="审计日志"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+    <n-card title="审计日志"><template #header-extra><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button></template>
       <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索实体..." size="small" clearable class="w-160" />
         <n-select v-model:value="typeFilter" :options="typeOpts" size="small" class="w-100" />

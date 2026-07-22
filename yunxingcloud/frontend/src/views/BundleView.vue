@@ -52,13 +52,13 @@ onMounted(load)
     <n-card title="捆绑套餐"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增套餐</n-button></template>
       <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索套餐..." size="small" clearable class="w-180" />
-        <n-button size="small" @click="load" secondary>刷新</n-button>
+        <n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
     </n-card>
     <n-drawer v-model:show="showModal" :width="380" placement="right">
       <n-drawer-content title="新增套餐" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="100" size="small">
           <n-form-item label="套餐名称" required><n-input v-model:value="form.name" placeholder="如: 手机配件套装" /></n-form-item>
           <n-form-item label="商品ID"><n-input v-model:value="productInput" placeholder="1,2,3" /></n-form-item>

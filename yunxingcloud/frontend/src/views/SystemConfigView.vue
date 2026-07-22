@@ -30,7 +30,7 @@ onMounted(load)
 </script>
 <template>
   <div class="view-pad">
-    <n-card title="系统配置"><template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+    <n-card title="系统配置"><template #header-extra><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button></template>
       <n-dataTable :columns="columns" :data="items" :loading="loading" :row-key="(r:any)=>r.key" :pagination="{pageSize:15}" size="small" />
     </n-card>
     <n-modal v-model:show="showModal" title="编辑配置" preset="card" class="max-w-450">
@@ -39,7 +39,7 @@ onMounted(load)
         <n-form-item label="值"><n-input v-model:value="form.value" type="textarea" /></n-form-item>
         <n-form-item :label="t('common.description')"><n-input v-model:value="form.description" /></n-form-item>
       </n-form>
-      <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
+      <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</n-button></n-space></template>
     </n-modal>
   </div>
 </template>

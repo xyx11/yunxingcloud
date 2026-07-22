@@ -48,7 +48,7 @@ onMounted(load)
 <template>
   <div class="view-pad">
     <n-card title="媒体库">
-      <template #header-extra><n-button size="small" @click="load" secondary>刷新</n-button></template>
+      <template #header-extra><n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button></template>
       <n-space class="mb-12" justify="space-between">
         <n-space>
           <n-input v-model:value="searchKeyword" placeholder="搜索文件..." size="small" clearable class="w-200" />

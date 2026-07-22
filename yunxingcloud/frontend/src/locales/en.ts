@@ -41,7 +41,7 @@ export default {
     inactive: 'Inactive', active2: 'Active', used: 'Used', ended2: 'Ended',
     notStarted: 'Not Started', inProgress: 'In Progress', signed: 'Delivered', inTransit: 'In Transit',
     viewAll: 'View All', noDetail: 'No details', items: '{0} items', createSuccess: 'Created successfully', updateSuccess: 'Updated successfully',
-    help: 'Help', uploadFromLocal: 'Local Upload',
+    help: 'Help', uploadFromLocal: 'Local Upload', allStatus: 'All Status', exportExcel: 'Export Excel', seo: 'SEO',
   },
   points: {
     available: 'Points Balance', totalEarned: 'Total Earned', totalSpent: 'Total Spent',
@@ -191,6 +191,7 @@ export default {
     receiver: 'Receiver', address: 'Address',
     product: 'Item', unitPrice: 'Unit Price', quantity: 'Qty',
     statuses: { '0': 'Pending', '1': 'Paid', '2': 'Shipped', '3': 'Completed', '4': 'Cancelled' },
+    batchShip: 'Batch Ship', batchCancel: 'Batch Cancel',
   },
   product: {
     name: 'Name', description: 'Description', price: 'Price',
@@ -198,6 +199,7 @@ export default {
     searchPlaceholder: 'Search products',
     add: 'Add Product', edit: 'Edit Product',
     statuses: { '0': 'Listed', '1': 'Delisted' },
+    basicInfo: 'Basic Info', media: 'Media',
   },
   inventory: {
     productId: 'Product ID', title: 'Inventory', list: 'Stock List', alerts: 'Alerts', logs: 'Logs', suggestions: 'Suggestions',
@@ -206,6 +208,7 @@ export default {
     stockIn: 'Stock In', stockOut: 'Stock Out', warehouse: 'Warehouse',
     remark: 'Remark', lowStockAlert: '{n} items low stock',
     stockInSuccess: 'Stock in completed', stockOutSuccess: 'Stock out completed',
+    transfer: 'Warehouse Transfer', confirmTransfer: 'Confirm Transfer',
   },
   warehouse: {
     name: 'Name', address: 'Address',
@@ -260,6 +263,7 @@ export default {
     typeRefund: 'Refund', typeReturn: 'Return', typeExchange: 'Exchange',
     statusPending: 'Pending', statusApproved: 'Approved', statusRejected: 'Rejected',
     statusRefunding: 'Refunding', statusCompleted: 'Completed',
+    totalApps: 'Total', pendingApps: 'Pending', approvedApps: 'Approved', rejectConfirm: 'Confirm reject?',
   },
   chat: {
     title: 'Chat Sessions', refresh: 'Refresh', searchPlaceholder: 'Search session ID...',

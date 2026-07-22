@@ -74,13 +74,13 @@ onMounted(load)
     <n-card title="优惠券管理"><template #header-extra><n-button type="primary" size="small" @click="add">+ 新增优惠券</n-button></template>
       <n-space class="mb-12">
         <n-input v-model:value="searchKeyword" placeholder="搜索优惠券..." size="small" clearable class="w-180" />
-        <n-button size="small" @click="load" secondary>刷新</n-button>
+        <n-button size="small" @click="load" secondary>{{ t('common.refresh') }}</n-button>
       </n-space>
       <n-dataTable :columns="columns" :data="filtered" :loading="loading" :row-key="(r:any)=>r.id" :pagination="{pageSize:10}" size="small" />
     </n-card>
     <n-drawer v-model:show="showModal" :width="420" placement="right">
       <n-drawer-content :title="editingId ? '编辑优惠券' : '新增优惠券'" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" :loading="saving" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="90" size="small">
           <n-form-item :label="t('common.name')" required><n-input v-model:value="form.name" placeholder="如: 618满199减50" /></n-form-item>
           <n-form-item :label="t('common.type')"><n-select v-model:value="form.type" :options="typeOpts" /></n-form-item>

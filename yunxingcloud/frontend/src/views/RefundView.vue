@@ -46,30 +46,30 @@ const columns: DataTableColumns<Record<string, unknown>> = [
   { title: t('common.actions'), key: 'act', width: 160, render(r) {
     if (r.status !== '0') return h('span', '-')
     return h(NSpace, { size: 'small' }, { default: () => [
-      h(NButton, { size: 'tiny', type: 'success', onClick: () => approve(r.id as number) }, { default: () => '通过' }),
-      h(NPopconfirm, { onPositiveClick: () => reject(r.id as number) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => '拒绝' }), default: () => '确认拒绝？' }),
+      h(NButton, { size: 'tiny', type: 'success', onClick: () => approve(r.id as number) }, { default: () => t('afterSale.approve') }),
+      h(NPopconfirm, { onPositiveClick: () => reject(r.id as number) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('afterSale.reject') }), default: () => '确认拒绝？' }),
     ]})
   }},
 ]
 
 async function load() { loading.value = true; try { const r = await request.get('/after-sale'); items.value = r.data } finally { loading.value = false } }
-async function approve(id: number) { try { await request.put(`/after-sale/${id}/approve`); notify.success('已通过'); load() } catch { notify.error('操作失败') } }
-async function reject(id: number) { try { await request.put(`/after-sale/${id}/reject`); notify.success('已拒绝'); load() } catch { notify.error('操作失败') } }
+async function approve(id: number) { try { await request.put(`/after-sale/${id}/approve`); notify.success(t('afterSale.approveSuccess')); load() } catch { notify.error(t('common.error')) } }
+async function reject(id: number) { try { await request.put(`/after-sale/${id}/reject`); notify.success(t('afterSale.rejectSuccess')); load() } catch { notify.error(t('common.error')) } }
 onMounted(load)
 </script>
 <template>
   <n-card :title="t('refund.title')">
     <!-- Stats -->
     <n-grid cols="4" x-gap="12" class="mb-16">
-      <n-grid-item><n-statistic label="总申请" :value="stats.total" /></n-grid-item>
-      <n-grid-item><n-statistic label="待处理" :value="stats.pending" /></n-grid-item>
-      <n-grid-item><n-statistic label="已通过" :value="stats.approved" /></n-grid-item>
-      <n-grid-item><n-statistic label="退款总额" :value="formatPrice(stats.totalAmount / 100, 2)" /></n-grid-item>
+      <n-grid-item><n-statistic :label="t('refund.totalApps')" :value="stats.total" /></n-grid-item>
+      <n-grid-item><n-statistic :label="t('refund.pendingApps')" :value="stats.pending" /></n-grid-item>
+      <n-grid-item><n-statistic :label="t('refund.approvedApps')" :value="stats.approved" /></n-grid-item>
+      <n-grid-item><n-statistic :label="t('refund.totalAmount')" :value="formatPrice(stats.totalAmount / 100, 2)" /></n-grid-item>
     </n-grid>
     <n-divider />
     <n-space class="mb-12">
-      <n-select v-model:value="filterStatus" :options="[{label:'全部状态',value:''},{label:'待审核',value:'0'},{label:'已通过',value:'1'},{label:'已拒绝',value:'2'},{label:'退款中',value:'3'},{label:'已完成',value:'4'}]" size="small" class="w-120" />
-      <n-button size="small" @click="load" :loading="loading">刷新</n-button>
+      <n-select v-model:value="filterStatus" :options="[{label:t('common.allStatus'),value:''},{label:t('refund.statusPending'),value:'0'},{label:t('refund.statusApproved'),value:'1'},{label:t('refund.statusRejected'),value:'2'},{label:t('refund.statusRefunding'),value:'3'},{label:t('refund.statusCompleted'),value:'4'}]" size="small" class="w-120" />
+      <n-button size="small" @click="load" :loading="loading">{{ t('common.refresh') }}</n-button>
     </n-space>
     <n-dataTable :columns="columns" :data="filtered" :pagination="{ pageSize: 10 }" />
   </n-card>

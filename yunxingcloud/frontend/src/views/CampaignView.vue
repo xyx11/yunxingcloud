@@ -47,7 +47,7 @@ onMounted(load)
     </n-space>
     <n-drawer v-model:show="showModal" :width="400" placement="right">
       <n-drawer-content :title="editingId?'编辑活动':'新建活动'" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="80" size="small">
           <n-form-item :label="t('common.name')"><n-input v-model:value="form.name" /></n-form-item>
           <n-form-item label="类型"><n-select v-model:value="form.type" :options="typeOpts" /></n-form-item>

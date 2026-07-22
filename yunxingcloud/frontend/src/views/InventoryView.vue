@@ -95,8 +95,8 @@ onUnmounted(() => { sse?.close() })
       <n-space>
         <n-button type="primary" @click="showIn = true">{{ t('inventory.stockIn') }}</n-button>
         <n-button type="warning" @click="showOut = true">{{ t('inventory.stockOut') }}</n-button>
-        <n-button type="info" @click="showTransfer = true">仓库调拨</n-button>
-        <n-button size="small" @click="exportExcel">导出Excel</n-button>
+        <n-button type="info" @click="showTransfer = true">{{ t('inventory.transfer') }}</n-button>
+        <n-button size="small" @click="exportExcel">{{ t('common.exportExcel') }}</n-button>
         <n-tag v-if="alerts.length" type="error">⚠ {{ t('inventory.lowStockAlert', { n: alerts.length }) }}</n-tag>
       </n-space>
       <n-tabs v-model:value="activeTab" type="line" @update:value="(v: string) => { if (v === 'logs') loadLogs(); if (v === 'suggest') loadSuggestions() }">
@@ -135,8 +135,8 @@ onUnmounted(() => { sse?.close() })
       </n-drawer-content>
     </n-drawer>
     <n-drawer v-model:show="showTransfer" :width="400" placement="right">
-      <n-drawer-content title="仓库调拨" closable>
-        <template #footer><n-space justify="end"><n-button @click="showTransfer = false">取消</n-button><n-button type="primary" :loading="saving" @click="doTransfer">确认调拨</n-button></n-space></template>
+      <n-drawer-content :title="t('inventory.transfer')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showTransfer = false">{{ t('common.cancel') }}</n-button><n-button type="primary" :loading="saving" @click="doTransfer">{{ t('inventory.confirmTransfer') }}</n-button></n-space></template>
         <n-form :model="transferForm" label-placement="left" label-width="80" size="small">
           <n-form-item label="商品ID"><n-input-number v-model:value="transferForm.productId" :min="1" /></n-form-item>
           <n-form-item label="调出仓库"><n-select v-model:value="transferForm.fromWarehouseId" :options="whOptions" /></n-form-item>

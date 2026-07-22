@@ -32,7 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
   function restoreFromStorage() {
     const token = localStorage.getItem('accessToken')
     if (token) {
-      fetchUser().catch(() => clear())
+      // 只在 401 时清除，网络错误保留 token 让用户重试
+      fetchUser().catch((e: any) => {
+        if (e?.response?.status === 401) clear()
+      })
     }
   }
 
