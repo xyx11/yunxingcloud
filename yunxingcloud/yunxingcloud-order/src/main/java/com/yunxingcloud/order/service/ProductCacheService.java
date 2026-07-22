@@ -90,12 +90,12 @@ public class ProductCacheService {
     /** 预热所有缓存 */
     public java.util.Map<String, Object> refreshAllCaches() {
         int count = 0;
-        try { getHotProducts(); count++; } catch (Exception ignored) {}
-        try { getNewProducts(); count++; } catch (Exception ignored) {}
-        try { getCategories(); count++; } catch (Exception ignored) {}
-        try { getBanners(); count++; } catch (Exception ignored) {}
-        try { getRecommendedProducts(); count++; } catch (Exception ignored) {}
-        try { getCoupons(); count++; } catch (Exception ignored) {}
+        try { getHotProducts(); count++; } catch (Exception e) { log.warn("缓存预热失败-hotProducts: {}", e.getMessage()); }
+        try { getNewProducts(); count++; } catch (Exception e) { log.warn("缓存预热失败-newProducts: {}", e.getMessage()); }
+        try { getCategories(); count++; } catch (Exception e) { log.warn("缓存预热失败-categories: {}", e.getMessage()); }
+        try { getBanners(); count++; } catch (Exception e) { log.warn("缓存预热失败-banners: {}", e.getMessage()); }
+        try { getRecommendedProducts(); count++; } catch (Exception e) { log.warn("缓存预热失败-recommended: {}", e.getMessage()); }
+        try { getCoupons(); count++; } catch (Exception e) { log.warn("缓存预热失败-coupons: {}", e.getMessage()); }
         log.info("缓存预热完成: {} 项", count);
         return java.util.Map.of("refreshed", count, "status", "OK");
     }

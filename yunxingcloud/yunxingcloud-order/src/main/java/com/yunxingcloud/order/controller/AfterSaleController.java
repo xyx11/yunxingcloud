@@ -42,13 +42,16 @@ public class AfterSaleController {
 
     @PostMapping
     public ResponseEntity<?> apply(@RequestBody Map<String, Object> body) {
+        if (body.get("orderId") == null || body.get("type") == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "orderId and type are required"));
+        }
         AfterSale as = service.apply(
                 Long.valueOf(body.get("orderId").toString()), user(),
                 (String) body.get("type"), (String) body.get("reason"),
                 body.containsKey("refundAmount") ? Long.valueOf(body.get("refundAmount").toString()) : null,
                 (String) body.getOrDefault("evidenceUrls", ""));
-        log.info("User {} applied after-sale for order {}, type={}, reason={}", user(),
-                body.get("orderId"), body.get("type"), body.get("reason"));
+        log.info("User {} applied after-sale for order {}, type={}", user(),
+                body.get("orderId"), body.get("type"));
         return ResponseEntity.ok(as);
     }
 
