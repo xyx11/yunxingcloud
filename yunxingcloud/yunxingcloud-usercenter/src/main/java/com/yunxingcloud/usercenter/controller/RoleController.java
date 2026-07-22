@@ -54,10 +54,10 @@ public class RoleController {
     @PreAuthorize("hasAuthority('role:write')")
     public ResponseEntity<Role> update(@PathVariable Long id, @RequestBody Role body) {
         return roleRepository.findById(id).map(role -> {
-            role.setName(body.getName());
-            role.setCode(body.getCode());
-            role.setDescription(body.getDescription());
-            role.setPermissions(body.getPermissions());
+            if (body.getName() != null) role.setName(body.getName());
+            if (body.getCode() != null) role.setCode(body.getCode());
+            if (body.getDescription() != null) role.setDescription(body.getDescription());
+            if (body.getPermissions() != null) role.setPermissions(body.getPermissions());
             role.setEnabled(body.isEnabled());
             return ResponseEntity.ok(roleRepository.save(role));
         }).orElse(ResponseEntity.notFound().build());

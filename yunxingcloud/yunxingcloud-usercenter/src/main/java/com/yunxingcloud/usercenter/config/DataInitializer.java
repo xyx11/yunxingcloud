@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.data-init.enabled", havingValue = "true", matchIfMissing = false)
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;

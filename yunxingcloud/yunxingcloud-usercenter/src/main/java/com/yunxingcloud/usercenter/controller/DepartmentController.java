@@ -53,9 +53,9 @@ public class DepartmentController {
     @PreAuthorize("hasAuthority('dept:write')")
     public ResponseEntity<Department> update(@PathVariable Long id, @RequestBody Department body) {
         return departmentRepository.findById(id).map(dept -> {
-            dept.setName(body.getName());
-            dept.setParentId(body.getParentId());
-            dept.setSortOrder(body.getSortOrder());
+            if (body.getName() != null) dept.setName(body.getName());
+            if (body.getParentId() != null) dept.setParentId(body.getParentId());
+            if (body.getSortOrder() != null) dept.setSortOrder(body.getSortOrder());
             dept.setEnabled(body.isEnabled());
             return ResponseEntity.ok(departmentRepository.save(dept));
         }).orElse(ResponseEntity.notFound().build());
