@@ -41,9 +41,11 @@ public class OrderController {
             .getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("admin")); }
 
     @GetMapping
-    public ResponseEntity<?> list() {
-        if (isAdmin()) return ResponseEntity.ok(orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt")));
-        return ResponseEntity.ok(orderRepo.findByUsernameOrderByCreatedAtDesc(user()));
+    public ResponseEntity<?> list(@RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "20") int size) {
+        var pageable = org.springframework.data.domain.PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        if (isAdmin()) return ResponseEntity.ok(orderRepo.findAll(pageable));
+        return ResponseEntity.ok(orderRepo.findByUsernameOrderByCreatedAtDesc(user(), pageable));
     }
 
     @GetMapping("/{id}")

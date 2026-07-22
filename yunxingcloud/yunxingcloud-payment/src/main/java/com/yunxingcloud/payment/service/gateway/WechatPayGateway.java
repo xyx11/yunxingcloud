@@ -140,7 +140,8 @@ public class WechatPayGateway implements PaymentGateway {
             // NotificationHandler handler = new NotificationHandler(verifier, apiV3Key.getBytes());
             // Notification notification = handler.parse(request);
             // return notification != null;
-            return true;
+            log.error("WeChat Pay callback verification not implemented — configure apiV3Key and verifier");
+            return false;
         } catch (Exception e) {
             log.error("WeChat Pay callback verification failed: {}", e.getMessage());
             return false;

@@ -60,7 +60,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     private final SecretKey key;
 
-    public JwtAuthGlobalFilter(@Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024}") String secret) {
+    public JwtAuthGlobalFilter(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

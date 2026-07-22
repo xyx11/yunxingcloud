@@ -2,6 +2,8 @@ package com.yunxingcloud.order.repository;
 
 import com.yunxingcloud.order.entity.OrderHead;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +16,7 @@ public interface OrderHeadRepository extends JpaRepository<OrderHead, Long> {
     @Query("SELECT o FROM OrderHead o WHERE o.id = :id")
     Optional<OrderHead> findByIdForUpdate(Long id);
     List<OrderHead> findByUsernameOrderByCreatedAtDesc(String username);
+    Page<OrderHead> findByUsernameOrderByCreatedAtDesc(String username, Pageable pageable);
     List<OrderHead> findByStatusOrderByCreatedAtDesc(String status);
     List<OrderHead> findByStatusAndExpireAtBefore(String status, java.time.LocalDateTime time);
     Optional<OrderHead> findByOrderNo(String orderNo);

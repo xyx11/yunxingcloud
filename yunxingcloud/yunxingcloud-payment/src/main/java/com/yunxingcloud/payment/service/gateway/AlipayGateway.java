@@ -136,7 +136,8 @@ public class AlipayGateway implements PaymentGateway {
             //     .filter(e -> !"sign".equals(e.getKey()) && !"sign_type".equals(e.getKey()))
             //     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             // return AlipaySignature.rsaCheckV1(filtered, alipayPublicKey, "UTF-8", signType);
-            return true;
+            log.error("Alipay callback verification not implemented — configure alipayPublicKey and enable signature verification");
+            return false;
         } catch (Exception e) {
             log.error("Alipay callback verification failed: {}", e.getMessage());
             return false;
