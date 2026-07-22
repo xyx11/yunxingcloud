@@ -1,9 +1,6 @@
-import { computed } from 'vue'
-import { darkTheme, lightTheme } from 'naive-ui'
+import { useThemeStore } from '@/stores/theme'
 
 export function useThemeProvider() {
-  const currentTheme = computed(() =>
-    localStorage.getItem('theme') === 'dark' ? darkTheme : lightTheme
-  )
-  return { currentTheme }
+  const store = useThemeStore()
+  return { currentTheme: store.currentTheme }
 }
