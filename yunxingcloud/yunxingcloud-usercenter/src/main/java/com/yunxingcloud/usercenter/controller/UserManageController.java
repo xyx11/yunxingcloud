@@ -90,4 +90,17 @@ public class UserManageController {
     public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id) {
         return ResponseEntity.ok(userService.resetUserPassword(id));
     }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.approveUser(id));
+    }
+
+    @GetMapping("/by-username")
+    public ResponseEntity<?> getByUsername(@RequestParam String username) {
+        return userService.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

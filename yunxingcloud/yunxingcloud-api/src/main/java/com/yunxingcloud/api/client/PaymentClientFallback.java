@@ -14,7 +14,7 @@ public class PaymentClientFallback implements PaymentClient {
     @Override
     public Map<String, Object> createOrder(Map<String, Object> body) {
         log.warn("Payment service unavailable, createOrder fallback");
-        return null;
+        return Map.of("success", false, "fallback", true, "message", "Payment service unavailable");
     }
 
     @Override

@@ -118,9 +118,22 @@ public class UserService {
             String newPwd = generateRandomPassword();
             u.setPassword(passwordEncoder.encode(newPwd));
             userRepository.save(u);
-            log.info("用户 {} 密码已重置，新密码: {}", u.getUsername(), newPwd);
+            log.info("Password reset for user: {}", u.getUsername());
             return Map.<String, Object>of("success", true, "message", i18n.msg("user.pwd_reset"));
         }).orElseThrow(() -> new IllegalArgumentException("user.not_found"));
+    }
+
+    @Transactional
+    public Map<String, Object> approveUser(Long id) {
+        return userRepository.findById(id).map(u -> {
+            u.setApproved(true);
+            userRepository.save(u);
+            return Map.<String, Object>of("success", true, "message", i18n.msg("user.approved"));
+        }).orElseThrow(() -> new IllegalArgumentException("user.not_found"));
+    }
+
+    public java.util.Optional<com.yunxingcloud.usercenter.entity.User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     private String generateRandomPassword() {
@@ -164,7 +177,7 @@ public class UserService {
                     u.setRegisterSource("import");
                     userRepository.save(u);
                     success++;
-                } catch (Exception e) { fail++; }
+                } catch (Exception e) { fail++; log.error("Import user failed at row {}: {}", fail + success, e.getMessage()); }
             }
         } catch (Exception e) {
             return Map.of("success", false, "message", i18n.msg("file.parse_failed") + ": " + e.getMessage());
