@@ -1,20 +1,17 @@
-/**
- * Format price with thousand separators and optional decimal places.
- * @example formatPrice(1299) => "¥1,299"
- * @example formatPrice(1299.50, 2) => "¥1,299.50"
- * @example formatCount(12345) => "1.2万"
- * @example formatCount(9999) => "9,999"
- */
+import { t, currentLocale } from '@/locales'
+
 export function formatPrice(price: number, decimals: number = 0): string {
-  return `¥${Number(price).toLocaleString('zh-CN', {
+  const loc = currentLocale.value === 'en' ? 'en-US' : 'zh-CN'
+  return `¥${Number(price).toLocaleString(loc, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`
 }
 
 export function formatCount(n: number): string {
-  if (n >= 10000) return (Math.floor(n / 100) / 100).toFixed(1) + '万'
-  if (n >= 1000) return n.toLocaleString('zh-CN')
+  if (n >= 100000000) return (n / 100000000).toFixed(1).replace(/\.0$/, '') + t('format.hundredMillion')
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + t('format.tenThousand')
+  if (n >= 1000) return n.toLocaleString(currentLocale.value === 'en' ? 'en-US' : 'zh-CN')
   return String(n)
 }
 
@@ -35,12 +32,14 @@ export function formatFileSize(bytes: number): string {
 
 export function formatDate(date: string | Date | number): string {
   const d = date instanceof Date ? date : new Date(date)
-  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  const loc = currentLocale.value === 'en' ? 'en-US' : 'zh-CN'
+  return d.toLocaleDateString(loc, { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 export function formatDateTime(date: string | Date | number): string {
   const d = date instanceof Date ? date : new Date(date)
-  return d.toLocaleString('zh-CN', {
+  const loc = currentLocale.value === 'en' ? 'en-US' : 'zh-CN'
+  return d.toLocaleString(loc, {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   })
@@ -54,10 +53,35 @@ export function formatRelativeTime(date: string | Date | number | number): strin
   const min = 60 * 1000
   const hour = 60 * min
   const day = 24 * hour
-  if (diff < min) return '刚刚'
-  if (diff < hour) return Math.floor(diff / min) + '分钟前'
-  if (diff < day) return Math.floor(diff / hour) + '小时前'
-  if (diff < 2 * day) return '昨天'
-  if (diff < 7 * day) return Math.floor(diff / day) + '天前'
+  if (diff < min) return t('format.justNow')
+  if (diff < hour) return t('format.minutesAgo', { n: Math.floor(diff / min) })
+  if (diff < day) return t('format.hoursAgo', { n: Math.floor(diff / hour) })
+  if (diff < 2 * day) return t('format.yesterday')
+  if (diff < 7 * day) return t('format.daysAgo', { n: Math.floor(diff / day) })
   return formatDate(date)
+}
+
+export function formatLargeNumber(n: number): string {
+  if (n >= 100000000) return (n / 100000000).toFixed(1).replace(/\.0$/, '') + t('format.hundredMillion')
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + t('format.tenThousand')
+  return String(n)
+}
+
+export function formatDuration(ms: number): string {
+  if (ms < 60000) return t('format.second', { n: Math.floor(ms / 1000) })
+  if (ms < 3600000) return t('format.minute', { n: Math.floor(ms / 60000) })
+  if (ms < 86400000) return t('format.hour', { n: Math.floor(ms / 3600000) })
+  return t('format.day', { n: Math.floor(ms / 86400000) })
+}
+
+export function formatStock(stock: number): { text: string; urgent: boolean } {
+  if (stock <= 0) return { text: t('format.soldOut'), urgent: true }
+  if (stock <= 5) return { text: t('format.stockLeft', { n: stock }), urgent: true }
+  if (stock <= 20) return { text: t('format.stockCount', { n: stock }), urgent: false }
+  return { text: t('format.stockSufficient'), urgent: false }
+}
+
+export function formatOrderNo(no: string): string {
+  if (no.length > 16) return no.substring(0, 4) + '...' + no.substring(no.length - 4)
+  return no
 }

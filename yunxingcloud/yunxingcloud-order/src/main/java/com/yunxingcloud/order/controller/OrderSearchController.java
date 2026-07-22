@@ -29,4 +29,18 @@ public class OrderSearchController {
         return ResponseEntity.ok(orderSearchService.search(keyword, status, username,
                 startDate, endDate, page, size));
     }
+
+    @GetMapping("/search/stats")
+    public ResponseEntity<?> searchStats() {
+        var all = orderSearchService.search(null, null, null, null, null, 0, 1000);
+        return ResponseEntity.ok(java.util.Map.of("total", all.get("total")));
+    }
+
+    @GetMapping("/search/quick")
+    public ResponseEntity<?> quickSearch(@RequestParam String q) {
+        return ResponseEntity.ok(orderSearchService.search(q, null, null, null, null, 0, 5));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() { return ResponseEntity.ok(java.util.Map.of("status", "ok")); }
 }

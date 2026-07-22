@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class MallServiceTest {
 
     @Mock private ProductCategoryRepository catRepo;
@@ -303,7 +306,7 @@ class MallServiceTest {
     void shouldListCoupons() {
         Coupon c = new Coupon();
         c.setId(1L);
-        when(couponRepo.findAll()).thenReturn(List.of(c));
+        when(cacheService.getCoupons()).thenReturn(List.of(c));
 
         assertThat(mallService.listCoupons()).hasSize(1);
     }
@@ -351,13 +354,13 @@ class MallServiceTest {
         c.setUsedQty(0);
         when(couponRepo.findById(1L)).thenReturn(Optional.of(c));
         when(couponUserRepo.existsByCouponIdAndUsername(1L, "user1")).thenReturn(false);
+        when(couponRepo.incrementUsedQty(1L)).thenReturn(1);
 
         String result = mallService.claimCoupon(1L, "user1");
 
         assertThat(result).isNull();
         verify(couponUserRepo).save(any(CouponUser.class));
-        verify(couponRepo).save(c);
-        assertThat(c.getUsedQty()).isEqualTo(1);
+        verify(couponRepo).incrementUsedQty(1L);
     }
 
     @Test

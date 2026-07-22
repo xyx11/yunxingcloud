@@ -32,4 +32,7 @@ public class LogisticsController {
     public ResponseEntity<?> track(@PathVariable String trackingNo) {
         return ResponseEntity.ok(logisticsService.track(trackingNo));
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("endpoints", 4)); }
 }

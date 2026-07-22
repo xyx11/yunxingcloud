@@ -31,6 +31,9 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     safeRemove('accessToken')
     safeRemove('user')
+    safeRemove('cart_count')
+    safeRemove('mall_welcome')
+    window.dispatchEvent(new CustomEvent('cart_updated'))
   }
 
   function setToken(t: string, u: { username: string; nickname?: string }) {

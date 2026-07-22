@@ -56,6 +56,29 @@ public class GiftCardService {
         return repo.findByCardNo(cardNo).orElse(null);
     }
 
+    /** 获取用户所有礼品卡 */
+    public java.util.List<GiftCard> myCards(String username) {
+        return repo.findAll().stream()
+            .filter(c -> username.equals(c.getOwner()))
+            .toList();
+    }
+
+    /** 批量失效过期卡 */
+    @Transactional
+    public int expireOverdueCards() {
+        int count = 0;
+        var cards = repo.findAll();
+        for (var c : cards) {
+            if (c.getExpireAt() != null && c.getExpireAt().isBefore(java.time.LocalDateTime.now())
+                    && !"3".equals(c.getStatus()) && !"2".equals(c.getStatus())) {
+                c.setStatus("3");
+                repo.save(c);
+                count++;
+            }
+        }
+        return count;
+    }
+
     private String generateCode() {
         return String.format("%016d", new SecureRandom().nextLong() & Long.MAX_VALUE).substring(0, 16);
     }

@@ -34,11 +34,20 @@ public class CartService {
                 .orElseThrow(() -> new IllegalArgumentException("商品不存在"));
         if (p.getStock() < quantity)
             throw new IllegalArgumentException("库存不足");
+        // Check if user already has this product in cart
+        List<CartItem> existing = cartRepo.findByUsernameOrderByCreatedAtDesc(username);
+        for (CartItem ci : existing) {
+            if (ci.getProductId().equals(productId)) {
+                ci.setQuantity(ci.getQuantity() + quantity);
+                return cartRepo.save(ci);
+            }
+        }
         CartItem item = new CartItem();
         item.setUsername(username);
         item.setProductId(productId);
         item.setProductName(p.getName());
         item.setPrice(p.getPrice());
+        item.setImageUrl(p.getImageUrl());
         item.setQuantity(quantity);
         return cartRepo.save(item);
     }
@@ -53,5 +62,19 @@ public class CartService {
     @Transactional
     public void clear(String username) {
         cartRepo.deleteByUsername(username);
+    }
+
+    @Transactional
+    public CartItem updateQuantity(Long id, int quantity, String username) {
+        CartItem item = cartRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("购物车项不存在"));
+        if (!item.getUsername().equals(username))
+            throw new IllegalArgumentException("无权操作");
+        if (quantity <= 0) {
+            cartRepo.delete(item);
+            return null;
+        }
+        item.setQuantity(quantity);
+        return cartRepo.save(item);
     }
 }

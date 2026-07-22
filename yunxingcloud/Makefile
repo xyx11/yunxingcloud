@@ -131,3 +131,17 @@ deploy-restart:
 
 deploy-logs:
 	./deploy.sh logs
+docker-build-local:
+	@for svc in gateway core usercenter payment order inventory; do \
+		port=$$(case $$svc in core) echo 8080;; usercenter) echo 8081;; gateway) echo 8090;; payment) echo 8083;; order) echo 8084;; inventory) echo 8085;; esac); \
+		jar="yunxingcloud-$$svc/target/yunxingcloud-$$svc-0.0.1-SNAPSHOT.jar"; \
+		echo "Building $$svc..."; \
+		docker build --build-arg JAR_FILE="$$jar" --build-arg PORT=$$port -t yunxingcloud-$$svc:latest -f Dockerfile.local .; \
+	done
+
+REGISTRY ?= ghcr.io/your-org
+docker-push:
+	@for svc in gateway core usercenter payment order inventory; do \
+		docker tag yunxingcloud-$$svc:latest $(REGISTRY)/yunxingcloud-$$svc:latest; \
+		docker push $(REGISTRY)/yunxingcloud-$$svc:latest; \
+	done

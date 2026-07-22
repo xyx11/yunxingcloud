@@ -45,4 +45,15 @@ public class ImageController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> list() {
+        // List uploaded images from upload directory
+        java.io.File dir = new java.io.File("uploads");
+        String[] files = dir.list();
+        return ResponseEntity.ok(Map.of("files", files != null ? files : new String[0], "count", files != null ? files.length : 0));
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() { java.io.File dir = new java.io.File("uploads"); String[] files = dir.list(); return ResponseEntity.ok(java.util.Map.of("count", files != null ? files.length : 0)); }
 }

@@ -34,6 +34,7 @@
   --orange: #ff9800;
   --orange-bg: #fff8f0;
   --red-status: #ff4d4f;
+  --star-gold: #f5a623;
 
   /* Radius */
   --radius-sm: 4px;
@@ -102,4 +103,22 @@
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, .3);
   --shadow-xl: 0 8px 32px rgba(0, 0, 0, .4);
   --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, .3);
+}
+
+/* ===== Responsive Layout ===== */
+@media (min-width: 1400px) {
+  :root { --max-width: 1320px; }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root { --max-width: 960px; }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

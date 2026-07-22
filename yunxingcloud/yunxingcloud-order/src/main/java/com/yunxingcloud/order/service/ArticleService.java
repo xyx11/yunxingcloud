@@ -38,4 +38,15 @@ public class ArticleService {
 
     @Transactional
     public Article update(Long id, Article article) { article.setId(id); return repo.save(article); }
+
+    @Transactional
+    public void publish(Long id) { repo.findById(id).ifPresent(a -> { a.setStatus("1"); repo.save(a); }); }
+
+    @Transactional
+    public void unpublish(Long id) { repo.findById(id).ifPresent(a -> { a.setStatus("0"); repo.save(a); }); }
+
+    @Transactional
+    public void delete(Long id) { repo.deleteById(id); }
+
+    public long count() { return repo.count(); }
 }

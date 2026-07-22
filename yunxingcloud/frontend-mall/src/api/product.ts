@@ -16,8 +16,8 @@ export interface Review { id: number; productId: number; username: string; conte
 export const getProducts = (params?: Record<string, any>) => request.get('/products', { params })
 export const getHotProducts = () => request.get('/products/hot')
 export const getNewProducts = () => request.get('/products/new')
-export const searchProducts = (q: string, page?: number, size?: number) =>
-  request.get('/products/search', { params: { q, page: page || 1, size: size || 20 } })
+export const searchProducts = (q: string, page?: number, size?: number, extra?: Record<string, string | number>) =>
+  request.get('/products/search', { params: { q, page: page || 1, size: size || 20, ...(extra || {}) } })
 export const getProductById = (id: number) => request.get(`/products/${id}`)
 export const getProductSkus = (id: number) => request.get(`/products/${id}/skus`)
 export const getProductReviews = (id: number) => request.get(`/products/${id}/reviews`)
@@ -34,7 +34,7 @@ export const getBrands = () => request.get('/brands')
 // Banners
 export const getBanners = () => request.get('/banners')
 /** Aggregated: banners + hotProducts + newProducts + categories */
-export const getHomeData = () => request.get('/home')
+export const getHomeData = () => request.get('/aggregate/home')
 
 // Recommendations
 export const getRecommend = () => request.get('/recommend/hot')
@@ -48,3 +48,10 @@ export const getProductsByTag = (tagId: number, page?: number, size?: number) =>
 
 // Search suggestions
 export const getSearchSuggestions = (q: string) => request.get('/search/suggest', { params: { q, limit: 10 } })
+
+// Price alerts
+export const checkPriceAlert = (productId: number) => request.get(`/price-alert/check?productId=${productId}`)
+export const backInStockAlert = (productId: number) => request.post(`/products/${productId}/back-in-stock-alert`)
+
+// Social
+export const trackShareClick = (shareId: number) => request.post(`/social/share/${shareId}/click`)

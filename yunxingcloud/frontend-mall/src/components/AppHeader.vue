@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useI18n } from '@/locales'
 import request from '@/api/request'
+import { useToast } from '@/composables/useToast'
 import type { Category } from '@/types'
 
 const router = useRouter()
+const toast = useToast()
 const auth = useAuthStore()
 const theme = useThemeStore()
-const { locale, setLocale } = useI18n()
+const { t, locale, setLocale } = useI18n()
 const searchText = ref('')
 const categories = ref<Category[]>([])
 const showMega = ref(false)
@@ -31,12 +33,15 @@ function doSearch() {
 }
 
 async function startVoiceSearch() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    toast.info(t('header.voiceNotSupported'))
+    return
+  }
   voiceSearching.value = true
   try {
     const win = window as unknown as Record<string, unknown>
     const SRClass = (win.SpeechRecognition || win.webkitSpeechRecognition) as new () => { lang: string; start(): void; onresult: (e: { results: { transcript: string }[][] }) => void; onend: () => void }
-    if (!SRClass) { voiceSearching.value = false; return }
+    if (!SRClass) { voiceSearching.value = false; toast.info(t('header.voiceUnavailable')); return }
     const recognition = new SRClass()
     recognition.lang = 'zh-CN'
     recognition.onresult = (e) => { searchText.value = e.results[0][0].transcript; doSearch() }
@@ -57,43 +62,47 @@ function openMega() {
   showMega.value = true
 }
 function closeMega() {
-  megaTimer = setTimeout(() => { showMega.value = false }, 200)
+  megaTimer = setTimeout(() => { showMega.value = false }, 350)
 }
 
-defineProps<{ cartCount?: number }>()
+const props = defineProps<{ cartCount?: number }>()
+const badgePulse = ref(false)
+watch(() => props.cartCount, (n, o) => {
+  if (n && n > (o || 0)) { badgePulse.value = true; setTimeout(() => badgePulse.value = false, 400) }
+})
 </script>
 
 <template>
   <!-- Top Bar -->
   <div class="top-bar">
-    <span>欢迎来到 YXCLOUD 商城</span>
+    <span>{{ t('common.welcome') }}</span>
     <div class="top-bar-links">
-      <button class="lang-btn" @click="theme.toggle()" :title="theme.isDark ? '切换到浅色' : '切换到深色'">
+      <button class="lang-btn" @click="theme.toggle()" :title="theme.isDark ? t('header.switchLight') : t('header.switchDark')">
         {{ theme.isDark ? '☀️' : '🌙' }}
       </button>
-      <button class="lang-btn" @click="setLocale(locale==='zh'?'en':'zh')" :title="locale==='zh'?'Switch to English':'切换到中文'">
+      <button class="lang-btn" @click="setLocale(locale==='zh'?'en':'zh')" :title="locale==='zh'?t('header.switchLang'):'Switch to English'">
         {{ locale === 'zh' ? 'EN' : '中' }}
       </button>
       <template v-if="auth.isLoggedIn">
         <span class="top-link" @click="goTo('/profile')">{{ auth.user?.username }}</span>
-        <span class="top-link" @click="goTo('/orders')">我的订单</span>
-        <span class="top-link" @click="auth.logout();goTo('/login')">退出</span>
+        <span class="top-link" @click="goTo('/orders')">{{ t('common.orders') }}</span>
+        <span class="top-link" @click="auth.logout();goTo('/login')">{{ t('common.logout') }}</span>
       </template>
       <template v-else>
-        <span class="top-link" @click="goTo('/login')">你好，请登录</span>
-        <span class="top-link top-link--highlight" @click="goTo('/register')">免费注册</span>
+        <span class="top-link" @click="goTo('/login')">{{ t('header.loginPrompt') }}</span>
+        <span class="top-link top-link--highlight" @click="goTo('/register')">{{ t('header.freeRegister') }}</span>
       </template>
     </div>
   </div>
 
   <!-- Main Header -->
   <header class="main-header">
-    <h1 class="logo" @click="router.push('/')" role="button" tabindex="0" aria-label="YXCLOUD 商城首页" @keydown.enter="router.push('/')">YXCLOUD</h1>
+    <h1 class="logo" @click="router.push('/')" role="button" tabindex="0" :aria-label="t('header.logoAria')" @keydown.enter="router.push('/')">YXCLOUD</h1>
 
     <!-- Search Box -->
     <div class="search-box" role="search">
-      <input v-model="searchText" placeholder="搜索华为手机、茅台飞天..." @keyup.enter="doSearch" aria-label="搜索商品" />
-      <button class="search-btn" @click="doSearch" aria-label="搜索">
+      <input v-model="searchText" :placeholder="t('search.placeholder')" @keyup.enter="doSearch" :aria-label="t('header.searchAria')" />
+      <button class="search-btn" @click="doSearch" :aria-label="t('common.search')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>
     </div>
@@ -105,16 +114,16 @@ defineProps<{ cartCount?: number }>()
 
     <!-- Header Actions -->
     <div class="header-actions" role="navigation" aria-label="用户导航">
-      <button class="header-btn" @click="startVoiceSearch" :disabled="voiceSearching" :title="voiceSearching?'正在监听...':'语音搜索'">
+      <button class="header-btn" @click="startVoiceSearch" :disabled="voiceSearching" :title="voiceSearching?t('header.listening'):t('header.voiceSearch')">
         {{ voiceSearching ? '🎙️' : '🎤' }}
       </button>
-      <button class="header-btn" @click="theme.toggle" :title="theme.isDark?'浅色模式':'深色模式'">
+      <button class="header-btn" @click="theme.toggle" :title="theme.isDark?t('header.themeLight'):t('header.themeDark')">
         {{ theme.isDark ? '☀️' : '🌙' }}
       </button>
-      <span class="header-link" @click="goTo('/orders')">我的订单</span>
-      <span class="header-link cart-link" @click="goTo('/cart')">
-        🛒<span class="cart-label">购物车</span>
-        <span v-if="cartCount && cartCount > 0" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+      <span class="header-link" @click="goTo('/orders')">{{ t('common.orders') }}</span>
+      <span class="header-link cart-link" data-cart-target="cart-fly" @click="goTo('/cart')">
+        🛒<span class="cart-label">{{ t('common.cart') }}</span>
+        <span v-if="cartCount && cartCount > 0" class="cart-badge" :class="{ 'cart-badge--pulse': badgePulse }">{{ cartCount > 99 ? '99+' : cartCount }}</span>
       </span>
     </div>
   </header>
@@ -122,7 +131,7 @@ defineProps<{ cartCount?: number }>()
   <!-- Category Nav -->
   <nav class="cat-nav">
     <div class="mega-menu-wrapper" @mouseenter="openMega" @mouseleave="closeMega">
-      <span class="all-categories" @click="goTo('/products')">📂 全部商品分类</span>
+      <span class="all-categories" @click="goTo('/products')">📂 {{ t('header.allCategories') }}</span>
       <div v-if="showMega && categories.length" class="mega-dropdown">
         <div v-for="cat in categories" :key="cat.id" class="mega-item" role="button" tabindex="0" @click="goCategory(cat.id)" @keydown.enter.prevent="goCategory(cat.id)" @keydown.space.prevent="goCategory(cat.id)">
           <span>{{ cat.icon || '📁' }}</span>
@@ -130,7 +139,7 @@ defineProps<{ cartCount?: number }>()
         </div>
       </div>
     </div>
-    <span v-for="cat in categories.slice(0, 8)" :key="cat.id" class="nav-link" @click="goCategory(cat.id)">
+    <span v-for="cat in categories" :key="cat.id" class="nav-link" @click="goCategory(cat.id)">
       {{ cat.name }}
     </span>
   </nav>
@@ -138,8 +147,8 @@ defineProps<{ cartCount?: number }>()
   <!-- Mobile Search -->
   <div class="mobile-search">
     <div class="mobile-search-inner">
-      <input v-model="searchText" placeholder="搜索商品" aria-label="搜索商品" @keyup.enter="doSearch" />
-      <button @click="doSearch">搜索</button>
+      <input v-model="searchText" :placeholder="t('search.placeholder')" :aria-label="t('header.searchAria')" @keyup.enter="doSearch" />
+      <button @click="doSearch">{{ t('common.search') }}</button>
     </div>
   </div>
 </template>
@@ -186,8 +195,10 @@ defineProps<{ cartCount?: number }>()
   cursor: pointer;
   white-space: nowrap;
   letter-spacing: -0.5px;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+  display: inline-block;
 }
-.logo:hover { opacity: .85; }
+.logo:hover { opacity: .85; transform: scale(1.05) rotate(-1deg); }
 
 .search-box {
   flex: 1;
@@ -209,10 +220,11 @@ defineProps<{ cartCount?: number }>()
 .search-btn:hover { background: var(--jd-red-dark); }
 
 .hot-tags {
-  display: flex; gap: var(--space-md); font-size: var(--font-xs); color: rgba(255,255,255,.7);
-  width: 100%; padding-left: 0; margin-top: -4px;
+  display: flex; gap: var(--space-sm); font-size: 12px; color: rgba(255,255,255,.75);
+  width: 100%; padding-left: 0; margin-top: 4px; max-width: 500px;
+  flex-wrap: nowrap; overflow: hidden;
 }
-.hot-tag { cursor: pointer; transition: color var(--transition-fast); }
+.hot-tag { cursor: pointer; transition: color var(--transition-fast); white-space: nowrap; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
 .hot-tag:hover { color: #fff; }
 
 .header-actions { display: flex; align-items: center; gap: var(--space-lg); font-size: var(--font-base); white-space: nowrap; }
@@ -230,6 +242,11 @@ defineProps<{ cartCount?: number }>()
   border-radius: var(--radius-round); font-size: 10px; padding: 1px 5px;
   font-weight: 700; min-width: 16px; text-align: center; line-height: 14px;
 }
+.cart-badge--pulse { animation: badgePulse .4s ease; }
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+}
 
 /* Category Nav */
 .cat-nav {
@@ -241,6 +258,13 @@ defineProps<{ cartCount?: number }>()
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  position: relative;
+}
+.cat-nav::after {
+  content: ''; position: sticky; right: 0; top: 0; bottom: 0;
+  width: 40px; flex-shrink: 0;
+  background: linear-gradient(to right, transparent, var(--bg-white));
+  pointer-events: none;
 }
 .cat-nav::-webkit-scrollbar { display: none; }
 .nav-link {

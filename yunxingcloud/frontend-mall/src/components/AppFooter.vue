@@ -1,47 +1,62 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/locales'
+import request from '@/api/request'
 
 const router = useRouter()
+const { t } = useI18n()
+const subscribeEmail = ref('')
+const subscribeDone = ref(false)
+const subscribing = ref(false)
+
+async function subscribe() {
+  if (!subscribeEmail.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subscribeEmail.value)) return
+  subscribing.value = true
+  try { await request.post('/newsletter/subscribe', { email: subscribeEmail.value }); subscribeDone.value = true } catch {}
+  finally { subscribing.value = false }
+}
+
 function goTo(path: string) { router.push(path) }
 
 const guarantees = [
-  { icon: '✅', title: '品质保证', desc: '正品保障 假一赔十' },
-  { icon: '🚚', title: '极速配送', desc: '全国包邮 1-3日达' },
-  { icon: '🔄', title: '7天退换', desc: '无忧退货 极速退款' },
-  { icon: '🛡️', title: '售后无忧', desc: '专属客服 随时响应' },
+  { icon: '✅', key: 'footer.promise1', descKey: 'footer.promise1Desc' },
+  { icon: '🚚', key: 'footer.promise2', descKey: 'footer.promise2Desc' },
+  { icon: '🔄', key: 'footer.promise3', descKey: 'footer.promise3Desc' },
+  { icon: '🛡️', key: 'footer.promise4', descKey: 'footer.promise4Desc' },
 ]
 
 const footerCols = [
   {
-    title: '购物指南',
+    key: 'footer.shopGuide',
     items: [
-      { label: '购物流程', path: '/help' },
-      { label: '会员介绍', path: '/help' },
-      { label: '常见问题', path: '/help' },
+      { key: 'footer.shopFlow', path: '/help' },
+      { key: 'footer.memberIntro', path: '/help' },
+      { key: 'footer.faq', path: '/help' },
     ],
   },
   {
-    title: '配送方式',
+    key: 'footer.delivery',
     items: [
-      { label: '配送范围', path: '/help' },
-      { label: '配送时效', path: '/help' },
-      { label: '验货签收', path: '/help' },
+      { key: 'footer.deliveryRange', path: '/help' },
+      { key: 'footer.deliveryTime', path: '/help' },
+      { key: 'footer.inspectSign', path: '/help' },
     ],
   },
   {
-    title: '售后服务',
+    key: 'footer.service',
     items: [
-      { label: '退货政策', path: '/after-sale' },
-      { label: '退款说明', path: '/help' },
-      { label: '联系客服', path: '/help' },
+      { key: 'footer.returnPolicy', path: '/after-sale' },
+      { key: 'footer.refundInfo', path: '/help' },
+      { key: 'footer.contactUs', path: '/help' },
     ],
   },
   {
-    title: '关于我们',
+    key: 'footer.aboutUs',
     items: [
-      { label: '公司介绍', path: '/help' },
-      { label: '联系我们', path: '/help' },
-      { label: '加入我们', path: '/help' },
+      { key: 'footer.companyIntro', path: '/help' },
+      { key: 'footer.contact', path: '/help' },
+      { key: 'footer.joinUs', path: '/help' },
     ],
   },
 ]
@@ -51,11 +66,11 @@ const footerCols = [
   <!-- Service Guarantees -->
   <section class="guarantees">
     <div class="guarantees-inner">
-      <div v-for="g in guarantees" :key="g.title" class="guarantee-item">
+      <div v-for="g in guarantees" :key="g.key" class="guarantee-item">
         <span class="guarantee-icon">{{ g.icon }}</span>
         <div>
-          <div class="guarantee-title">{{ g.title }}</div>
-          <div class="guarantee-desc">{{ g.desc }}</div>
+          <div class="guarantee-title">{{ t(g.key) }}</div>
+          <div class="guarantee-desc">{{ t(g.descKey) }}</div>
         </div>
       </div>
     </div>
@@ -64,13 +79,38 @@ const footerCols = [
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-grid">
-      <div v-for="col in footerCols" :key="col.title" class="footer-col">
-        <h4 class="footer-col-title">{{ col.title }}</h4>
-        <p v-for="item in col.items" :key="item.label" class="footer-link" @click="goTo(item.path)">{{ item.label }}</p>
+      <div v-for="col in footerCols" :key="col.key" class="footer-col">
+        <h4 class="footer-col-title">{{ t(col.key) }}</h4>
+        <p v-for="item in col.items" :key="item.key" class="footer-link" @click="goTo(item.path)">{{ t(item.key) }}</p>
       </div>
     </div>
+    <!-- Newsletter -->
+    <div class="footer-newsletter">
+      <div class="nl-inner">
+        <div class="nl-text">
+          <span class="nl-title">📧 {{ t('footer.newsletterTitle') }}</span>
+          <span class="nl-desc">{{ t('footer.newsletterDesc') }}</span>
+        </div>
+        <div class="nl-form">
+          <template v-if="subscribeDone">
+            <span class="nl-success">✅ {{ t('footer.newsletterSuccess') }}</span>
+          </template>
+          <template v-else>
+            <input v-model="subscribeEmail" type="email" :placeholder="t('footer.newsletterPlaceholder')" class="nl-input" @keyup.enter="subscribe" />
+            <button class="nl-btn" :disabled="subscribing" @click="subscribe">{{ subscribing ? t('footer.newsletterSubmitting') : t('footer.newsletterBtn') }}</button>
+          </template>
+        </div>
+      </div>
+    </div>
+
     <div class="footer-bottom">
-      &copy; {{ new Date().getFullYear() }} YXCLOUD 商城 v2.4.0
+      <div class="footer-social">
+        <span class="social-icon">📱</span>
+        <span class="social-icon">💬</span>
+        <span class="social-icon">📷</span>
+        <span class="social-icon">🎵</span>
+      </div>
+      &copy; {{ new Date().getFullYear() }} {{ t('footer.copyright') }} v2.5.0
     </div>
   </footer>
 </template>
@@ -109,8 +149,8 @@ const footerCols = [
 }
 
 .footer {
-  background: #333;
-  color: #999;
+  background: var(--bg-page);
+  color: var(--text-secondary);
   padding: var(--space-xxxl) var(--space-xl) var(--space-xl);
 }
 .footer-grid {
@@ -132,6 +172,24 @@ const footerCols = [
   transition: color var(--transition-fast);
 }
 .footer-link:hover { color: #fff; }
+
+/* Newsletter */
+.footer-newsletter { background: #2a2a2a; padding: var(--space-xl); margin-top: var(--space-xl); }
+.nl-inner { max-width: var(--max-width); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: var(--space-xl); flex-wrap: wrap; }
+.nl-text { display: flex; flex-direction: column; gap: 4px; }
+.nl-title { color: #fff; font-weight: 700; font-size: var(--font-md); }
+.nl-desc { color: #888; font-size: var(--font-sm); }
+.nl-form { display: flex; gap: var(--space-sm); }
+.nl-input { padding: var(--space-sm) var(--space-md); border: 1px solid #555; border-radius: var(--radius-md); background: #444; color: #fff; font-size: var(--font-sm); width: 220px; outline: none; }
+.nl-input:focus { border-color: var(--jd-red); }
+.nl-btn { padding: var(--space-sm) var(--space-xl); background: var(--jd-red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-sm); font-weight: 600; transition: background var(--transition-fast); }
+.nl-btn:hover { background: #d63434; }
+.nl-success { color: var(--green); font-weight: 600; }
+
+/* Social */
+.footer-social { display: flex; justify-content: center; gap: var(--space-lg); margin-bottom: var(--space-md); }
+.social-icon { font-size: 22px; cursor: pointer; opacity: .6; transition: opacity var(--transition-fast); }
+.social-icon:hover { opacity: 1; }
 
 .footer-bottom {
   max-width: var(--max-width);

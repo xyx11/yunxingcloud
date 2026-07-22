@@ -18,6 +18,8 @@ public class CartItem {
     private Long price;
     @Column(nullable = false)
     private Integer quantity = 1;
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -36,6 +38,8 @@ public class CartItem {
     public void setPrice(Long price) { this.price = price; }
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

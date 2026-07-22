@@ -26,15 +26,19 @@ public class PersonalizationService {
     public Map<String, Object> personalizedHome(String username) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // 用户购买过的品类
+        // 用户购买过的品类 (batch fetch to avoid N+1)
         Set<Long> boughtCategoryIds = new HashSet<>();
         List<OrderHead> orders = orderRepo.findByUsernameOrderByCreatedAtDesc(username);
+        Set<Long> productIds = new HashSet<>();
         for (OrderHead order : orders) {
             for (OrderLine line : lineRepo.findByOrderId(order.getId())) {
-                productRepo.findById(line.getProductId()).ifPresent(p -> {
-                    if (p.getCategoryId() != null) boughtCategoryIds.add(p.getCategoryId());
-                });
+                productIds.add(line.getProductId());
             }
+        }
+        if (!productIds.isEmpty()) {
+            productRepo.findAllById(productIds).forEach(p -> {
+                if (p.getCategoryId() != null) boughtCategoryIds.add(p.getCategoryId());
+            });
         }
 
         // 同类推荐 (买过的品类中的热门商品)

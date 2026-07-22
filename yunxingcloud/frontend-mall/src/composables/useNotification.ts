@@ -1,4 +1,7 @@
 import { ref } from 'vue'
+import { useI18n } from '@/locales'
+
+const { t } = useI18n()
 
 const supported = ref('Notification' in window && 'serviceWorker' in navigator)
 const permission = ref(Notification.permission)
@@ -14,7 +17,10 @@ export function useNotification() {
         const reg = await navigator.serviceWorker.ready
         await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array('BNcEz3WmQHq6WE-D9oJg5E9xRm0KZkPqJfTyHuVxLwYgAsNdFbGnHjMkLpQwErTyUiOpPaSdFgHjKlZxCvBnM')
+          // Set VITE_VAPID_PUBLIC_KEY in your .env file for production
+          applicationServerKey: urlBase64ToUint8Array(
+            import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BNcEz3WmQHq6WE-D9oJg5E9xRm0KZkPqJfTyHuVxLwYgAsNdFbGnHjMkLpQwErTyUiOpPaSdFgHjKlZxCvBnM'
+          )
         })
         localStorage.setItem('mall_push_subscribed', 'true')
         subscribed.value = true
@@ -35,7 +41,7 @@ export function useNotification() {
 
   function sendTest() {
     if (permission.value === 'granted') {
-      new Notification('YXCLOUD 商城', { body: '🎉 订阅成功！您将收到促销和订单状态通知', icon: '/mall/favicon.svg' })
+      new Notification(t('notif.title'), { body: t('notif.subscribed'), icon: '/favicon.svg' })
     }
   }
 

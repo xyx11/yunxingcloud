@@ -64,4 +64,9 @@ public class GroupBuyController {
         log.info("Admin expired timeout group buys");
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> myGroups() {
+        return ResponseEntity.ok(service.getUserGroups(user()));
+    }
 }

@@ -68,4 +68,10 @@ public class FlashSaleService {
         String v = redis.opsForValue().get("flash:stock:" + flashId);
         return v != null ? Integer.parseInt(v) : 0;
     }
+
+    /** 设置秒杀提醒 */
+    public void setRemind(Long saleId, Long productId, String username) {
+        String key = "flash:remind:" + saleId + ":" + username;
+        redis.opsForValue().set(key, String.valueOf(productId != null ? productId : ""), 24, TimeUnit.HOURS);
+    }
 }

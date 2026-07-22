@@ -70,4 +70,6 @@ public class AfterSaleService {
         as.setStatus("4");
         return afterSaleRepo.save(as);
     }
+
+    public long count() { return afterSaleRepo.count(); }
 }

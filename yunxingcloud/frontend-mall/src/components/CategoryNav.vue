@@ -1,26 +1,38 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { Category } from '@/types'
+import { useI18n } from '@/locales'
 
 defineProps<{
   categories: Category[]
 }>()
 
+const { t } = useI18n()
+
 const emit = defineEmits<{
   (e: 'select', categoryId: number): void
   (e: 'view-all'): void
 }>()
+
+const expanded = ref(false)
 </script>
 
 <template>
   <section v-if="categories.length" class="categories-section">
     <div class="section-header">
       <span class="section-title">📂 商品分类</span>
-      <button class="section-more" @click="emit('view-all')">查看全部 &gt;</button>
+      <button class="section-more" @click="expanded = !expanded">
+        {{ expanded ? t('product.collapseLess') : t('product.expandMore') }} {{ expanded ? '▲' : '▼' }}
+      </button>
     </div>
     <div class="categories">
-      <div v-for="cat in categories.slice(0, 10)" :key="cat.id" class="cat-item" role="button" tabindex="0" @click="emit('select', cat.id)" @keydown.enter.prevent="emit('select', cat.id)" @keydown.space.prevent="emit('select', cat.id)">
+      <div v-for="cat in (expanded ? categories : categories.slice(0, 10))" :key="cat.id" class="cat-item" role="button" tabindex="0" @click="emit('select', cat.id)" @keydown.enter.prevent="emit('select', cat.id)" @keydown.space.prevent="emit('select', cat.id)">
         <div class="cat-icon">{{ cat.icon || '📁' }}</div>
         <div class="cat-name">{{ cat.name }}</div>
+      </div>
+      <div v-if="!expanded && categories.length > 10" class="cat-item" role="button" tabindex="0" @click="emit('view-all')" @keydown.enter.prevent="emit('view-all')" @keydown.space.prevent="emit('view-all')">
+        <div class="cat-icon cat-icon-more">···</div>
+        <div class="cat-name">查看全部</div>
       </div>
     </div>
   </section>
@@ -53,4 +65,5 @@ const emit = defineEmits<{
   box-shadow: 0 2px 6px rgba(241,2,21,.08);
 }
 .cat-name { font-size: var(--font-xs); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-icon-more { background: var(--bg-hover) !important; color: var(--text-tertiary); font-weight: 700; font-size: 18px; }
 </style>

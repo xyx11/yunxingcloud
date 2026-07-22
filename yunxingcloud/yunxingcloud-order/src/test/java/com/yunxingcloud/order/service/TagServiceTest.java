@@ -72,7 +72,7 @@ class TagServiceTest {
         ProductTag tag = new ProductTag();
         tag.setId(10L);
         tag.setName("热卖");
-        when(tagRepo.findById(10L)).thenReturn(Optional.of(tag));
+        when(tagRepo.findAllById(any())).thenReturn(List.of(tag));
 
         List<ProductTag> result = tagService.tagsOfProduct(100L);
 
@@ -135,7 +135,7 @@ class TagServiceTest {
         product.setId(100L);
         product.setName("测试商品");
         product.setPrice(9900L);
-        when(productRepo.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepo.findAllById(any())).thenReturn(List.of(product));
 
         List<Product> result = tagService.productsByTag(10L);
 

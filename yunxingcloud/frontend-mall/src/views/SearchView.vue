@@ -3,7 +3,10 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchProducts, getSearchSuggestions, getHotKeywords } from '@/api/product'
 import { addToCart } from '@/api/cart'
+import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
+import { useCartFly } from '@/composables/useCartFly'
+import { useAnalytics } from '@/composables/useAnalytics'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
 import type { Product } from '@/types'
@@ -12,6 +15,8 @@ import LazyImage from '@/components/LazyImage.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { flyToCart } = useCartFly()
+const analytics = useAnalytics()
 const { t } = useI18n()
 const results = ref<Product[]>([])
 const totalPages = ref(0)
@@ -25,29 +30,53 @@ const suggestIndex = ref(-1)
 const searchFocused = ref(false)
 const searchError = ref(false)
 const priceFilter = ref('')
+const minPrice = ref('')
+const maxPrice = ref('')
+const recentlyAdded = ref(new Set<number>())
 const priceRanges = [
-  { key: '', label: '全部' },
+  { key: '', label: t('search.allPrices') },
   { key: '0-100', label: '¥0-100' },
   { key: '100-500', label: '¥100-500' },
   { key: '500-1000', label: '¥500-1000' },
   { key: '1000+', label: '¥1000+' },
 ]
 function filteredResults() {
-  if (!priceFilter.value) return results.value
-  const [min, max] = priceFilter.value.split('-').map(Number)
-  return results.value.filter(p => {
-    const price = p.price / 100
-    if (max) return price >= min && price <= max
-    return price >= min
-  })
+  let list = results.value
+  // Apply preset price filter
+  if (priceFilter.value) {
+    const [min, max] = priceFilter.value.split('-').map(Number)
+    list = list.filter(p => {
+      const price = p.price / 100
+      if (max) return price >= min && price <= max
+      return price >= min
+    })
+  }
+  // Apply custom price range
+  const cMin = Number(minPrice.value)
+  const cMax = Number(maxPrice.value)
+  if (!isNaN(cMin)) list = list.filter(p => p.price / 100 >= cMin)
+  if (!isNaN(cMax)) list = list.filter(p => p.price / 100 <= cMax)
+  return list
 }
 
-const hotKeywords = ref<string[]>(['华为手机', 'MacBook', 'Nike', '茅台', '空调', '耳机', '运动鞋', '洗发水'])
+const hotKeywords = ref<string[]>([])
+const hotKeywordsLoading = ref(true)
 
 async function loadHotKeywords() {
-  try { const r = await getHotKeywords(); const data = r.data || []; if (data.length) hotKeywords.value = data } catch {}
+  hotKeywordsLoading.value = true
+  try {
+    const r = await getHotKeywords()
+    const data: string[] = r.data || []
+    if (data.length) hotKeywords.value = data
+    else hotKeywords.value = ['华为手机', 'MacBook', 'Nike', '运动鞋', '蓝牙耳机', '防晒霜', 'T恤', '空调']
+  } catch {
+    if (!hotKeywords.value.length) hotKeywords.value = ['华为手机', 'MacBook', 'Nike', '运动鞋', '蓝牙耳机', '防晒霜', 'T恤', '空调']
+  } finally { hotKeywordsLoading.value = false }
 }
-const history = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
+function safeGetHistory(): string[] {
+  try { return JSON.parse(localStorage.getItem('searchHistory') || '[]') } catch { return [] }
+}
+const history = ref<string[]>(safeGetHistory())
 const suggestions = ref<Product[]>([])
 let suggestTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -76,7 +105,11 @@ async function doSearch() {
   const q = searchInput.value.trim(); searchQuery.value = q; loading.value = true; suggestions.value = []; searchError.value = false
   const h = [q, ...history.value.filter(h => h !== q)].slice(0, 10); history.value = h
   localStorage.setItem('searchHistory', JSON.stringify(h)); showHistory.value = false
-  try { const r = await searchProducts(q, page.value, 20); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; searchError.value = false; router.replace({ query: { q } }) } catch { toast.error('搜索失败，请重试'); results.value = []; searchError.value = true } finally { loading.value = false }
+  const extra: Record<string, string | number> = {}
+  const cMin = Number(minPrice.value); if (!isNaN(cMin)) extra.minPrice = cMin * 100
+  const cMax = Number(maxPrice.value); if (!isNaN(cMax)) extra.maxPrice = cMax * 100
+  try { const r = await searchProducts(q, page.value, 20, extra); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; analytics.search(q, results.value.length); searchError.value = false; router.replace({ query: { q } }); try { await request.post('/search/log', { keyword: q }) } catch {}   loading.value = false;
+    } catch { toast.error(t('search.searchFail')); results.value = []; searchError.value = true }
 }
 
 function loadMore() { page.value++; doSearch() }
@@ -107,7 +140,7 @@ function removeHistoryItem(kw: string) { history.value = history.value.filter(h 
 
 async function quickAdd(e: Event, p: Product) {
   e.stopPropagation()
-  try { await addToCart(p.id, 1); toast.success('已加入购物车'); (p as Product)._added = true; setTimeout(() => (p as Product)._added = false, 1500) } catch { toast.error('添加失败') }
+  try { await addToCart(p.id, 1); toast.success(t('toast.addedToCart')); flyToCart(e as MouseEvent); recentlyAdded.value.add(p.id); setTimeout(() => recentlyAdded.value.delete(p.id), 1500) } catch { toast.error(t('toast.addCartFail')) }
 }
 </script>
 
@@ -118,6 +151,7 @@ async function quickAdd(e: Event, p: Product) {
       <div class="search-bar">
         <input v-model="searchInput" :placeholder="t('search.placeholder')" @input="onInput" @keyup.enter="doSearch" @keydown="onKeydown" @focus="showHistory = true; searchFocused = true" class="search-input" />
         <button v-if="searchInput" class="search-clear" @click="clearInput" aria-label="清除">✕</button>
+        <button class="search-mic-btn" @click="searchFocused = true" title="语音搜索">🎤</button>
         <button class="search-btn" @click="doSearch">{{ t('common.search') }}</button>
       </div>
 
@@ -133,7 +167,10 @@ async function quickAdd(e: Event, p: Product) {
       <!-- Hot Keywords -->
       <div class="hot-section">
         <h4 class="hot-title">🔥 {{ t('search.hotKeywords') }}</h4>
-        <div class="hot-grid">
+        <div v-if="hotKeywordsLoading" class="hot-grid">
+          <span v-for="i in 8" :key="i" class="hot-tag hot-tag--sk" />
+        </div>
+        <div v-else class="hot-grid">
           <span v-for="kw in hotKeywords" :key="kw" class="hot-tag" @click="searchKeyword(kw)">{{ kw }}</span>
         </div>
       </div>
@@ -159,12 +196,18 @@ async function quickAdd(e: Event, p: Product) {
         <h2 class="results-title">{{ t('search.resultCount', { n: String(results.length) }) }}</h2>
         <div class="price-filter">
           <span v-for="pr in priceRanges" :key="pr.key" class="price-tag" :class="{ active: priceFilter === pr.key }" @click="priceFilter = pr.key">{{ pr.label }}</span>
+          <span class="price-input-wrap">
+            <input v-model="minPrice" type="number" placeholder="¥" class="price-input-inline" @keyup.enter="doSearch" />
+            <span>-</span>
+            <input v-model="maxPrice" type="number" placeholder="¥" class="price-input-inline" @keyup.enter="doSearch" />
+            <button class="price-go" @click="doSearch">{{ t('common.confirm') }}</button>
+          </span>
         </div>
         <div class="sort-row">
-          <span class="sort-opt" :class="{ active: !sortBy }" @click="setSort('')">综合</span>
-          <span class="sort-opt" :class="{ active: sortBy === 'sales' }" @click="setSort('sales')">销量</span>
-          <span class="sort-opt" :class="{ active: sortBy === 'price_asc' }" @click="setSort('price_asc')">价格↑</span>
-          <span class="sort-opt" :class="{ active: sortBy === 'price_desc' }" @click="setSort('price_desc')">价格↓</span>
+          <span class="sort-opt" :class="{ active: !sortBy }" @click="setSort('')">{{ t('sort.defaultSort') }}</span>
+          <span class="sort-opt" :class="{ active: sortBy === 'sales' }" @click="setSort('sales')">{{ t('sort.sales') }}</span>
+          <span class="sort-opt" :class="{ active: sortBy === 'price_asc' }" @click="setSort('price_asc')">{{ t('sort.priceAsc') }}</span>
+          <span class="sort-opt" :class="{ active: sortBy === 'price_desc' }" @click="setSort('price_desc')">{{ t('sort.priceDesc') }}</span>
         </div>
       </div>
 
@@ -185,10 +228,10 @@ async function quickAdd(e: Event, p: Product) {
             <div class="result-bottom">
               <div>
                 <span class="result-price">{{ formatPrice(p.price / 100, 2) }}</span>
-                <span class="result-sales">已售 {{ p.sales || 0 }}</span>
+                <span class="result-sales">{{ t('search.soldCount', { n: String(p.sales || 0) }) }}</span>
               </div>
-              <button class="add-btn" :class="{ added: (p as Product)._added }" @click="(e: Event) => quickAdd(e, p)">
-                {{ (p as Product)._added ? '✓' : '+' }}
+              <button class="add-btn" :class="{ added: recentlyAdded.has(p.id) }" @click="(e: Event) => quickAdd(e, p)">
+                {{ recentlyAdded.has(p.id) ? '✓' : '+' }}
               </button>
             </div>
           </div>
@@ -215,12 +258,12 @@ async function quickAdd(e: Event, p: Product) {
 
       <!-- Load More -->
       <div v-if="results.length && page < totalPages - 1" class="load-more">
-        <button class="load-more-btn" @click="loadMore">加载更多</button>
+        <button class="load-more-btn" @click="loadMore">{{ t('common.loadMore') }}</button>
       </div>
     </div>
 
     <!-- Mobile Cancel -->
-    <button v-if="searchQuery" class="mobile-cancel" @click="cancelSearch">取消</button>
+    <button v-if="searchQuery" class="mobile-cancel" @click="cancelSearch">{{ t('common.cancel') }}</button>
   </div>
 </template>
 
@@ -229,11 +272,14 @@ async function quickAdd(e: Event, p: Product) {
 
 .search-bar { display: flex; position: relative; margin-bottom: var(--space-xxl); }
 .search-input { flex: 1; height: 40px; padding: 0 var(--space-xl) 0 var(--space-lg); border: 2px solid var(--jd-red); border-radius: var(--radius-md) 0 0 var(--radius-md); outline: none; font-size: 15px; background: var(--bg-white); color: var(--text-primary); }
-.search-input:focus { box-shadow: 0 0 0 3px var(--jd-red-light); }
+.search-input { flex: 1; height: 40px; padding: 0 var(--space-xl) 0 var(--space-lg); border: 2px solid var(--jd-red); border-radius: var(--radius-md) 0 0 var(--radius-md); outline: none; font-size: 15px; background: var(--bg-white); color: var(--text-primary); transition: box-shadow .25s ease, border-color .25s ease; }
+.search-input:focus { box-shadow: 0 0 0 4px rgba(241,2,21,.15); border-color: var(--jd-red-dark); }
 .search-clear { position: absolute; right: 110px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px; }
 .search-clear:hover { color: var(--text-primary); }
 .search-btn { height: 40px; padding: 0 28px; background: var(--jd-red); color: #fff; border: none; border-radius: 0 var(--radius-md) var(--radius-md) 0; cursor: pointer; font-size: 15px; font-weight: 600; transition: background var(--transition-fast); }
 .search-btn:hover { background: var(--jd-red-dark); }
+.search-mic-btn { height: 40px; width: 40px; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); border-left: none; cursor: pointer; font-size: 18px; transition: all var(--transition-fast); display: flex; align-items: center; justify-content: center; }
+.search-mic-btn:hover { background: var(--jd-red-light); color: var(--jd-red); }
 
 .suggestions { background: var(--bg-white); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); overflow: hidden; margin-top: -16px; margin-bottom: var(--space-sm); }
 .suggest-item { padding: var(--space-md) var(--space-lg); cursor: pointer; display: flex; align-items: center; gap: var(--space-md); border-bottom: 1px solid var(--border-light); font-size: var(--font-md); transition: background var(--transition-fast); }
@@ -246,6 +292,7 @@ async function quickAdd(e: Event, p: Product) {
 .hot-grid { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
 .hot-tag { padding: 6px 14px; background: var(--jd-red-light); color: var(--jd-red); border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-base); transition: background var(--transition-fast); }
 .hot-tag:hover { background: #ffe0e0; }
+.hot-tag--sk { width: 72px; height: 30px; background: var(--border-light); border-radius: var(--radius-round); animation: shimmer 1.5s infinite; }
 
 .history-section { text-align: left; }
 .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); }
@@ -264,6 +311,9 @@ async function quickAdd(e: Event, p: Product) {
 .price-tag { font-size: var(--font-sm); padding: 4px 12px; border-radius: var(--radius-round); cursor: pointer; color: var(--text-secondary); border: 1px solid var(--border); transition: all var(--transition-fast); }
 .price-tag.active { color: var(--jd-red); border-color: var(--jd-red); background: var(--jd-red-light); }
 .price-tag:hover:not(.active) { border-color: var(--jd-red); color: var(--jd-red); }
+.price-input-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.price-input-inline { width: 60px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: var(--font-sm); text-align: center; background: var(--bg-white); color: var(--text-primary); }
+.price-go { padding: 2px 8px; font-size: 12px; border: none; background: var(--jd-red); color: #fff; border-radius: 4px; cursor: pointer; }
 
 .sort-row { display: flex; gap: var(--space-md); font-size: var(--font-base); }
 .sort-opt { cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--text-secondary); transition: all var(--transition-fast); }
@@ -280,12 +330,12 @@ async function quickAdd(e: Event, p: Product) {
 .result-card:hover { transform: translateY(-4px); }
 .result-info { padding: var(--space-md); }
 .result-name { font-size: var(--font-md); color: var(--text-primary); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.result-name :deep(mark) { background: #fff3cd; color: var(--jd-red); padding: 0 1px; border-radius: 2px; }
+.result-name :deep(mark) { background: #fff3cd; color: #b71c1c; padding: 0 1px; border-radius: 2px; }
 .result-bottom { display: flex; align-items: center; justify-content: space-between; }
 .result-price { color: var(--jd-red); font-size: var(--font-lg); font-weight: 700; }
 .result-sales { color: var(--text-tertiary); font-size: var(--font-xs); margin-left: var(--space-xs); }
 
-.add-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--jd-red); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); flex-shrink: 0; }
+.add-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--jd-red); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: var(--font-md); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); flex-shrink: 0; }
 .add-btn:hover { background: var(--jd-red); color: #fff; }
 .add-btn.added { background: var(--jd-red); color: #fff; }
 

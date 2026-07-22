@@ -50,4 +50,6 @@ public class MerchantService {
         m.setStatus("2");
         return merchantRepo.save(m);
     }
+
+    public long count() { return merchantRepo.count(); }
 }

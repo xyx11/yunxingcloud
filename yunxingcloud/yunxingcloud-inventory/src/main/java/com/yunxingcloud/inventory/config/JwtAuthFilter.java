@@ -30,7 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final SecretKey key;
 
-    public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
+    public JwtAuthFilter(@Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

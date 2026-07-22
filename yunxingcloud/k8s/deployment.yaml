@@ -1,5 +1,10 @@
 # NOTE: image tags use "latest" for development convenience.
-# In production, replace with specific version tags (e.g., :v1.2.3) and use imagePullPolicy: Always.
+# In production, replace with specific version tags.
+# Registry 配置: 将 image 前缀改为你的 registry，例如:
+#   image: ghcr.io/your-org/yunxingcloud-core:v1.0.0
+#   或 image: registry.cn-hangzhou.aliyuncs.com/your-ns/yunxingcloud-core:v1.0.0
+# 本地 Kind 开发: imagePullPolicy: IfNotPresent (直接 load 镜像)
+# 生产环境: imagePullPolicy: Always 或 IfNotPresent (依赖 registry)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +40,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-core"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "1Gi", cpu: "1000m" }
@@ -89,7 +94,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-usercenter"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql:3306/yunxingcloud_usercenter?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -193,7 +198,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-payment"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql:3306/yunxingcloud_payment?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -247,7 +252,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-order"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql:3306/yunxingcloud_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }
@@ -301,7 +306,7 @@ spec:
             - name: SERVICE_NAME
               value: "yunxingcloud-inventory"
             - name: DB_URL
-              value: "jdbc:mysql://mysql-service:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
+              value: "jdbc:mysql://mysql:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai"
           resources:
             requests: { memory: "256Mi", cpu: "200m" }
             limits: { memory: "512Mi", cpu: "500m" }

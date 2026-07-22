@@ -15,10 +15,10 @@ const showModal = ref(false); const editingId = ref<number|null>(null)
 const form = ref<Article & { coverImage?: string }>({ title:'', content:'', category:'news', status:'0', coverImage: '' })
 
 const catOpts = [
-  { label: '新闻', value: 'news' },
-  { label: '帮助', value: 'help' },
-  { label: '公告', value: 'notice' },
-  { label: '活动', value: 'promotion' },
+  { label: t('common.news'), value: 'news' },
+  { label: t('common.help'), value: 'help' },
+  { label: t('common.notice'), value: 'notice' },
+  { label: t('common.promotion'), value: 'promotion' },
 ]
 
 function handleUpload(options: UploadCustomRequestOptions) {

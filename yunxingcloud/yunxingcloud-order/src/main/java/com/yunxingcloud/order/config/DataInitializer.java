@@ -103,11 +103,12 @@ public class DataInitializer implements CommandLineRunner {
             p.setIsNew((Boolean) d[7]);
             p.setIsHot((Boolean) d[8]);
             p.setTags((String) d[9]);
+            p.setImageUrl("/product-" + (catIdx + 1) + ".svg");
             p.setStatus("0");
             productRepo.save(p);
 
-            // Add sample SKUs for some products (first 6)
-            if (catIdx <= 1) {
+            // Add sample SKUs for most products (categories 0-7)
+            if (catIdx <= 7) {
                 String[][] specOpts = {
                     {"星空黑", "皓月白", "流光金"},
                     {"128GB", "256GB", "512GB"},
@@ -129,18 +130,18 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initBanners() {
         String[][] banners = {
-            {"华为 Mate 80 Pro 新品首发", "华为年度旗舰，限时抢购中"},
-            {"618 年中大促 爆款直降", "全场低至5折，满199包邮"},
-            {"新品首发·小米16 Ultra", "徕卡影像新标杆，预约立减200"},
-            {"清凉一夏·空调冰洗节", "空调低至1999，冰箱满千减百"},
+            {"华为 Mate 80 Pro 新品首发", "华为年度旗舰，限时抢购中", "/product/1"},
+            {"618 年中大促 爆款直降", "全场低至5折，满199包邮", "/products"},
+            {"新品首发·小米16 Ultra", "徕卡影像新标杆，预约立减200", "/product/3"},
+            {"清凉一夏·空调冰洗节", "空调低至1999，冰箱满千减百", "/products"},
         };
         for (int i = 0; i < banners.length; i++) {
             Banner b = new Banner();
             b.setTitle(banners[i][0]);
-            b.setImageUrl(""); // placeholder, will use gradient bg
+            b.setImageUrl("/banner-" + (i + 1) + ".svg");
+            b.setDescription(banners[i][1]);
             b.setSortOrder(i);
-            if (i == 0) b.setLinkUrl("/product/1");
-            else if (i == 2) b.setLinkUrl("/product/3");
+            b.setLinkUrl(banners[i][2]);
             b.setStatus("0");
             bannerRepo.save(b);
         }
@@ -150,14 +151,14 @@ public class DataInitializer implements CommandLineRunner {
         List<Product> products = productRepo.findAll();
         if (products.size() < 6) return;
         String[][] reviewData = {
-            {"user_demo", "5", "非常好用！外观精致，性能强大，拍照效果一流，值得购买。"},
-            {"user_demo", "5", "物流很快，包装完好。已经用了几天，运行流畅不卡顿。"},
-            {"user_demo", "4", "整体不错，性价比很高。希望系统更新再优化一下续航。"},
-            {"user_demo", "5", "颜值很高，手感好。屏幕显示效果清晰，拍照也很出色。"},
-            {"user_demo", "4", "质量很好，做工精细。唯一不足是配送比预期晚了一天。"},
-            {"user_demo", "5", "第三次购买了，品质一如既往的好。推荐给身边的朋友了。"},
-            {"user_demo", "5", "性价比超高！功能齐全，操作流畅，很满意的一次购物。"},
-            {"user_demo", "3", "产品还行，但是包装可以再好一些。客服态度很好。"},
+            {"数码控小王", "5", "非常好用！外观精致，性能强大，拍照效果一流，值得购买。"},
+            {"快乐购物家", "5", "物流很快，包装完好。已经用了几天，运行流畅不卡顿。"},
+            {"品质生活_chen", "4", "整体不错，性价比很高。希望系统更新再优化一下续航。"},
+            {"美妆达人Lily", "5", "颜值很高，手感好。屏幕显示效果清晰，拍照也很出色。"},
+            {"跑步爱好者", "4", "质量很好，做工精细。唯一不足是配送比预期晚了一天。"},
+            {"老顾客_张三", "5", "第三次购买了，品质一如既往的好。推荐给身边的朋友了。"},
+            {"学生党_小李", "5", "性价比超高！功能齐全，操作流畅，很满意的一次购物。"},
+            {"理性消费者", "3", "产品还行，但是包装可以再好一些。客服态度很好。"},
         };
         Random rnd = new Random();
         for (String[] rd : reviewData) {

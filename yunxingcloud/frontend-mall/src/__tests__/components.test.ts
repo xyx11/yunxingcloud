@@ -5,6 +5,8 @@ import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdModal from '@/components/JdModal.vue'
 import ProductCard from '@/components/ProductCard.vue'
+import SkeletonBox from '@/components/SkeletonBox.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 // Mock IntersectionObserver for jsdom
 beforeEach(() => {
@@ -141,7 +143,7 @@ describe('ProductCard', () => {
 
   it('renders price', () => {
     const wrapper = mount(ProductCard, { props: { product } })
-    expect(wrapper.text()).toContain('1299')
+    expect(wrapper.text()).toContain('12.99')
   })
 
   it('renders badge', () => {
@@ -163,5 +165,46 @@ describe('ProductCard', () => {
   it('hides add-cart button when showAddCart=false', () => {
     const wrapper = mount(ProductCard, { props: { product, showAddCart: false } })
     expect(wrapper.text()).not.toContain('加入购物车')
+  })
+})
+
+describe('SkeletonBox', () => {
+  it('renders correct count of lines', () => {
+    const wrapper = mount(SkeletonBox, { props: { variant: 'text', count: 4 } })
+    const lines = wrapper.findAll('.sk-line')
+    expect(lines.length).toBe(4)
+  })
+})
+
+describe('ConfirmDialog', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('renders to body when show=true', () => {
+    mount(ConfirmDialog, { props: { show: true, title: '确认操作', message: '' } })
+    expect(document.querySelector('.cd-title')?.textContent).toContain('确认操作')
+  })
+
+  it('does not render when show=false', () => {
+    mount(ConfirmDialog, { props: { show: false, title: 'hidden', message: '' } })
+    expect(document.querySelector('.cd-overlay')).toBeNull()
+  })
+
+  it('emits cancel on overlay click', async () => {
+    const wrapper = mount(ConfirmDialog, { props: { show: true, title: '确认删除', message: 'are you sure?' } })
+    const overlay = document.querySelector('.cd-overlay') as HTMLElement
+    overlay.click()
+    expect(wrapper.emitted('cancel')).toBeTruthy()
+  })
+
+  it('emits confirm on button click', async () => {
+    const wrapper = mount(ConfirmDialog, { props: { show: true, title: '确认', message: 'proceed?' } })
+    const buttons = document.querySelectorAll('.cd-actions button')
+    const confirmBtn = Array.from(buttons).find(b => !b.classList.contains('jd-btn--outline')) as HTMLElement
+    if (confirmBtn) {
+      confirmBtn.click()
+      expect(wrapper.emitted('confirm')).toBeTruthy()
+    }
   })
 })

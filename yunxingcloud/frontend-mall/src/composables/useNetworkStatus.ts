@@ -1,10 +1,21 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
-export function useNetworkStatus() {
+export function useNetworkStatus(options?: { onStatusChange?: (online: boolean) => void }) {
   const isOnline = ref(navigator.onLine)
+  const wasOffline = ref(!navigator.onLine)
 
-  function onOnline() { isOnline.value = true }
-  function onOffline() { isOnline.value = false }
+  function onOnline() {
+    isOnline.value = true
+    if (wasOffline.value) {
+      wasOffline.value = false
+      options?.onStatusChange?.(true)
+    }
+  }
+  function onOffline() {
+    isOnline.value = false
+    wasOffline.value = true
+    options?.onStatusChange?.(false)
+  }
 
   onMounted(() => {
     window.addEventListener('online', onOnline)
@@ -16,5 +27,5 @@ export function useNetworkStatus() {
     window.removeEventListener('offline', onOffline)
   })
 
-  return { isOnline }
+  return { isOnline, wasOffline }
 }

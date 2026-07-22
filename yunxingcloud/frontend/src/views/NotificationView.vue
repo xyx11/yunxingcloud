@@ -13,29 +13,30 @@ const showModal = ref(false)
 const form = ref<Notification>({ username:'ALL', title:'', content:'', type:'system' })
 
 const columns: DataTableColumns<Notification> = [
-  { title: '接收人', key: 'username', width: 90 }, { title: '标题', key: 'title', width: 200 },
-  { title: '类型', key: 'type', width: 70 },
-  { title: '已读', key: 'isRead', width: 60, render(r:any){ return r.isRead ? '✓' : '' } },
-  { title: '时间', key: 'createdAt', width: 140, render(r:any){ return r.createdAt?.substring(0,16) } },
+  { title: t('common.recipient'), key: 'username', width: 90 },
+  { title: t('common.title'), key: 'title', width: 180 },
+  { title: t('common.type'), key: 'type', width: 70, render(r:any){ return h(NTag,{size:'small',type:r.type==='order'?'info':r.type==='promotion'?'warning':'default'},{default:()=>r.type}) } },
+  { title: t('common.readStatus'), key: 'isRead', width: 60, render(r:any){ return h(NTag,{size:'small',type:r.isRead?'success':'warning'},{default:()=>r.isRead ? t('common.isRead') : t('common.unread')}) } },
+  { title: t('common.createdAt'), key: 'createdAt', width: 140, render(r:any){ return r.createdAt?.substring(0,16) } },
 ]
 
 async function load() { const r = await fetchNotifications(); items.value = r.data }
-async function send() { await sendNotification(form.value); showModal.value=false; notify.success('已发送'); load() }
+async function send() { await sendNotification(form.value); showModal.value=false; notify.success(t('common.sendSuccess')); load() }
 onMounted(load)
 </script>
 <template>
-  <n-card title="通知管理">
-    <n-space vertical><n-button type="primary" @click="showModal=true">发送通知</n-button>
+  <n-card :title="t('nav.notifications')">
+    <n-space vertical><n-button type="primary" @click="showModal=true">{{ t('common.send') }}</n-button>
       <n-dataTable :columns="columns" :data="items" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="400" placement="right">
-      <n-drawer-content title="发送通知" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="send">发送</n-button></n-space></template>
+      <n-drawer-content :title="t('common.send')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="send">{{ t('common.send') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="70" size="small">
-          <n-form-item label="接收人"><n-input v-model:value="form.username" placeholder="ALL=全员" /></n-form-item>
-          <n-form-item label="标题"><n-input v-model:value="form.title" /></n-form-item>
-          <n-form-item label="内容"><n-input v-model:value="form.content" type="textarea" /></n-form-item>
-          <n-form-item label="类型"><n-select v-model:value="form.type" :options="[{label:'系统',value:'system'},{label:'订单',value:'order'},{label:'促销',value:'promotion'}]" /></n-form-item>
+          <n-form-item :label="t('common.recipient')"><n-input v-model:value="form.username" placeholder="ALL=All Users" /></n-form-item>
+          <n-form-item :label="t('common.title')"><n-input v-model:value="form.title" /></n-form-item>
+          <n-form-item :label="t('common.content')"><n-input v-model:value="form.content" type="textarea" /></n-form-item>
+          <n-form-item :label="t('common.type')"><n-select v-model:value="form.type" :options="[{label:t('common.system'),value:'system'},{label:t('common.order'),value:'order'},{label:t('common.promotion'),value:'promotion'}]" /></n-form-item>
         </n-form>
       </n-drawer-content>
     </n-drawer>

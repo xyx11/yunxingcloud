@@ -52,7 +52,8 @@ class CartServiceTest {
         Map<String, Object> result = cartService.list("user1");
 
         assertThat(result.get("items")).isNotNull();
-        assertThat(result).doesNotContainKey("recommended");
+        assertThat(result.get("recommended")).isNotNull();
+        assertThat((List<?>) result.get("recommended")).isEmpty();
     }
 
     @Test
@@ -141,5 +142,44 @@ class CartServiceTest {
         cartService.clear("user1");
 
         verify(cartRepo).deleteByUsername("user1");
+    }
+
+    @Test
+    void shouldUpdateQuantity() {
+        CartItem item = new CartItem();
+        item.setId(1L);
+        item.setUsername("user1");
+        item.setQuantity(2);
+        when(cartRepo.findById(1L)).thenReturn(Optional.of(item));
+        when(cartRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CartItem result = cartService.updateQuantity(1L, 5, "user1");
+
+        assertThat(result.getQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void shouldDeleteItemWhenQuantityZero() {
+        CartItem item = new CartItem();
+        item.setId(1L);
+        item.setUsername("user1");
+        item.setQuantity(2);
+        when(cartRepo.findById(1L)).thenReturn(Optional.of(item));
+
+        cartService.updateQuantity(1L, 0, "user1");
+
+        verify(cartRepo).delete(item);
+    }
+
+    @Test
+    void shouldRejectUpdateOtherUsersItem() {
+        CartItem item = new CartItem();
+        item.setId(1L);
+        item.setUsername("other_user");
+        when(cartRepo.findById(1L)).thenReturn(Optional.of(item));
+
+        assertThatThrownBy(() -> cartService.updateQuantity(1L, 5, "user1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("无权操作");
     }
 }

@@ -1,5 +1,7 @@
 package com.yunxingcloud.common.core;
 
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.yunxingcloud.common.enums.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,55 +14,61 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import com.yunxingcloud.common.enums.ErrorCode;
 import java.util.Map;
 
-/**
- * 公共异常处理基类，各微服务 GlobalExceptionHandler 可继承此类以复用通用异常处理逻辑
- */
 public abstract class BaseExceptionHandler {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusinessException(BusinessException e) {
-        ErrorCode code = e.getErrorCode();
+        ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "code", code != null ? code.getCode() : -1, "message", e.getMessage()));
+                .body(Map.of(
+                        "success", false,
+                        "code", errorCode != null ? errorCode.getCode() : -1,
+                        "message", e.getMessage()
+                ));
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleBadRequest(RuntimeException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", e.getMessage()));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
-        String msg = e.getBindingResult().getFieldErrors().stream()
+        String detail = e.getBindingResult().getFieldErrors().stream()
                 .map(f -> f.getField() + ": " + f.getDefaultMessage())
                 .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", msg));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", detail));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleNotReadable(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "请求格式错误"));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "请求格式错误"));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> handleDataIntegrity(DataIntegrityViolationException e) {
         log.warn("数据完整性冲突: {}", e.getMessage());
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "数据冲突，请检查后重试"));
+        return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "数据冲突，请检查后重试"));
     }
 
     @ExceptionHandler(TransactionException.class)
@@ -70,8 +78,8 @@ public abstract class BaseExceptionHandler {
                 .body(Map.of("success", false, "message", "服务暂时不可用，请稍后重试"));
     }
 
-    @ExceptionHandler(com.alibaba.csp.sentinel.slots.block.BlockException.class)
-    public ResponseEntity<?> handleBlockException(com.alibaba.csp.sentinel.slots.block.BlockException e) {
+    @ExceptionHandler(BlockException.class)
+    public ResponseEntity<?> handleBlockException(BlockException e) {
         log.warn("Sentinel 流控/降级: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("success", false, "message", "请求过于频繁，请稍后再试"));

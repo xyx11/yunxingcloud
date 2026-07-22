@@ -12,6 +12,7 @@ public class Coupon {
     @Column(name = "start_time") private LocalDateTime startTime;
     @Column(name = "end_time") private LocalDateTime endTime;
     @Column(length = 1) private String status = "0";
+    @Version private Integer version;
     @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;
     public Coupon() {}
     @PrePersist protected void onCreate() { if (createdAt == null) createdAt = LocalDateTime.now(); }

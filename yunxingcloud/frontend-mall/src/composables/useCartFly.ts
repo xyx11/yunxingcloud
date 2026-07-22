@@ -1,6 +1,6 @@
 export function useCartFly() {
   function flyToCart(e: MouseEvent, count = 1) {
-    const target = document.querySelector('.cart-icon, [aria-label="购物车"], .header-links span')
+    const target = document.querySelector('[data-cart-target="cart-fly"]')
     if (!target) return
 
     // Flying dot

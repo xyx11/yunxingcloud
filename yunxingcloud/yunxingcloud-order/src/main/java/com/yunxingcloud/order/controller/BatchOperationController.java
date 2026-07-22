@@ -35,4 +35,13 @@ public class BatchOperationController {
         String reason = (String) body.getOrDefault("reason", "批量取消");
         return ResponseEntity.ok(batchOperationService.batchCancel(ids, reason));
     }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @GetMapping("/count")
+    public ResponseEntity<?> count() {
+        return ResponseEntity.ok(java.util.Map.of("message", "Batch operations: ship + cancel available"));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() { return ResponseEntity.ok(java.util.Map.of("status", "ok")); }
 }

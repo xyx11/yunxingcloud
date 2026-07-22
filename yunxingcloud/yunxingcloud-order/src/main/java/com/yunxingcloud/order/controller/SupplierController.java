@@ -27,4 +27,7 @@ public class SupplierController {
     @PreAuthorize("hasAuthority('ticket:write')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Supplier s) { return ResponseEntity.ok(supplierService.update(id, s)); }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("count", supplierService.list().size())); }
 }

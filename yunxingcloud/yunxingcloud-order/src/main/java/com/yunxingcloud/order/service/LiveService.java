@@ -16,10 +16,15 @@ public class LiveService {
 
     private final LiveRoomRepository liveRoomRepo;
     private final ProductRepository productRepo;
+    private final Map<Long, java.util.Set<String>> remindMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     public LiveService(LiveRoomRepository liveRoomRepo, ProductRepository productRepo) {
         this.liveRoomRepo = liveRoomRepo;
         this.productRepo = productRepo;
+    }
+
+    public void setRemind(String username, Long roomId) {
+        remindMap.computeIfAbsent(roomId, k -> new java.util.HashSet<>()).add(username);
     }
 
     public List<LiveRoom> rooms() {

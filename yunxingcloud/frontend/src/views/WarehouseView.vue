@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NPopconfirm } from 'naive-ui'
+import { NCard, NDataTable, NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace, NTag, NPopconfirm, NInputNumber } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { fetchWarehouses, createWarehouse } from '@/api/inventory'
 import { useNotify } from '@/composables/useNotify'
@@ -11,14 +11,20 @@ const { t } = useI18n()
 const notify = useNotify()
 const items = ref<any[]>([])
 const showModal = ref(false); const editingId = ref<number|null>(null)
-const form = ref({ name: '', address: '' })
+const form = ref({ name: '', address: '', capacity: 0 })
 
 const columns = computed<DataTableColumns<any>>(() => [
   { title: 'ID', key: 'id', width: 60 },
-  { title: t('warehouse.name'), key: 'name', width: 150 },
-  { title: t('warehouse.address'), key: 'address', width: 250 },
+  { title: t('warehouse.name'), key: 'name', width: 130 },
+  { title: t('warehouse.address'), key: 'address', width: 200 },
+  { title: '容量', key: 'capacity', width: 80, render(r:any){ return r.capacity||'-' } },
+  { title: '使用率', key: 'usageRate', width: 100, render(r:any){
+    const pct = r.usageRate || 0
+    return h(NTag,{size:'small',type:pct>80?'error':pct>60?'warning':'success'},{default:()=>pct+'%'})
+  }},
+  { title: '商品数', key: 'productCount', width: 70, render(r:any){ return h(NTag,{size:'small',type:'info'},{default:()=>String(r.productCount||0)}) }},
   { title: t('common.actions'), key:'act', width:120, render(r:any){ return h(NSpace,{size:'small'},{default:()=>[
-    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={name:r.name,address:r.address||''};showModal.value=true}},{default:()=>t('common.edit')}),
+    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={name:r.name,address:r.address||'',capacity:r.capacity||0};showModal.value=true}},{default:()=>t('common.edit')}),
     h(NPopconfirm,{onPositiveClick:()=>del(r.id)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>t('common.delete')}),default:()=>t('common.confirmDelete')})
   ]})}}
 ])
@@ -30,7 +36,7 @@ async function save() {
   showModal.value = false; editingId.value = null; notify.success(t('common.saveSuccess')); load()
 }
 async function del(id:number) { try{await request.delete(`/api/warehouses/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.saveFailed'))} }
-function add() { editingId.value=null; form.value={name:'',address:''}; showModal.value=true }
+function add() { editingId.value=null; form.value={name:'',address:'',capacity:0}; showModal.value=true }
 onMounted(load)
 </script>
 <template>
@@ -45,6 +51,7 @@ onMounted(load)
         <n-form :model="form" label-placement="left" label-width="80" size="small">
           <n-form-item :label="t('warehouse.name')"><n-input v-model:value="form.name" /></n-form-item>
           <n-form-item :label="t('warehouse.address')"><n-input v-model:value="form.address" /></n-form-item>
+          <n-form-item label="容量(件)"><n-input-number v-model:value="form.capacity" :min="0" /></n-form-item>
         </n-form>
       </n-drawer-content>
     </n-drawer>

@@ -15,58 +15,58 @@ const amount = ref(10000); const expireDays = ref(365); const creating = ref(fal
 const cards = ref<any[]>([])
 const batchCount = ref(10); const batchAmount = ref(10000)
 
-const statusLabel: Record<string,string> = { '0':'未激活', '1':'已激活', '2':'已用完', '3':'已过期' }
+const statusLabel: Record<string,string> = { '0':t('common.inactive'), '1':t('common.active2'), '2':t('common.used'), '3':t('common.expired') }
 
 const columns: DataTableColumns<any> = [
   { title: t('giftCard.cardNo'), key: 'cardNo', width: 200 },
   { title: t('giftCard.amount'), key: 'amount', width: 80, render(r:any){ return formatPrice(r.amount/100, 2) } },
   { title: t('giftCard.balance'), key: 'balance', width: 80, render(r:any){ return formatPrice(r.balance/100, 2) } },
-  { title: '状态', key:'status', width:80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'?'success':'default'},{default:()=>statusLabel[r.status]}) } },
-  { title: '绑定用户', key:'owner', width:100, render(r:any){ return r.owner||'-' } },
+  { title: t('common.status'), key:'status', width:80, render(r:any){ return h(NTag,{size:'small',type:r.status==='1'?'success':'default'},{default:()=>statusLabel[r.status]}) } },
+  { title: t('common.bindUser'), key:'owner', width:100, render(r:any){ return r.owner||'-' } },
 ]
 
 async function query() {
   if (!cardNo.value.trim()) return
-  try { const r = await queryGiftCard(cardNo.value.trim()); queryResult.value = r.data } catch { queryResult.value = null; notify.error('未找到') }
+  try { const r = await queryGiftCard(cardNo.value.trim()); queryResult.value = r.data } catch { queryResult.value = null; notify.error(t('common.notFound')) }
 }
-async function create() { creating.value = true; try { await createGiftCard(amount.value, expireDays.value); notify.success('礼品卡已生成'); loadCards() } finally { creating.value = false } }
+async function create() { creating.value = true; try { await createGiftCard(amount.value, expireDays.value); notify.success(t('giftCard.createSuccess')); loadCards() } finally { creating.value = false } }
 async function batchCreate() {
   creating.value = true
   try {
     for (let i = 0; i < batchCount.value; i++) { await createGiftCard(batchAmount.value, expireDays.value) }
-    notify.success(`已生成 ${batchCount.value} 张礼品卡`); loadCards()
+    notify.success(t('giftCard.batchSuccess', { n: String(batchCount.value) })); loadCards()
   } finally { creating.value = false }
 }
-async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.warn('加载礼品卡失败:', e) } }
+async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.warn('Failed to load gift cards:', e) } }
 onMounted(loadCards)
 </script>
 <template>
-  <n-card title="礼品卡管理">
+  <n-card :title="t('nav.giftcards')">
     <n-space vertical>
-      <n-space><n-input v-model:value="cardNo" placeholder="输入卡号查询" class="w-240" /><n-button type="primary" @click="query">查询</n-button></n-space>
+      <n-space><n-input v-model:value="cardNo" :placeholder="t('giftCard.queryPlaceholder')" class="w-240" /><n-button type="primary" @click="query">{{ t('common.search') }}</n-button></n-space>
       <div v-if="queryResult" class="query-result">
-        <p><b>卡号:</b> {{ queryResult.cardNo }}</p>
-        <p><b>面额:</b> {{ formatPrice(queryResult.amount/100, 2) }} | <b>余额:</b> {{ formatPrice(queryResult.balance/100, 2) }}</p>
-        <p><b>状态:</b> <n-tag size="small" :type="queryResult.status==='1'?'success':'default'">{{ statusLabel[queryResult.status] }}</n-tag></p>
-        <p v-if="queryResult.owner"><b>绑定用户:</b> {{ queryResult.owner }}</p>
+        <p><b>{{ t('giftCard.cardNoLabel') }}</b> {{ queryResult.cardNo }}</p>
+        <p><b>{{ t('giftCard.amountLabel') }}</b> {{ formatPrice(queryResult.amount/100, 2) }} | <b>{{ t('giftCard.balanceLabel') }}</b> {{ formatPrice(queryResult.balance/100, 2) }}</p>
+        <p><b>{{ t('giftCard.statusLabel') }}</b> <n-tag size="small" :type="queryResult.status==='1'?'success':'default'">{{ statusLabel[queryResult.status] }}</n-tag></p>
+        <p v-if="queryResult.owner"><b>{{ t('giftCard.bindUserLabel') }}</b> {{ queryResult.owner }}</p>
       </div>
       <n-space>
-        <n-card title="生成单张" size="small" class="max-w-300">
+        <n-card :title="t('giftCard.generateCard')" size="small" class="max-w-300">
           <n-form>
-            <n-form-item label="面额(元)"><n-input-number v-model:value="amount" :min="1" :step="100" /></n-form-item>
-            <n-form-item label="有效期(天)"><n-input-number v-model:value="expireDays" :min="1" :max="3650" /></n-form-item>
-            <n-button type="primary" :loading="creating" @click="create">生成</n-button>
+            <n-form-item :label="t('giftCard.amountYuan')"><n-input-number v-model:value="amount" :min="1" :step="100" /></n-form-item>
+            <n-form-item :label="t('giftCard.expireDays')"><n-input-number v-model:value="expireDays" :min="1" :max="3650" /></n-form-item>
+            <n-button type="primary" :loading="creating" @click="create">{{ t('giftCard.generate') }}</n-button>
           </n-form>
         </n-card>
-        <n-card title="批量生成" size="small" class="max-w-300">
+        <n-card :title="t('giftCard.batchGenerate')" size="small" class="max-w-300">
           <n-form>
-            <n-form-item label="数量"><n-input-number v-model:value="batchCount" :min="1" :max="100" /></n-form-item>
-            <n-form-item label="面额(元)"><n-input-number v-model:value="batchAmount" :min="1" :step="100" /></n-form-item>
-            <n-button type="primary" :loading="creating" @click="batchCreate">批量生成</n-button>
+            <n-form-item :label="t('giftCard.count')"><n-input-number v-model:value="batchCount" :min="1" :max="100" /></n-form-item>
+            <n-form-item :label="t('giftCard.amountYuan')"><n-input-number v-model:value="batchAmount" :min="1" :step="100" /></n-form-item>
+            <n-button type="primary" :loading="creating" @click="batchCreate">{{ t('giftCard.batchGenerate') }}</n-button>
           </n-form>
         </n-card>
       </n-space>
-      <n-card title="礼品卡列表" size="small">
+      <n-card :title="t('giftCard.cardList')" size="small">
         <n-dataTable :columns="columns" :data="cards" :pagination="{pageSize:10}" size="small" />
       </n-card>
     </n-space>

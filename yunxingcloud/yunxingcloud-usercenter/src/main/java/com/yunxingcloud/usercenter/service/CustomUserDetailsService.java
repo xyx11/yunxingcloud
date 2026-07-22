@@ -1,5 +1,6 @@
 package com.yunxingcloud.usercenter.service;
 
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.usercenter.entity.Role;
 import com.yunxingcloud.usercenter.entity.User;
 import com.yunxingcloud.usercenter.repository.UserRepository;
@@ -17,9 +18,11 @@ import java.util.List;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final I18nService i18n;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
+    public CustomUserDetailsService(UserRepository userRepository, I18nService i18n) {
         this.userRepository = userRepository;
+        this.i18n = i18n;
     }
 
     @Override
@@ -28,10 +31,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + username));
 
         if (!user.isApproved()) {
-            throw new DisabledException("账号待审核，请联系管理员");
+            throw new DisabledException(i18n.msg("auth.pending_approval"));
         }
         if (!user.isEnabled()) {
-            throw new DisabledException("账号已被禁用");
+            throw new DisabledException(i18n.msg("auth.disabled"));
         }
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();

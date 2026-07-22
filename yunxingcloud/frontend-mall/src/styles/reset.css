@@ -44,6 +44,12 @@ button {
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--jd-red);
+  box-shadow: 0 0 0 3px rgba(241,2,21,.12);
 }
 
 ul, ol {
@@ -61,8 +67,51 @@ h1, h2, h3, h4, h5, h6 {
   outline-offset: 2px;
 }
 
+/* Mobile touch feedback */
+@media (pointer: coarse) {
+  [role="button"], .sort-item, .filter-link, .price-tag, .tab-item,
+  .nav-item, .sku-item, .result-card, .product-card, .addr-item,
+  .category-item, .brand-mini-card, .flash-item, .product-card-recent,
+  .coupon-item, .history-tag, .hot-tag, .recs-item {
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .1s ease;
+  }
+  [role="button"]:active, .sort-item:active, .filter-link:active,
+  .price-tag:active, .tab-item:active, .nav-item:active, .sku-item:active,
+  .result-card:active, .product-card:active, .addr-item:active {
+    transform: scale(.97);
+  }
+}
+
 /* Selection */
 ::selection {
   background: var(--jd-red);
   color: #fff;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* Links */
+a { transition: color .2s; }
+a:hover { color: var(--jd-red); }
+
+/* Smooth focus ring */
+:focus-visible {
+  outline: 2px solid var(--jd-red);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Mobile touch targets */
+@media (pointer: coarse) {
+  button, [role="button"], .qty-btn, .nav-item, .tab-item, .sort-item, .filter-link,
+  .price-tag, .hot-tag, .sku-item, .thumb, .icon-btn, .close-btn, .view-btn {
+    min-height: 44px; min-width: 44px;
+  }
+  input, select, textarea { font-size: 16px; }
+  input[type="checkbox"], input[type="radio"] { min-width: 20px; min-height: 20px; }
 }

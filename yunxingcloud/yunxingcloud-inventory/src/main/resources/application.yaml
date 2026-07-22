@@ -1,3 +1,7 @@
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD:yunxingcloud@2024}
+
 spring:
   application:
     name: yunxingcloud-inventory
@@ -8,7 +12,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/yunxingcloud_inventory?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD:ENC(6VGcqDaUyxnDMjR2b1ltITeT71DkI7a0dB8ntg53T58RWc/aAzshU7WUPfk2o5xH)}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

@@ -33,4 +33,7 @@ public class MemberController {
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping("/tiers")
     public ResponseEntity<?> createTier(@RequestBody MemberTier tier) { return ResponseEntity.ok(tierRepo.save(tier)); }
+
+    @GetMapping("/my-tier")
+    public ResponseEntity<?> myTier() { return ResponseEntity.ok(service.getTier(user())); }
 }

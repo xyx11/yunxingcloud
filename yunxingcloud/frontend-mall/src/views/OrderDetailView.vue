@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getOrderById, cancelOrder } from '@/api/order'
+import { getOrderById, getAggregateOrder, cancelOrder } from '@/api/order'
+import { addToCart } from '@/api/cart'
 import { ToastInjectionKey } from '@/composables/useToast'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
@@ -34,16 +35,32 @@ const statusMap: Record<string, { label: string; bg: string }> = {
   '4': { label: t('orderDetail.statusCanceled'), bg: '#e2e3e5' },
 }
 
-const stepLabels = ['下单', t('orderDetail.statusPaid'), t('orderDetail.statusShipped'), t('orderDetail.statusDone')]
+const stepLabels = [t('orderDetail.stepPlaced'), t('orderDetail.statusPaid'), t('orderDetail.statusShipped'), t('orderDetail.statusDone')]
 
 onMounted(async () => {
-  try { const r = await getOrderById(Number(route.params.id)); order.value = r.data.order; lines.value = r.data.lines || [] } catch { toast.error('订单信息加载失败') } finally { loading.value = false }
-  try { const r = await request.get(`/orders/${route.params.id}/shipment`); shipment.value = r.data } catch { toast.error('物流信息加载失败') }
+  const id = Number(route.params.id)
+  try {
+    const r = await getAggregateOrder(id)
+    order.value = r.data?.order || r.data
+    lines.value = r.data?.lines || r.data?.items || []
+    shipment.value = r.data?.shipment || null
+  } catch {
+    // Fallback: load individually
+    try {
+      const r = await getOrderById(id)
+      order.value = r.data.order || r.data
+      lines.value = r.data.lines || r.data.items || []
+    } catch {
+      toast.error(t('toast.orderLoadFail'))
+    }
+  } finally {
+    loading.value = false
+  }
 })
 
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
 async function cancel() { confirmShow.value = true }
-async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch { toast.error('取消订单失败') } }
+async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch { toast.error(t('toast.cancelFail')) } }
 
 async function confirmReceive() {
   if (receiving.value || !order.value) return; receiving.value = true
@@ -58,11 +75,21 @@ async function submitReview() {
   try { await request.post(`/products/${reviewForm.value.productId}/reviews`, reviewForm.value); toast.success(t('toast.reviewSuccess')); showReview.value = false } catch { toast.error(t('toast.reviewFail')) }
   finally { reviewing.value = false }
 }
+
+async function buyAgain(productId: number) {
+  try { await addToCart(productId, 1); toast.success(t('toast.addedToCart')); router.push('/cart') } catch { toast.error(t('toast.addCartFail')) }
+}
+
+function copyOrderNo() {
+  if (!order.value) return
+  navigator.clipboard.writeText(order.value.orderNo)
+  toast.success(t('toast.orderNoCopied'))
+}
 </script>
 
 <template>
   <div class="back-nav">
-    <button class="back-btn" @click="router.push('/orders')">&larr; 返回订单列表</button>
+    <button class="back-btn" @click="router.push('/orders')">&larr; {{ t('orderDetail.backToList') }}</button>
   </div>
   <div v-if="loading" class="order-page">
     <div class="card">
@@ -74,14 +101,14 @@ async function submitReview() {
     <!-- Status -->
     <div class="card">
       <div class="order-header">
-        <div><span class="order-no-label">{{ t('orderDetail.orderNo') }}：</span><span class="order-no">{{ order.orderNo }}</span></div>
+        <div><span class="order-no-label">{{ t('orderDetail.orderNo') }}：</span><span class="order-no">{{ order.orderNo }}</span><button class="copy-btn" @click="copyOrderNo" title="复制订单号">📋</button></div>
         <JdBadge :type="order.status === '3' || order.status === '1' ? 'green' : order.status === '4' ? 'gray' : 'orange'">
           {{ statusMap[order.status]?.label }}
         </JdBadge>
       </div>
 
       <!-- Steps -->
-      <div class="steps">
+      <div v-if="order.status !== '4'" class="steps">
         <div v-for="(s, i) in ['0', '1', '2', '3']" :key="s" class="step" :class="{ done: Number(order.status) >= Number(s) }">
           <div class="step-dot" :class="{ active: Number(order.status) >= Number(s) }">
             {{ Number(order.status) >= Number(s) ? '✓' : i + 1 }}
@@ -92,6 +119,10 @@ async function submitReview() {
           <div class="step-line-fill" :style="{ width: ((Number(order.status) / 3) * 100) + '%' }" />
         </div>
       </div>
+      <div v-else class="cancelled-banner">
+        <span class="cancelled-icon">✕</span>
+        <span>{{ t('orderDetail.statusCanceled') }}</span>
+      </div>
     </div>
 
     <!-- Logistics -->
@@ -100,8 +131,8 @@ async function submitReview() {
       <div class="shipment-info">
         <span>{{ t('orderDetail.carrier') }}：{{ shipment.carrier || '-' }}</span>
         <span>{{ t('orderDetail.trackingNo') }}：{{ shipment.trackingNo || '-' }}</span>
-        <JdButton v-if="shipment.trackingNo" type="outline" size="xs" @click="router.push('/logistics?orderId=' + order.id)">📦 {{ t('orderDetail.viewLogistics') }}</JdButton>
-        <span v-if="order.status==='2'" class="eta">预计 {{ new Date(Date.now()+3*86400000).toLocaleDateString('zh-CN',{month:'long',day:'numeric'}) }} 送达</span>
+        <JdButton v-if="shipment.trackingNo" type="outline" size="sm" @click="router.push('/logistics?orderId=' + order.id)">📦 {{ t('orderDetail.viewLogistics') }}</JdButton>
+        <span v-if="order.status==='2'" class="eta">{{ t('orderDetail.deliveryEstimate', { date: (shipment as any)?.estimatedDelivery ? new Date((shipment as any).estimatedDelivery).toLocaleDateString() : new Date(Date.now()+3*86400000).toLocaleDateString() }) }}</span>
       </div>
     </div>
 
@@ -118,17 +149,34 @@ async function submitReview() {
     <div class="card">
       <h3 class="card-title">{{ t('orderDetail.items') }}</h3>
       <div v-for="l in lines" :key="l.id" class="item-row">
-        <LazyImage :src="l.imageUrl || l.productImage || ''" alt="" height="60px" width="60px" rounded="6px" />
+        <LazyImage :src="l.imageUrl || l.productImage || ''" :alt="l.productName" height="60px" width="60px" rounded="6px" />
         <div class="item-info">
           <div class="item-name">{{ l.productName }}</div>
           <div class="item-meta">{{ formatPrice(l.price / 100, 2) }} × {{ l.quantity }}</div>
         </div>
         <span class="item-total">{{ formatPrice(l.price * l.quantity / 100, 2) }}</span>
         <JdButton v-if="order.status==='3'" type="outline" size="sm" @click="openReview(l.productId)">{{ t('orderDetail.review') }}</JdButton>
+        <JdButton v-if="order.status==='3'" type="outline" size="sm" @click="buyAgain(l.productId)">{{ t('order.buyAgain') }}</JdButton>
+        <JdButton v-if="order.status==='3'" type="outline" size="sm" @click="router.push('/invoices')">{{ t('invoice.title') }}</JdButton>
       </div>
-      <div class="order-total">
-        <span class="total-label">{{ t('orderDetail.total') }}：</span>
-        <span class="total-price">{{ formatPrice(order.totalAmount / 100, 2) }}</span>
+      <!-- Amount breakdown -->
+      <div class="amount-breakdown">
+        <div class="ab-row">
+          <span>{{ t('order.productTotal') }}</span>
+          <span>{{ formatPrice(order.totalAmount / 100, 2) }}</span>
+        </div>
+        <div v-if="order.couponDiscount" class="ab-row discount">
+          <span>{{ t('order.couponDeduct') }}</span>
+          <span>-{{ formatPrice((order.couponDiscount || 0) / 100, 2) }}</span>
+        </div>
+        <div class="ab-row">
+          <span>{{ t('order.freightLabel2') }}</span>
+          <span class="freight-free">{{ order.freight ? formatPrice(order.freight / 100, 2) : t('order.freeFreight') }}</span>
+        </div>
+        <div class="ab-row ab-total">
+          <span class="total-label">{{ t('orderDetail.total') }}</span>
+          <span class="total-price">{{ formatPrice((order.payAmount || order.totalAmount) / 100, 2) }}</span>
+        </div>
       </div>
     </div>
 
@@ -184,6 +232,10 @@ async function submitReview() {
 .step-label.active { color: var(--jd-red); }
 .step-line { position: absolute; top: 32px; left: 12%; right: 12%; height: 2px; background: var(--border-light); z-index: 0; }
 .step-line-fill { height: 100%; background: var(--jd-red); transition: width .6s; }
+.cancelled-banner { text-align: center; padding: var(--space-xl); background: #f8d7da; border-radius: var(--radius-md); color: #721c24; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: var(--space-sm); font-size: var(--font-lg); }
+.cancelled-icon { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: #721c24; color: #fff; align-items: center; justify-content: center; font-size: 12px; }
+.copy-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 0 4px; opacity: .6; transition: opacity var(--transition); }
+.copy-btn:hover { opacity: 1; }
 
 /* Shipment */
 .shipment-info { display: flex; gap: var(--space-lg); color: var(--text-secondary); font-size: var(--font-md); flex-wrap: wrap; align-items: center; }
@@ -203,6 +255,14 @@ async function submitReview() {
 .order-total { text-align: right; padding-top: var(--space-lg); }
 .total-label { font-size: var(--font-md); color: var(--text-secondary); }
 .total-price { font-size: var(--font-title); color: var(--jd-red); font-weight: 700; }
+
+/* Amount breakdown */
+.amount-breakdown { margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border-light); }
+.ab-row { display: flex; justify-content: space-between; padding: var(--space-xs) 0; font-size: var(--font-base); color: var(--text-secondary); }
+.ab-row.discount { color: var(--green); }
+.freight-free { color: var(--green); font-weight: 600; }
+.ab-total { border-top: 1px dashed var(--border); padding-top: var(--space-md); margin-top: var(--space-sm); }
+.ab-total .total-price { font-size: var(--font-xl); }
 
 /* Actions */
 .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); }

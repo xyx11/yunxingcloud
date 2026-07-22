@@ -48,4 +48,17 @@ public class ImageService {
         int i = name.lastIndexOf('.');
         return i > 0 ? name.substring(i + 1).toLowerCase() : "jpg";
     }
+
+    /** 校验图片格式 */
+    public boolean isValidImage(String filename) {
+        if (filename == null) return false;
+        String ext = getExtension(filename);
+        return ext.matches("jpg|jpeg|png|gif|webp");
+    }
+
+    /** 列出上传目录中的文件数 */
+    public long countUploadedFiles() {
+        String[] files = uploadDir.toFile().list();
+        return files != null ? files.length : 0;
+    }
 }

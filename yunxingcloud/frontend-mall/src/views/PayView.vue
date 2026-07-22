@@ -18,6 +18,10 @@ const paying = ref(false)
 const polling = ref(false)
 const pollCount = ref(0)
 const expired = ref(false)
+const pageLoading = ref(true)
+const loadError = ref(false)
+const payAmount = ref(0)
+const payOrderNo = ref('')
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const minutes = ref(15); const seconds = ref(0)
@@ -36,14 +40,21 @@ function startCountdown(expiresAt?: string) {
   }, 1000)
 }
 
-onMounted(async () => {
+async function loadOrder() {
+  pageLoading.value = true
+  loadError.value = false
   try {
     const r = await getOrderById(Number(route.params.id))
     order.value = r.data.order
-    if (order.value?.status !== '0') { toast.error('订单状态异常'); router.replace('/orders') }
+    payAmount.value = order.value?.totalAmount || 0
+    payOrderNo.value = order.value?.orderNo || ''
+    if (order.value?.status !== '0') { toast.error(t('toast.payStatusError')); router.replace('/orders') }
     else { startCountdown(order.value?.expiresAt) }
-  } catch { router.replace('/orders') }
-})
+  } catch { loadError.value = true; toast.error(t('toast.payLoadFail')) }
+  finally { pageLoading.value = false }
+}
+
+onMounted(loadOrder)
 
 function startPolling() {
   polling.value = true; pollCount.value = 0
@@ -76,31 +87,66 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
 <template>
   <div class="pay-page">
     <div class="pay-card">
+      <!-- Loading -->
+      <div v-if="pageLoading" class="pay-skel">
+        <div class="sk-line w80" />
+        <div class="sk-line w40" />
+        <div class="sk-bar" />
+        <div v-for="i in 2" :key="i" class="sk-channel" />
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="loadError" class="pay-error">
+        <p class="pay-error-icon">⚠️</p>
+        <p class="pay-error-text">订单信息加载失败</p>
+        <JdButton @click="loadOrder()">重新加载</JdButton>
+      </div>
+
       <!-- Polling -->
-      <template v-if="polling">
+      <template v-else-if="polling">
         <div class="polling">
-          <div class="polling-icon">⏳</div>
-          <h3 class="polling-title">{{ t('pay.polling') }}</h3>
+          <div class="polling-icon" :class="{ pulse: pollCount < 30 }">⏳</div>
+          <h3 class="polling-title">{{ pollCount < 60 ? t('pay.polling') : t('pay.waiting') }}</h3>
           <p class="polling-desc">{{ t('pay.pollingDesc') }}</p>
-          <div class="polling-bar"><div class="polling-fill" :style="{ width: (pollCount / 120 * 100) + '%' }" /></div>
+          <div class="polling-bar"><div class="polling-fill" :class="{ slow: pollCount > 60 }" :style="{ width: (pollCount / 120 * 100) + '%' }" /></div>
           <p class="polling-count">{{ pollCount }}/120 s</p>
-          <p v-if="pollCount > 25" class="polling-hint">
-            {{ t('pay.pollingDesc') }}
+          <div v-if="pollCount > 25" class="polling-actions">
+            <JdButton size="sm" type="outline" @click="loadOrder()">手动刷新</JdButton>
             <span class="polling-link" @click="router.replace('/orders')">{{ t('pay.backToOrders') }}</span>
-          </p>
+          </div>
         </div>
       </template>
 
       <!-- Payment Selection -->
       <template v-else>
         <h2 class="pay-title">{{ t('pay.title') }}</h2>
-        <div v-if="order" class="pay-order-info">
-          {{ order.orderNo }} · <b class="pay-amount">{{ formatPrice(order.totalAmount / 100, 2) }}</b>
+
+        <!-- Order summary card -->
+        <div class="pay-summary">
+          <div class="pay-summary-row">
+            <span>订单编号</span>
+            <span class="pay-summary-val">{{ payOrderNo || '-' }}</span>
+          </div>
+          <div class="pay-summary-row">
+            <span>支付金额</span>
+            <span class="pay-amount">{{ formatPrice(payAmount / 100, 2) }}</span>
+          </div>
+          <div class="pay-summary-row pay-summary-channel">
+            <span>支付方式</span>
+            <span>{{ selectedChannel === 'wechat' ? t('pay.wechat') : t('pay.alipay') }}</span>
+          </div>
         </div>
 
-        <div class="countdown-bar" :class="{ expired: expired }">
-          <template v-if="expired">⚠ 订单已过期，请重新下单</template>
-          <template v-else>⏱ {{ t('pay.timeout', { min: pad(minutes), sec: pad(seconds) }) }}</template>
+        <!-- Countdown with urgency -->
+        <div class="countdown-bar" :class="{ expired: expired, urgent: !expired && minutes === 0 && seconds <= 60 }">
+          <template v-if="expired">
+            <span class="countdown-icon">⚠️</span> 订单已过期，请重新下单
+          </template>
+          <template v-else>
+            <span class="countdown-icon">⏱</span>
+            {{ t('pay.timeout', { min: pad(minutes), sec: pad(seconds) }) }}
+            <span class="countdown-tip">超时订单将自动取消</span>
+          </template>
         </div>
 
         <div class="channel-list">
@@ -130,10 +176,29 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
           </div>
         </div>
 
+        <!-- Payment instructions -->
+        <div class="pay-instructions">
+          <div class="inst-step">
+            <span class="inst-num">1</span>
+            <span>选择上方支付方式</span>
+          </div>
+          <div class="inst-step">
+            <span class="inst-num">2</span>
+            <span>点击下方按钮确认支付</span>
+          </div>
+          <div class="inst-step">
+            <span class="inst-num">3</span>
+            <span>{{ t('pay.payInApp', { app: selectedChannel === 'wechat' ? t('pay.appWechat') : t('pay.appAlipay') }) }}</span>
+          </div>
+        </div>
+
         <JdButton block size="lg" :loading="paying" :disabled="expired" @click="confirmPay">
-          {{ paying ? t('pay.processing') : expired ? '订单已过期' : t('pay.confirm', { amount: formatPrice((order?.totalAmount || 0) / 100, 2) }) }}
+          {{ paying ? t('pay.processing') : expired ? t('pay.expired2') : t('pay.confirm', { amount: formatPrice(payAmount / 100, 2) }) }}
         </JdButton>
-        <p class="security-note">{{ t('pay.securityNote') }}</p>
+        <div class="pay-footer">
+          <p class="security-note">{{ t('pay.securityNote') }}</p>
+          <p class="pay-cancel-link" @click="router.push('/orders')">← 返回订单列表</p>
+        </div>
       </template>
     </div>
   </div>
@@ -148,19 +213,32 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
 .polling-icon { font-size: 48px; margin-bottom: var(--space-lg); animation: spin 1s linear infinite; }
 .polling-title { font-size: var(--font-lg); margin-bottom: var(--space-sm); }
 .polling-desc { color: var(--text-tertiary); font-size: var(--font-base); margin-bottom: var(--space-lg); }
-.polling-bar { width: 200px; height: 4px; background: var(--border-light); border-radius: 2px; margin: 0 auto; overflow: hidden; }
+.polling-bar { width: 200px; height: 4px; background: var(--border-light); border-radius: 2px; margin: 0 auto var(--space-md); overflow: hidden; }
 .polling-fill { height: 100%; background: var(--jd-red); border-radius: 2px; transition: width .3s; }
+.polling-fill.slow { background: var(--orange); }
+.polling-icon.pulse { animation: spin 1s linear infinite; }
+.polling-actions { display: flex; align-items: center; justify-content: center; gap: var(--space-xl); margin-top: var(--space-md); }
 .polling-count { color: var(--text-placeholder); font-size: var(--font-xs); margin-top: var(--space-sm); }
 .polling-hint { color: var(--orange); font-size: var(--font-sm); margin-top: var(--space-sm); }
 .polling-link { color: var(--jd-red); cursor: pointer; text-decoration: underline; }
 
 /* Payment */
-.pay-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-sm); }
-.pay-order-info { color: var(--text-tertiary); font-size: var(--font-base); margin-bottom: var(--space-sm); }
-.pay-amount { color: var(--jd-red); font-size: var(--font-lg); }
+.pay-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-lg); }
 
-.countdown-bar { background: #fff3cd; border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); margin-bottom: var(--space-lg); text-align: center; font-size: var(--font-base); color: #856404; }
+/* Order summary */
+.pay-summary { background: var(--bg-hover); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); }
+.pay-summary-row { display: flex; justify-content: space-between; padding: var(--space-xs) 0; font-size: var(--font-base); color: var(--text-secondary); }
+.pay-summary-val { color: var(--text-primary); font-weight: 500; }
+.pay-amount { color: var(--jd-red); font-size: var(--font-title); font-weight: 700; }
+.pay-summary-channel { border-top: 1px dashed var(--border); padding-top: var(--space-sm); margin-top: var(--space-sm); }
+
+.countdown-bar { background: #fff3cd; border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); text-align: center; font-size: var(--font-md); color: #856404; font-weight: 600; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: var(--space-sm); }
+.countdown-bar.urgent { background: #fff0f0; color: var(--jd-red); font-size: var(--font-lg); font-weight: 700; animation: pulse-countdown .8s ease-in-out infinite; }
 .countdown-bar.expired { background: #f8d7da; color: #721c24; }
+.countdown-icon { font-size: 20px; }
+.countdown-bar.urgent .countdown-icon { font-size: 24px; }
+.countdown-tip { font-size: var(--font-xs); font-weight: 400; opacity: .8; }
+@keyframes pulse-countdown { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
 .channel-list { margin-bottom: var(--space-xxl); }
 .channel-item { display: flex; align-items: center; padding: var(--space-lg); border-radius: var(--radius-md); margin-bottom: var(--space-md); cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-white); transition: all var(--transition-fast); }
@@ -173,12 +251,44 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
 .channel-desc { color: var(--text-tertiary); font-size: var(--font-sm); }
 .channel-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--jd-red); display: flex; align-items: center; justify-content: center; }
 .channel-radio.checked { background: var(--jd-red); color: #fff; font-size: var(--font-xs); }
-.security-note { text-align: center; margin-top: var(--space-lg); font-size: var(--font-sm); color: var(--text-tertiary); }
+/* Instructions */
+.pay-instructions { margin: var(--space-lg) 0; padding: var(--space-lg); background: #f0f7ff; border-radius: var(--radius-md); }
+.inst-step { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-xs) 0; font-size: var(--font-sm); color: var(--text-secondary); }
+.inst-num { width: 22px; height: 22px; border-radius: 50%; background: var(--jd-red); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+.pay-footer { text-align: center; margin-top: var(--space-lg); }
+.security-note { font-size: var(--font-sm); color: var(--text-tertiary); margin-bottom: var(--space-sm); }
+.pay-cancel-link { font-size: var(--font-sm); color: var(--text-placeholder); cursor: pointer; display: inline-block; }
+.pay-cancel-link:hover { color: var(--jd-red); }
+
+/* Skeleton */
+.pay-skel { display: flex; flex-direction: column; gap: var(--space-lg); }
+.sk-line { height: 20px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.sk-line.w80 { width: 80%; }
+.sk-line.w40 { width: 40%; }
+.sk-bar { height: 40px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
+.sk-channel { height: 64px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* Error */
+.pay-error { text-align: center; padding: var(--space-xxxl) 0; }
+.pay-error-icon { font-size: 48px; margin-bottom: var(--space-md); }
+.pay-error-text { color: var(--text-secondary); margin-bottom: var(--space-lg); }
+
+/* QR */
+.qr-section { text-align: center; margin: var(--space-lg) 0; }
+.qr-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+  padding: var(--space-xl); background: var(--bg-hover); border-radius: var(--radius-lg);
+}
+.qr-icon { font-size: 40px; }
+.qr-text { font-size: var(--font-sm); color: var(--text-secondary); }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .pay-page { max-width: 100%; margin: 0; padding: var(--space-md); padding-bottom: 80px; }
+  .pay-page { max-width: 100%; margin: 0; padding: var(--space-md); padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .pay-card { padding: var(--space-xl); border-radius: var(--radius-md); }
   .pay-title { font-size: var(--font-lg); }
   .channel-item { padding: var(--space-md); }

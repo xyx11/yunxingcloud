@@ -7,5 +7,7 @@ import java.util.List;
 public interface GroupRecordRepository extends JpaRepository<GroupRecord, Long> {
     List<GroupRecord> findByGroupId(Long groupId);
     List<GroupRecord> findByGroupBuyIdAndStatus(Long groupBuyId, String status);
+    List<GroupRecord> findByGroupBuyId(Long groupBuyId);
+    List<GroupRecord> findByUsernameOrderByJoinedAtDesc(String username);
     long countByGroupIdAndStatus(Long groupId, String status);
 }

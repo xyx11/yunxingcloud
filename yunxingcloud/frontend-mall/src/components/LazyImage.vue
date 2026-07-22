@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 
 const props = withDefaults(defineProps<{
   src?: string
@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<{
   srcset?: string
   sizes?: string
   webp?: boolean
+  fetchpriority?: 'high' | 'low' | 'auto'
 }>(), {
   src: '',
   alt: '',
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<{
   srcset: '',
   sizes: '',
   webp: false,
+  fetchpriority: 'auto',
 })
 
 const loaded = ref(false)
@@ -28,6 +30,17 @@ const el = ref<HTMLElement>()
 let observer: IntersectionObserver | null = null
 
 const hasSrc = () => props.src && props.src.length > 0
+
+const autoSrcset = computed(() => {
+  if (props.srcset || !props.src) return props.srcset
+  // Auto-generate responsive srcset for local/uploads images
+  if (props.src.startsWith('/uploads/') || props.src.startsWith('/images/')) {
+    const base = props.src.replace(/\.\w+$/, '')
+    const ext = props.src.match(/\.(\w+)$/)?.[1] || 'jpg'
+    return `${base}-400w.${ext} 400w, ${base}-800w.${ext} 800w, ${props.src} 1200w`
+  }
+  return ''
+})
 
 onMounted(() => {
   if (!el.value || !hasSrc()) return
@@ -66,13 +79,15 @@ function onLoad() { loaded.value = true }
     :style="{ background: bg, borderRadius: rounded }"
   >
     <picture v-if="hasSrc() && inView && webp">
-      <source :srcset="srcset || src.replace(/\.(png|jpg|jpeg)$/i, '.webp')" type="image/webp" />
+      <source :srcset="autoSrcset || src.replace(/\.(png|jpg|jpeg)(\?.*)?$/i, '.webp$2')" type="image/webp" />
       <img
         :src="src"
         :alt="alt"
-        :srcset="srcset || undefined"
+        :srcset="autoSrcset || undefined"
         :sizes="sizes || undefined"
         loading="lazy"
+        decoding="async"
+        :fetchpriority="fetchpriority"
         :width="width"
         :height="height"
         @load="onLoad"
@@ -84,17 +99,19 @@ function onLoad() { loaded.value = true }
       v-else-if="hasSrc() && inView"
       :src="src"
       :alt="alt"
-      :srcset="srcset || undefined"
+      :srcset="autoSrcset || undefined"
       :sizes="sizes || undefined"
       loading="lazy"
+      decoding="async"
+      :fetchpriority="fetchpriority"
       :width="width"
       :height="height"
       @load="onLoad"
       @error="onError"
       :class="{ 'img-loaded': loaded }"
     />
-    <span v-if="!loaded && !error" class="lazy-placeholder">📦</span>
-    <span v-if="error" class="lazy-error">🖼️</span>
+    <span v-if="inView && !loaded && !error" class="lazy-placeholder">📦</span>
+    <span v-if="inView && error" class="lazy-error">🖼️</span>
   </div>
 </template>
 

@@ -23,9 +23,16 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
-            allowed-methods: "*"
-            allowed-headers: "*"
+            allowed-origin-patterns: "http://localhost:*"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - "*"
+            allow-credentials: true
             max-age: 3600
 
     sentinel:
@@ -60,7 +67,7 @@ management:
       show-details: when_authorized
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:yunxingcloud-jwt-secret-key-2024}
 
 logging:
   level:

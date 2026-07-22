@@ -27,4 +27,10 @@ public class PriceAlertController {
 
     @GetMapping("/check")
     public ResponseEntity<?> check() { return ResponseEntity.ok(service.checkAndNotify(user())); }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> list() { return ResponseEntity.ok(service.list(user())); }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> remove(@PathVariable Long id) { service.remove(id, user()); return ResponseEntity.ok().build(); }
 }

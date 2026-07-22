@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface PointsRecordRepository extends JpaRepository<PointsRecord, Long> {
     List<PointsRecord> findByUsernameOrderByCreatedAtDesc(String username);
+    List<PointsRecord> findByUsernameAndType(String username, String type);
 }

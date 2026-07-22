@@ -49,4 +49,60 @@ public class PointsController {
         long deductedCents = service.redeem(user(), points, orderId);
         return ResponseEntity.ok(Map.of("success", true, "deductedCents", deductedCents));
     }
+
+    @GetMapping("/calculate")
+    public ResponseEntity<?> calculate(@RequestParam Long points) {
+        PointsAccount acc = service.getAccount(user());
+        long availablePoints = acc != null ? acc.getBalance() : 0;
+        long usable = Math.min(points, availablePoints);
+        long deductedCents = usable / 100 * 100; // 100积分=1元
+        return ResponseEntity.ok(Map.of(
+            "availablePoints", availablePoints,
+            "usable", usable,
+            "deductedCents", deductedCents
+        ));
+    }
+
+    @PostMapping("/checkin")
+    public ResponseEntity<?> checkin() {
+        try {
+            service.checkin(user());
+            PointsAccount acc = service.getAccount(user());
+            return ResponseEntity.ok(Map.of("success", true, "balance", acc != null ? acc.getBalance() : 0));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/checkin/status")
+    public ResponseEntity<?> checkinStatus() {
+        boolean checked = service.hasCheckedInToday(user());
+        return ResponseEntity.ok(Map.of("checked", checked));
+    }
+
+    @GetMapping("/exchanges")
+    public ResponseEntity<?> exchangeItems() {
+        return ResponseEntity.ok(java.util.List.of(
+            Map.of("id", 1, "name", "50元优惠券", "points", 5000, "stock", 100),
+            Map.of("id", 2, "name", "10元话费", "points", 1000, "stock", 200),
+            Map.of("id", 3, "name", "包邮券", "points", 500, "stock", 500),
+            Map.of("id", 4, "name", "限定周边", "points", 3000, "stock", 50)
+        ));
+    }
+
+    @PostMapping("/exchange/{itemId}")
+    public ResponseEntity<?> doExchange(@PathVariable Long itemId) {
+        PointsAccount acc = service.getAccount(user());
+        long balance = acc != null ? acc.getBalance() : 0;
+        // Simple check: each item costs based on id
+        long[] costs = {0, 5000, 1000, 500, 3000};
+        int idx = itemId.intValue();
+        if (idx < 1 || idx >= costs.length)
+            return ResponseEntity.badRequest().body(Map.of("message", "无效的商品"));
+        long cost = costs[idx];
+        if (balance < cost)
+            return ResponseEntity.badRequest().body(Map.of("message", "积分不足"));
+        service.redeem(user(), cost, 0L);
+        return ResponseEntity.ok(Map.of("success", true, "message", "兑换成功"));
+    }
 }

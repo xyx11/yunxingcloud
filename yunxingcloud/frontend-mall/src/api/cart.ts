@@ -1,7 +1,7 @@
 import request from './request'
 
 export interface CartItem {
-  id: number; productId: number; productName: string
+  id: number; productId: number; productName: string; productImage?: string
   price: number; quantity: number; imageUrl?: string
 }
 

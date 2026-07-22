@@ -43,4 +43,7 @@ public class OrderFulfillmentService {
         order.setStatus("3");
         orderRepo.save(order);
     }
+
+    /** 查询物流信息 */
+    public OrderShipment getShipment(Long orderId) { return shipmentRepo.findByOrderId(orderId); }
 }

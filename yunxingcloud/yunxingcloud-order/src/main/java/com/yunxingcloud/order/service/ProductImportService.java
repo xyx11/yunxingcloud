@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import com.yunxingcloud.common.core.CsvUtils;
 
 @Service
 public class ProductImportService {
@@ -60,7 +59,12 @@ public class ProductImportService {
                         String.valueOf(p.getSales() != null ? p.getSales() : 0),
                         "0".equals(p.getStatus()) ? "上架" : "下架"})
                 .toList();
-        return CsvUtils.toCsv(new String[]{"ID", "名称", "描述", "价格(元)", "库存", "销量", "状态"}, rows).getBytes(StandardCharsets.UTF_8);
+        StringBuilder sb = new StringBuilder();
+        sb.append("ID,名称,描述,价格(元),库存,销量,状态\n");
+        for (String[] row : rows) {
+            sb.append(String.join(",", row)).append("\n");
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private Long parsePrice(String v) {

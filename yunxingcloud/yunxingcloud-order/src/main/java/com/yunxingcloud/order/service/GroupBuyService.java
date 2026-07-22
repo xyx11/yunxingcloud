@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class GroupBuyService {
@@ -14,12 +15,14 @@ public class GroupBuyService {
     private final GroupBuyRepository groupBuyRepo;
     private final GroupRecordRepository groupRecordRepo;
     private final OrderHeadRepository orderRepo;
+    private final ProductRepository productRepo;
 
     public GroupBuyService(GroupBuyRepository groupBuyRepo, GroupRecordRepository groupRecordRepo,
-                           OrderHeadRepository orderRepo) {
+                           OrderHeadRepository orderRepo, ProductRepository productRepo) {
         this.groupBuyRepo = groupBuyRepo;
         this.groupRecordRepo = groupRecordRepo;
         this.orderRepo = orderRepo;
+        this.productRepo = productRepo;
     }
 
     /** 开团 (团长) */
@@ -103,5 +106,37 @@ public class GroupBuyService {
             gb.setStatus("1"); // 活动结束
             groupBuyRepo.save(gb);
         }
+    }
+
+    public List<Map<String, Object>> getUserGroups(String username) {
+        return groupRecordRepo.findByUsernameOrderByJoinedAtDesc(username).stream()
+            .map(gr -> {
+                var gb = groupBuyRepo.findById(gr.getGroupBuyId()).orElse(null);
+                var members = groupRecordRepo.findByGroupBuyId(gr.getGroupBuyId());
+                String status = gr.getStatus();
+                if ("0".equals(status)) status = "pending";
+                else if ("1".equals(status)) status = "success";
+                else status = "failed";
+                // Lookup product name from productRepo
+                String productName = "";
+                String imageUrl = "";
+                if (gb != null) {
+                    var product = productRepo.findById(gb.getProductId()).orElse(null);
+                    if (product != null) {
+                        productName = product.getName();
+                        imageUrl = product.getImageUrl();
+                    }
+                }
+                return Map.<String, Object>of(
+                    "id", gr.getId(),
+                    "groupBuyId", gr.getGroupBuyId(),
+                    "productName", productName,
+                    "imageUrl", imageUrl != null ? imageUrl : "",
+                    "minMembers", gb != null ? gb.getMinMembers() : 0,
+                    "currentMembers", members.size(),
+                    "status", status,
+                    "joinedAt", gr.getJoinedAt()
+                );
+            }).toList();
     }
 }

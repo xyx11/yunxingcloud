@@ -49,13 +49,12 @@ public class MallService {
 
     // ===== Home =====
     public Map<String, Object> home() {
-        var recommended = productRepo.findByStatus("0", PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "sales")));
         return Map.of(
             "banners", cacheService.getBanners(),
             "hotProducts", cacheService.getHotProducts(),
             "newProducts", cacheService.getNewProducts(),
             "categories", cacheService.getCategories(),
-            "recommended", recommended
+            "recommended", cacheService.getRecommendedProducts()
         );
     }
 
@@ -197,13 +196,13 @@ public class MallService {
     }
 
     // ===== Coupons =====
-    public List<Coupon> listCoupons() { return couponRepo.findAll(); }
+    public List<Coupon> listCoupons() { return cacheService.getCoupons(); }
 
     @Transactional
-    public Coupon createCoupon(Coupon c) { return couponRepo.save(c); }
+    public Coupon createCoupon(Coupon c) { cacheService.evictHomeCache(); return couponRepo.save(c); }
 
     @Transactional
-    public void deleteCoupon(Long id) { couponRepo.deleteById(id); }
+    public void deleteCoupon(Long id) { couponRepo.deleteById(id); cacheService.evictHomeCache(); }
 
     public List<Coupon> listAvailableCoupons() {
         return couponRepo.findAll().stream().filter(c ->
@@ -221,9 +220,10 @@ public class MallService {
         if (c.getStartTime() != null && c.getStartTime().isAfter(LocalDateTime.now())) return "优惠券未开始";
         if (c.getUsedQty() >= c.getTotalQty()) return "已领完";
         if (couponUserRepo.existsByCouponIdAndUsername(id, username)) return "已领取过";
+        int updated = couponRepo.incrementUsedQty(id);
+        if (updated == 0) return "已领完";
         CouponUser cu = new CouponUser(); cu.setCouponId(id); cu.setUsername(username);
         couponUserRepo.save(cu);
-        c.setUsedQty(c.getUsedQty() + 1); couponRepo.save(c);
         return null;
     }
 

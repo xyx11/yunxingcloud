@@ -18,16 +18,16 @@ const trackNo = ref(''); const trackResult = ref<any>(null); const trackSteps = 
 const filtered = computed(() => { if(!searchKeyword.value)return items.value;const kw=searchKeyword.value.toLowerCase();return items.value.filter((s:any)=>s.carrier?.toLowerCase().includes(kw)||s.trackingNo?.toLowerCase().includes(kw)) })
 
 const columns: DataTableColumns<any> = [
-  { title:'ID',key:'id',width:50 }, { title:'订单ID',key:'orderId',width:70 },
-  { title:'快递公司',key:'carrier',width:100 }, { title:'快递单号',key:'trackingNo',width:160 },
-  { title:'状态',key:'status',width:80,render(r:any){return h(NTag,{size:'small',type:r.status==='2'?'success':'info'},{default:()=>r.status==='2'?'已签收':'运输中'})} },
-  { title:'时间',key:'createdAt',width:140,render(r:any){return r.createdAt?.substring(0,16)}},
-  { title:'操作',key:'act',width:140,render(r:any){return h(NSpace,{size:'small'},{default:()=>[h(NButton,{size:'tiny',onClick:()=>{trackNo.value=r.trackingNo;trackResult.value=null;trackSteps.value=[];showTrack.value=true;doTrack(r.trackingNo)}},{default:()=>'追踪'})]})}},
+  { title:'ID',key:'id',width:50 }, { title:t('common.order'),key:'orderId',width:70 },
+  { title:t('common.carrier'),key:'carrier',width:100 }, { title:t('common.trackingNo'),key:'trackingNo',width:160 },
+  { title:t('common.status'),key:'status',width:80,render(r:any){return h(NTag,{size:'small',type:r.status==='2'?'success':'info'},{default:()=>r.status==='2' ? t('common.signed') : t('common.inTransit')})} },
+  { title:t('common.createdAt'),key:'createdAt',width:140,render(r:any){return r.createdAt?.substring(0,16)}},
+  { title:t('common.actions'),key:'act',width:140,render(r:any){return h(NSpace,{size:'small'},{default:()=>[h(NButton,{size:'tiny',onClick:()=>{trackNo.value=r.trackingNo;trackResult.value=null;trackSteps.value=[];showTrack.value=true;doTrack(r.trackingNo)}},{default:()=>t('common.track')})]})}},
 ]
 
 async function load() { loading.value=true; try{const r=await request.get('/api/shipments/all');items.value=r.data.content||r.data||[]}finally{loading.value=false} }
 async function save() { saving.value=true; try{await request.post('/api/shipments',form.value);showModal.value=false;notify.success(t('common.save'));load()}catch{notify.error(t('common.saveFailed'))}finally{saving.value=false} }
-function add() { form.value={orderId:'',carrier:'顺丰速运',trackingNo:'',status:'1'}; showModal.value=true }
+function add() { form.value={orderId:'',carrier:'SF Express',trackingNo:'',status:'1'}; showModal.value=true }
 
 async function doTrack(no: string) {
   tracking.value = true; trackSteps.value = []

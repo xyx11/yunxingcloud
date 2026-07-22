@@ -98,6 +98,34 @@ class PaymentControllerTest {
     }
 
     @Test
+    void shouldRefundOrder() throws Exception {
+        String body = mapper.writeValueAsString(Map.of("title", "Refund Test", "amount", 300, "channel", "wechat"));
+        HttpRequest createReq = HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/payment/orders")))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+        int id = mapper.readTree(client.send(createReq, HttpResponse.BodyHandlers.ofString()).body()).get("id").asInt();
+
+        HttpRequest refundReq = HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/payment/orders/" + id + "/refund")))
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.noBody()).build();
+        int code = client.send(refundReq, HttpResponse.BodyHandlers.ofString()).statusCode();
+        assertTrue(code < 500, "退款不应返回5xx: " + code);
+    }
+
+    @Test
+    void wechatCallbackShouldBeAccessible() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/payment/callback/wechat")))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{}")).build();
+        int code = client.send(req, HttpResponse.BodyHandlers.ofString()).statusCode();
+        assertTrue(code < 500, "回调不应返回5xx: " + code);
+    }
+
+    @Test
     void shouldQueryOrder() throws Exception {
         String body = mapper.writeValueAsString(Map.of("title", "Query Test", "amount", 50, "channel", "wechat"));
         HttpRequest createReq = HttpRequest.newBuilder()

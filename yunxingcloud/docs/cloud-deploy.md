@@ -95,3 +95,77 @@ REMOTE_BACKUP=backup@backup-server:/backups ./backup-all.sh sync
 - [ ] Grafana 仪表盘有数据
 - [ ] SSL Labs 评级 ≥ A
 - [ ] `./smoke-test.sh` 全部通过
+---
+
+## 方式三: 阿里云 ACK (推荐生产)
+
+### 前置准备
+
+```bash
+# 1. 创建 ACK 集群 (标准托管版, 2 节点 ecs.g7.xlarge 起步)
+# 2. 创建 ACR 企业版镜像仓库
+#    控制台 → 容器镜像服务 → 创建命名空间 yunxingcloud
+# 3. 配置 kubectl 连接 ACK
+#    控制台 → 集群 → 连接信息 → 复制 kubeconfig
+# 4. Docker 登录 ACR
+docker login --username=your-aliyun-account registry.cn-hangzhou.aliyuncs.com
+
+# 5. (可选) 创建 RDS MySQL 8.0 + Redis 6.0
+#    或使用 K8s 内部署 (infrastructure.yaml)
+# 6. 域名 DNS A 记录 → SLB 公网 IP
+```
+
+### 一键部署
+
+```bash
+# 构建镜像 + 推送 ACR + Kubectl 部署
+bash scripts/deploy-ack.sh registry.cn-hangzhou.aliyuncs.com/yunxingcloud v1.0.0
+
+# 或使用 GitHub Actions
+# 配置 Secrets: ACR_USERNAME, ACR_PASSWORD, KUBE_CONFIG
+# git push main → 自动触发 deploy-k8s.yml
+```
+
+### ACK 资源配置
+
+| 资源 | 规格 | 说明 |
+|------|------|------|
+| ACK 集群 | 标准托管版 2 节点 | ecs.g7.xlarge (4C16G) |
+| SLB | 按量付费 | ACK 自动创建 |
+| MySQL | RDS 8.0 2C4G 100GB | 或集群内自建 (infrastructure.yaml) |
+| Redis | Redis 6.0 2GB | 或集群内自建 |
+| Nacos | MSE 2C4G | 或集群内自建 (infrastructure.yaml) |
+| Elasticsearch | 3 节点 2C4G | 可选, 用于商品搜索 |
+| OSS | 标准存储 100GB | 文件上传 (OssService) |
+| 域名 | 已备案 | api.your-domain.com / admin.your-domain.com |
+
+### 成本估算 (月)
+
+| 组件 | 月费 (¥) |
+|------|----------|
+| ACK 2 节点 ecs.g7.xlarge | ~1,200 |
+| RDS MySQL 2C4G | ~400 |
+| Redis 2GB | ~200 |
+| MSE Nacos 2C4G | ~400 |
+| SLB | ~100 |
+| OSS 100GB | ~20 |
+| 域名 + DNS | ~10/年 |
+| **合计** | **~2,400/月** |
+
+### 部署后验证
+
+```bash
+# 检查 Pod
+kubectl get pods -n yunxingcloud
+
+# 获取 SLB IP
+kubectl get svc -n kube-system nginx-ingress-lb
+
+# API 测试
+curl https://api.your-domain.com/actuator/health
+curl -X POST https://api.your-domain.com/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 管理后台
+open https://admin.your-domain.com

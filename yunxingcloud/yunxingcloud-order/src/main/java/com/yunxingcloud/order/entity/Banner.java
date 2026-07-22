@@ -1,5 +1,9 @@
 package com.yunxingcloud.order.entity;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -14,11 +18,15 @@ public class Banner {
     private String imageUrl;
     @Column(name = "link_url", length = 500)
     private String linkUrl;
+    @Column(length = 500)
+    private String description;
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
     @Column(length = 1)
     private String status = "0";
     @Column(name = "created_at", updatable = false)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
 
     public Banner() {}
@@ -32,6 +40,8 @@ public class Banner {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getLinkUrl() { return linkUrl; }
     public void setLinkUrl(String linkUrl) { this.linkUrl = linkUrl; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public String getStatus() { return status; }

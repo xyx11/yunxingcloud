@@ -5,12 +5,14 @@ export default defineConfig({
   timeout: 30000,
   retries: 1,
   use: {
-    baseURL: 'http://localhost:8080',
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'admin', use: { browserName: 'chromium', baseURL: 'http://localhost:8080' } },
+    { name: 'mall', use: { browserName: 'chromium', baseURL: 'http://localhost:5174' } },
   ],
+  // Run admin tests by default, use --project=mall for mall tests
+  reporter: [['list'], ['html', { open: 'never' }]],
 })

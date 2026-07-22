@@ -21,4 +21,15 @@ public class SupplierService {
 
     @Transactional
     public Supplier update(Long id, Supplier s) { s.setId(id); return repo.save(s); }
+
+    public java.util.Optional<Supplier> get(Long id) { return repo.findById(id); }
+
+    public List<Supplier> search(String keyword) {
+        return repo.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Transactional
+    public void delete(Long id) { repo.deleteById(id); }
+
+    public long count() { return repo.count(); }
 }

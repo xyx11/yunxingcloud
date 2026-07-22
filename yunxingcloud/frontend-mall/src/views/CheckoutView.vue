@@ -1,255 +1,440 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getAddresses, getMyCoupons, submitOrder, createAddress } from '@/api/order'
 import { getCart } from '@/api/cart'
-import { submitOrder, getAddresses, getMyCoupons } from '@/api/order'
-import request from '@/api/request'
-import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
-import LazyImage from '@/components/LazyImage.vue'
+import { getPointsAccount } from '@/api/member'
 import { formatPrice } from '@/utils/format'
-import SkeletonBox from '@/components/SkeletonBox.vue'
+import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
-import type { Address, Coupon, CartItem } from '@/types'
+import JdEmpty from '@/components/JdEmpty.vue'
+import JdModal from '@/components/JdModal.vue'
+import SkeletonBox from '@/components/SkeletonBox.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/locales'
 
 const router = useRouter()
+const auth = useAuthStore()
+const toast = useToast()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
-const items = ref<CartItem[]>([])
-const addresses = ref<Address[]>([])
+
+const cartItems = ref<any[]>([])
+const addresses = ref<any[]>([])
+const coupons = ref<any[]>([])
 const loading = ref(true)
-const total = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
-const actualTotal = computed(() => Math.max(0, total.value - (selectedCoupon.value?.amount || 0) - campaignDiscount.value * 100))
-const selectedAddr = ref<Address | null>(null)
-const receiver = ref({ name: '', phone: '', address: '' })
-const selectedCoupon = ref<Coupon | null>(null)
-const couponApplied = ref(false)
-const myCoupons = ref<Coupon[]>([])
-const showCoupons = ref(false)
-const paymentMethod = ref('wechat')
-const deliveryTimeSlot = ref('')
-const deliverySlots = ['不限', '上午 9:00-12:00', '下午 14:00-18:00', '晚间 18:00-21:00']
 const submitting = ref(false)
-const showInvoice = ref(false)
-const invoice = ref({ type: 'personal', title: '', taxNo: '', email: '' })
-const campaignDiscount = ref(0)
 
-async function loadCampaignDiscount() {
-  try { const r = await request.get('/campaigns'); const campaigns: { type: string; threshold?: number; discount?: number }[] = r.data || []; for (const c of campaigns) { if (c.type === 'full_reduction' && total.value >= (c.threshold || 0)) { campaignDiscount.value = c.discount || 0 } } } catch {}
-}
+const selectedAddrId = ref<number | null>(null)
+const selectedCouponId = ref<number | null>(null)
+const payMethod = ref<'wechat' | 'alipay'>('wechat')
+const remark = ref('')
+const agreedToTerms = ref(false)
 
-async function load() {
+// Points
+const pointsBalance = ref(0)
+const pointsToUse = ref(0)
+const pointsRate = 100 // 100 points = ¥1
+const pointsDiscount = computed(() => Math.floor(pointsToUse.value / pointsRate) * 100)
+const maxPointsDiscount = computed(() => Math.min(pointsBalance.value, Math.floor((subtotal.value - discount.value) / 100) * pointsRate))
+
+const showAddrEditor = ref(false)
+const addrForm = ref({ name: '', phone: '', province: '', city: '', district: '', detail: '', isDefault: false })
+
+const selectedAddress = computed(() => addresses.value.find(a => a.id === selectedAddrId.value) || null)
+const selectedCoupon = computed(() => coupons.value.find(c => c.id === selectedCouponId.value) || null)
+const availableCoupons = computed(() =>
+  coupons.value.filter((c: any) => !c.minAmount || subtotal.value >= c.minAmount)
+)
+
+const subtotal = computed(() =>
+  cartItems.value.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
+)
+
+const discount = computed(() => {
+  if (!selectedCoupon.value) return 0
+  return Math.min(selectedCoupon.value.amount || 0, subtotal.value)
+})
+
+const total = computed(() => Math.max(0, subtotal.value - discount.value - pointsDiscount.value))
+
+const canSubmit = computed(() =>
+  selectedAddrId.value !== null && cartItems.value.length > 0 && agreedToTerms.value && !submitting.value
+)
+
+const isLoggedIn = computed(() => auth.isLoggedIn)
+
+async function loadData() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data.items || [] } catch { toast.error('购物车加载失败') }
-  try { const r = await getAddresses(); addresses.value = r.data || [] } catch { toast.error('地址加载失败') }
-  finally { loading.value = false }
+  try {
+    const [cartR, addrR, couponR, pointsR] = await Promise.all([
+      getCart().catch(() => ({ data: { items: [] } })),
+      isLoggedIn.value ? getAddresses().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      isLoggedIn.value ? getMyCoupons().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      isLoggedIn.value ? getPointsAccount().catch(() => ({ data: { balance: 0 } })) : Promise.resolve({ data: { balance: 0 } }),
+    ])
+    cartItems.value = cartR.data?.items || []
+    addresses.value = addrR.data || []
+    coupons.value = (couponR.data || [])
+    pointsBalance.value = pointsR.data?.balance || pointsR.data?.points || 0
+
+    const def = addresses.value.find(a => a.isDefault)
+    if (def) selectedAddrId.value = def.id
+    else if (addresses.value.length) selectedAddrId.value = addresses.value[0].id
+  } catch {
+    toast.error(t('checkout.loadFail'))
+  } finally {
+    loading.value = false
+  }
 }
 
-function selectAddress(addr: Address) {
-  selectedAddr.value = addr
-  receiver.value = { name: addr.name, phone: addr.phone, address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(' ') }
-}
-
-async function loadCoupons() { try { const r = await getMyCoupons(); myCoupons.value = (r.data || []).filter((c: Coupon) => c.status === '0' || c.status === 'available') } catch { toast.error('优惠券加载失败') } }
-
-function selectCoupon(c: Coupon) { selectedCoupon.value = c; couponApplied.value = true; showCoupons.value = false; toast.success('优惠券已选用') }
-
-async function submit() {
-  if (!receiver.value.name || !receiver.value.phone || !receiver.value.address) { toast.error(t('checkout.selectAddress')); return }
+async function doSubmit() {
+  if (!canSubmit.value || !selectedAddress.value) return
   submitting.value = true
-  try { const res = await submitOrder({ ...receiver.value, couponCode: String(selectedCoupon.value?.couponId ?? ''), paymentMethod: paymentMethod.value, deliveryTimeSlot: deliveryTimeSlot.value }); toast.success(t('toast.orderPlaced')); const resData = res.data as { id?: number; data?: { id?: number } }; const orderId = resData.id || resData.data?.id; router.push(orderId ? '/order/' + orderId : '/orders') }
-  catch (e: unknown) { toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || t('toast.orderFail')) }
-  finally { submitting.value = false }
+  try {
+    const addr = selectedAddress.value
+    const r = await submitOrder({
+      receiverName: addr.name,
+      receiverPhone: addr.phone,
+      receiverAddress: `${addr.province || ''}${addr.city || ''}${addr.district || ''}${addr.detail || addr.address || ''}`,
+      couponId: selectedCouponId.value != null ? String(selectedCouponId.value) : '',
+      payChannel: payMethod.value,
+      remark: remark.value,
+      points: String(pointsToUse.value || 0),
+    })
+    const orderId = r.data?.id || r.data?.orderId
+    if (orderId) {
+      router.push(`/pay/${orderId}`)
+    } else {
+      router.push('/orders')
+    }
+  } catch {
+    toast.error(t('checkout.submitFail'))
+  } finally {
+    submitting.value = false
+  }
 }
 
-onMounted(() => { load(); loadCoupons(); loadCampaignDiscount() })
+const savingAddr = ref(false)
+async function saveNewAddress() {
+  const { name, phone, detail } = addrForm.value
+  if (!name.trim() || !phone.trim() || !detail.trim()) {
+    toast.error(t('checkout.addressRequired'))
+    return
+  }
+  savingAddr.value = true
+  try {
+    const r = await createAddress({
+      name: name.trim(),
+      phone: phone.trim(),
+      address: `${addrForm.value.province}${addrForm.value.city}${addrForm.value.district}${detail.trim()}`,
+      isDefault: addrForm.value.isDefault,
+      city: addrForm.value.city,
+      district: addrForm.value.district,
+    })
+    const newAddr = r.data || r
+    addresses.value.push(newAddr)
+    selectedAddrId.value = newAddr.id
+    showAddrEditor.value = false
+    addrForm.value = { name: '', phone: '', province: '', city: '', district: '', detail: '', isDefault: false }
+  } catch {
+    toast.error(t('common.updateFailed'))
+  } finally {
+    savingAddr.value = false
+  }
+}
+
+onMounted(async () => {
+  if (!isLoggedIn.value) { router.push('/login?redirect=/checkout'); return }
+  await loadData()
+})
 </script>
 
 <template>
-  <div class="checkout-page">
-    <h2 class="page-title">{{ t('checkout.title') }}</h2>
-
-    <div v-if="loading" class="card">
-      <SkeletonBox height="20px" width="80%" />
-      <SkeletonBox height="20px" width="50%" />
-      <SkeletonBox height="20px" width="60%" />
+  <div class="chk-page">
+    <div class="chk-header">
+      <button class="chk-back" @click="router.push('/cart')">← {{ t('checkout.back') }}</button>
+      <h1 class="chk-title">{{ t('checkout.title') }}</h1>
     </div>
 
+    <SkeletonBox v-if="loading" variant="list-item" :count="4" height="80px" gap="var(--space-md)" />
+
+    <template v-else-if="cartItems.length === 0">
+      <JdEmpty icon="🛒" :title="t('checkout.emptyTitle')" :description="t('checkout.emptyDesc')">
+        <JdButton @click="router.push('/products')">{{ t('checkout.goBrowse') }}</JdButton>
+      </JdEmpty>
+    </template>
+
     <template v-else>
-      <!-- Receiver -->
-      <div class="card">
-        <h3 class="section-title">{{ t('checkout.receiverInfo') }}</h3>
-        <div v-if="addresses.length" class="addr-list">
-          <div v-for="addr in addresses" :key="addr.id" class="addr-item" :class="{ selected: selectedAddr?.id === addr.id }" role="button" tabindex="0" @click="selectAddress(addr)" @keydown.enter.prevent="selectAddress(addr)" @keydown.space.prevent="selectAddress(addr)">
-            <div class="addr-item-name">{{ addr.name }} <span class="addr-item-phone">{{ addr.phone }}</span></div>
-            <div class="addr-item-detail">{{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detail }}</div>
-            <span v-if="addr.isDefault" class="default-addr-badge">默认地址</span>
-          </div>
-        </div>
-        <div v-if="!selectedAddr" class="receiver-form">
-          <div class="receiver-grid">
-            <input v-model="receiver.name" :placeholder="t('order.receiverName')" class="field-input" />
-            <input v-model="receiver.phone" :placeholder="t('order.receiverPhone')" class="field-input" />
-          </div>
-          <input v-model="receiver.address" :placeholder="t('order.receiverAddress')" class="field-input field-full" />
-        </div>
-      </div>
-
-      <!-- Products -->
-      <div class="card">
-        <h3 class="section-title">{{ t('checkout.productList') }}</h3>
-        <div v-for="item in items" :key="item.id" class="product-row">
-          <LazyImage :src="item.imageUrl || item.productImage || ''" alt="" height="60px" width="60px" rounded="6px" />
-          <span class="product-name">{{ item.productName }} × {{ item.quantity }}</span>
-          <span class="product-price">{{ formatPrice(item.price * item.quantity / 100, 2) }}</span>
-        </div>
-
-        <div class="summary-section">
-          <div class="coupon-row">
-            <button v-if="!couponApplied" class="coupon-btn" @click="showCoupons = !showCoupons; if (showCoupons) loadCoupons()">
-              {{ myCoupons.length ? myCoupons.length + '张可用' : '选择优惠券' }}
-            </button>
-            <div v-else class="coupon-selected">
-              <span>已选优惠券</span>
-              <button class="coupon-remove" @click="selectedCoupon = null; couponApplied = false">移除</button>
+      <div class="chk-body">
+        <div class="chk-main">
+          <!-- Address -->
+          <section class="chk-section">
+            <h3 class="chk-sec-title">{{ t('checkout.address') }}</h3>
+            <div v-if="addresses.length === 0" class="chk-no-addr">
+              <p>{{ t('checkout.noAddress') }}</p>
+              <JdButton size="sm" @click="showAddrEditor = true">{{ t('checkout.addAddress') }}</JdButton>
             </div>
-            <div v-if="showCoupons && myCoupons.length" class="coupon-dropdown">
-              <div v-for="c in myCoupons" :key="c.id" class="coupon-item" role="button" tabindex="0" @click="selectCoupon(c)" @keydown.enter.prevent="selectCoupon(c)" @keydown.space.prevent="selectCoupon(c)">
-                <span class="coupon-amount">{{ formatPrice((c.amount || 0) / 100) }}</span>
-                <span class="coupon-cond" v-if="c.minAmount">满{{ formatPrice(c.minAmount / 100) }}可用</span>
-                <span class="coupon-use">使用</span>
+            <div v-else class="chk-addr-list">
+              <div
+                v-for="a in addresses" :key="a.id"
+                class="chk-addr-item"
+                :class="{ selected: selectedAddrId === a.id }"
+                role="radio"
+                :aria-checked="selectedAddrId === a.id"
+                tabindex="0"
+                @click="selectedAddrId = a.id"
+                @keydown.enter.prevent="selectedAddrId = a.id"
+                @keydown.space.prevent="selectedAddrId = a.id"
+              >
+                <div class="chk-addr-check">{{ selectedAddrId === a.id ? '●' : '○' }}</div>
+                <div class="chk-addr-body">
+                  <div class="chk-addr-line1">
+                    <strong>{{ a.name }}</strong>
+                    <span class="chk-addr-phone">{{ a.phone }}</span>
+                    <span v-if="a.isDefault" class="chk-addr-tag">{{ t('checkout.default') }}</span>
+                  </div>
+                  <div class="chk-addr-line2">{{ a.address || `${a.province || ''}${a.city || ''}${a.district || ''}${a.detail || ''}` }}</div>
+                </div>
+              </div>
+              <JdButton size="sm" type="outline" @click="showAddrEditor = true">+ {{ t('checkout.newAddress') }}</JdButton>
+            </div>
+          </section>
+
+          <!-- Cart items -->
+          <section class="chk-section">
+            <h3 class="chk-sec-title">{{ t('checkout.orderItems') }}</h3>
+            <div class="chk-items">
+              <div v-for="item in cartItems" :key="item.id" class="chk-item">
+                <LazyImage :src="item.imageUrl || item.productImage || ''" :alt="item.productName" height="80px" width="80px" rounded="8px" />
+                <div class="chk-item-info">
+                  <div class="chk-item-name">{{ item.productName }}</div>
+                  <div class="chk-item-qty">x{{ item.quantity || 1 }}</div>
+                </div>
+                <div class="chk-item-price">{{ formatPrice((item.price || 0) / 100) }}</div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div class="payment-row">
-            <span class="payment-label">支付方式</span>
-            <div class="payment-options">
-              <span class="payment-option" :class="{ selected: paymentMethod === 'wechat' }" @click="paymentMethod = 'wechat'">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#07c160"><path d="M8.5 13.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5S10 15.83 10 15s-.67-1.5-1.5-1.5zm5 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5S15 15.83 15 15s-.67-1.5-1.5-1.5zM12 2C6.48 2 2 6.04 2 11c0 2.57 1.2 4.88 3.11 6.44l-.86 2.56 2.82-1.53c.9.3 1.86.48 2.87.53l.06-.58A5 5 0 0 1 12 6a5 5 0 0 1 5 5 5 5 0 0 1-3.3 4.73l.3 1.08c.33.04.66.08.99.08 1.72 0 3.34-.44 4.75-1.2l2.86 1.46-.82-2.44C21.24 15.59 22 13.38 22 11c0-4.96-4.48-9-10-9z"/></svg>
-                微信支付
-              </span>
-              <span class="payment-option" :class="{ selected: paymentMethod === 'alipay' }" @click="paymentMethod = 'alipay'">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1677ff"><path d="M21.422 15.358c-3.22-1.386-6.847-2.408-10.604-2.996-1.04-.165-2.104-.284-3.18-.336-1.09-.052-2.19-.064-3.29-.006-.402.02-.805.05-1.205.108-.086.012-.22.04-.3.06-.08.02-.154.05-.194.09-.064.082-.02.258.03.382.074.19.242.368.398.508.69.62 1.51 1.07 2.35 1.41 1.69.68 3.49 1.07 5.24 1.51 1.08.27 2.15.55 3.21.88.42.13.83.28 1.23.45.87.36 1.46.86 1.47 1.48.01.56-.35 1.06-.88 1.24-.34.11-.71.14-1.07.14-1.04.02-2.05-.22-3.03-.5-1.82-.52-3.57-1.2-5.2-2.14-.14-.08-.29-.19-.44-.27-.02-.01-.06-.02-.08-.01-.01.02-.01.05-.01.08l-.01.47c0 .74.07 1.47.25 2.19.17.68.47 1.3.88 1.88.42.59.94 1.09 1.53 1.48.6.4 1.24.71 1.93.91 1.08.32 2.2.48 3.33.5 1.28.03 2.56-.09 3.8-.42.61-.16 1.2-.37 1.76-.65.55-.28 1.05-.62 1.47-1.06.32-.34.6-.72.78-1.16.2-.5.28-1.04.19-1.57-.15-.86-.68-1.58-1.54-2.16-.13-.09-.26-.16-.41-.24l-.04-.02zM3.904 8.158c.34-.11.69-.19 1.04-.24.78-.13 1.57-.12 2.35-.02.72.1 1.42.29 2.12.5.68.2 1.36.42 2.02.69 1.29.52 2.46 1.17 3.47 1.98.2.16.43.31.62.47.01 0 .06.04.07.04 0-.24-.01-.48-.01-.72 0-.86-.01-1.73-.01-2.59 0-.52-.01-1.04 0-1.56.01-.36.04-.72.13-1.07.08-.32.21-.61.4-.88.22-.31.5-.57.83-.76.33-.2.68-.35 1.05-.43.41-.1.82-.14 1.24-.12.4.02.8.07 1.2.13 0-.53-.02-1.06-.06-1.59-.02-.3-.07-.6-.15-.9-.06-.24-.16-.47-.3-.68-.2-.31-.47-.58-.79-.76-.56-.32-1.19-.47-1.83-.51-1.52-.12-3.04.12-4.46.77-.56.26-1.08.6-1.56 1-.57.47-1.05 1.02-1.43 1.65-.18.29-.23.62-.23.96.01.34.03.68.04 1.02.01.36 0 .72 0 1.08.01.78 0 1.56 0 2.34l-.01.33c-.04.03-.08.05-.12.07-1.37.93-2.55 2.09-3.46 3.46-.44.67-.79 1.39-1.05 2.15-.01.02-.02.05-.04.08-.12.29-.12.29-.24-.01-.23-.58-.53-1.14-.8-1.7-.25-.52-.57-1.01-.86-1.52-.22-.39-.46-.77-.65-1.17-.12-.26-.23-.52-.3-.8-.06-.23-.09-.47-.08-.71.02-.5.18-.96.5-1.36.21-.26.47-.48.76-.63z"/></svg>
-                支付宝
-              </span>
+          <!-- Coupon -->
+          <section class="chk-section">
+            <h3 class="chk-sec-title">{{ t('checkout.coupon') }}</h3>
+            <div v-if="availableCoupons.length" class="chk-coupon-list">
+              <div
+                v-for="c in availableCoupons" :key="c.id"
+                class="chk-coupon-item"
+                :class="{ selected: selectedCouponId === c.id }"
+                role="radio"
+                :aria-checked="selectedCouponId === c.id"
+                tabindex="0"
+                @click="selectedCouponId = selectedCouponId === c.id ? null : c.id"
+                @keydown.enter.prevent="selectedCouponId = selectedCouponId === c.id ? null : c.id"
+                @keydown.space.prevent="selectedCouponId = selectedCouponId === c.id ? null : c.id"
+              >
+                <div class="chk-coupon-left">
+                  <div class="chk-coupon-amount">{{ formatPrice(c.amount / 100) }}</div>
+                  <div v-if="c.minAmount" class="chk-coupon-min">{{ t('checkout.minAmount', { n: String(Math.ceil((c.minAmount || 0) / 100)) }) }}</div>
+                </div>
+                <div class="chk-coupon-body">
+                  <div class="chk-coupon-name">{{ c.name }}</div>
+                  <div v-if="c.expireAt" class="chk-coupon-expire">{{ t('checkout.expiresAt', { d: c.expireAt }) }}</div>
+                </div>
+              </div>
             </div>
-          </div>
+            <div v-else class="chk-no-coupon">{{ t('checkout.noCoupon') }}</div>
+          </section>
 
-          <div class="delivery-row">
-            <span class="delivery-label">配送时段</span>
-            <div class="delivery-options">
-              <span v-for="s in deliverySlots" :key="s" class="delivery-option" :class="{ selected: deliveryTimeSlot === s }" @click="deliveryTimeSlot = deliveryTimeSlot === s ? '' : s">{{ s }}</span>
+          <!-- Remark -->
+          <section class="chk-section">
+            <h3 class="chk-sec-title">{{ t('checkout.remark') }}</h3>
+            <textarea v-model="remark" class="chk-remark" :placeholder="t('checkout.remarkPlaceholder')" maxlength="200" />
+          </section>
+        </div>
+
+        <!-- Right: order summary -->
+        <aside class="chk-sidebar">
+          <div class="chk-summary">
+            <h3 class="chk-sum-title">{{ t('checkout.summary') }}</h3>
+            <div class="chk-sum-row">
+              <span>{{ t('checkout.subtotal') }}</span>
+              <span>{{ formatPrice(subtotal / 100) }}</span>
             </div>
-          </div>
-        </div>
-
-        <div class="price-summary">
-          <div class="price-line"><span>商品总额</span><span>{{ formatPrice(total / 100, 2) }}</span></div>
-          <div class="price-line"><span>优惠</span><span class="discount">{{ couponApplied || campaignDiscount ? '-' + formatPrice(((selectedCoupon?.amount || 0) + campaignDiscount * 100) / 100, 2) : formatPrice(0, 2) }}</span></div>
-          <div class="price-line"><span>运费</span><span class="free-shipping">免运费</span></div>
-        </div>
-
-        <div class="total-row">
-          <span class="total-label">{{ t('checkout.totalItems', { n: items.length }) }}</span>
-          <div><span class="total-prefix">{{ t('checkout.actualPay') }}：</span><span class="total-price">{{ formatPrice(actualTotal / 100, 2) }}</span></div>
-        </div>
-
-        <!-- Invoice -->
-        <div class="invoice-section">
-          <div class="invoice-toggle" role="button" tabindex="0" @click="showInvoice = !showInvoice" @keydown.enter.prevent="showInvoice = !showInvoice" @keydown.space.prevent="showInvoice = !showInvoice">{{ showInvoice ? '▼' : '▶' }} 发票信息</div>
-          <div v-if="showInvoice" class="invoice-form">
-            <div class="invoice-type">
-              <label class="radio-label"><input type="radio" v-model="invoice.type" value="personal" /> 个人</label>
-              <label class="radio-label"><input type="radio" v-model="invoice.type" value="company" /> 企业</label>
+            <div v-if="discount" class="chk-sum-row chk-sum-discount">
+              <span>{{ t('checkout.discount') }}</span>
+              <span>-{{ formatPrice(discount / 100) }}</span>
             </div>
-            <input v-if="invoice.type === 'company'" v-model="invoice.title" placeholder="发票抬头" class="field-input field-full" />
-            <input v-if="invoice.type === 'company'" v-model="invoice.taxNo" placeholder="税号" class="field-input field-full" />
-            <input v-model="invoice.email" placeholder="接收邮箱" class="field-input field-full" />
-          </div>
-        </div>
+            <div v-if="pointsDiscount > 0" class="chk-sum-row chk-sum-discount">
+              <span>{{ t('checkout.pointsDeductDetail') }}</span>
+              <span>-{{ formatPrice(pointsDiscount / 100) }}</span>
+            </div>
+            <div class="chk-sum-row">
+              <span>{{ t('checkout.shipping') }}</span>
+              <span class="chk-ship-free">{{ t('checkout.freeShipping') }}</span>
+            </div>
+            <div class="chk-sum-divider" />
+            <div class="chk-sum-row chk-sum-total">
+              <span>{{ t('checkout.total') }}</span>
+              <span class="chk-total-price">{{ formatPrice(total / 100) }}</span>
+            </div>
 
-        <JdButton block size="lg" :loading="submitting" :disabled="submitting" @click="submit">
-          {{ t('order.submitOrder') }}
-        </JdButton>
+            <!-- Points redeem -->
+            <div v-if="pointsBalance > 0" class="chk-points">
+              <p class="chk-points-info">{{ t('checkout.pointsAvailable', { n: pointsBalance }) }}</p>
+              <div class="chk-points-input-row">
+                <input v-model.number="pointsToUse" type="number" :max="maxPointsDiscount" :placeholder="t('checkout.pointsPlaceholder')" class="chk-points-input" />
+                <span class="chk-points-hint">= {{ t('checkout.pointsValue', { n: String(Math.floor(pointsToUse / pointsRate)) }) }}</span>
+              </div>
+            </div>
+
+            <div class="chk-pay-methods">
+              <label class="chk-pay-method" :class="{ selected: payMethod === 'wechat' }">
+                <input type="radio" v-model="payMethod" value="wechat" class="chk-pay-radio" />
+                <span>💚 {{ t('checkout.wechatPay') }}</span>
+              </label>
+              <label class="chk-pay-method" :class="{ selected: payMethod === 'alipay' }">
+                <input type="radio" v-model="payMethod" value="alipay" class="chk-pay-radio" />
+                <span>💙 {{ t('checkout.alipay') }}</span>
+              </label>
+            </div>
+
+            <label class="chk-agree">
+              <input type="checkbox" v-model="agreedToTerms" />
+              <span>{{ t('checkout.agreeTerms') }}</span>
+            </label>
+
+            <JdButton block :loading="submitting" :disabled="!canSubmit" class="chk-submit-btn" @click="doSubmit">
+              {{ submitting ? t('checkout.submitting') : t('checkout.submitOrder') }}
+            </JdButton>
+
+            <p v-if="!canSubmit && !submitting" class="chk-hint">
+              {{ !selectedAddrId ? t('checkout.selectAddressHint') : !agreedToTerms ? t('checkout.agreeHint') : '' }}
+            </p>
+          </div>
+        </aside>
       </div>
     </template>
+
+    <!-- Address editor modal -->
+    <JdModal :visible="showAddrEditor" :title="t('checkout.newAddress')" @close="showAddrEditor = false">
+      <div class="chk-addr-form">
+        <input v-model="addrForm.name" :placeholder="t('checkout.namePlaceholder')" class="chk-addr-input" maxlength="30" aria-label="Receiver name" />
+        <input v-model="addrForm.phone" :placeholder="t('checkout.phonePlaceholder')" class="chk-addr-input" maxlength="20" aria-label="Phone number" />
+        <div class="chk-addr-row">
+          <input v-model="addrForm.province" :placeholder="t('checkout.province')" class="chk-addr-input chk-addr-third" maxlength="20" />
+          <input v-model="addrForm.city" :placeholder="t('checkout.city')" class="chk-addr-input chk-addr-third" maxlength="20" />
+          <input v-model="addrForm.district" :placeholder="t('checkout.district')" class="chk-addr-input chk-addr-third" maxlength="20" />
+        </div>
+        <input v-model="addrForm.detail" :placeholder="t('checkout.detailPlaceholder')" class="chk-addr-input" maxlength="100" aria-label="Detail address" />
+        <label class="chk-addr-default">
+          <input type="checkbox" v-model="addrForm.isDefault" />
+          <span>{{ t('checkout.setDefault') }}</span>
+        </label>
+        <div class="chk-addr-form-actions">
+          <JdButton type="outline" @click="showAddrEditor = false">{{ t('common.cancel') }}</JdButton>
+          <JdButton @click="saveNewAddress">{{ t('common.save') }}</JdButton>
+        </div>
+      </div>
+    </JdModal>
   </div>
 </template>
 
 <style scoped>
-.checkout-page { max-width: 800px; margin: 0 auto; }
-.page-title { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-xl); }
-.card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); margin-bottom: var(--space-lg); box-shadow: var(--shadow-sm); }
-.section-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-md); }
+.chk-page { max-width: 1000px; margin: 0 auto; padding: var(--space-xxl) var(--space-md); }
+.chk-header { margin-bottom: var(--space-xl); }
+.chk-back { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: var(--font-md); padding: 0; }
+.chk-back:hover { color: var(--jd-red); }
+.chk-title { font-size: var(--font-xl); font-weight: 700; margin-top: var(--space-sm); }
 
-.addr-list { margin-bottom: var(--space-lg); }
-.addr-item { padding: var(--space-lg); border-radius: var(--radius-md); margin-bottom: var(--space-sm); cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-white); transition: all var(--transition-fast); box-shadow: var(--shadow-sm); }
-.addr-item:hover { box-shadow: var(--shadow-md); border-color: var(--border); }
-.addr-item.selected { border: 2px solid var(--jd-red); background: var(--jd-red-light); box-shadow: 0 0 0 4px rgba(241,2,21,.08); }
-.addr-item-name { font-weight: 600; margin-bottom: var(--space-xs); }
-.addr-item-phone { color: var(--text-tertiary); font-weight: 400; }
-.addr-item-detail { color: var(--text-secondary); font-size: var(--font-base); }
-.default-tag { color: var(--jd-red); font-size: var(--font-xs); margin-left: var(--space-sm); }
-.default-addr-badge { display: inline-block; background: #e8f5e9; color: var(--green); font-size: var(--font-xs); padding: 1px 8px; border-radius: var(--radius-sm); font-weight: 600; margin-top: var(--space-xs); }
+.chk-body { display: flex; gap: var(--space-xl); align-items: flex-start; }
+.chk-main { flex: 1; min-width: 0; }
+.chk-sidebar { width: 340px; flex-shrink: 0; position: sticky; top: var(--space-xl); }
 
-.receiver-form { margin-bottom: var(--space-lg); }
-.receiver-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md); }
+.chk-section { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-lg); box-shadow: var(--shadow-sm); }
+.chk-sec-title { font-size: var(--font-md); font-weight: 700; margin-bottom: var(--space-lg); }
 
-.field-input { padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); background: var(--bg-white); color: var(--text-primary); }
-.field-input:focus { border-color: var(--jd-red); outline: none; }
-.field-full { width: 100%; box-sizing: border-box; margin-top: var(--space-md); }
+.chk-no-addr { text-align: center; padding: var(--space-lg); color: var(--text-tertiary); }
+.chk-no-addr p { margin-bottom: var(--space-sm); }
+.chk-addr-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.chk-addr-item {
+  display: flex; gap: var(--space-md); padding: var(--space-md);
+  border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+.chk-addr-item.selected { border-color: var(--jd-red); }
+.chk-addr-item:hover:not(.selected) { border-color: var(--text-tertiary); }
+.chk-addr-check { color: var(--jd-red); font-size: var(--font-lg); flex-shrink: 0; padding-top: 2px; }
+.chk-addr-body { flex: 1; }
+.chk-addr-line1 { display: flex; gap: var(--space-sm); align-items: center; margin-bottom: 4px; font-size: var(--font-sm); }
+.chk-addr-phone { color: var(--text-secondary); }
+.chk-addr-tag { background: var(--jd-red); color: #fff; font-size: 11px; padding: 1px 8px; border-radius: var(--radius-round); }
+.chk-addr-line2 { font-size: var(--font-sm); color: var(--text-secondary); }
 
-.product-row { display: flex; align-items: center; padding: var(--space-md) 0; border-bottom: 1px solid var(--border-light); gap: var(--space-lg); }
-.product-name { flex: 1; font-size: var(--font-md); }
-.product-price { color: var(--jd-red); font-weight: 600; font-size: 15px; }
+.chk-items { display: flex; flex-direction: column; gap: var(--space-md); }
+.chk-item { display: flex; gap: var(--space-md); align-items: center; }
+.chk-item-info { flex: 1; }
+.chk-item-name { font-size: var(--font-sm); font-weight: 500; margin-bottom: 4px; }
+.chk-item-qty { font-size: var(--font-xs); color: var(--text-tertiary); }
+.chk-item-price { color: var(--jd-red); font-weight: 700; font-size: var(--font-md); }
 
-.summary-section { margin-top: var(--space-lg); }
-.coupon-row { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); flex-wrap: wrap; }
-.coupon-btn { padding: var(--space-sm) var(--space-lg); border: 1px dashed var(--jd-red); color: var(--jd-red); background: var(--bg-white); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-base); }
-.coupon-selected { display: flex; justify-content: space-between; align-items: center; background: #fff9f0; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); font-size: var(--font-base); flex: 1; }
-.coupon-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: var(--font-sm); }
-.coupon-dropdown { width: 100%; max-height: 150px; overflow: auto; margin-top: var(--space-sm); }
-.coupon-item { padding: var(--space-sm) var(--space-md); margin-bottom: var(--space-xs); background: #fef9e7; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm); display: flex; align-items: center; gap: var(--space-sm); }
-.coupon-item:hover { background: #fef3c7; }
-.coupon-amount { color: var(--jd-red); font-weight: 700; font-size: var(--font-md); }
-.coupon-cond { color: var(--text-tertiary); font-size: var(--font-xs); flex: 1; }
-.coupon-use { color: var(--jd-red); font-weight: 600; }
+.chk-coupon-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.chk-coupon-item {
+  display: flex; gap: var(--space-md); padding: var(--space-md);
+  border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+.chk-coupon-item.selected { border-color: var(--jd-red); }
+.chk-coupon-item:hover:not(.selected) { border-color: var(--text-tertiary); }
+.chk-coupon-left {
+  flex-shrink: 0; width: 80px; text-align: center;
+  border-right: 1px dashed var(--border); padding-right: var(--space-md);
+}
+.chk-coupon-amount { color: var(--jd-red); font-size: var(--font-xl); font-weight: 700; }
+.chk-coupon-min { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.chk-coupon-body { flex: 1; }
+.chk-coupon-name { font-weight: 600; font-size: var(--font-sm); }
+.chk-coupon-expire { font-size: var(--font-xs); color: var(--text-tertiary); margin-top: 2px; }
+.chk-no-coupon { color: var(--text-tertiary); font-size: var(--font-sm); }
 
-.payment-row { margin-bottom: var(--space-md); }
-.payment-label { font-size: var(--font-base); color: var(--text-secondary); margin-right: var(--space-md); }
-.payment-options { display: flex; gap: var(--space-md); margin-top: var(--space-sm); }
-.payment-option { cursor: pointer; padding: var(--space-sm) var(--space-lg); border-radius: var(--radius-md); font-size: var(--font-base); display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--bg-white); transition: all var(--transition-fast); }
-.payment-option.selected { border: 2px solid var(--jd-red); background: var(--jd-red-light); }
+.chk-remark { width: 100%; min-height: 80px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); resize: vertical; font-size: var(--font-sm); font-family: inherit; color: var(--text-primary); background: var(--bg-white); box-sizing: border-box; }
+.chk-remark:focus { border-color: var(--jd-red); outline: none; }
 
-.price-summary { margin-top: var(--space-lg); padding-top: var(--space-md); border-top: 1px solid var(--border-light); }
-.price-line { display: flex; justify-content: space-between; font-size: var(--font-base); color: var(--text-secondary); margin-bottom: var(--space-xs); }
-.discount { color: var(--jd-red); }
-.free-shipping { color: var(--green); }
+.chk-summary { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); box-shadow: var(--shadow-sm); }
+.chk-sum-title { font-size: var(--font-md); font-weight: 700; margin-bottom: var(--space-lg); }
+.chk-sum-row { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); font-size: var(--font-sm); }
+.chk-sum-discount { color: var(--jd-red); }
+.chk-ship-free { color: var(--green); }
+.chk-sum-divider { border-top: 1px solid var(--border); margin: var(--space-md) 0; }
+.chk-sum-total { font-size: var(--font-md); font-weight: 700; }
+.chk-total-price { color: var(--jd-red); font-size: var(--font-xl); }
+.chk-points { margin-top: var(--space-lg); padding: var(--space-md); background: var(--bg-hover); border-radius: var(--radius-md); }
+.chk-points-info { font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: var(--space-xs); }
+.chk-points-input-row { display: flex; align-items: center; gap: var(--space-sm); }
+.chk-points-input { width: 100px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-sm); text-align: center; background: var(--bg-white); color: var(--text-primary); box-sizing: border-box; }
+.chk-points-hint { font-size: var(--font-xs); color: var(--text-placeholder); }
 
-.total-row { display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-md); margin-top: var(--space-md); border-top: 1px solid var(--border-light); }
-.total-label { font-size: var(--font-md); color: var(--text-secondary); }
-.total-prefix { font-size: var(--font-lg); color: var(--text-secondary); }
-.total-price { font-size: var(--font-h1); color: var(--jd-red); font-weight: 700; }
+.chk-pay-methods { margin-top: var(--space-lg); }
+.chk-pay-method {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-md); border: 2px solid var(--border); border-radius: var(--radius-md);
+  cursor: pointer; margin-bottom: var(--space-sm); transition: border-color var(--transition-fast);
+}
+.chk-pay-method.selected { border-color: var(--jd-red); }
+.chk-pay-radio { display: none; }
+.chk-agree { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-lg); font-size: var(--font-sm); color: var(--text-secondary); cursor: pointer; }
+.chk-submit-btn { margin-top: var(--space-lg); }
+.chk-hint { font-size: var(--font-xs); color: var(--text-tertiary); margin-top: var(--space-sm); text-align: center; }
 
-.invoice-section { margin-top: var(--space-lg); padding: var(--space-md); background: var(--bg-hover); border-radius: var(--radius-md); }
-.invoice-toggle { cursor: pointer; font-size: var(--font-md); font-weight: 600; }
-.invoice-form { margin-top: var(--space-sm); }
-.invoice-type { margin-bottom: var(--space-sm); display: flex; gap: var(--space-lg); }
-.radio-label { font-size: var(--font-base); cursor: pointer; display: flex; align-items: center; gap: 4px; }
-.radio-label input { accent-color: var(--jd-red); }
-.invoice-form .field-full { margin-top: var(--space-sm); }
+.chk-addr-form { display: flex; flex-direction: column; gap: var(--space-md); }
+.chk-addr-input { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); color: var(--text-primary); background: var(--bg-white); box-sizing: border-box; }
+.chk-addr-input:focus { border-color: var(--jd-red); outline: none; }
+.chk-addr-row { display: flex; gap: var(--space-sm); }
+.chk-addr-third { flex: 1; }
+.chk-addr-default { display: flex; align-items: center; gap: var(--space-sm); font-size: var(--font-sm); color: var(--text-secondary); cursor: pointer; }
+.chk-addr-form-actions { display: flex; gap: var(--space-md); justify-content: flex-end; margin-top: var(--space-sm); }
 
 @media (max-width: 768px) {
-  .checkout-page { padding: 0 var(--space-md) 80px; }
-  .card { padding: var(--space-md); }
-  .receiver-grid { grid-template-columns: 1fr; }
-  .product-row { flex-wrap: wrap; gap: var(--space-sm); }
-  .product-name { flex-basis: calc(100% - 80px); font-size: var(--font-sm); }
-  .payment-options { flex-wrap: wrap; }
-  .payment-option { flex: 1; min-width: 120px; justify-content: center; }
-  .total-row { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
-  .total-price { font-size: var(--font-h2); }
-  .invoice-type { flex-wrap: wrap; }
+  .chk-page { padding: var(--space-lg) var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .chk-body { flex-direction: column-reverse; }
+  .chk-sidebar { width: 100%; position: static; }
 }
 </style>

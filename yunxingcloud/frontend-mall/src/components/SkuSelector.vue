@@ -28,6 +28,11 @@ const SKU_COLORS: Record<string, string> = {
   '银': '#ccc',
   '橙': '#ff9800',
 }
+
+function isCurrentSku(_sku: Sku) {
+  // Placeholder — expose if needed by parent
+  return false
+}
 </script>
 
 <template>
@@ -38,8 +43,15 @@ const SKU_COLORS: Record<string, string> = {
         v-for="sku in skus"
         :key="sku.id"
         class="sku-item"
-        :class="{ selected: modelValue?.id === sku.id }"
-        @click="emit('update:modelValue', sku)"
+        :class="{ selected: modelValue?.id === sku.id, disabled: sku.stock === 0 }"
+        role="radio"
+        :aria-checked="modelValue?.id === sku.id"
+        :aria-disabled="sku.stock === 0"
+        :tabindex="sku.stock === 0 ? -1 : 0"
+        :title="sku.stock === 0 ? t('product.soldOut') : sku.name"
+        @click="sku.stock !== 0 && emit('update:modelValue', sku)"
+        @keydown.enter.prevent="sku.stock !== 0 && emit('update:modelValue', sku)"
+        @keydown.space.prevent="sku.stock !== 0 && emit('update:modelValue', sku)"
       >
         <span
           v-if="sku.specs"
@@ -53,7 +65,10 @@ const SKU_COLORS: Record<string, string> = {
           }"
         />
         {{ sku.name }}
-        <span class="sku-price">{{ formatPrice(sku.price / 100, 2) }}</span>
+        <span class="sku-price" :class="{ highlight: modelValue && modelValue.id !== sku.id }">
+          {{ formatPrice(sku.price / 100, 2) }}
+        </span>
+        <span v-if="isCurrentSku(sku)" class="sku-check">✓</span>
       </span>
     </div>
   </div>
@@ -104,4 +119,7 @@ const SKU_COLORS: Record<string, string> = {
   font-size: var(--font-xs);
   color: var(--text-tertiary);
 }
+.sku-price.highlight { color: var(--jd-red); font-weight: 600; }
+.sku-item.disabled { opacity: .4; cursor: not-allowed; text-decoration: line-through; background: var(--bg-hover); }
+.sku-check { font-size: 12px; color: var(--jd-red); margin-left: 2px; }
 </style>

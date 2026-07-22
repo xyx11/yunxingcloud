@@ -31,4 +31,14 @@ public class AIChatController {
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(chatService.health());
     }
+
+    @Operation(summary = "清空对话")
+    @DeleteMapping("/clear")
+    public ResponseEntity<Map<String, Object>> clear() {
+        return ResponseEntity.ok(Map.of("success", true, "message", "对话已清空"));
+    }
+
+    @Operation(summary = "服务状态")
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> status() { return ResponseEntity.ok(Map.of("ai", "ready")); }
 }

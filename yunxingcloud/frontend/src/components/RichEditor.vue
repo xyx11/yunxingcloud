@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch, ref, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { createEditor, createToolbar, type IDomEditor } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'

@@ -12,7 +12,9 @@
     "lint:fix": "eslint . --ext .vue,.ts --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:mall": "playwright test --project=mall",
+    "test:e2e:admin": "playwright test --project=admin"
   },
   "dependencies": {
     "@wangeditor/editor": "^5.1.23",

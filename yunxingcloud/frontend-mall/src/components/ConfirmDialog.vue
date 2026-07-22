@@ -11,10 +11,14 @@ const props = withDefaults(defineProps<{
   message: string
   confirmText?: string
   cancelText?: string
+  danger?: boolean
+  loading?: boolean
 }>(), {
   title: '',
   confirmText: '',
   cancelText: '',
+  danger: false,
+  loading: false,
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
@@ -35,7 +39,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
         <p class="cd-message">{{ message }}</p>
         <div class="cd-actions">
           <JdButton type="outline" @click="emit('cancel')">{{ cancelText || t('common.cancel') }}</JdButton>
-          <JdButton @click="emit('confirm')">{{ confirmText || t('common.confirm') }}</JdButton>
+          <JdButton :type="danger ? 'danger' : undefined" :loading="loading" @click="!loading && emit('confirm')">{{ confirmText || t('common.confirm') }}</JdButton>
         </div>
       </div>
     </div>

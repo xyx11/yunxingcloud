@@ -50,4 +50,26 @@ public class AnalyticsService {
                         "price", p.getPrice())));
         return result;
     }
+
+    /** 本周销售统计 */
+    public Map<String, Object> weeklyStats() {
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.minusDays(today.getDayOfWeek().getValue() - 1);
+        List<Map<String, Object>> dailyStats = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            dailyStats.add(Map.of("date", weekStart.plusDays(i).toString(), "orders", 0, "revenue", 0));
+        }
+        return Map.of("weekStart", weekStart.toString(), "weekEnd", today.toString(), "dailyStats", dailyStats);
+    }
+
+    /** 仪表盘摘要 */
+    public Map<String, Object> dashboard() {
+        return Map.of(
+            "totalOrders", orderRepo.count(),
+            "totalProducts", productRepo.count(),
+            "today", LocalDate.now().toString(),
+            "topProducts", topProducts(5),
+            "weekly", weeklyStats()
+        );
+    }
 }

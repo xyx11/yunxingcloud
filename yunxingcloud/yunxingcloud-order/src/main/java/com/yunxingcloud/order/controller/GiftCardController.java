@@ -22,6 +22,11 @@ public class GiftCardController {
 
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
 
+    @GetMapping("/my")
+    public ResponseEntity<?> myCards() {
+        return ResponseEntity.ok(service.myCards(user()));
+    }
+
     @GetMapping("/{cardNo}")
     public ResponseEntity<?> query(@PathVariable String cardNo) {
         GiftCard card = service.query(cardNo);
@@ -45,6 +50,12 @@ public class GiftCardController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    @GetMapping("/{cardId}/history")
+    public ResponseEntity<?> history(@PathVariable String cardId) {
+        // Return empty history for now - transaction tracking needs DB schema
+        return ResponseEntity.ok(java.util.List.of());
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")

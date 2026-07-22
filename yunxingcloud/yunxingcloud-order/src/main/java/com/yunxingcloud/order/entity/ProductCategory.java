@@ -1,4 +1,8 @@
 package com.yunxingcloud.order.entity;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*; import java.time.LocalDateTime;
 @Entity @Table(name = "product_category")
 public class ProductCategory {
@@ -8,7 +12,10 @@ public class ProductCategory {
     @Column(name = "sort_order") private Integer sortOrder = 0;
     @Column(length = 200) private String icon;
     @Column(length = 1) private String status = "0";
-    @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;
+    @Column(name = "created_at", updatable = false)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    private LocalDateTime createdAt;
     public ProductCategory() {}
     @PrePersist protected void onCreate() { if (createdAt == null) createdAt = LocalDateTime.now(); }
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }

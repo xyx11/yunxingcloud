@@ -2,6 +2,7 @@ package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.api.client.InventoryClient;
 import com.yunxingcloud.common.annotation.Idempotent;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.repository.*;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -27,11 +27,12 @@ public class OrderService {
     private final CouponRepository couponRepo;
     private final CouponUserRepository couponUserRepo;
     private final InventoryClient inventoryClient;
+    private final I18nService i18n;
 
     public OrderService(OrderHeadRepository orderRepo, OrderLineRepository lineRepo,
                         CartItemRepository cartRepo, ProductRepository productRepo,
                         CouponRepository couponRepo, CouponUserRepository couponUserRepo,
-                        InventoryClient inventoryClient) {
+                        InventoryClient inventoryClient, I18nService i18n) {
         this.orderRepo = orderRepo;
         this.lineRepo = lineRepo;
         this.cartRepo = cartRepo;
@@ -39,32 +40,32 @@ public class OrderService {
         this.couponRepo = couponRepo;
         this.couponUserRepo = couponUserRepo;
         this.inventoryClient = inventoryClient;
+        this.i18n = i18n;
     }
 
-    @Idempotent(prefix = "order", ttl = 10, unit = TimeUnit.SECONDS, message = "请勿重复提交订单")
+    @Idempotent(prefix = "order", ttl = 10, unit = TimeUnit.SECONDS, message = "order.duplicate_submit")
     @Transactional
     public OrderHead submit(String username, Map<String, String> receiver, Long couponId) {
         List<CartItem> cartItems = cartRepo.findByUsernameOrderByCreatedAtDesc(username);
-        if (cartItems.isEmpty()) throw new IllegalStateException("购物车为空");
+        if (cartItems.isEmpty()) throw new IllegalStateException(i18n.msg("cart.empty"));
+
+        // 库存校验 + 乐观扣减
+        List<Product> productsToUpdate = new ArrayList<>();
+        for (CartItem c : cartItems) {
+            Product product = productRepo.findById(c.getProductId()).orElse(null);
+            if (product != null && product.getStock() != null) {
+                if (c.getQuantity() > product.getStock()) {
+                    throw new IllegalStateException(i18n.msg("order.stock_insufficient",
+                        product.getName(), c.getQuantity(), product.getStock()));
+                }
+                product.setStock(product.getStock() - c.getQuantity());
+                productsToUpdate.add(product);
+            }
+        }
+        productRepo.saveAll(productsToUpdate);
 
         long totalAmount = cartItems.stream().mapToLong(c -> c.getPrice() * c.getQuantity()).sum();
-        long couponAmount = 0;
-        Coupon coupon = null;
-
-        // 优惠券核销
-        if (couponId != null) {
-            var userCoupon = couponUserRepo.findById(couponId).orElse(null);
-            if (userCoupon == null || !"0".equals(userCoupon.getStatus()))
-                throw new IllegalStateException("优惠券不可用");
-            coupon = couponRepo.findById(userCoupon.getCouponId()).orElse(null);
-            if (coupon == null) throw new IllegalStateException("优惠券不存在");
-            if (coupon.getThreshold() != null && totalAmount < coupon.getThreshold())
-                throw new IllegalStateException("未达最低消费 " + (coupon.getThreshold() / 100.0) + " 元");
-            couponAmount = Math.min(coupon.getAmount(), totalAmount);
-            userCoupon.setStatus("1"); // 标记已使用
-            couponUserRepo.save(userCoupon);
-        }
-
+        long couponAmount = validateAndApplyCoupon(couponId, totalAmount);
         long actualAmount = totalAmount - couponAmount;
 
         OrderHead order = new OrderHead();
@@ -93,7 +94,7 @@ public class OrderService {
             line.setQuantity(c.getQuantity());
             lineRepo.save(line);
 
-            // 预占库存 (不立即扣减，而是 reserve)
+            // 预占库存
             try {
                 Map<String, Object> invBody = new HashMap<>();
                 invBody.put("productId", c.getProductId());
@@ -103,8 +104,8 @@ public class OrderService {
                 invBody.put("orderId", order.getId());
                 inventoryClient.orderOut(invBody);
             } catch (Exception e) {
-                log.warn("Inventory order-out failed for product {}: {}", c.getProductId(), e.getMessage());
-                // 继续执行，库存扣减失败不阻塞下单
+                log.error("订单 {} 库存预占失败 productId={} qty={}: {}",
+                    order.getOrderNo(), c.getProductId(), c.getQuantity(), e.getMessage());
             }
         }
 
@@ -112,9 +113,47 @@ public class OrderService {
         return order;
     }
 
-    // 兼容无优惠券调用
     public OrderHead submit(String username, Map<String, String> receiver) {
         return submit(username, receiver, null);
+    }
+
+    private long validateAndApplyCoupon(Long couponId, long totalAmount) {
+        if (couponId == null) return 0;
+        var userCoupon = couponUserRepo.findById(couponId).orElse(null);
+        if (userCoupon == null || !"0".equals(userCoupon.getStatus()))
+            throw new IllegalStateException(i18n.msg("coupon.unavailable"));
+        Coupon coupon = couponRepo.findById(userCoupon.getCouponId()).orElse(null);
+        if (coupon == null) throw new IllegalStateException(i18n.msg("coupon.not_found"));
+        if (coupon.getThreshold() != null && totalAmount < coupon.getThreshold())
+            throw new IllegalStateException(i18n.msg("coupon.below_threshold", coupon.getThreshold() / 100.0));
+        long couponAmount = Math.min(coupon.getAmount(), totalAmount);
+        userCoupon.setStatus("1");
+        couponUserRepo.save(userCoupon);
+        return couponAmount;
+    }
+
+    private void rollbackInventory(Long orderId) {
+        for (OrderLine line : lineRepo.findByOrderId(orderId)) {
+            try {
+                Map<String, Object> invBody = new HashMap<>();
+                invBody.put("productId", line.getProductId());
+                invBody.put("warehouseId", 1L);
+                invBody.put("quantity", line.getQuantity());
+                invBody.put("orderId", orderId);
+                inventoryClient.orderBack(invBody);
+            } catch (Exception e) {
+                log.warn("库存回退失败 orderId={} productId={}: {}", orderId, line.getProductId(), e.getMessage());
+            }
+        }
+    }
+
+    private void refundCoupon(Long couponId) {
+        if (couponId != null) {
+            couponUserRepo.findById(couponId).ifPresent(uc -> {
+                uc.setStatus("0");
+                couponUserRepo.save(uc);
+            });
+        }
     }
 
     @Transactional
@@ -124,63 +163,37 @@ public class OrderService {
         if ("3".equals(current.getStatus()) || "4".equals(current.getStatus())) return;
         current.setStatus("4");
         orderRepo.save(current);
-
-        // 回退库存
-        for (OrderLine line : lineRepo.findByOrderId(current.getId())) {
-            try {
-                Map<String, Object> invBody = new HashMap<>();
-                invBody.put("productId", line.getProductId());
-                invBody.put("warehouseId", 1L);
-                invBody.put("quantity", line.getQuantity());
-                invBody.put("orderId", current.getId());
-                inventoryClient.orderBack(invBody);
-            } catch (Exception e) {
-                log.warn("Inventory order-back failed for product {}: {}", line.getProductId(), e.getMessage());
-            }
-        }
-
-        // 退还优惠券
-        if (current.getCouponId() != null) {
-            couponUserRepo.findById(current.getCouponId()).ifPresent(uc -> {
-                uc.setStatus("0");
-                couponUserRepo.save(uc);
-            });
-        }
+        restoreProductStock(current.getId());
+        rollbackInventory(current.getId());
+        refundCoupon(current.getCouponId());
     }
 
     @Transactional
     public void cancelTimeoutOrders() {
         List<OrderHead> expired = orderRepo.findByStatusAndExpireAtBefore("0", LocalDateTime.now());
-        log.info("取消 {} 个超时订单", expired.size());
+        log.info("Cancelling {} expired orders", expired.size());
         for (OrderHead order : expired) {
-            // 重新读取保证状态最新，防止覆盖已支付的订单
             OrderHead current = orderRepo.findById(order.getId()).orElse(null);
             if (current == null || !"0".equals(current.getStatus())) {
-                log.info("订单 {} 状态已变更, 跳过取消", order.getId());
+                log.info("Order {} status changed, skipping cancellation", order.getId());
                 continue;
             }
             current.setStatus("4");
-            current.setRemark("超时未支付自动取消");
+            current.setRemark(i18n.msg("order.timeout_cancel_remark"));
             orderRepo.save(current);
+            restoreProductStock(current.getId());
+            rollbackInventory(current.getId());
+            refundCoupon(current.getCouponId());
+        }
 
-            for (OrderLine line : lineRepo.findByOrderId(current.getId())) {
-                try {
-                    Map<String, Object> invBody = new HashMap<>();
-                    invBody.put("productId", line.getProductId());
-                    invBody.put("warehouseId", 1L);
-                    invBody.put("quantity", line.getQuantity());
-                    invBody.put("orderId", current.getId());
-                    inventoryClient.orderBack(invBody);
-                } catch (Exception e) {
-                    log.warn("Timeout inventory-back failed: {}", e.getMessage());
-                }
-            }
-            if (current.getCouponId() != null) {
-                couponUserRepo.findById(current.getCouponId()).ifPresent(uc -> {
-                    uc.setStatus("0");
-                    couponUserRepo.save(uc);
-                });
-            }
+    }
+
+    private void restoreProductStock(Long orderId) {
+        for (OrderLine line : lineRepo.findByOrderId(orderId)) {
+            productRepo.findById(line.getProductId()).ifPresent(product -> {
+                product.setStock((product.getStock() != null ? product.getStock() : 0) + line.getQuantity());
+                productRepo.save(product);
+            });
         }
     }
 

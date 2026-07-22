@@ -1,0 +1,102 @@
+# NetworkPolicy: restrict pod-to-pod and ingress traffic
+# Requires a CNI that supports NetworkPolicy (Calico, Cilium, etc.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yunxingcloud-deny-all
+  namespace: yunxingcloud
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yunxingcloud-allow-gateway
+  namespace: yunxingcloud
+spec:
+  podSelector:
+    matchLabels:
+      app: yunxingcloud-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app: ingress-nginx
+      ports:
+        - port: 8090
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yunxingcloud-allow-internal
+  namespace: yunxingcloud
+spec:
+  podSelector:
+    matchLabels:
+      app: yunxingcloud-core
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: yunxingcloud-gateway
+      ports:
+        - port: 8080
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: yunxingcloud-usercenter
+      ports:
+        - port: 8080
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: yunxingcloud-order
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yunxingcloud-allow-dns
+  namespace: yunxingcloud
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443
+          protocol: TCP
+        - port: 8848
+          protocol: TCP
+        - port: 3306
+          protocol: TCP
+        - port: 6379
+          protocol: TCP

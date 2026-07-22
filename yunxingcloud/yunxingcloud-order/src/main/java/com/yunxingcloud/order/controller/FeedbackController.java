@@ -41,4 +41,7 @@ public class FeedbackController {
         feedbackService.reply(id, body.get("reply"));
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> stats() { return ResponseEntity.ok(java.util.Map.of("endpoints", 4)); }
 }

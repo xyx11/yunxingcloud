@@ -44,4 +44,13 @@ public class PriceAlertService {
         }
         return triggered;
     }
+
+    public List<PriceAlert> list(String username) {
+        return alertRepo.findByUsernameOrderByCreatedAtDesc(username);
+    }
+
+    @Transactional
+    public void remove(Long id, String username) {
+        alertRepo.deleteByIdAndUsername(id, username);
+    }
 }

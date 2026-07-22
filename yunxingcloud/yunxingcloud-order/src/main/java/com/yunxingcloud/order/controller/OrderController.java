@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import org.slf4j.Logger;
@@ -54,22 +55,36 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> submit(@RequestBody(required = false) Map<String, String> receiver) {
+    public ResponseEntity<?> submit(@RequestBody(required = false) Map<String, Object> body) {
         try {
-            OrderHead order = orderService.submit(user(), receiver);
+            Long couponId = null;
+            if (body != null && body.containsKey("couponId")) {
+                try { couponId = Long.valueOf(body.get("couponId").toString()); } catch (NumberFormatException ignored) {}
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, String> receiver = (Map<String, String>) (Map<?, ?>) body;
+            OrderHead order = couponId != null
+                    ? orderService.submit(user(), receiver, couponId)
+                    : orderService.submit(user(), receiver);
             return ResponseEntity.ok(order);
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
+    @Transactional
     @PostMapping("/{id}/pay")
     public ResponseEntity<?> pay(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
-        return orderRepo.findById(id).map(order -> {
+        return orderRepo.findByIdForUpdate(id).map(order -> {
             if (!order.getUsername().equals(user()) && !isAdmin())
                 return ResponseEntity.status(403).build();
             if (!"0".equals(order.getStatus()))
                 return ResponseEntity.badRequest().body(Map.of("message", "当前状态不可支付"));
+            // Idempotency: if already has a paymentOrderId, return it to prevent duplicate charges
+            if (order.getPaymentOrderId() != null) {
+                log.warn("Order {} already has paymentOrderId {}, skipping duplicate pay", order.getOrderNo(), order.getPaymentOrderId());
+                return ResponseEntity.ok(Map.of("id", order.getPaymentOrderId(), "duplicate", true));
+            }
             String channel = body != null && body.containsKey("channel") ? body.get("channel").toString() : "wechat";
             Map<String, Object> payOrder = Map.of(
                     "title", "订单" + order.getOrderNo(),
@@ -79,7 +94,7 @@ public class OrderController {
                 Map<String, Object> result = paymentClient.createOrder(payOrder);
                 if (result != null && result.get("id") != null) {
                     order.setPaymentOrderId(Long.valueOf(result.get("id").toString()));
-                    orderRepo.save(order);
+                    orderRepo.saveAndFlush(order);
                     paymentClient.pay(Long.valueOf(result.get("id").toString()), null);
                     order.setStatus("1");
                     orderRepo.save(order);
@@ -134,5 +149,49 @@ public class OrderController {
             orderService.cancelOrder(order);
             return ResponseEntity.ok(Map.of("success", true));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> stats() {
+        var orders = orderRepo.findByUsernameOrderByCreatedAtDesc(user());
+        long pending = orders.stream().filter(o -> "0".equals(o.getStatus())).count();
+        long paid = orders.stream().filter(o -> "1".equals(o.getStatus())).count();
+        long shipped = orders.stream().filter(o -> "2".equals(o.getStatus())).count();
+        long done = orders.stream().filter(o -> "3".equals(o.getStatus())).count();
+        long total = orders.size();
+        long totalSpent = orders.stream().filter(o -> "1".equals(o.getStatus()) || "2".equals(o.getStatus()) || "3".equals(o.getStatus()))
+            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        return ResponseEntity.ok(Map.of(
+            "pending", pending, "paid", paid, "shipped", shipped, "done", done,
+            "total", total, "totalSpent", totalSpent
+        ));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<?> export() {
+        var orders = isAdmin() ? orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                : orderRepo.findByUsernameOrderByCreatedAtDesc(user());
+        StringBuilder sb = new StringBuilder();
+        sb.append("订单号,用户,金额(元),状态,创建时间\n");
+        for (var o : orders) {
+            sb.append(String.format("%s,%s,%.2f,%s,%s\n",
+                o.getOrderNo(), o.getUsername(),
+                (o.getTotalAmount() != null ? o.getTotalAmount() : 0) / 100.0,
+                switch (o.getStatus()) {
+                    case "0" -> "待支付"; case "1" -> "已支付"; case "2" -> "已发货";
+                    case "3" -> "已完成"; case "4" -> "已取消"; default -> o.getStatus();
+                },
+                o.getCreatedAt() != null ? o.getCreatedAt().toString().substring(0, 16) : ""));
+        }
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=orders.csv")
+                .body(sb.toString());
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<?> recent() {
+        var orders = orderRepo.findByUsernameOrderByCreatedAtDesc(user());
+        return ResponseEntity.ok(orders.stream().limit(5).toList());
     }
 }

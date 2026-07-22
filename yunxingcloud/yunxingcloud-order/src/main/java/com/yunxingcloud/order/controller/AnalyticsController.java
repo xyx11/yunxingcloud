@@ -25,4 +25,7 @@ public class AnalyticsController {
     public ResponseEntity<?> topProducts(@RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(service.topProducts(limit));
     }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> dashboard() { return ResponseEntity.ok(service.dashboard()); }
 }

@@ -59,4 +59,7 @@ public class InvoiceController {
         log.info("Admin issued invoice {}, invoiceNo={}", id, body.get("invoiceNo"));
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("endpoints", 4)); }
 }

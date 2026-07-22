@@ -1,0 +1,28 @@
+# Alibaba Cloud 云盘 StorageClass
+# 详细文档: https://help.aliyun.com/document_detail/134767.html
+---
+# ESSD 云盘 (高性能 SSD, 推荐生产使用)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: alicloud-disk-ssd
+provisioner: diskplugin.csi.alibabacloud.com
+parameters:
+  type: cloud_essd
+  performanceLevel: PL1
+  encrypted: "true"
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+---
+# NAS 共享存储 (用于 uploads 多 Pod 共享)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: alicloud-nas
+provisioner: nasplugin.csi.alibabacloud.com
+parameters:
+  server: ${NAS_SERVER}      # 替换为 NAS 挂载点地址
+  path: /yunxingcloud/uploads
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

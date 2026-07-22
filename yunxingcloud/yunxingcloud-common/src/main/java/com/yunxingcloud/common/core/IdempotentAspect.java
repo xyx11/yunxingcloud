@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,6 +24,9 @@ public class IdempotentAspect {
 
     private static final Logger log = LoggerFactory.getLogger(IdempotentAspect.class);
     private final StringRedisTemplate redis;
+
+    @Autowired(required = false)
+    private I18nService i18n;
 
     public IdempotentAspect(StringRedisTemplate redis) {
         this.redis = redis;
@@ -45,7 +49,11 @@ public class IdempotentAspect {
             }
         } else {
             log.warn("幂等拦截: {}", key);
-            throw new IllegalStateException(idem.message());
+            String msg = idem.message();
+            if (i18n != null) {
+                try { msg = i18n.msg(msg); } catch (Exception ignored) {}
+            }
+            throw new IllegalStateException(msg);
         }
     }
 

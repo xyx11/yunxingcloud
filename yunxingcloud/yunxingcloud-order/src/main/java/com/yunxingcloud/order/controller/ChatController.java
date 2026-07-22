@@ -34,4 +34,7 @@ public class ChatController {
     public ResponseEntity<?> mySessions() {
         return ResponseEntity.ok(chatService.sessions(user()));
     }
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() { return ResponseEntity.ok(java.util.Map.of("status", "ok")); }
 }

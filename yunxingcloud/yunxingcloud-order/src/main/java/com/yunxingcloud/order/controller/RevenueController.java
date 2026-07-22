@@ -20,4 +20,14 @@ public class RevenueController {
 
     @GetMapping("/daily")
     public ResponseEntity<?> daily() { return ResponseEntity.ok(service.dailyRevenue()); }
+
+    @GetMapping("/monthly")
+    public ResponseEntity<?> monthly() {
+        var overview = service.overview();
+        var daily = service.dailyRevenue();
+        return ResponseEntity.ok(java.util.Map.of("overview", overview, "daily", daily));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<?> summary() { return ResponseEntity.ok(service.overview()); }
 }

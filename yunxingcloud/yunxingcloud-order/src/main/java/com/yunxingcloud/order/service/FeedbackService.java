@@ -26,4 +26,15 @@ public class FeedbackService {
     public void reply(Long id, String reply) {
         repo.findById(id).ifPresent(f -> { f.setReply(reply); f.setStatus("1"); repo.save(f); });
     }
+
+    public List<Feedback> listByStatus(String status) {
+        return repo.findByStatusOrderByCreatedAtDesc(status);
+    }
+
+    @Transactional
+    public void delete(Long id) { repo.deleteById(id); }
+
+    public long count() { return repo.count(); }
+
+    public long countByStatus(String status) { return repo.findByStatusOrderByCreatedAtDesc(status).size(); }
 }

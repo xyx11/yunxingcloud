@@ -21,7 +21,8 @@ const productOpts = computed(() => products.value.map((p)=>({label:p.name as str
 const columns: DataTableColumns<Record<string, unknown>> = [
   { title:'ID',key:'id',width:50 }, { title:'商品',key:'productName',width:120 }, { title:'SKU名称',key:'name',width:120 },
   { title:'价格',key:'price',width:80,render:(r)=>formatPrice(((r.price as number)||0)/100, 2) },
-  { title:'库存',key:'stock',width:60 }, { title:'编码',key:'skuCode',width:100 },
+  { title:'库存',key:'stock',width:70,render(r){ const s=(r.stock as number)||0; return h(NTag,{size:'small',type:s<=0?'error':s<=10?'warning':'success'},{default:()=>String(s)}) } },
+  { title:'编码',key:'skuCode',width:100 },
   { title:'操作',key:'act',width:120,render(r){return h(NSpace,{size:'small'},{default:()=>[h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id as number;form.value={productId:r.productId as number,name:r.name as string,price:(r.price as number)/100,stock:r.stock as number,skuCode:(r.skuCode as string)||'',status:r.status as string};showModal.value=true}},{default:()=>'编辑'}),h(NPopconfirm,{onPositiveClick:()=>del(r.id as number)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})]})}}
 ]
 

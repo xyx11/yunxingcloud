@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class JwtConfig {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024}")
     private String secret;
 
     @Bean

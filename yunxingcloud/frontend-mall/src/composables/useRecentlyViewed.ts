@@ -36,10 +36,15 @@ export function useRecentlyViewed() {
     save()
   }
 
+  function remove(id: number) {
+    items.value = items.value.filter(p => p.id !== id)
+    save()
+  }
+
   function clear() {
     items.value = []
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  return { items, add, clear }
+  return { items, add, remove, clear }
 }

@@ -5,6 +5,7 @@ import com.yunxingcloud.payment.entity.PaymentOrder;
 import com.yunxingcloud.payment.entity.PaymentRecord;
 import com.yunxingcloud.payment.repository.PaymentOrderRepository;
 import com.yunxingcloud.payment.repository.PaymentRecordRepository;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.payment.service.gateway.PaymentGateway;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +24,16 @@ public class PaymentService {
     private final PaymentOrderRepository orderRepo;
     private final PaymentRecordRepository recordRepo;
     private final Map<String, PaymentGateway> gateways;
+    private final I18nService i18n;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public PaymentService(PaymentOrderRepository orderRepo,
                           PaymentRecordRepository recordRepo,
-                          List<PaymentGateway> gatewayList) {
+                          List<PaymentGateway> gatewayList,
+                          I18nService i18n) {
         this.orderRepo = orderRepo;
         this.recordRepo = recordRepo;
+        this.i18n = i18n;
         this.gateways = new HashMap<>();
         gatewayList.forEach(g -> gateways.put(g.getChannel(), g));
     }
@@ -48,7 +52,7 @@ public class PaymentService {
     @Transactional
     public Map<String, Object> pay(Long orderId, String notifyBaseUrl) {
         PaymentOrder order = orderRepo.findById(orderId).orElseThrow();
-        if (!"0".equals(order.getStatus())) throw new IllegalStateException("订单状态不允许支付: " + order.getStatus());
+        if (!"0".equals(order.getStatus())) throw new IllegalStateException(i18n.msg("payment.status_invalid"));
         PaymentGateway gw = gateways.get(order.getChannel());
         if (gw == null) throw new IllegalArgumentException("Unsupported channel: " + order.getChannel());
         order.setStatus("1");
@@ -111,9 +115,9 @@ public class PaymentService {
     @Transactional
     public Map<String, Object> refund(Long orderId, Long refundAmount, String reason) {
         PaymentOrder order = orderRepo.findById(orderId).orElseThrow();
-        if (!"2".equals(order.getStatus())) throw new IllegalStateException("只有已支付订单可以退款");
+        if (!"2".equals(order.getStatus())) throw new IllegalStateException(i18n.msg("payment.refund_only_paid"));
         if (refundAmount > order.getAmount() - order.getRefundAmount())
-            throw new IllegalArgumentException("退款金额超过可退金额");
+            throw new IllegalArgumentException(i18n.msg("payment.refund_exceeds"));
 
         PaymentGateway gw = gateways.get(order.getChannel());
         var req = new PaymentGateway.RefundRequest(order.getTradeNo(), order.getAmount(), refundAmount, reason);

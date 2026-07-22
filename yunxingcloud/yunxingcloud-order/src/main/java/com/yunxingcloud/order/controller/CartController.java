@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "购物车", description = "购物车管理")
@@ -58,5 +59,26 @@ public class CartController {
         cartService.clear(user());
         log.info("User {} cleared cart", user());
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateQuantity(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        try {
+            int quantity = Integer.parseInt(body.getOrDefault("quantity", "1").toString());
+            var result = cartService.updateQuantity(id, quantity, user());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            log.warn("User {} failed to update cart {}: {}", user(), id, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/batch-remove")
+    public ResponseEntity<?> batchRemove(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        var ids = (List<Integer>) body.getOrDefault("ids", List.of());
+        for (var id : ids) cartService.remove(Long.valueOf(id), user());
+        log.info("User {} batch-removed {} cart items", user(), ids.size());
+        return ResponseEntity.ok(Map.of("success", true, "removed", ids.size()));
     }
 }

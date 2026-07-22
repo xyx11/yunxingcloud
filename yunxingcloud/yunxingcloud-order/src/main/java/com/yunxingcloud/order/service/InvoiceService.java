@@ -49,4 +49,8 @@ public class InvoiceService {
         inv.setInvoiceUrl(invoiceUrl);
         return invoiceRepo.save(inv);
     }
+
+    public long count() { return invoiceRepo.count(); }
+
+    public java.util.List<Invoice> listByUser(String username) { return invoiceRepo.findByUsernameOrderByCreatedAtDesc(username); }
 }

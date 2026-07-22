@@ -4,9 +4,26 @@ metadata:
   name: yunxingcloud-config
   namespace: yunxingcloud
 data:
-  NACOS_SERVER: "nacos-service:8848"
-  REDIS_HOST: "redis-service"
+  NACOS_SERVER: "nacos:8848"
+  REDIS_HOST: "redis"
   REDIS_PORT: "6379"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
   DB_USERNAME: "root"
-  ES_URIS: "http://elasticsearch-service:9200"
+  DB_URL: "jdbc:mysql://mysql:3306/yunxingcloud_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+  ES_URIS: "http://elasticsearch:9200"
   OTEL_ENABLED: "false"
+  # 生产日志
+  LOGGING_LEVEL_ROOT: "WARN"
+  LOGGING_LEVEL_COM_YUNXINGCLOUD: "INFO"
+  # Nacos 配置 (发现注册保留，配置导入禁用)
+  SPRING_CLOUD_NACOS_CONFIG_ENABLED: "false"
+  SPRING_CLOUD_NACOS_CONFIG_IMPORT_CHECK_ENABLED: "false"
+  SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "true"
+  # 数据库连接池
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "20"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
+  # JPA (Flyway未配置时用ddl-auto=update自动建表)
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_JPA_OPEN_IN_VIEW: "false"

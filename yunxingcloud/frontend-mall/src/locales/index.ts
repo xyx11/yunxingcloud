@@ -6,11 +6,11 @@ function safeGet(k: string, d: string) { try { return localStorage.getItem(k) ||
 function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catch {} }
 
 const messages: Record<string, Record<string, unknown>> = { zh, en }
-const locale = ref(safeGet('locale', 'zh'))
+const currentLocale = ref(safeGet('locale', 'zh'))
 
 function t(key: string, fallbackOrParams?: string | Record<string, string | number>): string {
   const keys = key.split('.')
-  let val: unknown = messages[locale.value]
+  let val: unknown = messages[currentLocale.value]
   for (const k of keys) {
     val = (val as Record<string, unknown> | undefined)?.[k]
     if (val === undefined) {
@@ -25,10 +25,13 @@ function t(key: string, fallbackOrParams?: string | Record<string, string | numb
 }
 
 function setLocale(lang: string) {
-  locale.value = lang
+  currentLocale.value = lang
   safeSet('locale', lang)
+  document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN'
 }
 
+export { messages, currentLocale, t }
+
 export function useI18n() {
-  return { t, locale, setLocale }
+  return { t, locale: currentLocale, setLocale }
 }

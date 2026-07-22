@@ -55,4 +55,26 @@ public class CampaignService {
         int updated = repo.incrementUsedCount(campaignId);
         if (updated == 0) throw new IllegalStateException("活动库存不足或不存在");
     }
+
+    public java.util.List<Campaign> getActiveCampaigns() {
+        LocalDateTime now = LocalDateTime.now();
+        return repo.findByStatusAndStartTimeBeforeAndEndTimeAfter("1", now, now);
+    }
+
+    public java.util.Map<String, Object> getCampaignProducts(Long campaignId) {
+        Campaign c = repo.findById(campaignId).orElse(null);
+        if (c == null) return java.util.Map.of();
+        LocalDateTime now = LocalDateTime.now();
+        boolean active = "1".equals(c.getStatus()) && now.isAfter(c.getStartTime()) && now.isBefore(c.getEndTime());
+        long remaining = c.getEndTime() != null
+            ? java.time.Duration.between(now, c.getEndTime()).getSeconds()
+            : 0;
+        return java.util.Map.of(
+            "campaign", c,
+            "active", active,
+            "remainingSeconds", Math.max(0, remaining),
+            "threshold", c.getThreshold() != null ? c.getThreshold() : 0,
+            "discount", c.getDiscount() != null ? c.getDiscount() : 0
+        );
+    }
 }

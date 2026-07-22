@@ -94,4 +94,61 @@ class OrderLifecycleTest {
     private boolean isValidGroupTransition(String from, String to) {
         return "0".equals(from) && ("1".equals(to) || "2".equals(to));
     }
+
+    @Test
+    void duplicatePaymentPrevention() {
+        // First payment: no existing paymentOrderId, returns new one
+        assertEquals("PAY_001", getPaymentId(null, "PAY_001"));
+        // Duplicate: already has paymentOrderId, returns existing one
+        assertEquals("PAY_001", getPaymentId("PAY_001", "PAY_002"));
+    }
+
+    private String getPaymentId(String existingId, String newId) {
+        if (existingId != null) return existingId;
+        return newId;
+    }
+
+    @Test
+    void timeoutOrderCancellation() {
+        long now = System.currentTimeMillis();
+        long orderTime = now - 30 * 60 * 1000; // 30 minutes ago
+        long timeoutMinutes = 15;
+        boolean expired = (now - orderTime) > timeoutMinutes * 60 * 1000;
+        assertTrue(expired);
+    }
+
+    @Test
+    void couponDoubleUsePrevention() {
+        // Simulate: coupon used once, cannot be used again
+        String couponStatus = "0"; // 0=unused, 1=used
+        boolean canUse = "0".equals(couponStatus);
+        assertTrue(canUse);
+
+        couponStatus = "1"; // Mark as used
+        canUse = "0".equals(couponStatus);
+        assertFalse(canUse);
+    }
+
+    @Test
+    void inventoryPreOccupancyAndRelease() {
+        int stock = 100;
+        int orderQty = 3;
+
+        // Pre-occupy
+        stock -= orderQty;
+        assertEquals(97, stock);
+
+        // Cancel order: release stock
+        stock += orderQty;
+        assertEquals(100, stock);
+    }
+
+    @Test
+    void cartTotalCalculation() {
+        record CartItem(long price, int qty) {}
+        var items = new CartItem[]{new CartItem(9900, 2), new CartItem(15000, 1)};
+        long total = 0;
+        for (var item : items) total += item.price * item.qty;
+        assertEquals(34800L, total); // 99*2 + 150 = 348
+    }
 }

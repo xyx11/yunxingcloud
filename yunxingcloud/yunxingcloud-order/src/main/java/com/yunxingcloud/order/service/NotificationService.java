@@ -38,4 +38,21 @@ public class NotificationService {
 
     @Transactional
     public Notification send(Notification notif) { return repo.save(notif); }
+
+    public List<Notification> getByType(String username, String type) {
+        return repo.findByUsernameOrUsernameOrderByCreatedAtDesc(username, "ALL").stream()
+            .filter(n -> type.equals(n.getType())).toList();
+    }
+
+    @Transactional
+    public void delete(Long id) { repo.deleteById(id); }
+
+    /** 批量清理已读通知 */
+    @Transactional
+    public int cleanRead(String username) {
+        var read = repo.findByUsernameOrUsernameOrderByCreatedAtDesc(username, "ALL").stream()
+            .filter(n -> n.getIsRead()).toList();
+        read.forEach(n -> repo.delete(n));
+        return read.size();
+    }
 }

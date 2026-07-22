@@ -2,6 +2,7 @@
 import { addToCart } from '@/api/cart'
 import { useCartFly } from '@/composables/useCartFly'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/locales'
 import { formatPrice, formatCount } from '@/utils/format'
 import type { Product } from '@/types'
 import LazyImage from '@/components/LazyImage.vue'
@@ -9,6 +10,7 @@ import JdEmpty from '@/components/JdEmpty.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 
 const toast = useToast()
+const { t } = useI18n()
 const { flyToCart } = useCartFly()
 
 withDefaults(defineProps<{
@@ -35,10 +37,10 @@ async function quickAdd(e: Event, p: Product) {
   e.stopPropagation()
   try {
     await addToCart(p.id, 1)
-    toast.success('已加入购物车')
+    toast.success(t('toast.addedToCart'))
     flyToCart(e as MouseEvent)
     emit('add-cart', p, e)
-  } catch { toast.error('添加失败') }
+  } catch { toast.error(t('toast.addCartFail')) }
 }
 </script>
 
@@ -46,25 +48,25 @@ async function quickAdd(e: Event, p: Product) {
   <section class="section">
     <div v-if="title" class="section-header">
       <span class="section-title">{{ title }}</span>
-      <button class="section-more" @click="emit('view-all')">查看全部 &gt;</button>
+      <button class="section-more" @click="emit('view-all')">{{ t('product.viewAll') }}</button>
     </div>
 
     <SkeletonBox v-if="loading && !products.length" variant="card" :columns="columns" :count="columns" height="360px" />
 
-    <JdEmpty v-else-if="!products.length" icon="🛍️" title="暂无商品" />
+    <JdEmpty v-else-if="!products.length" icon="🛍️" :title="t('product.noProducts')" />
 
     <div v-else class="product-grid" :style="{ '--cols': columns }">
       <div v-for="p in products" :key="p.id" class="product-card" role="button" tabindex="0" @click="emit('product-click', p.id)" @keydown.enter.prevent="emit('product-click', p.id)" @keydown.space.prevent="emit('product-click', p.id)">
         <div class="product-img-wrap">
           <LazyImage :src="productImage(p)" :alt="p.name" height="200px" />
-          <span v-if="p.isNew" class="tag-new">新品</span>
+          <span v-if="p.isNew" class="tag-new">{{ t('product.newBadge') }}</span>
         </div>
         <div class="product-info">
           <h4 class="product-name">{{ p.name }}</h4>
           <div class="product-bottom">
             <div>
               <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>
-              <span v-if="p.sales" class="product-sales">🔥 {{ formatCount(p.sales) }}人已购</span>
+              <span v-if="p.sales" class="product-sales">🔥 {{ formatCount(p.sales) }}{{ t('product.soldSuffix') }}</span>
             </div>
             <button class="quick-add-btn" @click="(e: Event) => quickAdd(e, p)">+</button>
           </div>
@@ -83,7 +85,7 @@ async function quickAdd(e: Event, p: Product) {
 .section-more { font-size: var(--font-base); color: var(--text-tertiary); cursor: pointer; }
 .section-more:hover { color: var(--jd-red); }
 
-.product-grid { display: grid; gap: var(--space-lg); grid-template-columns: repeat(var(--cols, 4), 1fr); }
+.product-grid { display: grid; gap: var(--space-lg); grid-template-columns: repeat(var(--grid-cols, 4), 1fr); }
 
 .product-card {
   background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden;
@@ -116,7 +118,7 @@ async function quickAdd(e: Event, p: Product) {
 .quick-add-btn:hover { background: var(--jd-red); color: #fff; }
 
 @media (max-width: 768px) {
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
+  .product-grid { --grid-cols: 2; gap: var(--space-sm); }
   .product-price { font-size: var(--font-lg); }
 }
 </style>

@@ -1,0 +1,33 @@
+# PodDisruptionBudget: ensure HA during voluntary disruptions (node drains, upgrades)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yunxingcloud-gateway-pdb
+  namespace: yunxingcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yunxingcloud-core-pdb
+  namespace: yunxingcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-core
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yunxingcloud-usercenter-pdb
+  namespace: yunxingcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: yunxingcloud-usercenter

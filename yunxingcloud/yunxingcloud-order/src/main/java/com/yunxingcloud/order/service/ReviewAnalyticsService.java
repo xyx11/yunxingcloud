@@ -39,6 +39,18 @@ public class ReviewAnalyticsService {
         );
     }
 
+    /** 我的评价列表 */
+    public Map<String, Object> myReviews(String username, int page, int size) {
+        var pageResult = repo.findByUsernameOrderByCreatedAtDesc(username,
+                org.springframework.data.domain.PageRequest.of(page, size));
+        return Map.of(
+                "list", pageResult.getContent(),
+                "total", pageResult.getTotalElements(),
+                "page", page,
+                "size", size
+        );
+    }
+
     /** 全站评价统计 */
     public Map<String, Object> siteStats() {
         List<ProductReview> all = repo.findAll();

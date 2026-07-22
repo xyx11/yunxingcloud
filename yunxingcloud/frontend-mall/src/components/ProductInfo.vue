@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
 import type { Product, Sku } from '@/types'
@@ -29,14 +29,20 @@ const displayPrice = computed(() =>
 const displayStock = computed(() =>
   props.selectedSku ? props.selectedSku.stock : props.product.stock || 0
 )
+
+const priceFlash = ref(false)
+watch(displayPrice, () => {
+  priceFlash.value = true
+  setTimeout(() => priceFlash.value = false, 350)
+})
 </script>
 
 <template>
   <h1 class="pdp-name">
     {{ product.name }}
-    <span class="jd-tag">自营</span>
-    <span v-if="product.isNew" class="badge-new">新品</span>
-    <span v-if="product.isHot" class="badge-hot">热卖</span>
+    <span class="jd-tag">{{ t('product.selfOperated') }}</span>
+    <span v-if="product.isNew" class="badge-new">{{ t('product.newBadge') }}</span>
+    <span v-if="product.isHot" class="badge-hot">{{ t('product.hotBadge') }}</span>
   </h1>
   <div v-if="product.tags?.length" class="pdp-tags">
     <span v-for="t in (typeof product.tags === 'string' ? product.tags.split(',').filter(Boolean) : product.tags)" :key="t" class="pdp-tag">{{ t }}</span>
@@ -49,23 +55,23 @@ const displayStock = computed(() =>
       :rating="product.rating || 0"
       :count="reviewsCount || 0"
     />
-    <span v-else class="no-rating">暂无评分</span>
+    <span v-else class="no-rating">{{ t('product.noRating') }}</span>
   </div>
 
   <!-- Price Box -->
   <div class="price-box">
     <div class="price-row">
       <span class="price-label">{{ t('product.price') }}</span>
-      <span class="price-value">{{ formatPrice(displayPrice / 100, 2) }}</span>
+      <span class="price-value" :class="{ 'price-flash': priceFlash }">{{ formatPrice(displayPrice / 100, 2) }}</span>
       <span v-if="product.originalPrice && product.originalPrice > displayPrice" class="price-original">{{ formatPrice(product.originalPrice / 100) }}</span>
       <span
         v-if="displayStock > 0 && displayStock <= 10"
         class="stock-warn"
-      >仅剩 {{ displayStock }} 件</span>
+      >{{ t('cart.stockLeft', { n: displayStock }) }}</span>
       <span
         v-if="displayStock === 0"
         class="stock-out"
-      >暂时缺货</span>
+      >{{ t('product.tempOutOfStock') }}</span>
       <button
         class="alert-btn"
         :class="{ set: alertSet }"
@@ -74,7 +80,7 @@ const displayStock = computed(() =>
     </div>
     <div class="meta-row">
       <span>{{ t('product.salesCount') }} <b class="text-red">{{ product.sales || 0 }}</b></span>
-      <span>👁 <b class="text-blue">{{ viewerCount }}</b> 人正在看</span>
+      <span>👁 <b class="text-blue">{{ viewerCount }}</b> {{ t('product.firstViewed') }}</span>
       <span>{{ t('product.stock') }} <b>{{ displayStock }}</b></span>
     </div>
   </div>
@@ -133,6 +139,12 @@ const displayStock = computed(() =>
   color: var(--jd-red);
   font-size: 32px;
   font-weight: 700;
+  transition: color .2s;
+}
+.price-flash { animation: pricePulse .35s ease; }
+@keyframes pricePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); color: #d4000f; }
 }
 .stock-warn {
   padding: 2px 6px;

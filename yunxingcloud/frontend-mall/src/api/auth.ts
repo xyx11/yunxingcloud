@@ -6,4 +6,8 @@ export interface RegisterParams { username: string; password: string; email?: st
 export const login = (params: LoginParams) => request.post('/login', params)
 export const register = (params: RegisterParams) => request.post('/register', params)
 export const changePassword = (oldPassword: string, newPassword: string) =>
-  request.put('/password', { oldPassword, newPassword })
+  request.post('/password/change', { oldPassword, newPassword })
+export const forgotPassword = (email: string) =>
+  request.post('/password/forgot', { email })
+export const resetPassword = (token: string, newPassword: string) =>
+  request.post('/password/reset', { token, newPassword })

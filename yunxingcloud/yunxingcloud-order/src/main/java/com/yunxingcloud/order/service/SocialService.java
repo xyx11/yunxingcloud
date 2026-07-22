@@ -45,4 +45,10 @@ public class SocialService {
     public void click(Long id) {
         shareRepo.findById(id).ifPresent(s -> { s.setClickCount(s.getClickCount() + 1); shareRepo.save(s); });
     }
+
+    public long wishlistCount(String username) { return wishRepo.findByUsername(username).size(); }
+
+    public String shareLink(Long productId, String channel) {
+        return "https://yxcloud.com/product/" + productId + "?ref=" + (channel != null ? channel : "copy");
+    }
 }

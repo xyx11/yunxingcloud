@@ -1,21 +1,26 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/locales'
 
-defineProps<{ cartCount: number }>()
+const props = defineProps<{ cartCount: number; hasUnreadNotif?: boolean }>()
+const badgePulse = ref(false)
+watch(() => props.cartCount, (n, o) => {
+  if (n > (o || 0)) { badgePulse.value = true; setTimeout(() => badgePulse.value = false, 400) }
+})
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 
-const tabItems: { path: string; label: string; icon: string }[] = [
-  { path: '/', label: '', icon: '🏠' },
-  { path: '/products', label: '', icon: '📂' },
-  { path: '/live', label: '', icon: '📺' },
-  { path: '/brands', label: '', icon: '🏷️' },
-  { path: '/notifications', label: '', icon: '🔔' },
-  { path: '/cart', label: '', icon: '🛒' },
-  { path: '/profile', label: '', icon: '👤' },
+const tabItems: { path: string; label: string; icon: string; activeIcon: string }[] = [
+  { path: '/', label: '', icon: '🏠', activeIcon: '🏠' },
+  { path: '/products', label: '', icon: '📂', activeIcon: '📂' },
+  { path: '/live', label: '', icon: '📺', activeIcon: '📺' },
+  { path: '/brands', label: '', icon: '🏷️', activeIcon: '🏷️' },
+  { path: '/notifications', label: '', icon: '🔔', activeIcon: '🔔' },
+  { path: '/cart', label: '', icon: '🛒', activeIcon: '🛒' },
+  { path: '/profile', label: '', icon: '👤', activeIcon: '👤' },
 ]
 
 const i18nKey: Record<string, string> = {
@@ -30,24 +35,29 @@ const i18nKey: Record<string, string> = {
 
 function goTo(path: string) { router.push(path) }
 function getLabel(path: string) { return t(i18nKey[path] as any) || '' }
+function isActive(path: string): boolean {
+  if (path === '/') return route.path === '/'
+  return route.path.startsWith(path)
+}
 </script>
 
 <template>
-  <nav class="mobile-nav" role="navigation" aria-label="底部导航">
+  <nav class="mobile-nav" role="navigation" :aria-label="t('nav.mobileNav')">
     <div class="mobile-nav-inner">
       <div
         v-for="t in tabItems" :key="t.path"
         class="nav-item"
-        :class="{ active: route.path === t.path }"
+        :class="{ active: isActive(t.path) }"
         @click="goTo(t.path)"
         @touchstart.passive=""
         @touchend.passive=""
       >
-        <span class="nav-icon" :class="{ 'nav-icon--active': route.path === t.path }">{{ t.icon }}</span>
-        <span v-if="t.path==='/cart' && cartCount > 0" class="nav-badge">
+        <span class="nav-icon" :class="{ 'nav-icon--active': isActive(t.path) }">{{ t.icon }}</span>
+        <span v-if="t.path==='/cart' && cartCount > 0" class="nav-badge" :class="{ 'nav-badge--pulse': badgePulse }">
           {{ cartCount > 99 ? '99+' : cartCount }}
         </span>
-        <span class="nav-label" :class="{ 'nav-label--active': route.path === t.path }">{{ getLabel(t.path) }}</span>
+        <span v-if="t.path==='/notifications' && hasUnreadNotif" class="nav-dot" />
+        <span class="nav-label" :class="{ 'nav-label--active': isActive(t.path) }">{{ getLabel(t.path) }}</span>
       </div>
     </div>
   </nav>
@@ -108,12 +118,18 @@ function getLabel(path: string) { return t(i18nKey[path] as any) || '' }
   line-height: 17px;
   font-weight: 700;
 }
+.nav-badge--pulse { animation: badgePulse .4s ease; }
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+}
 .nav-label {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
 }
 .nav-label--active { color: var(--jd-red); }
+.nav-dot { position: absolute; top: 2px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--jd-red); }
 .active::after {
   content: '';
   position: absolute;
@@ -122,7 +138,10 @@ function getLabel(path: string) { return t(i18nKey[path] as any) || '' }
   height: 2px;
   background: var(--jd-red);
   border-radius: 1px;
+  transition: transform .2s ease, opacity .2s ease;
 }
+.nav-item:not(.active)::after { opacity: 0; transform: scaleX(0); }
+.nav-item.active::after { opacity: 1; transform: scaleX(1); }
 
 @media (max-width: 768px) {
   .mobile-nav { display: block !important; }

@@ -16,15 +16,15 @@ const form = ref<GroupBuy>({ productId: 0, minMembers: 2, groupPrice: 0 })
 
 const columns: DataTableColumns<GroupBuy> = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '商品ID', key: 'productId', width: 80 },
-  { title: '拼团价(分)', key: 'groupPrice', width: 100 },
+  { title: t('common.productId'), key: 'productId', width: 80 },
+  { title: t('common.groupPrice'), key: 'groupPrice', width: 100 },
   { title: t('groupBuy.minMembers'), key: 'minMembers', width: 80 },
-  { title: '状态', key: 'status', width: 80, render(r: GroupBuy) { return h(NTag, { size:'small', type: r.status==='0'?'success':'default' }, { default: () => r.status==='0'?'进行中':'已结束' }) } },
-  { title: '开始', key: 'startTime', width: 140, render(r: GroupBuy){ return r.startTime?.substring(0,16) } },
-  { title: '结束', key: 'endTime', width: 140, render(r: GroupBuy){ return r.endTime?.substring(0,16) } },
+  { title: t('common.status'), key: 'status', width: 80, render(r: GroupBuy) { return h(NTag, { size:'small', type: r.status==='0'?'success':'default' }, { default: () => r.status==='0' ? t('common.inProgress') : t('common.ended2') }) } },
+  { title: t('common.startTime'), key: 'startTime', width: 140, render(r: GroupBuy){ return r.startTime?.substring(0,16) } },
+  { title: t('common.endTime'), key: 'endTime', width: 140, render(r: GroupBuy){ return r.endTime?.substring(0,16) } },
   { title: t('common.actions'), key:'act', width:160, render(r: GroupBuy){ return h(NSpace,{size:'small'},{default:()=>[
-    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>'编辑'}),
-    h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>'删除'}),default:()=>t('common.confirmDelete')})
+    h(NButton,{size:'tiny',onClick:()=>{editingId.value=r.id;form.value={...r};showModal.value=true}},{default:()=>t('common.edit')}),
+    h(NPopconfirm,{onPositiveClick:()=>del(r.id!)},{trigger:()=>h(NButton,{size:'tiny',type:'error'},{default:()=>t('common.delete')}),default:()=>t('common.confirmDelete')})
   ]})}}
 ]
 
@@ -35,22 +35,22 @@ async function save() {
   showModal.value=false; editingId.value=null; notify.success(t('common.saveSuccess')); load()
 }
 async function del(id:number) { try{await request.delete(`/api/groupbuys/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.deleteFailed'))} }
-async function expire() { await expireGroupBuys(); notify.success('已处理超时团'); load() }
+async function expire() { await expireGroupBuys(); notify.success(t('groupBuy.expired')); load() }
 function add() { editingId.value=null; form.value={productId:0,minMembers:2,groupPrice:0}; showModal.value=true }
 onMounted(load)
 </script>
 <template>
-  <n-card title="拼团管理">
+  <n-card :title="t('nav.groupbuy')">
     <n-space vertical>
-      <n-space><n-button type="primary" @click="add">新增拼团</n-button><n-button @click="expire">处理超时团</n-button></n-space>
+      <n-space><n-button type="primary" @click="add">{{ t('common.add') }} {{ t('groupBuy.title') }}</n-button><n-button @click="expire">{{ t('groupBuy.expireBtn') }}</n-button></n-space>
       <n-dataTable :columns="columns" :data="items" :loading="loading" :pagination="{pageSize:10}" />
     </n-space>
     <n-drawer v-model:show="showModal" :width="380" placement="right">
-      <n-drawer-content :title="editingId?'编辑拼团':'新增拼团'" closable>
-        <template #footer><n-space justify="end"><n-button @click="showModal=false">取消</n-button><n-button type="primary" @click="save">保存</n-button></n-space></template>
+      <n-drawer-content :title="editingId ? t('common.edit') + ' ' + t('groupBuy.title') : t('common.add') + ' ' + t('groupBuy.title')" closable>
+        <template #footer><n-space justify="end"><n-button @click="showModal=false">{{ t('common.cancel') }}</n-button><n-button type="primary" @click="save">{{ t('common.save') }}</n-button></n-space></template>
         <n-form :model="form" label-placement="left" label-width="80" size="small">
-          <n-form-item label="商品ID"><n-input-number v-model:value="form.productId" :min="1" /></n-form-item>
-          <n-form-item label="拼团价(分)"><n-input-number v-model:value="form.groupPrice" :min="1" /></n-form-item>
+          <n-form-item :label="t('common.productId')"><n-input-number v-model:value="form.productId" :min="1" /></n-form-item>
+          <n-form-item :label="t('common.groupPrice')"><n-input-number v-model:value="form.groupPrice" :min="1" /></n-form-item>
           <n-form-item :label="t('groupBuy.minMembers')"><n-input-number v-model:value="form.minMembers" :min="2" /></n-form-item>
         </n-form>
       </n-drawer-content>

@@ -1,35 +1,84 @@
 <script setup lang="ts">
-import { ref, inject } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
 import { ToastInjectionKey } from '@/composables/useToast'
+import { forgotPassword } from '@/api/auth'
 import JdButton from '@/components/JdButton.vue'
+import request from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
 const toast = inject(ToastInjectionKey)!
 const { t } = useI18n()
 
+const showForgotPwd = ref(false)
+const forgotForm = ref({ email: '' })
+const forgotLoading = ref(false)
+const forgotSent = ref(false)
+
+async function doForgot() {
+  if (!forgotForm.value.email) return
+  forgotLoading.value = true
+  try {
+    await forgotPassword(forgotForm.value.email)
+    forgotSent.value = true
+    toast.success(t('login.resetSent'))
+  } catch { toast.error(t('login.resetFail')) }
+  finally { forgotLoading.value = false }
+}
+
 const form = ref({
   username: (() => { try { return localStorage.getItem('mall_remember_user') || '' } catch { return '' } })(),
   password: '',
+  captcha: '',
 })
 const rememberMe = ref(!!form.value.username)
+const showPwd = ref(false)
 const error = ref('')
 const loading = ref(false)
+const captchaId = ref('')
+const captchaUrl = ref('')
+const captchaRefreshing = ref(false)
+const loginAttempts = ref(0)
+const showCaptcha = computed(() => loginAttempts.value >= 2)
+
+async function loadCaptcha() {
+  captchaId.value = 'captcha_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8)
+  try {
+    const r = await request.get('/captcha')
+    captchaUrl.value = r.data?.image || ''
+  } catch { captchaUrl.value = '' }
+}
+
+async function refreshCaptcha() {
+  captchaRefreshing.value = true
+  loadCaptcha()
+  setTimeout(() => { captchaRefreshing.value = false }, 300)
+}
+
+const shakeError = ref(false)
+function triggerShake() { shakeError.value = true; setTimeout(() => shakeError.value = false, 500) }
+
+onMounted(() => { loadCaptcha(); setTimeout(() => document.querySelector<HTMLInputElement>('.form-input')?.focus(), 200) })
 
 async function doLogin() {
   error.value = ''
-  if (!form.value.username || !form.value.password) { error.value = t('login.fillRequired'); return }
+  if (!form.value.username || !form.value.password) { error.value = t('login.fillRequired'); triggerShake(); return }
+  if (showCaptcha.value && !form.value.captcha) { error.value = t('login.captchaRequired'); triggerShake(); return }
   loading.value = true
   try {
     await auth.login(form.value.username, form.value.password)
-    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user'); localStorage.removeItem('mall_remember_pass') } catch {}
+    try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user') } catch {}
+    loginAttempts.value = 0
     toast.success(t('toast.loginSuccess'))
     const redirect = router.currentRoute.value.query.redirect as string
     router.push(redirect || '/')
   } catch (e: unknown) {
+    loginAttempts.value++
+    loadCaptcha()
+    triggerShake()
     const apiErr = e as { response?: { data?: { message?: string; code?: string } } }
     const errData = apiErr.response?.data || {}
     const errMsg: string = errData.message || ''
@@ -46,15 +95,14 @@ async function doLogin() {
 }
 
 const oauthProviders = [
-  { id: 'wechat', label: t('login.wechat'), color: '#07c160', bg: '#f0fff4', icon: '💬' },
-  { id: 'qq', label: 'QQ', color: '#12b7f5', bg: '#f0f9ff', icon: '🐧' },
-  { id: 'alipay', label: t('login.alipay'), color: '#1677ff', bg: '#f0f5ff', icon: '🔵' },
+  { id: 'wechat', label: t('login.wechat'), color: '#07c160', bg: '#f0fff4', icon: '💬', desc: '微信一键登录' },
+  { id: 'alipay', label: t('login.alipay'), color: '#1677ff', bg: '#f0f5ff', icon: '🔵', desc: '支付宝快捷登录' },
 ]
 </script>
 
 <template>
   <div class="login-page">
-    <div class="login-card">
+    <div class="login-card" :class="{ 'shake-anim': shakeError }">
       <div class="login-logo">
         <span class="login-emoji">🛒</span>
         <h2 class="login-title">{{ t('login.title') }}</h2>
@@ -65,19 +113,47 @@ const oauthProviders = [
 
       <div class="form-group">
         <label class="form-label">{{ t('login.username') }}</label>
-        <input v-model="form.username" :placeholder="t('login.placeholderUser')" class="form-input" />
+        <input v-model="form.username" :placeholder="t('login.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doLogin" />
       </div>
 
       <div class="form-group">
         <label class="form-label">{{ t('login.password') }}</label>
-        <input v-model="form.password" type="password" :placeholder="t('login.placeholderPass')" class="form-input" @keyup.enter="doLogin" />
+        <div class="password-wrap">
+          <input v-model="form.password" :type="showPwd ? 'text' : 'password'" :placeholder="t('login.placeholderPass')" class="form-input" autocomplete="current-password" @keyup.enter="doLogin" />
+          <button class="pwd-toggle" type="button" @click="showPwd = !showPwd" :aria-label="showPwd ? t('login.hidePassword') : t('login.showPassword')">{{ showPwd ? '👁' : '👁‍🗨' }}</button>
+        </div>
+      </div>
+
+      <!-- Captcha (shown after 2+ failed attempts) -->
+      <div v-if="showCaptcha" class="form-group">
+        <label class="form-label">{{ t('login.captcha') }}</label>
+        <div class="captcha-row">
+          <input v-model="form.captcha" :placeholder="t('login.captchaPlaceholder')" class="form-input captcha-input" maxlength="4" @keyup.enter="doLogin" />
+          <div class="captcha-img-wrap" @click="refreshCaptcha" :class="{ refreshing: captchaRefreshing }">
+            <img v-if="captchaUrl" :src="captchaUrl" :alt="t('login.captcha')" class="captcha-img" />
+            <span class="captcha-refresh">↻ {{ t('login.captchaRefresh') }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="login-options">
         <label class="remember-label">
           <input type="checkbox" v-model="rememberMe" /> {{ t('login.rememberUser') }}
         </label>
-        <span class="forgot-link" @click="router.push('/forgot-password')">{{ t('login.forgotPassword') }}</span>
+        <span class="forgot-link" @click="showForgotPwd = !showForgotPwd; forgotSent = false; forgotForm.email = ''">{{ t('login.forgotPassword') }}</span>
+      </div>
+
+      <!-- Forgot password panel -->
+      <div v-if="showForgotPwd" class="forgot-panel">
+        <div v-if="!forgotSent">
+          <p class="forgot-desc">{{ t('login.forgotDesc') }}</p>
+          <input v-model="forgotForm.email" :placeholder="t('login.emailPlaceholder')" class="form-input" type="email" @keyup.enter="doForgot" />
+          <JdButton block size="sm" :loading="forgotLoading" @click="doForgot" style="margin-top:12px">{{ t('login.sendResetLink') }}</JdButton>
+        </div>
+        <div v-else class="forgot-success">
+          <span class="forgot-check">✅</span>
+          <p>{{ t('login.resetSentMsg') }}</p>
+        </div>
       </div>
 
       <JdButton block size="lg" :loading="loading" :disabled="loading" @click="doLogin">
@@ -92,8 +168,12 @@ const oauthProviders = [
           <span class="divider-line" />
         </div>
         <div class="oauth-btns">
-          <a v-for="p in oauthProviders" :key="p.id" :href="`/oauth2/authorization/${p.id}`" class="oauth-btn" :style="{ color: p.color, borderColor: p.color }">
-            {{ p.icon }} {{ p.label }}
+          <a v-for="p in oauthProviders" :key="p.id" :href="`/oauth2/authorization/${p.id}`" class="oauth-btn" :style="{ backgroundColor: p.bg, borderColor: p.color, color: p.color }">
+            <span class="oauth-icon">{{ p.icon }}</span>
+            <div class="oauth-text">
+              <span class="oauth-label">{{ p.label }}</span>
+              <span class="oauth-desc">{{ p.desc }}</span>
+            </div>
           </a>
         </div>
       </div>
@@ -130,6 +210,9 @@ const oauthProviders = [
   color: var(--text-primary); transition: border-color var(--transition-fast);
 }
 .form-input:focus { border-color: var(--jd-red); box-shadow: 0 0 0 2px var(--jd-red-light); }
+.password-wrap { position: relative; }
+.password-wrap .form-input { padding-right: 40px; }
+.pwd-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; line-height: 1; }
 
 .login-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
 .remember-label { font-size: var(--font-sm); color: var(--text-tertiary); cursor: pointer; display: flex; align-items: center; gap: var(--space-xs); }
@@ -141,18 +224,41 @@ const oauthProviders = [
 .oauth-divider { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-md); }
 .divider-line { flex: 1; height: 1px; background: var(--border-light); }
 .divider-text { font-size: var(--font-sm); color: var(--text-tertiary); white-space: nowrap; }
-.oauth-btns { display: flex; gap: var(--space-md); justify-content: center; }
+/* Captcha */
+.captcha-row { display: flex; gap: var(--space-sm); align-items: center; }
+.captcha-input { flex: 1; }
+.captcha-img-wrap { flex-shrink: 0; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; align-items: center; min-width: 100px; transition: opacity var(--transition-fast); }
+.captcha-img-wrap.refreshing { opacity: .5; }
+.captcha-img { height: 42px; object-fit: contain; }
+.captcha-refresh { font-size: 10px; color: var(--text-tertiary); padding: 2px; }
+
+.oauth-btns { display: flex; flex-direction: column; gap: var(--space-sm); }
 .oauth-btn {
-  display: flex; align-items: center; gap: 4px; padding: var(--space-sm) var(--space-lg);
-  border: 1px solid; border-radius: var(--radius-round); cursor: pointer; text-decoration: none;
-  font-size: var(--font-sm); transition: all var(--transition-fast); background: var(--bg-white);
+  display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md) var(--space-lg);
+  border: 2px solid; border-radius: var(--radius-md); cursor: pointer; text-decoration: none;
+  transition: all var(--transition-fast);
 }
-.oauth-btn:hover { filter: brightness(.95); }
+.oauth-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.oauth-icon { font-size: 28px; flex-shrink: 0; }
+.oauth-text { display: flex; flex-direction: column; }
+.oauth-label { font-size: var(--font-md); font-weight: 700; }
+.oauth-desc { font-size: 11px; opacity: .7; }
 
 .login-footer { text-align: center; margin-top: var(--space-lg); font-size: var(--font-base); color: var(--text-tertiary); }
 .login-link { color: var(--jd-red); cursor: pointer; font-weight: 600; }
 .login-link:hover { text-decoration: underline; }
 .demo-hint { text-align: center; margin-top: var(--space-sm); font-size: var(--font-xs); color: var(--text-placeholder); }
+.forgot-panel { margin: var(--space-lg) 0; padding: var(--space-lg); background: var(--bg-hover); border-radius: var(--radius-md); }
+.forgot-desc { font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: var(--space-sm); }
+.forgot-success { text-align: center; padding: var(--space-md) 0; }
+.forgot-check { font-size: 32px; }
+
+.shake-anim { animation: shake .5s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
 
 @media (max-width: 768px) {
   .login-page { margin: var(--space-lg) auto; padding: 0 var(--space-md); }

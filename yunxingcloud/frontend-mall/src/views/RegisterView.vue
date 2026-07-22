@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
@@ -12,6 +12,18 @@ const form = ref({ username: '', password: '', confirmPassword: '', email: '' })
 const error = ref('')
 const loading = ref(false)
 const showSuccess = ref(false)
+const agreedToTerms = ref(false)
+const showPwd = ref(false)
+const shakeErr = ref(false)
+
+function triggerShake() { shakeErr.value = true; setTimeout(() => shakeErr.value = false, 500) }
+
+onMounted(() => setTimeout(() => document.querySelector<HTMLInputElement>('.form-input')?.focus(), 200))
+
+const emailValid = computed(() => {
+  if (!form.value.email) return true // optional field
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)
+})
 
 const pwdChecks = computed(() => ({
   len: form.value.password.length >= 8,
@@ -27,25 +39,27 @@ const pwdStrength = computed(() => {
 
 async function doRegister() {
   error.value = ''
-  if (!form.value.username || !form.value.password) { error.value = t('register.fillRequired'); return }
-  if (form.value.password !== form.value.confirmPassword) { error.value = t('register.passwordMismatch'); return }
-  if (!pwdChecks.value.len) { error.value = '密码至少8位'; return }
-  if (!pwdChecks.value.upper) { error.value = '密码需包含大写字母'; return }
-  if (!pwdChecks.value.lower) { error.value = '密码需包含小写字母'; return }
-  if (!pwdChecks.value.digit) { error.value = '密码需包含数字'; return }
-  if (!pwdChecks.value.special) { error.value = '密码需包含特殊字符(!@#$%等)'; return }
+  if (!form.value.username || !form.value.password) { error.value = t('register.fillRequired'); triggerShake(); return }
+  if (form.value.password !== form.value.confirmPassword) { error.value = t('register.passwordMismatch'); triggerShake(); return }
+  if (!pwdChecks.value.len) { error.value = t('register.pwdLen'); triggerShake(); return }
+  if (!pwdChecks.value.upper) { error.value = t('register.pwdUpper'); triggerShake(); return }
+  if (!pwdChecks.value.lower) { error.value = t('register.pwdLower'); triggerShake(); return }
+  if (!pwdChecks.value.digit) { error.value = t('register.pwdDigit'); triggerShake(); return }
+  if (!pwdChecks.value.special) { error.value = t('register.pwdSpecial'); triggerShake(); return }
+  if (!agreedToTerms.value) { error.value = t('register.agreeTerms'); triggerShake(); return }
+  if (!emailValid.value) { error.value = t('register.invalidEmail'); triggerShake(); return }
   loading.value = true
   try {
     await auth.register(form.value.username, form.value.password, form.value.email || undefined)
     showSuccess.value = true
-  } catch (e: unknown) { error.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('register.registerFail') }
+  } catch (e: unknown) { error.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('register.registerFail'); triggerShake() }
   finally { loading.value = false }
 }
 </script>
 
 <template>
   <div class="register-page">
-    <div class="register-card">
+    <div class="register-card" :class="{ 'shake-anim': shakeErr }">
       <div class="register-logo">
         <div class="register-emoji">🎉</div>
         <h2 class="register-title">{{ t('register.title') }}</h2>
@@ -56,30 +70,34 @@ async function doRegister() {
 
       <div class="form-group">
         <label class="form-label">{{ t('register.username') }}</label>
-        <input v-model="form.username" :placeholder="t('register.placeholderUser')" class="form-input" />
+        <input v-model="form.username" :placeholder="t('register.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doRegister" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">{{ t('register.password') }} <span class="hint">(8位+大小写+数字+特殊字符)</span></label>
-        <input v-model="form.password" type="password" :placeholder="t('register.placeholderPass')" class="form-input" />
+        <label class="form-label">{{ t('register.password') }} <span class="hint">({{ t('register.pwdHint') }})</span></label>
+        <div class="password-wrap">
+          <input v-model="form.password" :type="showPwd ? 'text' : 'password'" :placeholder="t('register.placeholderPass')" class="form-input" autocomplete="new-password" @keyup.enter="doRegister" />
+          <button class="pwd-toggle" type="button" @click="showPwd = !showPwd" :aria-label="showPwd ? t('login.hidePassword') : t('login.showPassword')">{{ showPwd ? '👁' : '👁‍🗨' }}</button>
+        </div>
         <div v-if="form.password" class="pwd-checks">
-          <span :class="{ pass: pwdChecks.len }">{{ pwdChecks.len ? '✓' : '○' }}8位</span>
-          <span :class="{ pass: pwdChecks.upper }">{{ pwdChecks.upper ? '✓' : '○' }}大写</span>
-          <span :class="{ pass: pwdChecks.digit }">{{ pwdChecks.digit ? '✓' : '○' }}数字</span>
-          <span :class="{ pass: pwdChecks.lower }">{{ pwdChecks.lower ? '✓' : '○' }}小写</span>
-          <span :class="{ pass: pwdChecks.special }">{{ pwdChecks.special ? '✓' : '○' }}特殊字符</span>
-          <span class="pwd-strength" :class="pwdStrength">{{ {weak:'弱',fair:'一般',good:'良好',strong:'强'}[pwdStrength] }}</span>
+          <span :class="{ pass: pwdChecks.len }">{{ pwdChecks.len ? '✓' : '○' }}{{ t('register.pwdLenLabel') }}</span>
+          <span :class="{ pass: pwdChecks.upper }">{{ pwdChecks.upper ? '✓' : '○' }}{{ t('register.pwdUpperLabel') }}</span>
+          <span :class="{ pass: pwdChecks.digit }">{{ pwdChecks.digit ? '✓' : '○' }}{{ t('register.pwdDigitLabel') }}</span>
+          <span :class="{ pass: pwdChecks.lower }">{{ pwdChecks.lower ? '✓' : '○' }}{{ t('register.pwdLowerLabel') }}</span>
+          <span :class="{ pass: pwdChecks.special }">{{ pwdChecks.special ? '✓' : '○' }}{{ t('register.pwdSpecialLabel') }}</span>
+          <span class="pwd-strength" :class="pwdStrength">{{ {weak: t('register.pwdWeak'), fair: t('register.pwdFair'), good: t('register.pwdGood'), strong: t('register.pwdStrong')}[pwdStrength] }}</span>
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-label">{{ t('register.confirmPassword') }}</label>
-        <input v-model="form.confirmPassword" type="password" :placeholder="t('register.placeholderConfirm')" class="form-input" @keyup.enter="doRegister" />
+        <input v-model="form.confirmPassword" :type="showPwd ? 'text' : 'password'" :placeholder="t('register.placeholderConfirm')" class="form-input" autocomplete="new-password" @keyup.enter="doRegister" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">邮箱 <span class="hint">(选填)</span></label>
-        <input v-model="form.email" type="email" placeholder="请输入邮箱（选填）" class="form-input" />
+        <label class="form-label">{{ t('register.emailLabel') }} <span class="hint">({{ t('register.optional') }})</span></label>
+        <input v-model="form.email" type="email" :placeholder="t('register.emailPlaceholder')" class="form-input" :class="{ invalid: !emailValid }" />
+        <span v-if="form.email && !emailValid" class="email-error">{{ t('register.invalidEmail') }}</span>
       </div>
 
       <div class="benefits-box">
@@ -89,7 +107,15 @@ async function doRegister() {
         <p class="benefits-item">· {{ t('register.benefit3') }}</p>
       </div>
 
-      <JdButton block size="lg" :loading="loading" :disabled="loading" @click="doRegister">
+      <!-- Agreement -->
+      <div class="agreement-row">
+        <label class="agreement-label">
+          <input type="checkbox" v-model="agreedToTerms" />
+          我已阅读并同意 <span class="agreement-link">《用户协议》</span> 和 <span class="agreement-link">《隐私政策》</span>
+        </label>
+      </div>
+
+      <JdButton block size="lg" :loading="loading" :disabled="loading || !agreedToTerms" @click="doRegister">
         {{ t('register.submit') }}
       </JdButton>
 
@@ -101,9 +127,9 @@ async function doRegister() {
       <div v-if="showSuccess" class="success-overlay" @click.self="router.push('/login')">
         <div class="success-card">
           <div class="success-emoji">🎉</div>
-          <h3 class="success-title">注册成功！</h3>
-          <p class="success-desc">账号已提交审核，审核通过后即可登录</p>
-          <JdButton block size="lg" @click="router.push('/login')">前往登录</JdButton>
+          <h3 class="success-title">{{ t('register.successTitle') }}</h3>
+          <p class="success-desc">{{ t('register.successDesc') }}</p>
+          <JdButton block size="lg" @click="router.push('/login')">{{ t('register.goLoginNow') }}</JdButton>
         </div>
       </div>
     </div>
@@ -138,6 +164,13 @@ async function doRegister() {
 .benefits-title { font-size: var(--font-sm); font-weight: 600; color: var(--jd-red); margin-bottom: 6px; }
 .benefits-item { font-size: var(--font-xs); color: var(--text-secondary); margin: 2px 0; }
 
+.agreement-row { margin-bottom: var(--space-xl); }
+.agreement-label { font-size: var(--font-sm); color: var(--text-tertiary); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.agreement-label input { accent-color: var(--jd-red); }
+.agreement-link { color: var(--jd-red); cursor: pointer; }
+.form-input.invalid { border-color: var(--jd-red); }
+.email-error { font-size: var(--font-xs); color: var(--jd-red); margin-top: 4px; display: block; }
+
 .login-link { text-align: center; margin-top: var(--space-lg); font-size: var(--font-base); color: var(--text-tertiary); }
 .login-link .link { color: var(--jd-red); cursor: pointer; font-weight: 600; }
 
@@ -147,10 +180,21 @@ async function doRegister() {
 .success-title { font-size: var(--font-lg); margin-bottom: var(--space-sm); }
 .success-desc { color: var(--text-secondary); font-size: var(--font-md); margin-bottom: var(--space-xxl); }
 
+.shake-anim { animation: shake .5s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
+
+.password-wrap { position: relative; }
+.password-wrap .form-input { padding-right: 40px; }
+.pwd-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; line-height: 1; }
+
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 768px) {
-  .register-page { max-width: 100%; padding: 0 var(--space-md) 80px; }
+  .register-page { max-width: 100%; padding: 0 var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }
   .register-card { padding: var(--space-xl); }
   .success-card { max-width: 90%; padding: 24px; }
 }

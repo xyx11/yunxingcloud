@@ -15,6 +15,8 @@ const carrier = ref('')
 const estimatedDelivery = ref('')
 const copying = ref(false)
 const loading = ref(false)
+const carrierPhone = ref('')
+const showMapHint = ref(false)
 
 const statusIcon = (status: string): string => {
   const s = (status || '').toLowerCase()
@@ -34,6 +36,9 @@ const packageStatus = computed(() => {
   return { icon: '🚚', text: t('logistics.inTransit'), cls: 'transit' }
 })
 
+const traceCount = computed(() => traces.value.length)
+const hasTracking = computed(() => !!(carrier.value || trackingNo.value))
+
 onMounted(async () => {
   const orderId = route.query.orderId
   if (orderId) {
@@ -44,16 +49,29 @@ onMounted(async () => {
       carrier.value = r.data?.carrier || ''
       trackingNo.value = r.data?.trackingNo || ''
       estimatedDelivery.value = r.data?.estimatedDelivery || ''
-    } catch { toast.error(t('logistics.loadFail')) } finally { loading.value = false }
+      carrierPhone.value = r.data?.carrierPhone || ''
+      loading.value = false;
+    } catch { loading.value = false; toast.error(t('logistics.loadFail')) }
   }
 })
 
 async function track() {
   if (!trackingNo.value.trim()) return
   loading.value = true
-  try { const r = await request.get('/logistics/track/' + trackingNo.value.trim()); traces.value = r.data || [] } catch { toast.error(t('logistics.trackFail')) } finally { loading.value = false }
+  try { const r = await request.get('/logistics/track/' + trackingNo.value.trim()); traces.value = r.data || []; loading.value = false;
+    } catch { toast.error(t('logistics.trackFail')) }
 }
 async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success(t('toast.copied')); setTimeout(() => copying.value = false, 1500) } catch {} }
+function toggleMapHint() { showMapHint.value = !showMapHint.value }
+
+function scanBarcode() {
+  // Use Barcode Detection API if available
+  if ('BarcodeDetector' in window) {
+    toast.info(t('logistics.scanStarting'))
+  } else {
+    toast.info(t('logistics.scanHint'))
+  }
+}
 </script>
 
 <template>
@@ -63,6 +81,7 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
       <div class="log-search">
         <input v-model="trackingNo" :placeholder="t('logistics.placeholder')" class="log-input" @keyup.enter="track" />
         <JdButton @click="track">{{ t('logistics.track') }}</JdButton>
+        <JdButton type="outline" size="sm" @click="scanBarcode" title="扫码查件">📷</JdButton>
       </div>
 
       <!-- Status Banner -->
@@ -70,16 +89,41 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
         <span class="log-status-icon">{{ packageStatus.icon }}</span>
         <div>
           <div class="log-status-text">{{ packageStatus.text }}</div>
-          <div v-if="estimatedDelivery" class="log-status-eta">预计送达: {{ estimatedDelivery }}</div>
+          <div v-if="estimatedDelivery" class="log-status-eta">{{ t('logistics.estimatedDelivery') }}: {{ estimatedDelivery }}</div>
         </div>
       </div>
 
-      <div v-if="carrier || trackingNo" class="log-info">
-        <div>
-          <span class="log-info-text">{{ t('logistics.carrier') }}：<b>{{ carrier || t('logistics.unknown') }}</b></span>
-          <span class="log-info-text">{{ t('logistics.trackingNo') }}：<b>{{ trackingNo }}</b></span>
+      <div v-if="hasTracking" class="log-info">
+        <div class="log-info-grid">
+          <div class="log-info-item">
+            <span class="log-info-label">{{ t('logistics.carrier') }}</span>
+            <span class="log-info-val">{{ carrier || t('logistics.unknown') }}</span>
+          </div>
+          <div class="log-info-item">
+            <span class="log-info-label">{{ t('logistics.trackingNo') }}</span>
+            <span class="log-info-val">{{ trackingNo }}</span>
+          </div>
+          <div v-if="carrierPhone" class="log-info-item">
+            <span class="log-info-label">{{ t('logistics.carrierPhone') }}</span>
+            <span class="log-info-val">{{ carrierPhone }}</span>
+          </div>
+          <div v-if="estimatedDelivery" class="log-info-item">
+            <span class="log-info-label">{{ t('logistics.estimatedDelivery') }}</span>
+            <span class="log-info-val eta">{{ estimatedDelivery }}</span>
+          </div>
         </div>
-        <JdButton type="ghost" size="sm" @click="copyNo">{{ copying ? t('logistics.copied') : t('logistics.copyNo') }}</JdButton>
+        <div class="log-info-actions">
+          <JdButton type="ghost" size="sm" @click="copyNo">{{ copying ? t('logistics.copied') : t('logistics.copyNo') }}</JdButton>
+          <JdButton type="ghost" size="sm" @click="toggleMapHint">🗺 {{ t('logistics.viewMap') }}</JdButton>
+        </div>
+      </div>
+
+      <div v-if="showMapHint" class="log-map-hint">
+        <div class="map-placeholder">
+          <span class="map-icon">🗺️</span>
+          <p>{{ t('logistics.mapHint') }}</p>
+          <p class="map-link-hint">{{ t('logistics.mapLinkHint', { no: trackingNo }) }}</p>
+        </div>
       </div>
 
       <div v-if="loading" class="log-loading"><div class="spinner" /><span>{{ t('logistics.querying') }}</span></div>
@@ -98,7 +142,12 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
         </div>
       </div>
 
-      <div v-else-if="!loading && (carrier || trackingNo)" class="log-empty">{{ t('logistics.noData') }}</div>
+      <!-- Summary -->
+      <div v-if="traceCount > 0" class="log-summary">
+        {{ t('logistics.totalRecords', { n: traceCount }) }}
+      </div>
+
+      <div v-else-if="!loading && hasTracking" class="log-empty">{{ t('logistics.noData') }}</div>
     </div>
   </div>
 </template>
@@ -118,8 +167,20 @@ async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.v
 .log-status-text { font-weight: 700; font-size: var(--font-md); }
 .log-status-eta { font-size: var(--font-sm); color: var(--text-secondary); margin-top: 2px; }
 
-.log-info { background: var(--bg-hover); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: center; }
-.log-info-text { font-size: var(--font-base); color: var(--text-secondary); margin-right: var(--space-lg); }
+.log-info { background: var(--bg-hover); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); }
+.log-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.log-info-item { display: flex; flex-direction: column; gap: 2px; }
+.log-info-label { font-size: var(--font-xs); color: var(--text-placeholder); }
+.log-info-val { font-size: var(--font-base); font-weight: 600; color: var(--text-primary); }
+.log-info-val.eta { color: var(--green); font-weight: 700; }
+.log-info-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
+
+.log-map-hint { background: #f0f7ff; border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); text-align: center; }
+.map-placeholder { color: var(--text-secondary); font-size: var(--font-sm); }
+.map-icon { font-size: 36px; display: block; margin-bottom: var(--space-sm); }
+.map-link-hint { font-size: var(--font-xs); color: var(--text-placeholder); margin-top: var(--space-xs); }
+
+.log-summary { text-align: center; padding: var(--space-md); color: var(--text-placeholder); font-size: var(--font-xs); }
 
 .log-loading { text-align: center; padding: 40px 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); font-size: var(--font-base); color: var(--text-tertiary); }
 .spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--jd-red); border-radius: 50%; animation: spin 1s linear infinite; }

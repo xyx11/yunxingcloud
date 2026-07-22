@@ -42,6 +42,10 @@ public class GatewayRouteConfig {
                 .route("usercenter-social", r -> r
                         .path("/api/user/social/**")
                         .uri(uri("yunxingcloud-usercenter", 8081)))
+                // User profile -> core (SSO user endpoint)
+                .route("usercenter-profile", r -> r
+                        .path("/api/user/**")
+                        .uri(uri("yunxingcloud-core", 8080)))
                 // Order -> order service
                 .route("order-api", r -> r
                         .path("/api/home/**", "/api/search/**",
@@ -62,7 +66,8 @@ public class GatewayRouteConfig {
                               "/api/feedback/**", "/api/price-alert/**",
                               "/api/bundles/**", "/api/suppliers/**",
                               "/api/batch/**", "/api/chat/**",
-                              "/api/revenue/**")
+                              "/api/revenue/**", "/api/live/**",
+                              "/api/presale/**")
                         .uri(uri("yunxingcloud-order", 8084)))
                 // Export + GlobalDashboard -> core
                 .route("core-export", r -> r

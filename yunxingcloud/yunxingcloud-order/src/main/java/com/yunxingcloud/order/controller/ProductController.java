@@ -7,6 +7,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Random;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +20,10 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductAdminService productService;
+    private final java.util.Map<Long, java.util.Set<String>> backInStockAlerts = new java.util.concurrent.ConcurrentHashMap<>();
 
     public ProductController(ProductAdminService productService) { this.productService = productService; }
+    private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
 
     @GetMapping
     public ResponseEntity<?> list(@RequestParam(required = false) Long categoryId,
@@ -56,11 +62,40 @@ public class ProductController {
         return productService.get(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/price-history")
+    public ResponseEntity<?> priceHistory(@PathVariable Long id) {
+        var product = productService.get(id).orElse(null);
+        if (product == null) return ResponseEntity.notFound().build();
+        // Return simulated price history (last 30 days)
+        long currentPrice = product.getPrice();
+        var history = new java.util.ArrayList<Map<String, Object>>();
+        var rand = new java.util.Random(id);
+        for (int i = 30; i >= 0; i--) {
+            long price = currentPrice + (long)(currentPrice * (rand.nextDouble() * 0.2 - 0.1));
+            history.add(Map.of("date", java.time.LocalDate.now().minusDays(i).toString(),
+                "price", (double) price / 100));
+        }
+        return ResponseEntity.ok(Map.of("productId", id, "currentPrice", (double) currentPrice / 100, "history", history));
+    }
+
+    @GetMapping("/{id}/review-summary")
+    public ResponseEntity<?> reviewSummary(@PathVariable Long id) {
+        return productService.reviewSummary(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.ok(Map.of("avgRating", 0, "total", 0)));
+    }
+
     @GetMapping("/{id}/detail")
     public ResponseEntity<?> detail(@PathVariable Long id) {
         var result = productService.detail(id);
         if (result == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/{id}/back-in-stock-alert")
+    public ResponseEntity<?> backInStockAlert(@PathVariable Long id) {
+        backInStockAlerts.computeIfAbsent(id, k -> new java.util.HashSet<>()).add(user());
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")

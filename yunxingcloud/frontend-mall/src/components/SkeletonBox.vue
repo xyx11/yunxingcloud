@@ -16,8 +16,8 @@ withDefaults(defineProps<{
 
 <template>
   <!-- Card Grid -->
-  <div v-if="variant === 'card' && columns" class="sk-grid" :style="{ gridTemplateColumns: `repeat(${columns},1fr)` }">
-    <div v-for="i in (count || 4)" :key="i" class="sk-card">
+  <div v-if="variant === 'card' && columns" class="sk-grid" :style="{ gridTemplateColumns: `repeat(${columns},1fr)` }" role="status" aria-label="Loading" aria-busy="true">
+    <div v-for="i in (count || 4)" :key="i" class="sk-card" aria-hidden="true">
       <div class="sk-image" />
       <div class="sk-card-body">
         <div class="sk-line sk-card-line-1" />
@@ -28,8 +28,8 @@ withDefaults(defineProps<{
   </div>
 
   <!-- List Item -->
-  <div v-else-if="variant === 'list-item'" class="sk-list">
-    <div v-for="i in (count || 4)" :key="i" class="sk-list-item">
+  <div v-else-if="variant === 'list-item'" class="sk-list" role="status" aria-label="Loading" aria-busy="true">
+    <div v-for="i in (count || 4)" :key="i" class="sk-list-item" aria-hidden="true">
       <div class="sk-image sk-list-img" />
       <div class="sk-list-body">
         <div class="sk-line sk-list-line-1" />
@@ -40,15 +40,15 @@ withDefaults(defineProps<{
   </div>
 
   <!-- Circle (avatar) -->
-  <div v-else-if="variant === 'circle'" class="sk-circle" :style="{ width, height }" />
+  <div v-else-if="variant === 'circle'" class="sk-circle" :style="{ width, height }" role="status" aria-label="Loading" aria-busy="true" />
 
   <!-- Banner -->
-  <div v-else-if="variant === 'banner'" class="sk-banner" :style="{ height: height || '200px', borderRadius: '12px' }" />
+  <div v-else-if="variant === 'banner'" class="sk-banner" :style="{ height: height || '200px', borderRadius: '12px' }" role="status" aria-label="Loading" aria-busy="true" />
 
   <!-- Text Lines -->
-  <template v-else>
-    <div v-for="i in count" :key="i" class="sk-line" :style="{ height, width: width || (100 - i * 15) + '%', marginBottom: gap }" />
-  </template>
+  <div v-else role="status" aria-label="Loading" aria-busy="true">
+    <div v-for="i in count" :key="i" class="sk-line" aria-hidden="true" :style="{ height, width: width || (100 - i * 15) + '%', marginBottom: gap }" />
+  </div>
 </template>
 
 <style scoped>

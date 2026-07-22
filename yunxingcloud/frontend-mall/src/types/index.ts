@@ -20,7 +20,6 @@ export interface Product {
   tags?: string[] | string
   skus?: Sku[]
   specs?: Spec[]
-  _added?: boolean
   categoryName?: string
   brandName?: string
   createdAt?: string
@@ -119,14 +118,73 @@ export interface Address {
 export interface Coupon {
   id: number
   name: string
-  type: 'discount' | 'cash'
+  type: 'full_reduction' | 'discount'
   value: number
+  discount?: number
   amount?: number
-  minAmount: number
+  threshold?: number
+  minAmount?: number
   startTime: string
   endTime: string
   status: string
   couponId?: number
+  totalQty?: number
+  usedQty?: number
+}
+
+export interface Brand {
+  id: number
+  name: string
+  logo?: string
+  description?: string
+}
+
+export interface LiveRoom {
+  id: number
+  title: string
+  coverUrl?: string
+  anchorName?: string
+  viewerCount?: number
+  status: string
+  description?: string
+  products?: Product[]
+}
+
+export interface NotificationItem {
+  id: number
+  title: string
+  content: string
+  type?: string
+  read: boolean
+  createdAt: string
+}
+
+export interface PresaleProduct {
+  id: number
+  productId?: number
+  productName?: string
+  name?: string
+  productImage?: string
+  imageUrl?: string
+  depositAmount: number
+  fullAmount?: number
+  price?: number
+  stock?: number
+  depositCount?: number
+  depositEndTime?: string
+  finalPayStartTime?: string
+  endTime?: string
+}
+
+export interface Bundle {
+  id: number
+  name: string
+  description?: string
+  imageUrl?: string
+  bundlePrice?: number
+  price?: number
+  originalPrice?: number
+  products?: { id: number; name: string; imageUrl?: string; price: number; quantity?: number }[]
 }
 
 export interface UserInfo {

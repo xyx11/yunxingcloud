@@ -1,11 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-const HomeView = () => import('@/views/HomeView.vue')
-const ProductView = () => import('@/views/ProductView.vue')
-const ProductListView = () => import('@/views/ProductListView.vue')
+// 高频路由 — 直接打包进主JS (避免首次访问空白)
+import HomeView from '@/views/HomeView.vue'
+import CartView from '@/views/CartView.vue'
+import CheckoutView from '@/views/CheckoutView.vue'
+import ProductView from '@/views/ProductView.vue'
+import ProductListView from '@/views/ProductListView.vue'
+
 const SearchView = () => import('@/views/SearchView.vue')
-const CartView = () => import('@/views/CartView.vue')
-const CheckoutView = () => import('@/views/CheckoutView.vue')
 const OrdersView = () => import('@/views/OrdersView.vue')
 const OrderDetailView = () => import('@/views/OrderDetailView.vue')
 const LoginView = () => import('@/views/LoginView.vue')
@@ -35,6 +37,11 @@ const BundleListView = () => import('@/views/BundleListView.vue')
 const CompareView = () => import('@/views/CompareView.vue')
 const HelpView = () => import('@/views/HelpView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
+const LiveDetailView = () => import('@/views/LiveDetailView.vue')
+const PresaleDetailView = () => import('@/views/PresaleDetailView.vue')
+const BundleDetailView = () => import('@/views/BundleDetailView.vue')
+const PriceAlertView = () => import('@/views/PriceAlertView.vue')
+const MyReviewsView = () => import('@/views/MyReviewsView.vue')
 
 const pageTitles: Record<string, string> = {
   '/': 'YXCLOUD 商城 - 品质生活，一站购齐',
@@ -58,6 +65,15 @@ const pageTitles: Record<string, string> = {
   '/recent': '最近浏览 - YXCLOUD',
   '/ranking': '排行榜 - YXCLOUD',
   '/help': '帮助中心 - YXCLOUD',
+  '/notifications': '消息通知 - YXCLOUD',
+  '/presale': '预售专区 - YXCLOUD',
+  '/live': '直播精选 - YXCLOUD',
+  '/brands': '品牌专区 - YXCLOUD',
+  '/bundles': '超值套餐 - YXCLOUD',
+  '/merchant/apply': '商家入驻 - YXCLOUD',
+  '/price-alerts': '降价提醒 - YXCLOUD',
+  '/compare': '商品对比 - YXCLOUD',
+  '/my-reviews': '我的评价 - YXCLOUD',
 }
 
 const pageDescriptions: Record<string, string> = {
@@ -84,6 +100,8 @@ const pageDescriptions: Record<string, string> = {
   '/bundles': '超值套餐，搭配购买更划算 - YXCLOUD',
   '/merchant/apply': '商家入驻 - YXCLOUD',
   '/help': '帮助中心 - YXCLOUD',
+  '/price-alerts': '降价提醒管理 - YXCLOUD',
+  '/my-reviews': '管理我的商品评价 - YXCLOUD',
 }
 
 function resolveTitle(path: string): string {
@@ -104,6 +122,9 @@ function resolveDescription(path: string): string {
   if (path.startsWith('/order/')) return '查看订单详情和物流信息 - YXCLOUD 商城'
   if (path.startsWith('/brand/')) return '浏览品牌商品列表 - YXCLOUD 商城'
   if (path.startsWith('/search')) return '搜索 YXCLOUD 商城海量商品'
+  if (path.startsWith('/live/')) return '观看直播带货 - YXCLOUD 商城'
+  if (path.startsWith('/presale/')) return '预售商品详情，定金预订更优惠 - YXCLOUD 商城'
+  if (path.startsWith('/bundle/')) return '超值套餐搭配，省更多 - YXCLOUD 商城'
   return '品质生活，一站购齐 - YXCLOUD 商城'
 }
 
@@ -150,40 +171,45 @@ const router = createRouter({
     return { top: 0, behavior: 'smooth' }
   },
   routes: [
-    { path: '/', component: HomeView, meta: { keepAlive: true } },
-    { path: '/products', component: ProductListView, meta: { keepAlive: true } },
-    { path: '/product/:id', component: ProductView },
+    { path: '/', component: HomeView, meta: { keepAlive: true, transition: 'fade' } },
+    { path: '/products', component: ProductListView, meta: { keepAlive: true, transition: 'fade' } },
+    { path: '/product/:id', component: ProductView, meta: { transition: 'slide' } },
     { path: '/search', component: SearchView },
     { path: '/cart', component: CartView },
     { path: '/checkout', component: CheckoutView },
-    { path: '/orders', component: OrdersView },
-    { path: '/order/:id', component: OrderDetailView },
+    { path: '/orders', component: OrdersView, meta: { keepAlive: true } },
+    { path: '/order/:id', component: OrderDetailView, meta: { transition: 'slide' } },
     { path: '/login', component: LoginView },
     { path: '/register', component: RegisterView },
-    { path: '/profile', component: ProfileView },
+    { path: '/profile', component: ProfileView, meta: { keepAlive: true } },
     { path: '/pay/:id', component: PayView },
     { path: '/order/:id/result', component: PaymentResultView },
     { path: '/points', component: PointsView },
     { path: '/gift-card', component: MallGiftCardView },
     { path: '/logistics', component: LogisticsView },
-    { path: '/wishlist', component: WishlistView },
-    { path: '/coupons', component: CouponCenterView },
+    { path: '/wishlist', component: WishlistView, meta: { keepAlive: true } },
+    { path: '/coupons', component: CouponCenterView, meta: { keepAlive: true } },
     { path: '/after-sale', component: AfterSaleView },
     { path: '/group-buy', component: GroupBuyView },
     { path: '/flash-sale', component: FlashSaleView },
     { path: '/invoices', component: InvoiceView },
-    { path: '/recent', component: RecentView },
+    { path: '/recent', component: RecentView, meta: { keepAlive: true } },
     { path: '/ranking', component: RankingView },
     { path: '/notifications', component: NotificationsView },
     { path: '/oauth2/callback', component: OAuthCallbackView },
-    { path: '/presale', component: PresaleView },
     { path: '/live', component: LiveView },
-    { path: '/brands', component: BrandsView },
-    { path: '/brand/:id', component: BrandDetailView },
+    { path: '/live/:id', component: LiveDetailView, meta: { transition: 'slide' } },
+    { path: '/brands', component: BrandsView, meta: { keepAlive: true } },
+    { path: '/brand/:id', component: BrandDetailView, meta: { transition: 'slide' } },
     { path: '/merchant/apply', component: MerchantApplyView },
     { path: '/bundles', component: BundleListView },
+    { path: '/bundle/:id', component: BundleDetailView, meta: { transition: 'slide' } },
+    { path: '/presale', component: PresaleView },
+    { path: '/presale/:id', component: PresaleDetailView, meta: { transition: 'slide' } },
+    { path: '/price-alerts', component: PriceAlertView },
     { path: '/help', component: HelpView },
     { path: '/compare', component: CompareView },
+    { path: '/my-reviews', component: MyReviewsView, meta: { transition: 'fade' } },
     { path: '/:pathMatch(.*)*', component: NotFoundView },
   ],
 })
@@ -196,16 +222,44 @@ router.beforeEach((to, _from) => {
   startProgress()
 
   // Auth guard
-  const protectedPaths = ['/orders', '/profile', '/checkout', '/cart']
-  const needsAuth = protectedPaths.includes(to.path) || to.path.startsWith('/order/') || to.path.startsWith('/pay/')
+  const protectedPaths = ['/orders', '/profile', '/checkout', '/cart', '/wishlist', '/coupons', '/after-sale', '/invoices', '/points', '/gift-card', '/merchant/apply', '/price-alerts', '/notifications', '/logistics', '/my-reviews']
+  const needsAuth = protectedPaths.some(p => to.path === p || to.path.startsWith(p + '/')) || to.path.startsWith('/order/') || to.path.startsWith('/pay/')
   if (needsAuth && !localStorage.getItem('accessToken')) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 })
 
+function updateOgTags(title: string, description: string) {
+  const tags: Record<string, string> = {
+    'og:title': title,
+    'og:description': description,
+    'twitter:title': title,
+    'twitter:description': description,
+  }
+  for (const [prop, content] of Object.entries(tags)) {
+    let el = document.querySelector(`meta[property="${prop}"]`) || document.querySelector(`meta[name="${prop}"]`)
+    if (!el) {
+      el = document.createElement('meta')
+      el.setAttribute(prop.startsWith('twitter:') ? 'name' : 'property', prop)
+      document.head.appendChild(el)
+    }
+    el.setAttribute('content', content)
+  }
+}
+
 router.afterEach((to) => {
+  const title = resolveTitle(to.path)
+  const desc = resolveDescription(to.path)
   updateMetaDescription(to.path)
+  updateOgTags(title, desc)
   finishProgress()
+  // Focus management for accessibility
+  setTimeout(() => {
+    const main = document.getElementById('main-content')
+    if (main) main.focus({ preventScroll: true })
+    const announcer = document.getElementById('sr-announcer')
+    if (announcer) announcer.textContent = resolveTitle(to.path)
+  }, 100)
 })
 
 // Prefetch routes on link hover

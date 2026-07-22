@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from '@/locales'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   rating: number
@@ -33,9 +36,9 @@ const starList = computed<StarItem[]>(() => {
 </script>
 
 <template>
-  <span class="star-container" role="img" :aria-label="`${rating} 星`">
+  <span class="star-container" role="img" :aria-label="`${rating.toFixed(1)} ${t('rating.stars')}`">
     <span v-for="s in starList" :key="s.key" :style="[starStyle, {
-      color: s.type === 'empty' ? '#ddd' : '#f5a623',
+      color: s.type === 'empty' ? 'var(--border)' : 'var(--star-gold)',
       position: 'relative',
       display: 'inline-block'
     }]">
@@ -51,7 +54,7 @@ const starList = computed<StarItem[]>(() => {
 
 <style scoped>
 .star-container { display: inline-flex; align-items: center; gap: 1px; }
-.star-half { position: absolute; left: 0; top: 0; overflow: hidden; width: 50%; color: #f5a623; }
-.star-empty-bg { color: #ddd; }
-.rating-count { color: #999; font-size: 12px; margin-left: 4px; }
+.star-half { position: absolute; left: 0; top: 0; overflow: hidden; width: 50%; color: var(--star-gold); }
+.star-empty-bg { color: var(--border); }
+.rating-count { color: var(--text-tertiary); font-size: 12px; margin-left: 4px; }
 </style>

@@ -45,8 +45,24 @@ async function checkStatus() {
       <p>{{ t('merchant.subtitle') }}</p>
     </div>
 
+    <!-- Benefits -->
+    <div class="benefits-row">
+      <div class="benefit-badge"><span>🚀</span> {{ t('merchant.benefit1') }}</div>
+      <div class="benefit-badge"><span>💰</span> {{ t('merchant.benefit2') }}</div>
+      <div class="benefit-badge"><span>📊</span> {{ t('merchant.benefit3') }}</div>
+      <div class="benefit-badge"><span>🎓</span> {{ t('merchant.benefit4') }}</div>
+    </div>
+
     <div class="merchant-card">
       <div v-if="!submitted">
+        <!-- Step indicator -->
+        <div class="apply-steps">
+          <div class="apply-step active"><span class="step-num">1</span>{{ t('merchant.step1') }}</div>
+          <div class="apply-step-line" />
+          <div class="apply-step"><span class="step-num">2</span>{{ t('merchant.step2') }}</div>
+          <div class="apply-step-line" />
+          <div class="apply-step"><span class="step-num">3</span>{{ t('merchant.step3') }}</div>
+        </div>
         <div class="form-group">
           <label class="form-label">{{ t('merchant.shopName') }}</label>
           <input v-model="form.name" class="form-input" :placeholder="t('merchant.shopNamePlaceholder')" />
@@ -97,6 +113,19 @@ async function checkStatus() {
 .merchant-hero h1 { font-size: var(--font-h1); font-weight: 800; margin-bottom: var(--space-sm); }
 .merchant-hero p { color: var(--text-secondary); font-size: var(--font-md); }
 .merchant-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-lg); }
+
+/* Benefits */
+.benefits-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+.benefit-badge { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-lg); text-align: center; font-weight: 600; font-size: var(--font-sm); color: var(--text-primary); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.benefit-badge span { font-size: 28px; }
+
+/* Steps */
+.apply-steps { display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-xxl); }
+.apply-step { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: var(--font-sm); color: var(--text-placeholder); }
+.apply-step.active { color: var(--jd-red); font-weight: 600; }
+.apply-step .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--border-light); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+.apply-step.active .step-num { background: var(--jd-red); color: #fff; }
+.apply-step-line { flex: 1; height: 2px; background: var(--border-light); max-width: 80px; margin: 0 var(--space-sm); margin-bottom: 22px; }
 .card-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-lg); }
 .form-group { margin-bottom: var(--space-lg); }
 .form-label { display: block; font-size: var(--font-base); color: var(--text-secondary); margin-bottom: var(--space-xs); }
@@ -115,6 +144,6 @@ async function checkStatus() {
 .check-result { margin-top: var(--space-md); padding: var(--space-md); background: var(--bg-hover); border-radius: var(--radius-sm); }
 
 @media (max-width: 768px) {
-  .merchant-page { padding: var(--space-lg) var(--space-md) 80px; }
+  .merchant-page { padding: var(--space-lg) var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>

@@ -15,8 +15,11 @@ export interface Coupon {
 }
 
 // Orders
-export const getOrders = () => request.get('/orders')
+export const getOrders = (params?: { page?: number; size?: number }) =>
+  request.get('/orders', { params })
 export const getOrderById = (id: number) => request.get(`/orders/${id}`)
+/** Aggregated: order + payment + shipment in one request */
+export const getAggregateOrder = (id: number) => request.get(`/aggregate/order/${id}`)
 export const submitOrder = (receiver: Record<string, string>) =>
   request.post('/orders', receiver)
 export const payOrder = (id: number, channel?: string) =>

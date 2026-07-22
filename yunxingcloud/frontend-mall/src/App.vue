@@ -8,12 +8,14 @@ import AppFooter from '@/components/AppFooter.vue'
 import MobileNav from '@/components/MobileNav.vue'
 import { useThemeStore } from '@/stores/theme'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
+import { useI18n } from '@/locales'
 
 const CompareFloatingBar = defineAsyncComponent(() => import('@/views/CompareView.vue'))
 const ChatWidget = defineAsyncComponent(() => import('@/components/ChatWidget.vue'))
 
 const router = useRouter()
 useThemeStore()
+const { t } = useI18n()
 const { isOnline } = useNetworkStatus()
 
 // PWA install prompt
@@ -24,15 +26,23 @@ async function doInstall() { if (installPrompt.value) { installPrompt.value.prom
 window.addEventListener('beforeinstallprompt', onBeforeInstall)
 const toast = useGlobalToast()
 const cartCount = ref(0)
+const cartBounce = ref(false)
 const showBackTop = ref(false)
 const showWelcome = ref(false)
-const welcomeDismissed = ref((() => { try { return localStorage.getItem('mall_welcome') } catch { return '1' } })())
+const welcomeDismissed = ref((() => { try { return localStorage.getItem('mall_welcome') } catch { return null } })())
 
+const pushDismissed = ref((() => { try { return localStorage.getItem('mall_push_dismissed') === '1' } catch { return false } })())
 const { supported: pushSupported, subscribed: pushSubscribed, request: requestPush, sendTest } = useNotification()
-const showPushBanner = ref(pushSupported.value && !pushSubscribed.value)
+const showPushBanner = ref(pushSupported.value && !pushSubscribed.value && !pushDismissed.value)
+function dismissPushBanner() { showPushBanner.value = false; try { localStorage.setItem('mall_push_dismissed', '1') } catch {} }
 
 function updateCartCount() {
-  try { cartCount.value = JSON.parse(localStorage.getItem('cart_count') || '0') } catch { cartCount.value = 0 }
+  try {
+    if (!localStorage.getItem('accessToken')) { cartCount.value = 0; return }
+    const prev = cartCount.value
+    cartCount.value = JSON.parse(localStorage.getItem('cart_count') || '0')
+    if (cartCount.value > prev) { cartBounce.value = true; setTimeout(() => cartBounce.value = false, 400) }
+  } catch { cartCount.value = 0 }
 }
 function onScroll() { showBackTop.value = window.scrollY > 400 }
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
@@ -40,13 +50,25 @@ function dismissWelcome() { showWelcome.value = false; try { localStorage.setIte
 
 async function enablePush() {
   const ok = await requestPush()
-  if (ok) { showPushBanner.value = false; sendTest() }
+  if (ok) { showPushBanner.value = false; try { localStorage.removeItem('mall_push_dismissed') } catch {}; sendTest() }
 }
 
 useThemeStore() // 初始化并应用主题
 
 const appError = ref<string | null>(null)
-onErrorCaptured((err) => { appError.value = err instanceof Error ? err.message : String(err); return false })
+const errorCount = ref(0)
+const MAX_ERRORS = 3
+
+onErrorCaptured((err) => {
+  errorCount.value++
+  if (errorCount.value >= MAX_ERRORS) {
+    appError.value = t('app.errorBoundary')
+  } else {
+    appError.value = err instanceof Error ? err.message : String(err)
+  }
+  console.error('[ErrorBoundary]', err)
+  return false
+})
 
 
 onMounted(() => {
@@ -67,28 +89,35 @@ onUnmounted(() => {
     <AppHeader :key="'header'" :cart-count="cartCount" />
 
     <!-- Offline banner -->
-    <div v-if="!isOnline" class="offline-banner">当前处于离线模式，部分功能不可用</div>
+    <div v-if="!isOnline" class="offline-banner">{{ t('app.offlineBanner') }}</div>
 
     <!-- Install prompt -->
     <div v-if="showInstall" class="install-banner">
-      <span>将此应用添加到主屏幕，随时随地购物</span>
-      <button class="install-btn" @click="doInstall">安装</button>
+      <span>{{ t('app.installPrompt') }}</span>
+      <button class="install-btn" @click="doInstall">{{ t('app.installBtn') }}</button>
       <button class="install-close" @click="showInstall = false">✕</button>
     </div>
 
     <!-- Main Content -->
+    <Transition name="error-bounce">
     <div v-if="appError" class="error-boundary">
       <div class="error-boundary-card">
-        <h2>页面出错了</h2>
+        <h2>{{ t('app.errorTitle') }}</h2>
         <p>{{ appError }}</p>
-        <button class="error-boundary-btn" @click="appError = null; router.go(0)">重新加载</button>
+        <p v-if="errorCount >= MAX_ERRORS" class="error-hint">{{ t('app.errorHint', { n: String(errorCount) }) }}</p>
+        <div class="error-boundary-btns">
+          <button class="error-boundary-btn" @click="appError = null; errorCount = 0">{{ t('app.closeBtn') }}</button>
+          <button class="error-boundary-btn primary" @click="router.go(0)">{{ t('app.refreshBtn') }}</button>
+          <button class="error-boundary-btn" @click="appError = null; errorCount = 0; router.push('/')">{{ t('app.homeBtn') }}</button>
+        </div>
       </div>
     </div>
+    </Transition>
 
-    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    <a href="#main-content" class="skip-link">{{ t('app.skipLink') }}</a>
     <main id="main-content" class="main-content" role="main" tabindex="-1">
       <router-view v-slot="{ Component, route: r }">
-        <Transition name="page-fade" mode="out-in">
+        <Transition :name="r.meta.transition || 'page-slide-left'" mode="out-in">
           <KeepAlive v-if="r.meta.keepAlive">
             <component :is="Component" :key="r.name" />
           </KeepAlive>
@@ -105,31 +134,31 @@ onUnmounted(() => {
     <div v-if="showPushBanner" class="push-banner">
       <span class="push-banner-icon">🔔</span>
       <div class="push-banner-body">
-        <div class="push-banner-title">开启通知</div>
-        <div class="push-banner-desc">第一时间获取促销和订单状态</div>
+        <div class="push-banner-title">{{ t('app.pushTitle') }}</div>
+        <div class="push-banner-desc">{{ t('app.pushDesc') }}</div>
       </div>
-      <button class="push-banner-btn" @click="enablePush">开启</button>
-      <button class="push-banner-close" @click="showPushBanner = false" aria-label="关闭">✕</button>
+      <button class="push-banner-btn" @click="enablePush">{{ t('app.pushBtn') }}</button>
+      <button class="push-banner-close" @click="dismissPushBanner" :aria-label="t('app.closeAria')">✕</button>
     </div>
 
     <!-- Welcome Modal -->
     <div v-if="showWelcome" class="welcome-overlay" @click.self="dismissWelcome" @keydown.escape="dismissWelcome">
       <div class="welcome-card" role="dialog" aria-modal="true" aria-label="欢迎弹窗">
-        <button class="welcome-close" @click="dismissWelcome" aria-label="关闭">✕</button>
+        <button class="welcome-close" @click="dismissWelcome" :aria-label="t('app.closeAria')">✕</button>
         <div class="welcome-emoji">🎉</div>
-        <h2 class="welcome-title">欢迎来到 YXCLOUD</h2>
-        <p class="welcome-subtitle">品质生活，一站购齐</p>
+        <h2 class="welcome-title">{{ t('app.welcomeTitle') }}</h2>
+        <p class="welcome-subtitle">{{ t('app.welcomeSubtitle') }}</p>
         <div class="welcome-coupon">
           <div class="welcome-coupon-price">¥50</div>
-          <div class="welcome-coupon-label">新用户专属优惠券礼包</div>
+          <div class="welcome-coupon-label">{{ t('app.welcomeCouponLabel') }}</div>
         </div>
-        <button class="welcome-cta" @click="dismissWelcome();router.push('/coupons')">🎁 立即领取</button>
-        <p class="welcome-skip" @click="dismissWelcome">暂不领取，随便逛逛</p>
+        <button class="welcome-cta" @click="dismissWelcome();router.push('/coupons')">{{ t('app.welcomeCta') }}</button>
+        <p class="welcome-skip" @click="dismissWelcome">{{ t('app.welcomeSkip') }}</p>
       </div>
     </div>
 
     <!-- Back to Top -->
-    <button v-if="showBackTop" class="back-to-top" @click="scrollToTop" aria-label="回到顶部">
+    <button class="back-to-top" :class="{ 'back-to-top--visible': showBackTop }" @click="scrollToTop" aria-label="回到顶部">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
     </button>
 
@@ -140,7 +169,7 @@ onUnmounted(() => {
     <ChatWidget />
 
     <!-- Toast -->
-    <TransitionGroup name="toast" tag="div" class="toast-container">
+    <TransitionGroup name="toast" tag="div" class="toast-container" role="status" aria-live="polite" aria-atomic="true">
       <div v-for="t in toast.toasts.value" :key="t.id" class="toast-item" :class="`toast-${t.type}`">
         <span>{{ toast.icons[t.type] || 'ℹ️' }}</span>
         <span class="toast-msg">{{ t.message }}</span>
@@ -151,10 +180,15 @@ onUnmounted(() => {
 </template>
 
 <style>
-.page-fade-enter-active { transition: opacity .2s ease, transform .2s ease; }
-.page-fade-leave-active { transition: opacity .15s ease, transform .15s ease; }
-.page-fade-enter-from { opacity: 0; transform: translateY(12px); }
-.page-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+.page-slide-left-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.page-slide-left-leave-active { transition: opacity .18s ease, transform .18s ease; }
+.page-slide-left-enter-from { opacity: 0; transform: translateX(30px); }
+.page-slide-left-leave-to { opacity: 0; transform: translateX(-30px); }
+
+.page-slide-right-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.page-slide-right-leave-active { transition: opacity .18s ease, transform .18s ease; }
+.page-slide-right-enter-from { opacity: 0; transform: translateX(-30px); }
+.page-slide-right-leave-to { opacity: 0; transform: translateX(30px); }
 
 .skip-link { position: absolute; top: -100px; left: 0; background: var(--jd-red); color: #fff; padding: 8px 16px; z-index: 10000; border-radius: 0 0 var(--radius-sm) 0; text-decoration: none; font-size: var(--font-sm); }
 .skip-link:focus { top: 0; }
@@ -232,43 +266,59 @@ onUnmounted(() => {
 
 /* Back to Top */
 .back-to-top {
-  position: fixed; bottom: 120px; right: 16px; z-index: 150; width: 40px; height: 40px;
-  border-radius: 50%; background: var(--jd-red); color: #fff; border: none; cursor: pointer;
-  box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center;
-  transition: transform var(--transition), background var(--transition-fast), opacity var(--transition-fast);
-  opacity: .9;
+  position: fixed; bottom: 120px; right: 16px; z-index: 150; width: 44px; height: 44px;
+  border-radius: 50%; background: rgba(241,2,21,.85); color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(241,2,21,.3); display: flex; align-items: center; justify-content: center;
+  transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .3s, box-shadow .3s;
+  opacity: 0; transform: translateY(20px);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
-.back-to-top:hover { transform: scale(1.15); background: var(--jd-red-dark); opacity: 1; }
+.back-to-top:hover { transform: translateY(-4px) scale(1.1); background: var(--jd-red); box-shadow: 0 6px 20px rgba(241,2,21,.5); opacity: 1; }
+.back-to-top--visible { opacity: .85; transform: translateY(0); }
 
 /* Toast */
 .toast-container {
   position: fixed; top: 60px; right: var(--space-xl); z-index: 9999;
-  display: flex; flex-direction: column; gap: var(--space-sm); pointer-events: none;
+  display: flex; flex-direction: column-reverse; gap: var(--space-sm); pointer-events: none;
 }
 .toast-item {
   padding: var(--space-md) var(--space-xl); border-radius: var(--radius-md);
-  font-size: var(--font-md); color: #fff; box-shadow: var(--shadow-md);
-  animation: fadeIn .3s; min-width: 200px; max-width: 360px;
+  font-size: var(--font-md); color: #fff; box-shadow: var(--shadow-lg);
+  min-width: 200px; max-width: 360px;
   display: flex; align-items: center; gap: var(--space-sm); pointer-events: auto;
+  backdrop-filter: blur(6px);
 }
-.toast-success { background: var(--green); }
-.toast-error { background: var(--jd-red); }
-.toast-warning { background: var(--orange); }
-.toast-info { background: var(--blue); }
+.toast-success { background: rgba(82,196,26,.92); }
+.toast-error { background: rgba(241,2,21,.92); }
+.toast-warning { background: rgba(255,152,0,.92); }
+.toast-info { background: rgba(22,119,255,.92); }
 .toast-msg { flex: 1; }
 .toast-dismiss { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: var(--font-md); padding: 0; line-height: 1; }
+
+.toast-enter-active { animation: toastIn .35s cubic-bezier(.21,1.02,.73,1); }
+.toast-leave-active { animation: toastOut .2s ease-in forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(80px) scale(.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(80px) scale(.9); } }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-.toast-enter-active { animation: fadeIn .3s; }
-.toast-leave-active { animation: fadeIn .2s reverse; }
+.error-bounce-enter-active { animation: errorBounceIn .4s ease-out; }
+.error-bounce-leave-active { animation: errorBounceOut .2s ease-in forwards; }
+@keyframes errorBounceIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes errorBounceOut { to { opacity: 0; transform: scale(.95); } }
 
 .error-boundary { display: flex; justify-content: center; align-items: center; min-height: 60vh; padding: var(--space-xxl); }
 .error-boundary-card { text-align: center; background: var(--bg-white); padding: var(--space-xxxl); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); max-width: 400px; }
 .error-boundary-card h2 { font-size: var(--font-xl); color: var(--jd-red); margin-bottom: var(--space-md); }
 .error-boundary-card p { color: var(--text-secondary); font-size: var(--font-base); margin-bottom: var(--space-xl); word-break: break-word; }
-.error-boundary-btn { padding: 10px 24px; background: var(--jd-red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-md); }
+.error-hint { color: var(--text-tertiary) !important; font-size: var(--font-sm) !important; }
+.error-boundary-btns { display: flex; gap: var(--space-sm); justify-content: center; flex-wrap: wrap; }
+.error-boundary-btn { padding: 10px 24px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-primary); border-radius: var(--radius-md); cursor: pointer; font-size: var(--font-md); }
+.error-boundary-btn.primary { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
+
+/* Screen reader only utility */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 /* Offline banner */
 .offline-banner {
@@ -290,7 +340,20 @@ onUnmounted(() => {
   background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 16px;
 }
 
+/* 平板竖屏 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-content { padding: var(--space-md) var(--space-xl); }
+}
+/* 手机 */
 @media (max-width: 768px) {
   .main-content { padding: var(--space-sm) var(--space-sm) calc(70px + env(safe-area-inset-bottom, 0px)); }
+  .push-banner { bottom: 80px; max-width: 90%; }
 }
+/* 大屏 */
+@media (min-width: 1400px) {
+  .main-content { max-width: 1320px; }
+}
+.router-loading { display: flex; justify-content: center; align-items: center; min-height: 50vh; }
+.router-loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border-light); border-top-color: var(--jd-red); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

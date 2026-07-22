@@ -7,4 +7,5 @@ import java.util.List;
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     List<Feedback> findByUsernameOrderByCreatedAtDesc(String username);
     List<Feedback> findByOrderByCreatedAtDesc();
+    List<Feedback> findByStatusOrderByCreatedAtDesc(String status);
 }

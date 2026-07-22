@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import LazyImage from './LazyImage.vue'
+import { formatPrice } from '@/utils/format'
+import { useI18n } from '@/locales'
 
 export interface ProductCardData {
   id: number
@@ -27,13 +29,16 @@ withDefaults(defineProps<{
   layout: 'grid',
 })
 
+const { t } = useI18n()
+
 const emit = defineEmits<{
   (e: 'click', id: number): void
   (e: 'add-cart', product: ProductCardData): void
 }>()
 
 function defaultImage(name: string): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f10215&color=fff&size=200&bold=true&format=png`
+  const hue = name.split('').reduce((h, c) => h + c.charCodeAt(0), 0) % 360
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="hsl(${hue},50%,90%)" width="200" height="200"/><text x="100" y="110" text-anchor="middle" font-size="48" fill="hsl(${hue},40%,50%)" font-family="sans-serif">${name.charAt(0)}</text></svg>`)}`
 }
 </script>
 
@@ -60,19 +65,19 @@ function defaultImage(name: string): string {
       <h3 class="card-name line-clamp-2">{{ product.name }}</h3>
 
       <div v-if="showRating && product.rating" class="card-rating">
-        <span class="stars" v-html="'★'.repeat(Math.round(product.rating)) + '☆'.repeat(5 - Math.round(product.rating))" />
+        <span class="stars">{{ '★'.repeat(Math.round(product.rating)) }}{{ '☆'.repeat(5 - Math.round(product.rating)) }}</span>
         <span class="rating-num">{{ product.rating }}</span>
       </div>
 
       <div class="card-price-row">
         <span class="card-price">
-          <span class="price-symbol">¥</span>{{ product.price }}
+          <span class="price-symbol">¥</span>{{ formatPrice(product.price / 100, 2) }}
         </span>
-        <span v-if="product.originalPrice" class="card-original-price">¥{{ product.originalPrice }}</span>
+        <span v-if="product.originalPrice" class="card-original-price">¥{{ formatPrice(product.originalPrice / 100, 2) }}</span>
       </div>
 
       <div v-if="showSales && product.sales" class="card-meta">
-        <span>{{ product.sales > 10000 ? Math.floor(product.sales / 1000) / 10 + '万' : product.sales }}+人已购</span>
+        <span>{{ product.sales > 10000 ? (Math.floor(product.sales / 1000) / 10).toFixed(1).replace('.0','') + '万' : product.sales }}{{ t('product.soldSuffix') }}</span>
       </div>
 
       <div v-if="product.tags && product.tags.length" class="card-tags">
@@ -84,7 +89,7 @@ function defaultImage(name: string): string {
         class="add-cart-btn"
         @click.stop="emit('add-cart', product)"
       >
-        🛒 加入购物车
+        🛒 {{ t('product.addToCart') }}
       </button>
     </div>
   </div>
@@ -96,12 +101,13 @@ function defaultImage(name: string): string {
   border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition: transform .2s ease, box-shadow .2s ease;
   box-shadow: var(--shadow-sm);
+  will-change: transform;
 }
 .product-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
 .card-image {
@@ -114,7 +120,7 @@ function defaultImage(name: string): string {
   transition: transform var(--transition-slow);
 }
 .product-card:hover .card-image :deep(img) {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 .card-badge {
   position: absolute; top: var(--space-sm); left: var(--space-sm);

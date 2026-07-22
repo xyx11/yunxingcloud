@@ -57,4 +57,14 @@ public class CampaignController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @GetMapping("/{id}/products")
+    public ResponseEntity<?> campaignProducts(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getCampaignProducts(id));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<?> activeCampaigns() {
+        return ResponseEntity.ok(service.getActiveCampaigns());
+    }
 }

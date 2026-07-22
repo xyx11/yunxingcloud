@@ -40,4 +40,21 @@ public class BundleService {
         b.setProductIds(dto.getProductIds()); b.setImageUrl(dto.getImageUrl()); b.setStatus(dto.getStatus());
         return bundleRepo.save(b);
     }
+
+    public long count() { return bundleRepo.count(); }
+
+    @Transactional
+    public ProductBundle update(Long id, ProductBundleDTO dto) {
+        ProductBundle b = bundleRepo.findById(id).orElseThrow();
+        if (dto.getName() != null) b.setName(dto.getName());
+        if (dto.getBundlePrice() != null) b.setBundlePrice(dto.getBundlePrice());
+        if (dto.getOriginalPrice() != null) b.setOriginalPrice(dto.getOriginalPrice());
+        if (dto.getProductIds() != null) b.setProductIds(dto.getProductIds());
+        if (dto.getImageUrl() != null) b.setImageUrl(dto.getImageUrl());
+        if (dto.getStatus() != null) b.setStatus(dto.getStatus());
+        return bundleRepo.save(b);
+    }
+
+    @Transactional
+    public void delete(Long id) { bundleRepo.deleteById(id); }
 }

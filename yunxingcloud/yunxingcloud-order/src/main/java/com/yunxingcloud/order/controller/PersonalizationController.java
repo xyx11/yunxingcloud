@@ -21,4 +21,21 @@ public class PersonalizationController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(service.personalizedHome(username));
     }
+
+    @GetMapping("/hot")
+    public ResponseEntity<?> hot() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        var home = service.personalizedHome(username);
+        return ResponseEntity.ok(home.getOrDefault("hot", java.util.List.of()));
+    }
+
+    @GetMapping("/news")
+    public ResponseEntity<?> news() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        var home = service.personalizedHome(username);
+        return ResponseEntity.ok(home.getOrDefault("news", java.util.List.of()));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> stats() { return ResponseEntity.ok(java.util.Map.of("endpoints", 4)); }
 }

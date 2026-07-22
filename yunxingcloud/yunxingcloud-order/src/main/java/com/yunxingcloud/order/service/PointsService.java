@@ -75,4 +75,18 @@ public class PointsService {
     public PointsAccount getAccount(String username) {
         return accountRepo.findByUsername(username).orElse(null);
     }
+
+    /** 每日签到 */
+    @Transactional
+    public void checkin(String username) {
+        if (hasCheckedInToday(username)) throw new IllegalStateException("今日已签到");
+        earn(username, 5L, "checkin", null, "每日签到");
+    }
+
+    /** 判断今日是否已签到 */
+    public boolean hasCheckedInToday(String username) {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        return recordRepo.findByUsernameAndType(username, "checkin").stream()
+            .anyMatch(r -> r.getCreatedAt() != null && r.getCreatedAt().toLocalDate().equals(today));
+    }
 }

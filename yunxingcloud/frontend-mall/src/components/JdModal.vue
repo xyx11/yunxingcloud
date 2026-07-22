@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from '@/locales'
 
 const { t } = useI18n()
@@ -21,6 +21,9 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const modalRef = ref<HTMLElement>()
+const prevFocus = ref<HTMLElement | null>(null)
+
 function close() {
   emit('update:visible', false)
   emit('close')
@@ -30,16 +33,39 @@ function onMaskClick() {
   if (props.maskClosable) close()
 }
 
-watch(() => props.visible, (v) => {
-  if (v) document.body.style.overflow = 'hidden'
-  else document.body.style.overflow = ''
+function trapFocus(e: KeyboardEvent) {
+  if (e.key === 'Escape') { close(); return }
+  if (e.key !== 'Tab' || !modalRef.value) return
+  const focusable = modalRef.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )
+  if (!focusable.length) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+}
+
+watch(() => props.visible, async (v) => {
+  if (v) {
+    prevFocus.value = document.activeElement as HTMLElement
+    document.body.style.overflow = 'hidden'
+    await nextTick()
+    modalRef.value?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')?.focus()
+  } else {
+    document.body.style.overflow = ''
+    setTimeout(() => prevFocus.value?.focus(), 50)
+  }
 })
+
+onMounted(() => document.addEventListener('keydown', trapFocus))
+onUnmounted(() => document.removeEventListener('keydown', trapFocus))
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="onMaskClick">
-      <div class="modal-content" :style="{ maxWidth: width }">
+      <div ref="modalRef" class="modal-content" :style="{ maxWidth: width }" role="dialog" aria-modal="true" :aria-label="title || ''">
         <div v-if="title || closable" class="modal-header">
           <h3 v-if="title" class="modal-title">{{ title }}</h3>
           <button v-if="closable" class="modal-close" @click="close" :aria-label="t('common.close')">✕</button>
@@ -66,6 +92,7 @@ watch(() => props.visible, (v) => {
   background: var(--bg-white); border-radius: var(--radius-lg); width: 100%;
   box-shadow: var(--shadow-xl); animation: slideUp .25s ease-out;
   max-height: 90vh; display: flex; flex-direction: column;
+  outline: none;
 }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;

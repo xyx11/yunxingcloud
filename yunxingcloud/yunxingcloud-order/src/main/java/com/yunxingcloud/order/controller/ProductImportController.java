@@ -1,3 +1,4 @@
+
 package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.service.ProductImportService;
@@ -32,4 +33,16 @@ public class ProductImportController {
                 .header("Content-Disposition", "attachment; filename=products.csv")
                 .body(data);
     }
+
+    @GetMapping("/import/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        String tpl = "名称,描述,价格(元),库存\n示例商品,商品描述,99.00,100\n";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header("Content-Disposition", "attachment; filename=product_template.csv")
+                .body(tpl.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() { return ResponseEntity.ok(java.util.Map.of("status", "ok")); }
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
 const { t } = useI18n()
@@ -11,7 +10,9 @@ import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
+import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
+import GroupActionModal from '@/components/GroupActionModal.vue'
 
 interface GroupBuyItem {
   id: number
@@ -26,23 +27,37 @@ interface GroupBuyItem {
   stock?: number
 }
 
-const router = useRouter()
 const groups = ref<GroupBuyItem[]>([])
+const myGroups = ref<any[]>([])
 const loading = ref(true)
+const activeTab = ref<'all' | 'my'>('all')
+const selectedGroup = ref<GroupBuyItem | null>(null)
+const showModal = ref(false)
+
+async function loadMyGroups() {
+  try { const r = await request.get('/group-buy/my'); myGroups.value = r.data || []; loading.value = false; 
+    } catch {}
+}
 
 onMounted(async () => {
-  try { const r = await request.get('/group-buy'); groups.value = r.data || [] } catch { toast.error('拼团列表加载失败') }
-  finally { loading.value = false }
+  try { const r = await request.get('/group-buy'); groups.value = r.data || []; loading.value = false; 
+      loading.value = false;
+    } catch { toast.error(t('groupBuy.loadFail')) }
+  loadMyGroups()
 })
 
-function goProduct(id: number) { router.push(`/product/${id}`) }
+function openGroupAction(g: GroupBuyItem) { selectedGroup.value = g; showModal.value = true }
 const progress = (g: GroupBuyItem) => Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
+const remainingSlots = (g: GroupBuyItem) => Math.max(0, (g.minMembers || 1) - (g.currentMembers || 0))
+const isGroupFull = (g: GroupBuyItem) => remainingSlots(g) <= 0
+function isExpired(g: GroupBuyItem) { return new Date(g.endTime).getTime() <= Date.now() }
 
 // Share poster
 const showShare = ref(false)
 const sharePoster = ref('')
 const shareGroupName = ref('')
 function share(g: GroupBuyItem) {
+  selectedGroup.value = g
   shareGroupName.value = g.productName || ''
   drawPoster(g)
   showShare.value = true
@@ -59,32 +74,33 @@ function drawPoster(g: GroupBuyItem) {
   ctx.fillStyle = grad; ctx.fillRect(0, 0, 400, 180)
   // title
   ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui'; ctx.textAlign = 'center'
-  ctx.fillText('拼团邀请', 200, 60)
-  ctx.font = '16px system-ui'; ctx.fillText('邀请好友一起拼，享超低价', 200, 90)
+  ctx.fillText(t('groupBuy.posterTitle'), 200, 60)
+  ctx.font = '16px system-ui'; ctx.fillText(t('groupBuy.posterSub'), 200, 90)
   // product name
   ctx.fillStyle = '#333'; ctx.font = 'bold 20px system-ui'
-  ctx.fillText(g.productName || '拼团商品', 200, 230)
+  ctx.fillText(g.productName || t('groupBuy.productDefault'), 200, 230)
   // prices
   ctx.font = 'bold 36px system-ui'; ctx.fillStyle = '#f10215'
   ctx.fillText('¥' + (g.groupPrice / 100).toFixed(2), 200, 290)
   ctx.font = '18px system-ui'; ctx.fillStyle = '#999'
-  ctx.fillText('原价 ¥' + (g.originalPrice / 100).toFixed(2), 200, 320)
-  const lw = ctx.measureText('原价 ¥' + (g.originalPrice / 100).toFixed(2))
+  const priceText = t('product.originalPrice') + ' ¥' + (g.originalPrice / 100).toFixed(2)
+  ctx.fillText(priceText, 200, 320)
+  const lw = ctx.measureText(priceText)
   ctx.strokeStyle = '#999'; ctx.lineWidth = 1
   ctx.beginPath(); ctx.moveTo(200 - lw.width/2, 316); ctx.lineTo(200 + lw.width/2, 316); ctx.stroke()
   // progress
   const pct = Math.min(100, Math.round(((g.currentMembers || 0) / (g.minMembers || 1)) * 100))
   ctx.fillStyle = '#666'; ctx.font = '16px system-ui'
-  ctx.fillText(`已参团 ${g.currentMembers || 0}/${g.minMembers} (${pct}%)`, 200, 370)
+  ctx.fillText(t('groupBuy.posterMembers', { n: String(g.currentMembers || 0), m: String(g.minMembers), pct: String(pct) }), 200, 370)
   ctx.fillStyle = '#eee'; ctx.fillRect(50, 385, 300, 12)
   ctx.fillStyle = '#f10215'; ctx.fillRect(50, 385, 300 * pct / 100, 12)
   // QR placeholder
   ctx.fillStyle = '#f5f5f5'; ctx.fillRect(150, 430, 100, 100)
   ctx.fillStyle = '#999'; ctx.font = '12px system-ui'; ctx.textAlign = 'center'
-  ctx.fillText('扫码参团', 200, 485)
+  ctx.fillText(t('groupBuy.posterQR'), 200, 485)
   // footer
   ctx.fillStyle = '#999'; ctx.font = '12px system-ui'
-  ctx.fillText('长按识别二维码 · 邀请好友参团', 200, 570)
+  ctx.fillText(t('groupBuy.posterHint'), 200, 570)
   sharePoster.value = canvas.toDataURL()
 }
 function downloadPoster() {
@@ -92,6 +108,7 @@ function downloadPoster() {
 }
 async function copyShareLink() {
   try { await navigator.clipboard.writeText(window.location.origin + '/group-buy'); toast.success(t('toast.copied')) } catch {}
+  try { await request.post('/social/share', { productId: selectedGroup.value?.productId, channel: 'group_buy_copy' }) } catch {}
 }
 </script>
 
@@ -102,12 +119,20 @@ async function copyShareLink() {
       <p class="gb-hero-sub">{{ t('groupBuy.subtitle') }}</p>
     </div>
 
+    <!-- Tabs -->
+    <div class="gb-tabs">
+      <span class="gb-tab" :class="{ active: activeTab === 'all' }" @click="activeTab = 'all'">{{ t('groupBuy.allGroups') }}</span>
+      <span class="gb-tab" :class="{ active: activeTab === 'my' }" @click="activeTab = 'my'; loadMyGroups()">{{ t('groupBuy.myGroups') }} {{ myGroups.length ? t('groupBuy.groupCount', { n: String(myGroups.length) }) : '' }}</span>
+    </div>
+
+    <!-- All groups -->
+    <template v-if="activeTab === 'all'">
     <div v-if="loading" class="gb-grid">
-      <div v-for="i in 6" :key="i" class="gb-card"><div class="sk-img" /><div class="sk-body"><div class="sk-line" /></div></div>
+      <SkeletonBox variant="card" :columns="3" :count="6" height="280px" />
     </div>
 
     <div v-else-if="groups.length" class="gb-grid">
-      <div v-for="g in groups" :key="g.id" class="gb-card" role="button" tabindex="0" @click="goProduct(g.productId)" @keydown.enter.prevent="goProduct(g.productId)" @keydown.space.prevent="goProduct(g.productId)">
+      <div v-for="g in groups" :key="g.id" class="gb-card" role="button" tabindex="0" @click="openGroupAction(g)" @keydown.enter.prevent="openGroupAction(g)" @keydown.space.prevent="openGroupAction(g)">
         <div class="gb-img">
           <LazyImage :src="g.imageUrl || ''" :alt="g.productName" height="200px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
           <JdBadge class="gb-badge-tl">{{ g.minMembers }}人团</JdBadge>
@@ -118,18 +143,42 @@ async function copyShareLink() {
           <div class="gb-prices">
             <span class="gb-price">{{ formatPrice(g.groupPrice / 100, 2) }}</span>
             <span class="gb-original">{{ formatPrice(g.originalPrice / 100, 2) }}</span>
-            <span class="gb-members">{{ g.currentMembers || 0 }}/{{ g.minMembers }}{{ t('groupBuy.people', '人') }}</span>
+            <span class="gb-members">{{ g.currentMembers || 0 }}/{{ g.minMembers }}{{ t('groupBuy.people', '人') }}<span v-if="isGroupFull(g)" class="gb-full-tag"> {{ t('groupBuy.successLabel') }}</span><span v-else class="gb-remain-tag"> {{ t('groupBuy.remaining', { n: remainingSlots(g) }) }}</span></span>
           </div>
-          <div class="gb-bar"><div class="gb-bar-fill" :style="{ width: progress(g) + '%' }" /></div>
+          <div class="gb-bar"><div class="gb-bar-fill" :class="{ complete: isGroupFull(g) }" :style="{ width: progress(g) + '%' }" /></div>
           <div class="gb-actions">
-            <JdButton size="sm" class="flex-1" @click.stop="goProduct(g.productId)">{{ t('groupBuy.joinGroup') }}</JdButton>
-            <JdButton size="sm" type="outline" @click.stop="share(g)">📤 邀请</JdButton>
+            <JdButton size="sm" class="flex-1" :disabled="isExpired(g)" @click.stop="openGroupAction(g)">{{ isExpired(g) ? t('countdown.ended') : t('groupBuy.joinGroup') }}</JdButton>
+            <JdButton size="sm" type="outline" :disabled="isExpired(g)" @click.stop="share(g)">📤 {{ t('groupBuy.invite') }}</JdButton>
           </div>
         </div>
       </div>
     </div>
 
     <JdEmpty v-else icon="👥" :title="t('groupBuy.empty', '暂无拼团活动')" />
+    </template>
+
+    <!-- My groups -->
+    <template v-else>
+      <div v-if="myGroups.length" class="gb-grid">
+        <div v-for="g in myGroups" :key="g.id" class="gb-card">
+          <div class="gb-img">
+            <LazyImage :src="g.imageUrl || ''" :alt="g.productName" height="200px" />
+            <JdBadge class="gb-badge-tl">{{ g.minMembers }}人团</JdBadge>
+          </div>
+          <div class="gb-info">
+            <h3 class="gb-name">{{ g.productName || t('groupBuy.productDefault') }}</h3>
+            <div class="gb-status-badge" :class="g.status === 'success' ? 'success' : g.status === 'failed' ? 'failed' : 'pending'">
+              {{ g.status === 'success' ? t('groupBuy.successLabel') : g.status === 'failed' ? t('groupBuy.failedLabel') : t('groupBuy.pendingLabel') }}
+            </div>
+            <div class="gb-bar"><div class="gb-bar-fill" :style="{ width: Math.min(100, ((g.currentMembers || 0) / (g.minMembers || 1)) * 100) + '%' }" /></div>
+          </div>
+        </div>
+      </div>
+      <JdEmpty v-else icon="👥" :title="t('groupBuy.emptyTitle')" :description="t('groupBuy.emptyDesc')" />
+    </template>
+
+    <!-- Group Action Modal -->
+    <GroupActionModal v-if="showModal && selectedGroup" :group="selectedGroup" @close="showModal = false" />
 
     <!-- Share Modal -->
     <div v-if="showShare" class="share-overlay" @click.self="showShare = false">
@@ -152,6 +201,15 @@ async function copyShareLink() {
 .gb-hero-title { font-size: var(--font-h1); font-weight: 800; margin-bottom: var(--space-sm); }
 .gb-hero-sub { font-size: 15px; opacity: .9; }
 
+.gb-tabs { display: flex; gap: var(--space-md); margin-bottom: var(--space-xl); }
+.gb-tab { padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-md); font-weight: 600; background: var(--bg-white); color: var(--text-secondary); border: 2px solid var(--border); transition: all var(--transition-fast); }
+.gb-tab.active { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
+.gb-tab:hover:not(.active) { border-color: var(--jd-red); color: var(--jd-red); }
+.gb-status-badge { font-size: var(--font-sm); font-weight: 600; margin: var(--space-sm) 0; }
+.gb-status-badge.pending { color: var(--orange); }
+.gb-status-badge.success { color: var(--green); }
+.gb-status-badge.failed { color: var(--text-tertiary); }
+
 .gb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
 .gb-card { background: var(--bg-white); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform var(--transition); }
 .gb-card:hover { transform: translateY(-6px); }
@@ -169,6 +227,9 @@ async function copyShareLink() {
 
 .gb-bar { background: var(--bg-hover); border-radius: var(--radius-sm); height: 6px; overflow: hidden; margin-bottom: var(--space-md); }
 .gb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--jd-red), #ff6b6b); border-radius: var(--radius-sm); transition: width .6s; }
+.gb-bar-fill.complete { background: var(--green); }
+.gb-full-tag { color: var(--green); font-weight: 600; }
+.gb-remain-tag { color: var(--jd-red); font-weight: 600; }
 
 .sk-img { height: 200px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 .sk-body { padding: var(--space-lg); }

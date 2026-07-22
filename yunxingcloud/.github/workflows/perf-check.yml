@@ -1,0 +1,50 @@
+name: Performance Check
+
+on:
+  pull_request:
+    paths:
+      - 'frontend-mall/**'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-mall/**'
+
+jobs:
+  bundle-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm', cache-dependency-path: frontend-mall/package-lock.json }
+      - run: npm ci
+        working-directory: frontend-mall
+      - run: npm run build
+        working-directory: frontend-mall
+      - name: Check bundle size
+        run: |
+          MAX_SIZE=800
+          SIZE=$(stat -c%s frontend-mall/dist/assets/vendor-vue*.js 2>/dev/null || echo 0)
+          if [ "$SIZE" -gt "$((MAX_SIZE * 1024))" ]; then
+            echo "::warning::Vendor bundle exceeds ${MAX_SIZE}KB (actual: $((SIZE / 1024))KB)"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats
+          path: frontend-mall/dist/stats.html
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: bundle-analysis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm', cache-dependency-path: frontend-mall/package-lock.json }
+      - run: npm ci
+        working-directory: frontend-mall
+      - run: npm run build
+        working-directory: frontend-mall
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: frontend-mall/lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

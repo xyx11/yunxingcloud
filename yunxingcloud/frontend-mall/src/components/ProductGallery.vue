@@ -9,7 +9,13 @@ const props = defineProps<{
 
 const activeImage = ref(0)
 const fullscreen = ref(false)
+const fsScale = ref(1)
 let touchX = 0
+let touchY = 0
+let fsTouchX = 0
+let pinchStartDist = 0
+let pinchStartScale = 1
+let lastTapTime = 0
 
 function onTouchStart(e: TouchEvent) {
   touchX = e.touches[0].clientX
@@ -22,6 +28,54 @@ function onTouchEnd(e: TouchEvent) {
       ? Math.min(props.images.length - 1, activeImage.value + 1)
       : Math.max(0, activeImage.value - 1)
   }
+}
+
+// Fullscreen touch swipe
+function onFsTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    pinchStartDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    )
+    pinchStartScale = fsScale.value
+  } else if (e.touches.length === 1) {
+    fsTouchX = e.touches[0].clientX
+    touchY = e.touches[0].clientY
+  }
+}
+
+function onFsTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2 && pinchStartDist > 0) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    )
+    fsScale.value = Math.min(3, Math.max(1, pinchStartScale * (dist / pinchStartDist)))
+  }
+}
+
+function onFsTouchEnd(e: TouchEvent) {
+  if (e.changedTouches.length === 1 && pinchStartDist === 0) {
+    const dx = e.changedTouches[0].clientX - fsTouchX
+    const dy = e.changedTouches[0].clientY - touchY
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) && props.images.length > 1 && fsScale.value <= 1) {
+      activeImage.value = dx < 0
+        ? Math.min(props.images.length - 1, activeImage.value + 1)
+        : Math.max(0, activeImage.value - 1)
+    }
+    // Double-tap to zoom
+    const now = Date.now()
+    if (now - lastTapTime < 300 && Math.abs(dx) < 20) {
+      fsScale.value = fsScale.value > 1 ? 1 : 2
+    }
+    lastTapTime = now
+  }
+  pinchStartDist = 0
+}
+
+function closeFs() {
+  fullscreen.value = false
+  fsScale.value = 1
 }
 
 function onFsKeydown(e: KeyboardEvent) {
@@ -52,19 +106,26 @@ onUnmounted(() => {
       @touchend="onTouchEnd"
       @click="fullscreen = true"
     >
-      <LazyImage
-        :src="images[activeImage]"
-        :alt="productName"
-        height="420px"
-        rounded="8px"
-      />
+      <Transition name="gallery-slide" mode="out-in">
+        <LazyImage
+          :key="activeImage"
+          :src="images[activeImage]"
+          :alt="productName"
+          height="420px"
+          rounded="8px"
+        />
+      </Transition>
     </div>
 
     <!-- Fullscreen overlay -->
-    <div v-if="fullscreen" class="fullscreen-overlay" @click="fullscreen = false">
+    <div v-if="fullscreen" class="fullscreen-overlay" @click="closeFs"
+      @touchstart.passive="onFsTouchStart"
+      @touchmove.passive="onFsTouchMove"
+      @touchend="onFsTouchEnd"
+    >
       <button
         class="fs-close"
-        @click.stop="fullscreen = false"
+        @click.stop="closeFs"
         aria-label="关闭"
       >✕</button>
       <button
@@ -84,6 +145,7 @@ onUnmounted(() => {
         :src="images[activeImage]"
         :alt="productName"
         class="fs-img"
+        :style="{ transform: 'scale(' + fsScale + ')', transition: 'transform .2s ease' }"
       />
       <span v-else class="fs-placeholder">📦</span>
       <div v-if="images.length > 1" class="fs-dots">
@@ -230,6 +292,11 @@ onUnmounted(() => {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+.gallery-slide-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.gallery-slide-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.gallery-slide-enter-from { opacity: 0; transform: translateX(20px); }
+.gallery-slide-leave-to { opacity: 0; transform: translateX(-20px); }
 
 @media (max-width: 768px) {
   .gallery { width: 100%; }

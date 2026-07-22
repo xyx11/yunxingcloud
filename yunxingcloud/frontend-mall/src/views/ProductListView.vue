@@ -42,8 +42,8 @@ const priceRanges = [
 ]
 
 onMounted(async () => {
-  try { const r = await getCategories(); categories.value = r.data || [] } catch { toast.error('分类加载失败') }
-  try { const r = await getBrands(); brands.value = r.data || [] } catch { toast.error('品牌加载失败') }
+  try { const r = await getCategories(); categories.value = r.data || [] } catch { toast.error(t('toast.categoryLoadFail')) }
+  try { const r = await getBrands(); brands.value = r.data || [] } catch { toast.error(t('toast.brandLoadFail')) }
   try { const r = await getTags(); tags.value = r.data || [] } catch {}
   filters.value.categoryId = (route.query.categoryId as string) || ''
   loadProducts()
@@ -78,7 +78,8 @@ async function loadProducts() {
     const r = await getProducts(params)
     products.value = r.data.content || r.data || []
     totalPages.value = r.data.totalPages || 0
-  } catch { toast.error('商品列表加载失败'); products.value = [] } finally { loading.value = false }
+    loading.value = false;
+    } catch { toast.error(t('toast.productListFail')); products.value = [] }
 }
 
 function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; if (filters.value.tagId) q.tagId = filters.value.tagId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
@@ -93,20 +94,27 @@ async function loadMore(nextPage?: number) {
     if (filters.value.sort) params.sort = filters.value.sort
     if (filters.value.categoryId) params.categoryId = filters.value.categoryId
     if (filters.value.brandId) params.brandId = filters.value.brandId
+    if (filters.value.tagId) params.tagId = filters.value.tagId
+    if (filters.value.minPrice) params.minPrice = Number(filters.value.minPrice) * 100
+    if (filters.value.maxPrice) params.maxPrice = Number(filters.value.maxPrice) * 100
     const r = await getProducts(params)
     const data = r.data
     products.value = [...products.value, ...(data.content || data || [])]
     totalPages.value = data.totalPages || 0
     currentPage.value = page
-  } catch { toast.error('加载更多失败') } finally { loadingMore.value = false }
+  } catch { toast.error(t('toast.loadMoreFail')) } finally { loadingMore.value = false }
 }
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goPage(p: number) { currentPage.value = p; loadProducts(); window.scrollTo(0, 0) }
 
+const viewMode = ref<'grid' | 'list'>('grid')
+const recentlyAdded = ref(new Set<number>())
+function isRecentlyAdded(id: number) { return recentlyAdded.value.has(id) }
+
 async function quickAdd(e: Event, p: Product) {
   e.stopPropagation()
-  try { await addToCart(p.id, 1); toast.success('已加入购物车'); (p as Product)._added = true; setTimeout(() => (p as Product)._added = false, 1500); flyToCart(e as MouseEvent) } catch { toast.error('添加失败') }
+  try { await addToCart(p.id, 1); toast.success(t('toast.addedToCart')); recentlyAdded.value.add(p.id); setTimeout(() => recentlyAdded.value.delete(p.id), 1500); flyToCart(e as MouseEvent) } catch { toast.error(t('toast.addCartFail')) }
 }
 
 function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewProduct.value = p }
@@ -115,7 +123,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 <template>
   <div class="plp">
     <!-- Mobile Filter Button -->
-    <button class="mobile-filter-btn" @click="showFilter = true">🔍 筛选</button>
+    <button class="mobile-filter-btn" @click="showFilter = true">🔍 {{ t('sort.filter') }}</button>
 
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -123,8 +131,8 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
       <div class="filter-card">
         <h4 class="filter-title">{{ t('product.hotRecommend') }}</h4>
         <div v-for="cat in categories" :key="cat.id" class="filter-item">
-          <span class="filter-link" :class="{ active: filters.categoryId === cat.id + '' }"
-                @click="filters.categoryId = cat.id + ''; applyFilters()">{{ cat.name }}</span>
+          <span class="filter-link" :class="{ active: filters.categoryId === cat.id + '' }" role="button" tabindex="0"
+                @click="filters.categoryId = cat.id + ''; applyFilters()" @keydown.enter.prevent="filters.categoryId = cat.id + ''; applyFilters()" @keydown.space.prevent="filters.categoryId = cat.id + ''; applyFilters()">{{ cat.name }}</span>
         </div>
       </div>
 
@@ -132,8 +140,8 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
       <div class="filter-card">
         <h4 class="filter-title">{{ t('common.brand') }}</h4>
         <div v-for="b in brands" :key="b.id" class="filter-item">
-          <span class="filter-link" :class="{ active: filters.brandId === b.id + '' }"
-                @click="filters.brandId = b.id + ''; applyFilters()">{{ b.name }}</span>
+          <span class="filter-link" :class="{ active: filters.brandId === b.id + '' }" role="button" tabindex="0"
+                @click="filters.brandId = b.id + ''; applyFilters()" @keydown.enter.prevent="filters.brandId = b.id + ''; applyFilters()" @keydown.space.prevent="filters.brandId = b.id + ''; applyFilters()">{{ b.name }}</span>
         </div>
       </div>
 
@@ -141,8 +149,8 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
       <div v-if="tags.length" class="filter-block">
         <h4 class="filter-title">标签</h4>
         <div v-for="t in tags" :key="t.id" class="filter-item">
-          <span class="filter-link" :class="{ active: filters.tagId === t.id + '' }"
-                @click="filters.tagId = filters.tagId === t.id + '' ? '' : t.id + ''; applyFilters()">{{ t.name }}</span>
+          <span class="filter-link" :class="{ active: filters.tagId === t.id + '' }" role="button" tabindex="0"
+                @click="filters.tagId = filters.tagId === t.id + '' ? '' : t.id + ''; applyFilters()" @keydown.enter.prevent="filters.tagId = filters.tagId === t.id + '' ? '' : t.id + ''; applyFilters()" @keydown.space.prevent="filters.tagId = filters.tagId === t.id + '' ? '' : t.id + ''; applyFilters()">{{ t.name }}</span>
         </div>
       </div>
 
@@ -156,7 +164,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
           <button class="price-confirm" @click="applyFilters()">{{ t('common.confirm') }}</button>
         </div>
         <div class="price-tags">
-          <span v-for="r in priceRanges" :key="r.label" class="price-tag" @click="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters()">
+          <span v-for="r in priceRanges" :key="r.label" class="price-tag" role="button" tabindex="0" @click="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters()" @keydown.enter.prevent="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters()" @keydown.space.prevent="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters()">
             {{ r.label }}
           </span>
         </div>
@@ -167,18 +175,23 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
     <div class="main">
       <!-- Sort Bar -->
       <div class="sort-bar">
-        <span class="sort-label">排序：</span>
-        <span class="sort-item" :class="{ active: !filters.sort }" @click="setSort('')">综合</span>
-        <span class="sort-item" :class="{ active: filters.sort === 'sales' }" @click="setSort('sales')">{{ t('sort.sales') }}</span>
-        <span class="sort-item" :class="{ active: filters.sort === 'price_asc' }" @click="setSort('price_asc')">价格↑</span>
-        <span class="sort-item" :class="{ active: filters.sort === 'price_desc' }" @click="setSort('price_desc')">价格↓</span>
-        <span class="sort-item" :class="{ active: filters.sort === 'newest' }" @click="setSort('newest')">最新</span>
+        <span class="sort-label">{{ t('sort.sortLabel') }}：</span>
+        <span class="sort-item" :class="{ active: !filters.sort }" role="button" tabindex="0" @click="setSort('')" @keydown.enter.prevent="setSort('')" @keydown.space.prevent="setSort('')">{{ t('sort.defaultSort') }}</span>
+        <span class="sort-item" :class="{ active: filters.sort === 'sales' }" role="button" tabindex="0" @click="setSort('sales')" @keydown.enter.prevent="setSort('sales')" @keydown.space.prevent="setSort('sales')">{{ t('sort.sales') }}</span>
+        <span class="sort-item" :class="{ active: filters.sort === 'price_asc' }" role="button" tabindex="0" @click="setSort('price_asc')" @keydown.enter.prevent="setSort('price_asc')" @keydown.space.prevent="setSort('price_asc')">{{ t('sort.priceAsc') }}</span>
+        <span class="sort-item" :class="{ active: filters.sort === 'price_desc' }" role="button" tabindex="0" @click="setSort('price_desc')" @keydown.enter.prevent="setSort('price_desc')" @keydown.space.prevent="setSort('price_desc')">{{ t('sort.priceDesc') }}</span>
+        <span class="sort-item" :class="{ active: filters.sort === 'newest' }" role="button" tabindex="0" @click="setSort('newest')" @keydown.enter.prevent="setSort('newest')" @keydown.space.prevent="setSort('newest')">{{ t('sort.newest') }}</span>
+        <span class="product-count">{{ products.length }} 件商品</span>
+        <div class="view-toggle">
+          <span class="view-btn" :class="{ active: viewMode === 'grid' }" role="button" tabindex="0" @click="viewMode = 'grid'" @keydown.enter.prevent="viewMode = 'grid'" @keydown.space.prevent="viewMode = 'grid'" title="网格视图">⊞</span>
+          <span class="view-btn" :class="{ active: viewMode === 'list' }" role="button" tabindex="0" @click="viewMode = 'list'" @keydown.enter.prevent="viewMode = 'list'" @keydown.space.prevent="viewMode = 'list'" title="列表视图">☰</span>
+        </div>
       </div>
 
       <!-- Products -->
       <SkeletonBox v-if="loading" variant="card" :columns="3" :count="6" height="280px" />
 
-      <div v-else class="product-grid">
+      <div v-else class="product-grid" :class="{ 'view-list': viewMode === 'list' }">
         <div v-for="p in products" :key="p.id" class="product-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <div class="card-img-wrap">
             <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
@@ -188,19 +201,19 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
               -{{ Math.round((1 - p.price / p.originalPrice) * 100) }}%
             </JdBadge>
             <button class="compare-btn" :class="{ active: isSelected(p.id) }" @click.stop="toggleCompare({ id: p.id, name: p.name, price: p.price })">
-              {{ isSelected(p.id) ? '✓ 对比' : '+ 对比' }}
+              {{ isSelected(p.id) ? t('product.compareRemove') : t('product.compareAdd') }}
             </button>
-            <button class="preview-btn" @click.stop="openQuickView($event, p)">👁 预览</button>
+            <button class="preview-btn" @click.stop="openQuickView($event, p)">{{ t('product.quickView') }}</button>
           </div>
           <div class="card-info">
             <h4 class="card-name">{{ p.name }}</h4>
             <div class="card-bottom">
               <div>
                 <span class="card-price">{{ formatPrice(p.price / 100, 2) }}</span>
-                <span class="card-sales" v-if="p.sales">{{ p.sales > 1000 ? '🔥 ' + (p.sales / 1000).toFixed(1) + 'k人已购' : p.sales + '人已购' }}</span>
+                <span class="card-sales" v-if="p.sales">{{ p.sales > 1000 ? '🔥 ' + (p.sales / 1000).toFixed(1).replace('.0','') + 'k' : p.sales }}{{ t('product.soldSuffix') }}</span>
               </div>
-              <button class="add-btn" :class="{ added: (p as Product)._added }" @click="(e: Event) => quickAdd(e, p)">
-                {{ (p as Product)._added ? '✓' : '+' }}
+              <button class="add-btn" :class="{ added: isRecentlyAdded(p.id) }" @click="(e: Event) => quickAdd(e, p)">
+                {{ isRecentlyAdded(p.id) ? '✓' : '+' }}
               </button>
             </div>
           </div>
@@ -230,12 +243,12 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
       <div v-if="showFilter" class="filter-overlay" @click.self="showFilter = false">
         <div class="filter-sheet">
           <div class="filter-sheet-header">
-            <h3>筛选</h3>
+            <h3>{{ t('common.search') }}</h3>
             <button class="filter-sheet-close" @click="showFilter = false">✕</button>
           </div>
           <div class="filter-sheet-body">
             <div class="filter-card">
-              <h4 class="filter-title">分类</h4>
+              <h4 class="filter-title">{{ t('product.category') }}</h4>
               <div class="filter-tags">
                 <span v-for="cat in categories" :key="cat.id" class="filter-tag"
                   :class="{ active: filters.categoryId === cat.id + '' }"
@@ -243,7 +256,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
               </div>
             </div>
             <div class="filter-card">
-              <h4 class="filter-title">品牌</h4>
+              <h4 class="filter-title">{{ t('common.brand') }}</h4>
               <div class="filter-tags">
                 <span v-for="b in brands" :key="b.id" class="filter-tag"
                   :class="{ active: filters.brandId === b.id + '' }"
@@ -251,12 +264,12 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
               </div>
             </div>
             <div class="filter-card">
-              <h4 class="filter-title">价格区间</h4>
+              <h4 class="filter-title">{{ t('common.priceRange') }}</h4>
               <div class="price-inputs">
-                <input v-model="filters.minPrice" placeholder="最低价" type="number" class="price-input" />
+                <input v-model="filters.minPrice" :placeholder="t('common.lowest')" type="number" class="price-input" />
                 <span class="price-sep">-</span>
-                <input v-model="filters.maxPrice" placeholder="最高价" type="number" class="price-input" />
-                <button class="price-confirm" @click="applyFilters(); showFilter = false">确定</button>
+                <input v-model="filters.maxPrice" :placeholder="t('common.highest')" type="number" class="price-input" />
+                <button class="price-confirm" @click="applyFilters(); showFilter = false">{{ t('common.confirm') }}</button>
               </div>
               <div class="price-tags">
                 <span v-for="r in priceRanges" :key="r.label" class="price-tag" @click="filters.minPrice = r.min; filters.maxPrice = r.max; applyFilters(); showFilter = false">{{ r.label }}</span>
@@ -309,7 +322,19 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .sort-item { cursor: pointer; font-size: var(--font-base); padding: 4px 8px; border-radius: var(--radius-sm); color: var(--text-secondary); }
 .sort-item.active { color: var(--jd-red); background: var(--jd-red-light); }
 
-.product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+/* View toggle */
+.product-count { font-size: var(--font-xs); color: var(--text-placeholder); margin-left: auto; white-space: nowrap; }
+
+.view-toggle { display: flex; gap: 4px; }
+.view-btn { cursor: pointer; padding: 4px 10px; border-radius: var(--radius-sm); color: var(--text-tertiary); font-size: 18px; transition: all var(--transition-fast); border: 1px solid var(--border); }
+.view-btn.active { color: var(--jd-red); border-color: var(--jd-red); background: var(--jd-red-light); }
+.view-btn:hover:not(.active) { border-color: var(--text-tertiary); }
+
+/* List view */
+.view-list .product-card { display: flex; flex-direction: row; }
+.view-list .product-card > :first-child { width: 160px; flex-shrink: 0; }
+
+.product-grid { display: grid; grid-template-columns: repeat(var(--grid-cols, 3), 1fr); gap: 14px; }
 .product-card { background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); transition: box-shadow var(--transition), transform var(--transition); }
 .product-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-4px); }
 
@@ -338,9 +363,12 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .page-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-base); background: var(--bg-white); color: var(--text-primary); }
 .page-btn.active { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
 
+@media (min-width: 769px) and (max-width: 1024px) {
+  .product-grid { --grid-cols: 3; }
+}
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .mobile-filter-btn { display: block; position: sticky; top: 0; z-index: 10; background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-lg); margin-bottom: var(--space-md); font-size: var(--font-md); cursor: pointer; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
-  .product-grid { grid-template-columns: repeat(2, 1fr); }
+  .product-grid { --grid-cols: 2; }
 }
 </style>

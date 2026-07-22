@@ -23,7 +23,7 @@ public class OrderTimeoutJob {
         try {
             orderService.cancelTimeoutOrders();
         } catch (Exception e) {
-            log.error("超时订单取消任务异常: {}", e.getMessage());
+            log.error("Order timeout cancellation failed: {}", e.getMessage());
         }
     }
 }

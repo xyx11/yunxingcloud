@@ -70,4 +70,13 @@ public class FlashSaleController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PostMapping("/remind")
+    public ResponseEntity<?> remind(@RequestBody Map<String, Object> body) {
+        Long saleId = Long.valueOf(body.get("saleId").toString());
+        Long productId = body.containsKey("productId") ? Long.valueOf(body.get("productId").toString()) : null;
+        service.setRemind(saleId, productId, user());
+        log.info("User {} set remind for flash sale {}", user(), saleId);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
 }

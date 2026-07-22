@@ -55,12 +55,12 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/products/**", "/api/categories/**", "/api/brands/**",
             "/api/banners/**", "/api/skus/**", "/api/home/**", "/api/search/**",
             "/api/recommend/**", "/api/reviews/**", "/api/articles/**",
-            "/api/group-buy/**", "/api/flash-sale/**"
+            "/api/group-buy/**", "/api/flash-sale/**", "/api/aggregate/**", "/api/seo/**", "/api/chat/**"
     );
 
     private final SecretKey key;
 
-    public JwtAuthGlobalFilter(@Value("${jwt.secret}") String secret) {
+    public JwtAuthGlobalFilter(@Value("${jwt.secret:yunxingcloud-jwt-secret-key-2024}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

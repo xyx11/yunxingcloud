@@ -4,12 +4,21 @@ import { useI18n } from '@/locales'
 import type { Review } from '@/types'
 
 const { t } = useI18n()
-const props = defineProps<{ reviews: Review[] }>()
+const props = defineProps<{
+  reviews: Review[]
+  analytics?: { avgRating?: number; total?: number; distribution?: Record<number, number> }
+}>()
 
-const total = computed(() => props.reviews.length)
-const avg = computed(() => total.value ? (props.reviews.reduce((s, r) => s + (r.rating || 0), 0) / total.value).toFixed(1) : 0)
+const total = computed(() => props.analytics?.total ?? props.reviews.length)
+const avg = computed(() => {
+  if (props.analytics?.avgRating != null) return props.analytics.avgRating.toFixed(1)
+  return total.value ? (props.reviews.reduce((s, r) => s + (r.rating || 0), 0) / total.value).toFixed(1) : 0
+})
 
 const distribution = computed(() => {
+  if (props.analytics?.distribution) {
+    return Object.entries(props.analytics.distribution).sort((a, b) => Number(b[0]) - Number(a[0]))
+  }
   const dist: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
   props.reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating]++ })
   return Object.entries(dist).sort((a, b) => Number(b[0]) - Number(a[0]))

@@ -1,3 +1,13 @@
+# Ingress 配置
+# 部署前替换 DOMAIN 为你自己的域名，例如: yunxingcloud.com
+# 命令行一键替换: sed -i '' 's/yunxingcloud.local/your-domain.com/g' k8s/ingress.yaml
+#
+# TLS 证书 (二选一):
+# A) cert-manager 自动申请 Let's Encrypt (推荐):
+#    1. kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+#    2. 取消下面 cert-manager.io/cluster-issuer 注释
+# B) 手动配置:
+#    kubectl create secret tls yunxingcloud-tls --cert=cert.pem --key=key.pem -n yunxingcloud
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,6 +18,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # cert-manager 自动 TLS (安装 cert-manager 后取消注释):
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
   rules:

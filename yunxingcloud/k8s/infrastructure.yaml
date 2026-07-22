@@ -100,3 +100,149 @@ spec:
               port: 9200
             initialDelaySeconds: 30
             periodSeconds: 10
+
+---
+# Service definitions for infrastructure components
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: nacos
+  ports:
+    - name: http
+      port: 8848
+      targetPort: 8848
+    - name: grpc
+      port: 9848
+      targetPort: 9848
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - port: 9200
+      targetPort: 9200
+  type: ClusterIP
+
+---
+# MySQL for development (生产环境请使用云数据库)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: yunxingcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yunxingcloud-secret
+                  key: DB_PASSWORD
+            - name: MYSQL_DATABASE
+              value: yunxingcloud_core
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: yunxingcloud
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+  type: ClusterIP
+
+---
+# ============================================
+# Persistent Volume Claims (生产环境使用云厂商 StorageClass)
+# ============================================
+# 默认使用标准 StorageClass，云厂商请替换:
+#   阿里云: storageClassName: alicloud-disk-ssd
+#   AWS:    storageClassName: gp3
+#   GCP:    storageClassName: standard-rwo
+#   自建:   storageClassName: local-path (Rancher) 或 nfs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: yunxingcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  # 生产环境取消下面注释并填入云厂商 StorageClass:
+  # storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: yunxingcloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  # 生产环境取消下面注释:
+  # storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: es-pvc
+  namespace: yunxingcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

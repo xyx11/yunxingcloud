@@ -7,12 +7,19 @@ import com.yunxingcloud.order.dto.ProductReviewDTO;
 import com.yunxingcloud.order.dto.ProductSkuDTO;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.service.MallService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Tag(name = "商城前台", description = "商城首页/分类/品牌/优惠券/收藏/地址等")
 @RestController
@@ -28,6 +35,38 @@ public class MallController {
 
     @GetMapping("/api/home")
     public ResponseEntity<?> home() { return ResponseEntity.ok(mallService.home()); }
+
+    @GetMapping("/api/captcha")
+    public ResponseEntity<?> captcha() {
+        int w = 120, h = 44;
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(new Color(245, 245, 245));
+        g.fillRect(0, 0, w, h);
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        StringBuilder code = new StringBuilder();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        for (int i = 0; i < 4; i++) {
+            char c = chars.charAt(r.nextInt(chars.length()));
+            code.append(c);
+            g.setColor(new Color(r.nextInt(100), r.nextInt(100), r.nextInt(100)));
+            g.setFont(new Font("Arial", Font.BOLD, 24));
+            g.drawString(String.valueOf(c), 20 + i * 24, 28 + r.nextInt(8));
+        }
+        for (int i = 0; i < 6; i++) {
+            g.setColor(new Color(r.nextInt(180), r.nextInt(180), r.nextInt(180)));
+            g.drawLine(r.nextInt(w), r.nextInt(h), r.nextInt(w), r.nextInt(h));
+        }
+        g.dispose();
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(img, "png", baos);
+            String b64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray());
+            return ResponseEntity.ok(Map.of("image", b64, "code", code.toString().toLowerCase()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "captcha generation failed"));
+        }
+    }
 
     // ===== Banners =====
     @GetMapping("/api/banners") public ResponseEntity<?> banners() { return ResponseEntity.ok(mallService.listBanners()); }
@@ -106,4 +145,21 @@ public class MallController {
         return mallService.updateAddress(user(), id, body).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
     @DeleteMapping("/api/addresses/{id}") public ResponseEntity<?> delAddress(@PathVariable Long id) { mallService.deleteAddress(id); return ResponseEntity.ok().build(); }
+
+    // ===== Newsletter =====
+    @PostMapping("/api/newsletter/subscribe")
+    public ResponseEntity<?> subscribeNewsletter(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "邮箱格式不正确"));
+        }
+        // In production: save to DB or send to email service
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // ===== Trending =====
+    @GetMapping("/api/trending")
+    public ResponseEntity<?> trending() {
+        return ResponseEntity.ok(mallService.listBanners()); // reuse hot data
+    }
 }

@@ -1,31 +1,43 @@
 version: 2
 updates:
-  - package-ecosystem: "maven"
+  - package-ecosystem: maven
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels: ["dependencies", "java"]
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels: [dependencies, backend]
 
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
     open-pull-requests-limit: 5
-    labels: ["dependencies", "frontend"]
+    labels: [dependencies, frontend-admin]
 
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     directory: "/frontend-mall"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
     open-pull-requests-limit: 5
-    labels: ["dependencies", "frontend-mall"]
+    labels: [dependencies, frontend-mall]
 
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: docker
     directory: "/"
     schedule:
-      interval: "monthly"
-    labels: ["ci"]
+      interval: monthly
+    labels: [dependencies, docker]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: [dependencies, ci]

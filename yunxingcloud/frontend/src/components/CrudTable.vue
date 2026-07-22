@@ -3,7 +3,7 @@ import { computed, ref, watch, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DataTableColumn } from 'naive-ui'
 import {
-  NCard, NDataTable, NButton, NModal, NForm,
+  NCard, NButton, NModal, NForm,
   NInput, NSpace, NPopover, NPopconfirm, NCheckbox,
 } from 'naive-ui'
 

@@ -118,7 +118,8 @@ public class ProductAdminService {
         p.setName(dto.getName()); p.setDescription(dto.getDescription()); p.setPrice(dto.getPrice());
         p.setStock(dto.getStock()); p.setCategoryId(dto.getCategoryId()); p.setBrandId(dto.getBrandId());
         p.setImages(dto.getImages()); p.setImageUrl(dto.getImageUrl());
-        p.setIsNew(dto.getIsNew()); p.setIsHot(dto.getIsHot()); p.setTags(dto.getTags()); p.setStatus(dto.getStatus());
+        p.setIsNew(dto.getIsNew()); p.setIsHot(dto.getIsHot()); p.setTags(dto.getTags());
+        p.setStatus(dto.getStatus() != null ? dto.getStatus() : "0");
         return repo.save(p);
     }
 
@@ -146,5 +147,17 @@ public class ProductAdminService {
     public boolean delete(Long id) {
         if (repo.existsById(id)) { repo.deleteById(id); return true; }
         return false;
+    }
+
+    public java.util.Optional<Map<String, Object>> reviewSummary(Long productId) {
+        var reviews = reviewRepo.findByProductIdOrderByCreatedAtDesc(productId);
+        if (reviews.isEmpty()) return java.util.Optional.empty();
+        double avg = reviews.stream().mapToInt(r -> r.getRating() != null ? r.getRating() : 0).average().orElse(0);
+        var distribution = new java.util.HashMap<Integer, Long>();
+        for (int i = 1; i <= 5; i++) {
+            final int star = i;
+            distribution.put(i, reviews.stream().filter(r -> r.getRating() != null && r.getRating() == star).count());
+        }
+        return java.util.Optional.of(Map.of("avgRating", Math.round(avg * 10) / 10.0, "total", reviews.size(), "distribution", distribution));
     }
 }

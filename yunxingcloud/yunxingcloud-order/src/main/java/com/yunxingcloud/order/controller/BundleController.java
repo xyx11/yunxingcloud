@@ -35,4 +35,7 @@ public class BundleController {
     public ResponseEntity<?> create(@Valid @RequestBody ProductBundleDTO dto) {
         return ResponseEntity.ok(bundleService.create(dto));
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("count", bundleService.list().size())); }
 }

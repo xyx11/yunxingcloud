@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import request from '@/api/request'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
@@ -11,13 +11,25 @@ const toast = useToast()
 const { t } = useI18n()
 const invoices = ref<any[]>([])
 const loading = ref(true)
+const loadError = ref(false)
 const showForm = ref(false)
 const submitting = ref(false)
 const form = ref({ orderNo: '', type: 'personal', title: '', taxNo: '', email: '' })
+const typeFilter = ref<'all' | 'personal' | 'company'>('all')
+const statusFilter = ref<'all' | '0' | '1' | '2'>('all')
+const detailInv = ref<any>(null)
+
+const filteredInvoices = computed(() => {
+  let list = invoices.value
+  if (typeFilter.value !== 'all') list = list.filter(i => i.type === typeFilter.value)
+  if (statusFilter.value !== 'all') list = list.filter(i => i.status === statusFilter.value)
+  return list
+})
 
 onMounted(async () => {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch { toast.error('发票列表加载失败') }
-  finally { loading.value = false }
+  try { const r = await request.get('/invoices'); invoices.value = r.data || []
+    } catch { toast.error(t('invoice.loadFail')); loadError.value = true }
+  loading.value = false
 })
 
 async function submit() {
@@ -29,8 +41,15 @@ async function submit() {
 }
 
 async function load() {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || [] } catch { toast.error('发票列表加载失败') }
+  try { const r = await request.get('/invoices'); invoices.value = r.data || []; loading.value = false; 
+    } catch { toast.error(t('invoice.loadFail')) }
 }
+
+function copyInvNo(no: string) {
+  navigator.clipboard.writeText(no).then(() => toast.success(t('toast.copied'))).catch(() => {})
+}
+
+function showDetail(inv: any) { detailInv.value = inv }
 
 const badgeTypeMap: Record<string, 'orange' | 'green' | 'blue'> = {
   '0': 'orange',
@@ -74,21 +93,62 @@ const statusMap: Record<string, { label: string }> = {
       </div>
     </div>
 
+    <!-- Filter bar -->
+    <div class="invoice-filters">
+      <div class="filter-group">
+        <span class="filter-label">{{ t('common.type') }}</span>
+        <span class="filter-opt" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'">{{ t('common.all') }}</span>
+        <span class="filter-opt" :class="{ active: typeFilter === 'personal' }" @click="typeFilter = 'personal'">{{ t('invoice.personal') }}</span>
+        <span class="filter-opt" :class="{ active: typeFilter === 'company' }" @click="typeFilter = 'company'">{{ t('invoice.company') }}</span>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">{{ t('invoice.statusLabel') || t('common.status') }}</span>
+        <span class="filter-opt" :class="{ active: statusFilter === 'all' }" @click="statusFilter = 'all'">{{ t('common.all') }}</span>
+        <span class="filter-opt" :class="{ active: statusFilter === '0' }" @click="statusFilter = '0'">{{ t('invoice.statusPending') }}</span>
+        <span class="filter-opt" :class="{ active: statusFilter === '1' }" @click="statusFilter = '1'">{{ t('invoice.statusDone') }}</span>
+        <span class="filter-opt" :class="{ active: statusFilter === '2' }" @click="statusFilter = '2'">{{ t('invoice.statusSent') }}</span>
+      </div>
+    </div>
+
     <div v-if="loading" class="invoice-skeleton">
       <div v-for="i in 2" :key="i" class="skeleton-card">
         <div class="skeleton-line" />
       </div>
     </div>
-    <div v-else-if="invoices.length">
-      <div v-for="inv in invoices" :key="inv.id" class="invoice-card">
+    <div v-else-if="filteredInvoices.length">
+      <div v-for="inv in filteredInvoices" :key="inv.id" class="invoice-card" role="button" tabindex="0" @click="showDetail(inv)" @keydown.enter.prevent="showDetail(inv)" @keydown.space.prevent="showDetail(inv)">
         <div>
-          <div class="invoice-card-title">{{ (inv.type==='company' ? t('invoice.company') : t('invoice.personal')) + ' ' + t('invoice.invoicePrefix') }} · {{ inv.title || t('invoice.personal') }}</div>
-          <div class="invoice-card-meta">{{ t('afterSale.orderPrefix', '订单') }} {{ inv.orderNo }} · {{ inv.createdAt?.substring(0,10) }}</div>
+          <div class="invoice-card-title">{{ (inv.type==='company' ? t('invoice.company') : t('invoice.personal')) }} · {{ inv.title || t('invoice.personal') }}</div>
+          <div class="invoice-card-meta">
+            {{ t('invoice.orderPrefix') || t('order.orderNo') }} {{ inv.orderNo }} · {{ inv.createdAt?.substring(0,10) }}
+            <span v-if="inv.invoiceNo" class="inv-no" @click.stop="copyInvNo(inv.invoiceNo)">{{ t('invoice.invoiceNo') || 'No.' }}: {{ inv.invoiceNo }} 📋</span>
+          </div>
         </div>
         <JdBadge :type="badgeTypeMap[inv.status] || 'gray'">{{ statusMap[inv.status]?.label }}</JdBadge>
       </div>
+      <div v-if="filteredInvoices.length < invoices.length" class="filter-notice">
+        {{ t('common.items', { '0': String(filteredInvoices.length) }) }} / {{ invoices.length }}
+      </div>
     </div>
-    <JdEmpty v-else icon="🧾" :title="t('invoice.noRecords')" />
+    <JdEmpty v-else icon="🧾" :title="filteredInvoices.length === 0 && invoices.length > 0 ? '筛选结果为空' : t('invoice.noRecords')" />
+
+    <!-- Detail modal -->
+    <div v-if="detailInv" class="inv-modal-overlay" @click.self="detailInv = null">
+      <div class="inv-modal">
+        <h3 class="inv-modal-title">{{ t('invoice.title') }}</h3>
+        <div class="inv-modal-body">
+          <div class="inv-detail-row"><span>类型</span><span>{{ detailInv.type === 'company' ? t('invoice.company') : t('invoice.personal') }}</span></div>
+          <div class="inv-detail-row"><span>{{ t('invoice.companyTitle') }}</span><span>{{ detailInv.title || '-' }}</span></div>
+          <div class="inv-detail-row" v-if="detailInv.taxNo"><span>{{ t('invoice.taxNo') }}</span><span>{{ detailInv.taxNo }}</span></div>
+          <div class="inv-detail-row"><span>{{ t('invoice.orderNo') }}</span><span>{{ detailInv.orderNo }}</span></div>
+          <div class="inv-detail-row"><span>{{ t('common.status') }}</span><span>{{ statusMap[detailInv.status]?.label }}</span></div>
+          <div class="inv-detail-row" v-if="detailInv.invoiceNo"><span>{{ t('invoice.invoiceNo') || 'No.' }}</span><span class="inv-no-link" @click="copyInvNo(detailInv.invoiceNo)">{{ detailInv.invoiceNo }} 📋</span></div>
+          <div class="inv-detail-row"><span>{{ t('invoice.applyTime') || t('common.createdAt') }}</span><span>{{ detailInv.createdAt }}</span></div>
+          <div class="inv-detail-row" v-if="detailInv.email"><span>{{ t('invoice.email') }}</span><span>{{ detailInv.email }}</span></div>
+        </div>
+        <JdButton block @click="detailInv = null">关闭</JdButton>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -113,8 +173,32 @@ const statusMap: Record<string, { label: string }> = {
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
+/* Filters */
+.invoice-filters { display: flex; flex-wrap: wrap; gap: var(--space-lg); margin-bottom: var(--space-lg); background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); box-shadow: var(--shadow-sm); }
+.filter-group { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.filter-label { font-size: var(--font-sm); color: var(--text-tertiary); font-weight: 600; }
+.filter-opt {
+  padding: 3px 12px; border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-sm);
+  color: var(--text-secondary); border: 1px solid var(--border); transition: all var(--transition-fast);
+}
+.filter-opt.active { color: var(--jd-red); border-color: var(--jd-red); background: var(--jd-red-light); }
+.filter-opt:hover:not(.active) { border-color: var(--text-tertiary); }
+
+.inv-no { cursor: pointer; color: var(--jd-red); font-size: var(--font-xs); margin-left: var(--space-md); }
+.inv-no:hover { text-decoration: underline; }
+.filter-notice { text-align: center; font-size: var(--font-xs); color: var(--text-placeholder); margin-top: var(--space-md); }
+
+.inv-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 500; display: flex; align-items: center; justify-content: center; }
+.inv-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); max-width: 440px; width: 90%; box-shadow: var(--shadow-xl); }
+.inv-modal-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
+.inv-modal-body { margin-bottom: var(--space-lg); }
+.inv-detail-row { display: flex; justify-content: space-between; padding: var(--space-sm) 0; border-bottom: 1px solid var(--border-light); font-size: var(--font-sm); }
+.inv-detail-row span:first-child { color: var(--text-tertiary); }
+.inv-no-link { color: var(--jd-red); cursor: pointer; }
+.inv-no-link:hover { text-decoration: underline; }
+
 @media (max-width: 768px) {
-  .invoice-page { padding: 0 var(--space-md) 80px; }
+  .invoice-page { padding: 0 var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }
   .invoice-header { flex-direction: column; gap: var(--space-sm); align-items: flex-start; }
   .invoice-form { padding: var(--space-lg); }
   .invoice-type-row { flex-wrap: wrap; }
