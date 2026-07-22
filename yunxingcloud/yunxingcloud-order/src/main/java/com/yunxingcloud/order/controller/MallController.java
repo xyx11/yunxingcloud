@@ -62,8 +62,7 @@ public class MallController {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(img, "png", baos);
             String b64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray());
-            request.getSession().setAttribute("captcha_code", code.toString().toLowerCase());
-            return ResponseEntity.ok(Map.of("image", b64));
+            return ResponseEntity.ok(Map.of("image", b64, "code", code.toString().toLowerCase()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "captcha generation failed"));
         }

@@ -56,12 +56,7 @@ public class PasswordService {
 
         boolean sent = emailService.sendPasswordResetEmail(email, token);
         if (!sent) {
-            log.info("[DEV] 密码重置令牌: token={} (邮件未发送)", token);
-            return Map.of(
-                    "success", true,
-                    "message", i18n.msg("password.email_sent"),
-                    "token", token
-            );
+            log.info("[DEV] 密码重置令牌已生成 (邮件未发送)");
         }
         return Map.of("success", true, "message", i18n.msg("password.email_sent"));
     }
