@@ -30,6 +30,7 @@ public class CartService {
 
     @Transactional
     public CartItem add(String username, Long productId, int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("数量必须大于0");
         Product p = productRepo.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("商品不存在"));
         if (p.getStock() < quantity)

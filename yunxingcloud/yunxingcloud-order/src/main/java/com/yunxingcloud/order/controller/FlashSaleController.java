@@ -71,6 +71,18 @@ public class FlashSaleController {
         }
     }
 
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<?> confirm(@PathVariable Long id) {
+        service.confirmOrder(id, user());
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/release")
+    public ResponseEntity<?> release(@PathVariable Long id) {
+        service.releaseReservation(id, user());
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     @PostMapping("/remind")
     public ResponseEntity<?> remind(@RequestBody Map<String, Object> body) {
         Long saleId = Long.valueOf(body.get("saleId").toString());

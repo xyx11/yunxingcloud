@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +20,13 @@ public class RecommendationService {
 
     private final ProductRepository productRepo;
     private final JdbcTemplate jdbc;
+    private final StringRedisTemplate redis;
 
-    public RecommendationService(ProductRepository productRepo, JdbcTemplate jdbc) {
+    public RecommendationService(ProductRepository productRepo, JdbcTemplate jdbc,
+                                  StringRedisTemplate redis) {
         this.productRepo = productRepo;
         this.jdbc = jdbc;
+        this.redis = redis;
     }
 
     /** 协同过滤: 买了X的人也买了Y */
@@ -200,5 +204,9 @@ public class RecommendationService {
         return productRepo.findByIsNewTrueAndStatus("0",
                 Sort.by(Sort.Direction.DESC, "createdAt")).stream()
                 .limit(limit).collect(Collectors.toList());
+    }
+
+    public void saveConfig(Map<String, Object> config) {
+        config.forEach((k, v) -> redis.opsForValue().set("recommend:config:" + k, String.valueOf(v)));
     }
 }

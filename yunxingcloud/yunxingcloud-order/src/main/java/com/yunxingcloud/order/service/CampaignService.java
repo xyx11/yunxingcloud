@@ -61,6 +61,14 @@ public class CampaignService {
         return repo.findByStatusAndStartTimeBeforeAndEndTimeAfter("1", now, now);
     }
 
+    public java.util.Optional<Campaign> get(Long id) { return repo.findById(id); }
+
+    @Transactional
+    public Campaign create(Campaign c) { return repo.save(c); }
+
+    @Transactional
+    public void delete(Long id) { repo.deleteById(id); }
+
     public java.util.Map<String, Object> getCampaignProducts(Long campaignId) {
         Campaign c = repo.findById(campaignId).orElse(null);
         if (c == null) return java.util.Map.of();

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, inject } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCart, addToCart, removeFromCart } from '@/api/cart'
 import { addFavorite } from '@/api/order'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
@@ -15,7 +15,7 @@ import type { CartItem, Product } from '@/types'
 
 const router = useRouter()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const items = ref<CartItem[]>([])
 const recs = ref<Product[]>([])
 const loading = ref(true)
@@ -85,7 +85,7 @@ let undoTimer: ReturnType<typeof setTimeout> | null = null
 async function load() {
   loading.value = true
   try { const r = await getCart(); items.value = r.data.items || []; recs.value = r.data.recommended || [] }
-  catch { toast.error(t('toast.cartLoadFail')); return } // 401 → redirect, keep skeleton
+  catch { toast.error(t('toast.cartLoadFail')); loading.value = false; return }
   loading.value = false
 }
 
@@ -124,7 +124,7 @@ async function remove(id: number) {
 async function updateQtyDirect(item: CartItem, e: Event) {
   const v = parseInt((e.target as HTMLInputElement).value, 10)
   if (isNaN(v) || v < 1) { load(); return }
-  const q = Math.min(999, v)
+  const q = Math.min((item as any).stock || 999, v)
   const delta = q - item.quantity
   if (delta === 0) return
   updateQty(item, delta)

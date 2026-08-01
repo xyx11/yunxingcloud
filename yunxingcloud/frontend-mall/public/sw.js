@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yxcloud-mall-v6'
+const CACHE_NAME = 'yxcloud-mall-v7'
 const API_CACHE = 'yxcloud-api-v2'
 const READONLY_API = ['/api/products', '/api/categories', '/api/brands', '/api/banners', '/api/home', '/api/flash-sale']
 

@@ -40,4 +40,10 @@ public class RecommendationController {
     public ResponseEntity<?> newArrivals(@RequestParam(defaultValue = "8") int limit) {
         return ResponseEntity.ok(service.newArrivals(limit));
     }
+
+    @PostMapping("/config")
+    public ResponseEntity<?> saveConfig(@RequestBody Map<String, Object> body) {
+        service.saveConfig(body);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
 }

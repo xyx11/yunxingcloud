@@ -93,13 +93,15 @@ async function buyNow(s: FlashSaleItem) {
   if (buying.value.has(s.id)) return
   buying.value.add(s.id)
   try {
+    await request.post('/cart', { productId: s.productId, quantity: 1 })
     await request.post(`/flash-sale/${s.id}/buy`, null, { params: { productId: s.productId } })
     toast.success(t('toast.flashSuccess'))
-    await request.post('/cart', { productId: s.productId, quantity: 1 })
     router.push('/cart')
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('toast.flashBuyFail')
     toast.error(msg)
+    // try to release reservation if flash buy failed after cart add
+    try { await request.post(`/flash-sale/${s.id}/release`) } catch {}
   } finally { buying.value.delete(s.id) }
 }
 </script>

@@ -36,8 +36,8 @@ const columns: DataTableColumns<Record<string, unknown>> = [
   }
 ]
 
-async function load() { loading.value=true; try{const r=await request.get('/banners');items.value=r.data||[]} finally{loading.value=false} }
-async function save() { saving.value=true; try{editingId.value?await request.put(`/banners/${editingId.value}`,form.value):await request.post('/banners',form.value);showModal.value=false;editingId.value=null;notify.success(t('common.save'));load()}catch{notify.error(t('common.saveFailed'))}finally{saving.value=false} }
+async function load() { loading.value=true; try{const r=await request.get('/api/banners');items.value=r.data||[]} finally{loading.value=false} }
+async function save() { saving.value=true; try{editingId.value?await request.put(`/banners/${editingId.value}`,form.value):await request.post('/api/banners',form.value);showModal.value=false;editingId.value=null;notify.success(t('common.save'));load()}catch{notify.error(t('common.saveFailed'))}finally{saving.value=false} }
 async function del(id:number) { try{await request.delete(`/banners/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.saveFailed'))} }
 function add() { editingId.value=null; form.value={title:'',imageUrl:'',linkUrl:'',sortOrder:0,status:'0'}; showModal.value=true }
 onMounted(load)

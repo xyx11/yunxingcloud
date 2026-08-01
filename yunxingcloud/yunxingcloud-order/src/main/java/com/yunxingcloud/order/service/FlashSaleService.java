@@ -28,16 +28,16 @@ public class FlashSaleService {
                 fs.getEndTime().getSecond() - LocalDateTime.now().getSecond(), TimeUnit.SECONDS);
     }
 
-    /** 秒杀下单: Redis 原子扣减库存 */
+    private static final long RESERVE_TIMEOUT_MINUTES = 5;
+
+    /** 秒杀下单: Redis 原子扣减库存。用户有5分钟完成下单，超时库存自动释放 */
     @Transactional
     public boolean tryBuy(Long flashId, Long productId, String username) {
-        // 校验是否在秒杀时间内
         FlashSale fs = flashRepo.findById(flashId).orElseThrow();
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(fs.getStartTime())) throw new IllegalStateException("秒杀尚未开始");
         if (now.isAfter(fs.getEndTime())) throw new IllegalStateException("秒杀已结束");
 
-        // 限购检查
         String userKey = "flash:user:" + flashId + ":" + username;
         Long userCount = redis.opsForValue().increment(userKey);
         if (userCount != null && userCount == 1) {
@@ -48,19 +48,36 @@ public class FlashSaleService {
             throw new IllegalStateException("已达限购数量 (" + fs.getLimitPerUser() + "件)");
         }
 
-        // Redis 原子扣减库存
         String stockKey = "flash:stock:" + flashId;
         Long remaining = redis.opsForValue().decrement(stockKey);
         if (remaining == null || remaining < 0) {
-            redis.opsForValue().increment(stockKey);  // 回滚
+            redis.opsForValue().increment(stockKey);
             redis.opsForValue().decrement(userKey);
             throw new IllegalStateException("已售罄");
         }
 
-        // 原子更新 DB 已售数量
-        flashRepo.incrementSold(flashId);
+        // 预留超时: 5分钟内未完成下单则自动释放库存
+        String reserveKey = "flash:reserve:" + flashId + ":" + username;
+        redis.opsForValue().set(reserveKey, "1", RESERVE_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
+        flashRepo.incrementSold(flashId);
         return true;
+    }
+
+    /** 确认下单: 清除预留标记，库存永久扣减 */
+    public void confirmOrder(Long flashId, String username) {
+        redis.delete("flash:reserve:" + flashId + ":" + username);
+    }
+
+    /** 释放预留库存 (用户取消/超时) */
+    public void releaseReservation(Long flashId, String username) {
+        String reserveKey = "flash:reserve:" + flashId + ":" + username;
+        if (Boolean.TRUE.equals(redis.hasKey(reserveKey))) {
+            redis.delete(reserveKey);
+            String userKey = "flash:user:" + flashId + ":" + username;
+            redis.opsForValue().decrement(userKey);
+            redis.opsForValue().increment("flash:stock:" + flashId);
+        }
     }
 
     /** 获取秒杀剩余库存 */

@@ -9,6 +9,9 @@ import MobileNav from '@/components/MobileNav.vue'
 import { useThemeStore } from '@/stores/theme'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { useI18n } from '@/locales'
+import { createLogger } from '@/utils/logger'
+
+const logger = createLogger('app')
 
 const CompareFloatingBar = defineAsyncComponent(() => import('@/views/CompareView.vue'))
 const ChatWidget = defineAsyncComponent(() => import('@/components/ChatWidget.vue'))
@@ -44,7 +47,8 @@ function updateCartCount() {
     if (cartCount.value > prev) { cartBounce.value = true; setTimeout(() => cartBounce.value = false, 400) }
   } catch { cartCount.value = 0 }
 }
-function onScroll() { showBackTop.value = window.scrollY > 400 }
+let scrollTicking = false
+function onScroll() { if (!scrollTicking) { scrollTicking = true; requestAnimationFrame(() => { showBackTop.value = window.scrollY > 400; scrollTicking = false }) } }
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 function dismissWelcome() { showWelcome.value = false; try { localStorage.setItem('mall_welcome', '1') } catch {} }
 
@@ -53,34 +57,36 @@ async function enablePush() {
   if (ok) { showPushBanner.value = false; try { localStorage.removeItem('mall_push_dismissed') } catch {}; sendTest() }
 }
 
-useThemeStore() // 初始化并应用主题
-
 const appError = ref<string | null>(null)
 const errorCount = ref(0)
-const MAX_ERRORS = 3
 
 onErrorCaptured((err) => {
   errorCount.value++
-  if (errorCount.value >= MAX_ERRORS) {
-    appError.value = t('app.errorBoundary')
-  } else {
-    appError.value = err instanceof Error ? err.message : String(err)
-  }
-  console.error('[ErrorBoundary]', err)
+  appError.value = err instanceof Error ? err.message : String(err)
+  logger.error('ErrorBoundary', { message: err instanceof Error ? err.message : String(err) })
   return false
 })
 
+router.afterEach(() => {
+  errorCount.value = 0
+  appError.value = null
+})
+
+
+function onNetworkError() { toast.error('网络连接异常，请检查网络后重试') }
 
 onMounted(() => {
   updateCartCount()
   window.addEventListener('scroll', onScroll)
   window.addEventListener('cart_updated', updateCartCount)
+  window.addEventListener('api:network-error', onNetworkError)
   if (!welcomeDismissed.value) setTimeout(() => showWelcome.value = true, 1500)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('cart_updated', updateCartCount)
+  window.removeEventListener('api:network-error', onNetworkError)
 })
 </script>
 
@@ -104,7 +110,7 @@ onUnmounted(() => {
       <div class="error-boundary-card">
         <h2>{{ t('app.errorTitle') }}</h2>
         <p>{{ appError }}</p>
-        <p v-if="errorCount >= MAX_ERRORS" class="error-hint">{{ t('app.errorHint', { n: String(errorCount) }) }}</p>
+        <p v-if="errorCount > 1" class="error-hint">{{ t('app.errorHint', { n: String(errorCount) }) }}</p>
         <div class="error-boundary-btns">
           <button class="error-boundary-btn" @click="appError = null; errorCount = 0">{{ t('app.closeBtn') }}</button>
           <button class="error-boundary-btn primary" @click="router.go(0)">{{ t('app.refreshBtn') }}</button>
@@ -117,7 +123,7 @@ onUnmounted(() => {
     <a href="#main-content" class="skip-link">{{ t('app.skipLink') }}</a>
     <main id="main-content" class="main-content" role="main" tabindex="-1">
       <router-view v-slot="{ Component, route: r }">
-        <Transition :name="r.meta.transition || 'page-slide-left'" mode="out-in">
+        <Transition :name="(r.meta.transition as string) || 'page-slide-left'" mode="out-in">
           <KeepAlive v-if="r.meta.keepAlive">
             <component :is="Component" :key="r.name" />
           </KeepAlive>

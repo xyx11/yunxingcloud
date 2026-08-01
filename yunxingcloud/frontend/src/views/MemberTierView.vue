@@ -24,10 +24,10 @@ const columns: DataTableColumns<Record<string, unknown>> = [
   ]})}}
 ]
 
-async function load() { const r = await request.get('/member/tiers'); items.value = r.data }
+async function load() { const r = await request.get('/api/member/tiers'); items.value = r.data }
 async function save() {
   if (editingId.value) { await request.put(`/member/tiers/${editingId.value}`, form.value) }
-  else { await request.post('/member/tiers', form.value) }
+  else { await request.post('/api/member/tiers', form.value) }
   showModal.value=false; editingId.value=null; notify.success(t('common.saveSuccess')); load()
 }
 async function del(id:number) { try{await request.delete(`/member/tiers/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.deleteFailed'))} }

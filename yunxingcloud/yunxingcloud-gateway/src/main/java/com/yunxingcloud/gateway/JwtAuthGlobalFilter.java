@@ -77,6 +77,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build()
                     .parseSignedClaims(token).getPayload();
+            if ("refresh".equals(claims.get("type", String.class)))
+                return unauthorized(exchange, "刷新令牌不可用于API访问");
             exchange.getRequest().mutate()
                     .header("X-Auth-Username", claims.getSubject())
                     .header("X-Auth-Authorities", claims.get("authorities", String.class))

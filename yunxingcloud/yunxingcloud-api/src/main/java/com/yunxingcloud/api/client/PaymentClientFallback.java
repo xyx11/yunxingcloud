@@ -28,4 +28,10 @@ public class PaymentClientFallback implements PaymentClient {
         log.warn("Payment service unavailable, getOrder fallback for {}", id);
         return Map.of("id", id, "status", "0", "fallback", true);
     }
+
+    @Override
+    public Map<String, Object> refund(Long id, Map<String, Object> body) {
+        log.warn("Payment service unavailable, refund fallback for order {}", id);
+        return Map.of("success", false, "fallback", true, "message", "Payment service unavailable");
+    }
 }

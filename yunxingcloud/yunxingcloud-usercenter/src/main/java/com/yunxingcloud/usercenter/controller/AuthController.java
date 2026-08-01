@@ -30,6 +30,7 @@ public class AuthController {
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")
+    @com.yunxingcloud.common.annotation.UserRateLimit(permits = 20, window = 60, message = "登录尝试过于频繁，请60秒后重试")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest,
                                                       HttpServletResponse httpResponse) {

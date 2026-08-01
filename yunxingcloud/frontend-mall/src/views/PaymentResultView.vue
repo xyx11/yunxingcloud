@@ -54,7 +54,7 @@ onMounted(async () => {
   if (orderId.value) {
     try {
       const r = await getOrderById(Number(orderId.value))
-      orderInfo.value = r.data.order
+      orderInfo.value = r.data?.order || null
       orderNo.value = orderInfo.value?.orderNo || ''
     } catch {}
   }

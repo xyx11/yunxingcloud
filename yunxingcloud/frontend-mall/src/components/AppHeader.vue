@@ -21,14 +21,36 @@ let megaTimer: ReturnType<typeof setTimeout> | null = null
 
 const hotKeywords = ['iPhone 17', 'MacBook Pro', '华为Mate 70', '茅台飞天', 'Nike Dunk', '戴森V16']
 
+// Instant search suggestions
+const suggestions = ref<string[]>([])
+const showSuggestions = ref(false)
+let suggestTimer: ReturnType<typeof setTimeout> | null = null
+
+async function fetchSuggestions(q: string) {
+  if (!q.trim()) { suggestions.value = []; return }
+  try {
+    const r = await request.get('/search/suggest', { params: { q, limit: 6 } })
+    suggestions.value = r.data || []
+  } catch { suggestions.value = [] }
+}
+
+function onSearchInput() {
+  showSuggestions.value = true
+  if (suggestTimer) clearTimeout(suggestTimer)
+  suggestTimer = setTimeout(() => fetchSuggestions(searchText.value), 200)
+}
+
+function onSearchFocus() { if (suggestions.value.length) showSuggestions.value = true }
+function onSearchBlur() { setTimeout(() => showSuggestions.value = false, 200) }
+function selectSuggestion(kw: string) { searchText.value = kw; showSuggestions.value = false; doSearch() }
+
 onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch { /* noop */ }
 })
 
-
-
 function doSearch() {
   if (!searchText.value.trim()) return
+  showSuggestions.value = false
   router.push({ path: '/search', query: { q: searchText.value.trim() } })
 }
 
@@ -101,10 +123,17 @@ watch(() => props.cartCount, (n, o) => {
 
     <!-- Search Box -->
     <div class="search-box" role="search">
-      <input v-model="searchText" :placeholder="t('search.placeholder')" @keyup.enter="doSearch" :aria-label="t('header.searchAria')" />
+      <input v-model="searchText" :placeholder="t('search.placeholder')" @keyup.enter="doSearch" @input="onSearchInput" @focus="onSearchFocus" @blur="onSearchBlur" :aria-label="t('header.searchAria')" />
       <button class="search-btn" @click="doSearch" :aria-label="t('common.search')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>
+      <!-- Suggestions dropdown -->
+      <ul v-if="showSuggestions && suggestions.length" class="search-suggestions">
+        <li v-for="s in suggestions" :key="s" class="suggest-item" @mousedown.prevent="selectSuggestion(s)">
+          <span class="suggest-icon">🔍</span>
+          <span class="suggest-text">{{ s }}</span>
+        </li>
+      </ul>
     </div>
 
     <!-- Hot Keywords -->
@@ -204,8 +233,9 @@ watch(() => props.cartCount, (n, o) => {
   flex: 1;
   max-width: 500px;
   display: flex;
+  position: relative;
   border-radius: var(--radius-round);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 .search-box input {
@@ -218,6 +248,21 @@ watch(() => props.cartCount, (n, o) => {
   transition: background var(--transition-fast);
 }
 .search-btn:hover { background: var(--jd-red-dark); }
+
+.search-suggestions {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+  background: var(--bg-white); border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-md); list-style: none; margin: 0; padding: var(--space-xs) 0;
+  max-height: 280px; overflow-y: auto;
+}
+.suggest-item {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg); cursor: pointer; font-size: var(--font-sm);
+  color: var(--text-primary); transition: background var(--transition-fast);
+}
+.suggest-item:hover { background: var(--bg-hover); }
+.suggest-icon { opacity: .4; font-size: var(--font-xs); }
+.suggest-text { flex: 1; }
 
 .hot-tags {
   display: flex; gap: var(--space-sm); font-size: 12px; color: rgba(255,255,255,.75);

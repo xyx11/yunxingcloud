@@ -52,7 +52,7 @@ const columns: DataTableColumns<Record<string, unknown>> = [
   }},
 ]
 
-async function load() { loading.value = true; try { const r = await request.get('/after-sale'); items.value = r.data } finally { loading.value = false } }
+async function load() { loading.value = true; try { const r = await request.get('/api/after-sale'); items.value = r.data } finally { loading.value = false } }
 async function approve(id: number) { try { await request.put(`/after-sale/${id}/approve`); notify.success(t('afterSale.approveSuccess')); load() } catch { notify.error(t('common.error')) } }
 async function reject(id: number) { try { await request.put(`/after-sale/${id}/reject`); notify.success(t('afterSale.rejectSuccess')); load() } catch { notify.error(t('common.error')) } }
 onMounted(load)

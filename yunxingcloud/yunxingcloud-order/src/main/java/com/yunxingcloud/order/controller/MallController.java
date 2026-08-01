@@ -2,6 +2,7 @@ package com.yunxingcloud.order.controller;
 
 import com.yunxingcloud.order.dto.BrandDTO;
 import com.yunxingcloud.order.dto.CategoryDTO;
+import com.yunxingcloud.order.repository.NewsletterSubscriptionRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.yunxingcloud.order.dto.ProductReviewDTO;
 import com.yunxingcloud.order.dto.ProductSkuDTO;
@@ -13,22 +14,34 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @Tag(name = "商城前台", description = "商城首页/分类/品牌/优惠券/收藏/地址等")
 @RestController
 public class MallController {
 
     private final MallService mallService;
+    private final StringRedisTemplate redis;
+    private final NewsletterSubscriptionRepository newsletterRepo;
 
-    public MallController(MallService mallService) {
+    public MallController(MallService mallService, StringRedisTemplate redis,
+                          NewsletterSubscriptionRepository newsletterRepo) {
         this.mallService = mallService;
+        this.redis = redis;
+        this.newsletterRepo = newsletterRepo;
     }
 
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
@@ -62,9 +75,38 @@ public class MallController {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(img, "png", baos);
             String b64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray());
-            return ResponseEntity.ok(Map.of("image", b64, "code", code.toString().toLowerCase()));
+            String token = UUID.randomUUID().toString().replace("-", "");
+            String salt = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            String hashed = sha256(code.toString().toLowerCase() + salt);
+            redis.opsForValue().set("captcha:" + token, hashed + ":" + salt, 5, TimeUnit.MINUTES);
+            return ResponseEntity.ok(Map.of("image", b64, "captchaToken", token));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "captcha generation failed"));
+        }
+    }
+
+    @GetMapping("/api/captcha/validate")
+    public ResponseEntity<?> captchaValidate(@RequestParam String token, @RequestParam String code) {
+        if (token == null || code == null || token.isBlank() || code.isBlank())
+            return ResponseEntity.ok(Map.of("valid", false));
+        String stored = redis.opsForValue().get("captcha:" + token);
+        if (stored == null) return ResponseEntity.ok(Map.of("valid", false));
+        redis.delete("captcha:" + token);
+        String[] parts = stored.split(":", 2);
+        if (parts.length != 2) return ResponseEntity.ok(Map.of("valid", false));
+        boolean valid = sha256(code.toLowerCase() + parts[1]).equals(parts[0]);
+        return ResponseEntity.ok(Map.of("valid", valid));
+    }
+
+    private static String sha256(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) hex.append(String.format("%02x", b));
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -153,13 +195,59 @@ public class MallController {
         if (email == null || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
             return ResponseEntity.badRequest().body(Map.of("message", "邮箱格式不正确"));
         }
-        // In production: save to DB or send to email service
+        var existing = newsletterRepo.findByEmail(email);
+        if (existing.isPresent()) {
+            var sub = existing.get();
+            if ("1".equals(sub.getStatus())) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "已订阅"));
+            }
+            sub.setStatus("1");
+            sub.setSubscribedAt(java.time.LocalDateTime.now());
+            newsletterRepo.save(sub);
+        } else {
+            NewsletterSubscription sub = new NewsletterSubscription();
+            sub.setEmail(email);
+            newsletterRepo.save(sub);
+        }
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/api/newsletter/unsubscribe")
+    public ResponseEntity<?> unsubscribeNewsletter(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null) return ResponseEntity.badRequest().body(Map.of("message", "邮箱不能为空"));
+        var existing = newsletterRepo.findByEmail(email);
+        if (existing.isPresent()) {
+            var sub = existing.get();
+            sub.setStatus("0");
+            sub.setUnsubscribedAt(java.time.LocalDateTime.now());
+            newsletterRepo.save(sub);
+        }
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     // ===== Trending =====
     @GetMapping("/api/trending")
     public ResponseEntity<?> trending() {
-        return ResponseEntity.ok(mallService.listBanners()); // reuse hot data
+        return ResponseEntity.ok(mallService.home().get("hotProducts"));
     }
+
+    // ===== SEO =====
+    @GetMapping("/api/seo/meta/home")
+    public ResponseEntity<?> seoHomeMeta() {
+        Map<String, String> meta = new java.util.LinkedHashMap<>();
+        meta.put("title", redis.opsForValue().get("seo:meta:home:title"));
+        meta.put("description", redis.opsForValue().get("seo:meta:home:description"));
+        meta.put("keywords", redis.opsForValue().get("seo:meta:home:keywords"));
+        return ResponseEntity.ok(meta);
+    }
+
+    @PostMapping("/api/seo/meta/home")
+    public ResponseEntity<?> saveSeoHomeMeta(@RequestBody Map<String, String> body) {
+        body.forEach((k, v) -> redis.opsForValue().set("seo:meta:home:" + k, v != null ? v : ""));
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @GetMapping("/api/seo/sitemap")
+    public ResponseEntity<?> sitemap() { return ResponseEntity.ok(""); }
 }

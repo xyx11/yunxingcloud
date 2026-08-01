@@ -17,4 +17,7 @@ public interface PaymentClient {
 
     @GetMapping("/orders/{id}")
     Map<String, Object> getOrder(@PathVariable Long id);
+
+    @PostMapping("/orders/{id}/refund")
+    Map<String, Object> refund(@PathVariable Long id, @RequestBody Map<String, Object> body);
 }

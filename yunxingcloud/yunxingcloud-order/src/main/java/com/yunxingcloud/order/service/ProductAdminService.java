@@ -21,10 +21,12 @@ public class ProductAdminService {
     private final ProductRepository repo;
     private final ProductSkuRepository skuRepo;
     private final ProductReviewRepository reviewRepo;
+    private final ProductCacheService cacheService;
 
     public ProductAdminService(ProductRepository repo, ProductSkuRepository skuRepo,
-                               ProductReviewRepository reviewRepo) {
+                               ProductReviewRepository reviewRepo, ProductCacheService cacheService) {
         this.repo = repo; this.skuRepo = skuRepo; this.reviewRepo = reviewRepo;
+        this.cacheService = cacheService;
     }
 
     public Page<Product> list(Long categoryId, Long brandId, Long minPrice, Long maxPrice,
@@ -140,13 +142,21 @@ public class ProductAdminService {
             if (body.getIsHot() != null) p.setIsHot(body.getIsHot());
             if (body.getTags() != null) p.setTags(body.getTags());
             if (body.getStatus() != null) p.setStatus(body.getStatus());
-            return repo.save(p);
+            var saved = repo.save(p);
+            cacheService.evictProductDetail(id);
+            cacheService.evictCatalog();
+            return saved;
         });
     }
 
     @Transactional
     public boolean delete(Long id) {
-        if (repo.existsById(id)) { repo.deleteById(id); return true; }
+        if (repo.existsById(id)) {
+            repo.deleteById(id);
+            cacheService.evictProductDetail(id);
+            cacheService.evictCatalog();
+            return true;
+        }
         return false;
     }
 

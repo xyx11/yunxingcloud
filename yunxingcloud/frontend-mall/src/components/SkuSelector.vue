@@ -106,6 +106,8 @@ function isCurrentSku(_sku: Sku) {
   border: 2px solid var(--jd-red);
   color: var(--jd-red);
   background: var(--jd-red-light);
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(228,57,60,.15);
 }
 .sku-color {
   width: 14px;

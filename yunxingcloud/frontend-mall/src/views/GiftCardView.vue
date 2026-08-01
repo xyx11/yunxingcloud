@@ -37,6 +37,28 @@ const statusType: Record<string, 'orange' | 'green' | 'gray'> = {
   '0': 'orange', '1': 'green', '2': 'gray', '3': 'gray',
 }
 
+// Purchase modal
+const showPurchase = ref(false)
+const purchaseAmount = ref(20000) // 默认200元
+const purchaseLoading = ref(false)
+const purchaseMsg = ref('')
+const purchaseSuccess = ref(false)
+const amountOptions = [5000, 10000, 20000, 50000, 100000] // 分
+
+async function doPurchase() {
+  purchaseLoading.value = true; purchaseMsg.value = ''; purchaseSuccess.value = false
+  try {
+    await request.post('/gift-cards/purchase', { amount: purchaseAmount.value })
+    purchaseSuccess.value = true
+    purchaseMsg.value = t('giftCard.purchaseSuccess') || '购买成功'
+    loadMyCards()
+    setTimeout(() => { showPurchase.value = false; purchaseSuccess.value = false; purchaseMsg.value = '' }, 2000)
+  } catch (e: any) {
+    purchaseMsg.value = e.response?.data?.message || t('giftCard.purchaseFail') || '购买失败'
+  }
+  finally { purchaseLoading.value = false }
+}
+
 onMounted(() => { loadMyCards() })
 
 async function loadMyCards() {
@@ -198,7 +220,27 @@ function selectCard(c: GiftCard) {
       <!-- Buy gift card hint -->
       <div class="gc-buy-hint">
         <p>🎁 {{ t('giftCard.buyHint') }}</p>
-        <JdButton size="sm" type="outline" @click="() => {}">{{ t('giftCard.buyNow') }}</JdButton>
+        <JdButton size="sm" type="outline" @click="showPurchase = true">{{ t('giftCard.buyNow') }}</JdButton>
+      </div>
+
+      <!-- Purchase Modal -->
+      <div v-if="showPurchase" class="gc-modal-overlay" @click.self="showPurchase = false">
+        <div class="gc-modal">
+          <h3 class="gc-modal-title">🎁 {{ t('giftCard.buyNow') }}</h3>
+          <div class="gc-amount-grid">
+            <button
+              v-for="a in amountOptions" :key="a"
+              class="gc-amount-btn"
+              :class="{ active: purchaseAmount === a }"
+              @click="purchaseAmount = a"
+            >{{ formatPrice(a / 100, 0) }}</button>
+          </div>
+          <p v-if="purchaseMsg" class="gc-msg" :class="{ success: purchaseSuccess }">{{ purchaseMsg }}</p>
+          <div class="gc-modal-actions">
+            <JdButton type="ghost" @click="showPurchase = false">{{ t('common.cancel') }}</JdButton>
+            <JdButton :loading="purchaseLoading" @click="doPurchase">{{ purchaseLoading ? '...' : t('giftCard.buyNow') }}</JdButton>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -287,6 +329,15 @@ function selectCard(c: GiftCard) {
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+
+/* Purchase Modal */
+.gc-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.gc-modal { background: var(--bg-white); border-radius: var(--radius-xl); padding: var(--space-xxl); width: 90%; max-width: 360px; box-shadow: var(--shadow-lg); }
+.gc-modal-title { font-size: var(--font-lg); font-weight: 700; text-align: center; margin-bottom: var(--space-lg); }
+.gc-amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); margin-bottom: var(--space-lg); }
+.gc-amount-btn { padding: var(--space-md); border: 2px solid var(--border); border-radius: var(--radius-md); background: var(--bg-white); font-size: var(--font-lg); font-weight: 700; cursor: pointer; color: var(--text-primary); transition: all var(--transition-fast); }
+.gc-amount-btn.active { border-color: var(--jd-red); background: var(--jd-red-light); color: var(--jd-red); }
+.gc-modal-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
 
 @media (max-width: 768px) {
   .gc-page { padding: 0 var(--space-md) 80px; }

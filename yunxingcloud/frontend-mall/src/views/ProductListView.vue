@@ -3,9 +3,10 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategories, getBrands, getProducts, getTags } from '@/api/product'
 import { addToCart } from '@/api/cart'
-import { useToast } from '@/composables/useToast'
+import { useGlobalToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
 import { useCartFly } from '@/composables/useCartFly'
+import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useI18n } from '@/locales'
 import QuickViewModal from '@/components/QuickViewModal.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
@@ -17,7 +18,7 @@ import type { Product, Category } from '@/types'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const toast = useToast()
+const toast = useGlobalToast()
 const { toggle: toggleCompare, isSelected } = useCompare()
 const { flyToCart } = useCartFly()
 
@@ -41,6 +42,8 @@ const priceRanges = [
   { label: t('sort.over1k'), min: '1000', max: '' },
 ]
 
+const { pulling, refreshing, pullDistance } = usePullRefresh(loadProducts)
+
 onMounted(async () => {
   try { const r = await getCategories(); categories.value = r.data || [] } catch { toast.error(t('toast.categoryLoadFail')) }
   try { const r = await getBrands(); brands.value = r.data || [] } catch { toast.error(t('toast.brandLoadFail')) }
@@ -60,10 +63,16 @@ watch(() => route.query, (q) => {
 })
 
 function onScroll() {
-  if (loadingMore.value || currentPage.value >= totalPages.value - 1) return
-  const h = document.documentElement
-  if (h.scrollTop + h.clientHeight >= h.scrollHeight - 300) loadMore(currentPage.value + 1)
+  if (scrollTicking) return
+  scrollTicking = true
+  requestAnimationFrame(() => {
+    if (loadingMore.value || currentPage.value >= totalPages.value - 1) { scrollTicking = false; return }
+    const h = document.documentElement
+    if (h.scrollTop + h.clientHeight >= h.scrollHeight - 300) loadMore(currentPage.value + 1)
+    scrollTicking = false
+  })
 }
+let scrollTicking = false
 
 async function loadProducts() {
   loading.value = true
@@ -76,10 +85,11 @@ async function loadProducts() {
     if (filters.value.minPrice) params.minPrice = Number(filters.value.minPrice) * 100
     if (filters.value.maxPrice) params.maxPrice = Number(filters.value.maxPrice) * 100
     const r = await getProducts(params)
-    products.value = r.data.content || r.data || []
-    totalPages.value = r.data.totalPages || 0
-    loading.value = false;
+    const d = r.data
+    products.value = Array.isArray(d?.content) ? d.content : Array.isArray(d) ? d : []
+    totalPages.value = d?.totalPages || 0
     } catch { toast.error(t('toast.productListFail')); products.value = [] }
+    finally { loading.value = false }
 }
 
 function applyFilters() { currentPage.value = 0; const q: Record<string, string> = {}; if (filters.value.categoryId) q.categoryId = filters.value.categoryId; if (filters.value.brandId) q.brandId = filters.value.brandId; if (filters.value.tagId) q.tagId = filters.value.tagId; router.push({ query: q }); loadProducts(); window.scrollTo(0, 0) }
@@ -98,9 +108,10 @@ async function loadMore(nextPage?: number) {
     if (filters.value.minPrice) params.minPrice = Number(filters.value.minPrice) * 100
     if (filters.value.maxPrice) params.maxPrice = Number(filters.value.maxPrice) * 100
     const r = await getProducts(params)
-    const data = r.data
-    products.value = [...products.value, ...(data.content || data || [])]
-    totalPages.value = data.totalPages || 0
+    const d = r.data
+    const items = Array.isArray(d?.content) ? d.content : Array.isArray(d) ? d : []
+    products.value = [...products.value, ...items]
+    totalPages.value = d?.totalPages || 0
     currentPage.value = page
   } catch { toast.error(t('toast.loadMoreFail')) } finally { loadingMore.value = false }
 }
@@ -188,6 +199,12 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
         </div>
       </div>
 
+      <!-- Pull-to-refresh indicator -->
+      <div v-if="pulling" class="pull-indicator" :style="{ height: pullDistance + 'px', opacity: Math.min(pullDistance / 60, 1) }">
+        <span>{{ refreshing ? '⟳' : '↓' }}</span>
+        <span>{{ refreshing ? t('home.refreshing') : t('home.pullRefresh') }}</span>
+      </div>
+
       <!-- Products -->
       <SkeletonBox v-if="loading" variant="card" :columns="3" :count="6" height="280px" />
 
@@ -230,9 +247,11 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 
       <!-- Pagination -->
       <div v-if="totalPages > 1 && !loadingMore" class="pagination">
-        <button v-for="p in Math.min(totalPages, 10)" :key="p" class="page-btn" :class="{ active: currentPage === p - 1 }" @click="goPage(p - 1)">
-          {{ p }}
-        </button>
+        <button :disabled="currentPage === 0" @click="goPage(0)">«</button>
+        <button :disabled="currentPage === 0" @click="goPage(currentPage - 1)">‹</button>
+        <span class="page-info">{{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button :disabled="currentPage >= totalPages - 1" @click="goPage(currentPage + 1)">›</button>
+        <button :disabled="currentPage >= totalPages - 1" @click="goPage(totalPages - 1)">»</button>
       </div>
     </div>
 
@@ -300,7 +319,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .filter-tag.active { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
 
 /* Sidebar */
-.sidebar { width: 220px; flex-shrink: 0; }
+.sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; align-self: flex-start; }
 .filter-card { background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); box-shadow: var(--shadow-sm); }
 .filter-title { font-size: var(--font-md); font-weight: 700; margin-bottom: var(--space-md); }
 .filter-item { margin-bottom: var(--space-xs); }
@@ -341,10 +360,14 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .card-img-wrap { height: 180px; position: relative; }
 .card-badge-tl { position: absolute; top: 6px; left: 6px; z-index: 1; }
 .card-badge-tr { position: absolute; top: 6px; right: 50px; z-index: 1; }
-.compare-btn { position: absolute; top: 6px; right: 6px; padding: 3px 10px; border: 1px solid var(--jd-red); border-radius: var(--radius-round); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: 12px; z-index: 1; transition: all var(--transition-fast); }
-.compare-btn.active { background: var(--jd-red); color: #fff; }
-.preview-btn { position: absolute; bottom: 60px; right: 6px; padding: 3px 10px; border: 1px solid var(--blue); border-radius: var(--radius-round); background: var(--bg-white); color: var(--blue); cursor: pointer; font-size: 12px; z-index: 1; transition: all var(--transition-fast); }
+.compare-btn { position: absolute; top: 6px; right: 6px; padding: 3px 10px; border: 1px solid var(--jd-red); border-radius: var(--radius-round); background: var(--bg-white); color: var(--jd-red); cursor: pointer; font-size: 12px; z-index: 1; opacity: 0; transition: opacity .2s ease; }
+.product-card:hover .compare-btn { opacity: 1; }
+.compare-btn.active { background: var(--jd-red); color: #fff; opacity: 1; }
+.preview-btn { position: absolute; bottom: 60px; right: 6px; padding: 3px 10px; border: 1px solid var(--blue); border-radius: var(--radius-round); background: var(--bg-white); color: var(--blue); cursor: pointer; font-size: 12px; z-index: 1; opacity: 0; transition: opacity .2s ease; }
+.product-card:hover .preview-btn { opacity: 1; }
 .preview-btn:hover { background: var(--blue); color: #fff; }
+.card-img-wrap img { transition: transform .3s ease; }
+.product-card:hover .card-img-wrap img { transform: scale(1.05); }
 
 .card-info { padding: var(--space-md); }
 .card-name { font-size: var(--font-md); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
@@ -359,9 +382,11 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .empty-state { text-align: center; padding: 60px; color: var(--text-tertiary); }
 .empty-icon { font-size: 48px; }
 .load-more { text-align: center; padding: var(--space-lg); color: var(--text-tertiary); font-size: var(--font-base); }
-.pagination { display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-xxl); }
+.pagination { display: flex; justify-content: center; align-items: center; gap: var(--space-sm); margin-top: var(--space-xxl); }
 .page-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-base); background: var(--bg-white); color: var(--text-primary); }
 .page-btn.active { background: var(--jd-red); color: #fff; border-color: var(--jd-red); }
+.page-btn:disabled { opacity: .3; cursor: default; }
+.page-info { font-size: var(--font-sm); color: var(--text-secondary); min-width: 60px; text-align: center; }
 
 @media (min-width: 769px) and (max-width: 1024px) {
   .product-grid { --grid-cols: 3; }
@@ -370,5 +395,11 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
   .sidebar { display: none; }
   .mobile-filter-btn { display: block; position: sticky; top: 0; z-index: 10; background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-lg); margin-bottom: var(--space-md); font-size: var(--font-md); cursor: pointer; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
   .product-grid { --grid-cols: 2; }
+}
+
+.pull-indicator {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  font-size: var(--font-sm); color: var(--text-tertiary); overflow: hidden;
+  transition: opacity .2s;
 }
 </style>

@@ -32,6 +32,7 @@ public class RegisterController {
     @Operation(summary = "用户注册")
     @PostMapping("/register")
     @SentinelResource(value = "registerFlow", blockHandler = "registerBlockHandler")
+    @com.yunxingcloud.common.annotation.UserRateLimit(permits = 10, window = 60, message = "注册请求过于频繁，请稍后重试")
     public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest request) {
         if (request.username() == null || request.username().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", i18n.msg("register.username_blank")));

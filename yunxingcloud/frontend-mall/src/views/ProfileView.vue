@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress, getFavorites, getMyCoupons } from '@/api/order'
 import { changePassword } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
 import type { Address, Coupon, FavoriteItem } from '@/types'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
+import { provinceList, cityList, districtList } from '@/utils/regionData'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 
 type TabKey = 'addresses' | 'coupons' | 'favorites' | 'password'
 
@@ -75,6 +76,12 @@ async function loadOrderStats() {
 const pwForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const addrForm = ref({ name: '', phone: '', province: '', city: '', district: '', detail: '', isDefault: false })
 
+const addrCityOpts = computed(() => cityList(addrForm.value.province))
+const addrDistrictOpts = computed(() => districtList(addrForm.value.province, addrForm.value.city))
+
+function onProvinceChange() { addrForm.value.city = ''; addrForm.value.district = '' }
+function onCityChange() { addrForm.value.district = '' }
+
 const quickLinks = [
   { icon: '📦', label: t('profile.menuOrders'), path: '/orders' },
   { icon: '⭐', label: t('points.title'), path: '/points' },
@@ -87,7 +94,7 @@ const quickLinks = [
 ]
 
 async function copyShareLink() {
-  try { await navigator.clipboard.writeText(window.location.origin + '/register?ref=' + (auth.user?.username || '')); shareCopied.value = true; toast.success(t('profile.inviteCopied')); setTimeout(() => shareCopied.value = false, 2000) } catch {}
+  try { await navigator.clipboard.writeText(window.location.origin + '/register?ref=' + (auth.user?.username || '')); shareCopied.value = true; toast.success(t('profile.inviteCopied')); setTimeout(() => shareCopied.value = false, 2000) } catch { toast.error('复制失败') }
 }
 
 onMounted(async () => { if (!auth.isLoggedIn) { router.push('/login'); return }; loadTab(); loadMemberTier(); loadOrderStats() })
@@ -127,6 +134,7 @@ async function deleteAddressById(id: number) { if (!confirm(t('common.confirmDel
 const changingPwd = ref(false)
 async function changePwd() {
   if (!pwForm.value.oldPassword || !pwForm.value.newPassword) { toast.error(t('register.fillRequired')); return }
+  if (pwForm.value.newPassword.length < 8) { toast.error(t('register.pwdLen')); return }
   if (pwForm.value.newPassword !== pwForm.value.confirmPassword) { toast.error(t('register.passwordMismatch')); return }
   changingPwd.value = true
   try { await changePassword(pwForm.value.oldPassword, pwForm.value.newPassword); toast.success(t('toast.passwordChanged')); pwForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' } }
@@ -233,9 +241,18 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
           <div class="addr-form-grid">
             <input v-model="addrForm.name" :placeholder="t('profile.receiverName')" class="field-input" />
             <input v-model="addrForm.phone" :placeholder="t('profile.receiverPhone')" class="field-input" />
-            <input v-model="addrForm.province" :placeholder="t('profile.province')" class="field-input" />
-            <input v-model="addrForm.city" :placeholder="t('profile.city')" class="field-input" />
-            <input v-model="addrForm.district" :placeholder="t('profile.district')" class="field-input" />
+            <select v-model="addrForm.province" class="field-input field-select" @change="onProvinceChange">
+              <option value="">{{ t('profile.province') }}</option>
+              <option v-for="p in provinceList" :key="p" :value="p">{{ p }}</option>
+            </select>
+            <select v-model="addrForm.city" class="field-input field-select" :disabled="!addrForm.province" @change="onCityChange">
+              <option value="">{{ t('profile.city') }}</option>
+              <option v-for="c in addrCityOpts" :key="c" :value="c">{{ c }}</option>
+            </select>
+            <select v-model="addrForm.district" class="field-input field-select" :disabled="!addrForm.city">
+              <option value="">{{ t('profile.district') }}</option>
+              <option v-for="d in addrDistrictOpts" :key="d" :value="d">{{ d }}</option>
+            </select>
           </div>
           <input v-model="addrForm.detail" :placeholder="t('profile.detail')" class="field-input field-full" />
           <div class="addr-form-footer">
@@ -260,7 +277,7 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
           </div>
         </div>
         <div v-if="loading" class="sk-box"><div class="sk-line" /><div class="sk-line w60" /><div class="sk-line w40" /></div>
-        <div v-else-if="!loading" class="empty-text">{{ t('profile.noAddresses') }}</div>
+        <div v-else-if="!addresses.length" class="empty-text">{{ t('profile.noAddresses') }}</div>
       </div>
 
       <!-- Favorites -->
@@ -371,6 +388,8 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
 .field-input { padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-base); background: var(--bg-white); color: var(--text-primary); }
 .field-input:focus { border-color: var(--jd-red); outline: none; }
 .field-full { width: 100%; box-sizing: border-box; }
+.field-select { cursor: pointer; appearance: auto; }
+.field-select:disabled { background: var(--bg-hover); color: var(--text-tertiary); cursor: not-allowed; }
 
 .addr-form { background: var(--bg-hover); padding: var(--space-xl); border-radius: var(--radius-md); margin-bottom: var(--space-lg); }
 .addr-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md); }

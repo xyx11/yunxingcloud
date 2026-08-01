@@ -18,7 +18,11 @@ public class ArticleController {
     public ArticleController(ArticleService articleService) { this.articleService = articleService; }
 
     @GetMapping
-    public ResponseEntity<?> list(@RequestParam(defaultValue = "1") String status) {
+    public ResponseEntity<?> list(@RequestParam(defaultValue = "1") String status,
+                                   @RequestParam(required = false) String category) {
+        if (category != null && !category.isBlank()) {
+            return ResponseEntity.ok(articleService.byCategory(category));
+        }
         return ResponseEntity.ok(articleService.list(status));
     }
 

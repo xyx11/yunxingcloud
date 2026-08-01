@@ -70,4 +70,15 @@ public class AfterSaleController {
         log.info("Admin rejected after-sale {}, remark={}", id, body.get("remark"));
         return ResponseEntity.ok(result);
     }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancel(@PathVariable Long id) {
+        AfterSale as = afterSaleRepo.findById(id).orElse(null);
+        if (as == null) return ResponseEntity.notFound().build();
+        if (!as.getUsername().equals(user())) return ResponseEntity.status(403).body(Map.of("message", "无权操作"));
+        if (!"0".equals(as.getStatus())) return ResponseEntity.badRequest().body(Map.of("message", "仅待审核的售后单可撤销"));
+        afterSaleRepo.delete(as);
+        log.info("User {} cancelled after-sale {}", user(), id);
+        return ResponseEntity.ok(Map.of("message", "已撤销"));
+    }
 }

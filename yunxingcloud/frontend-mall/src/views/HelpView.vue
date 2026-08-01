@@ -104,9 +104,8 @@ function toggle(groupIdx: number, itemIdx: number) {
   openStates.value = { ...openStates.value, [key]: !openStates.value[key] }
 }
 
-function retry() { loadError.value = false; loading.value = true; setTimeout(() => { window.location.reload() }, 100) }
-
-onMounted(async () => {
+async function loadHelp() {
+  loadError.value = false; loading.value = true
   try {
     const r = await getArticles('help')
     const articles = r.data || []
@@ -119,8 +118,11 @@ onMounted(async () => {
       else faqGroups.value.push({ category: 'account', items: extraItems })
     }
     loading.value = false;
-    } catch { loadError.value = true }
-})
+  } catch { loadError.value = true; loading.value = false }
+}
+function retry() { loadHelp() }
+
+onMounted(loadHelp)
 </script>
 
 <template>

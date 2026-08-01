@@ -33,9 +33,10 @@ public abstract class BaseExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleBadRequest(RuntimeException e) {
-        log.warn("Bad request: {}", e.getMessage());
+        log.warn("Bad request: {}", e.getMessage(), e);
+        String msg = e.getMessage();
         return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", "Bad request"));
+                .body(Map.of("success", false, "message", msg != null ? msg : "Bad request"));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)

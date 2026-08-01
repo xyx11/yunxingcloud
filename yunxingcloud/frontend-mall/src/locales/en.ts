@@ -258,6 +258,7 @@ export default {
     selectAddressHint: 'Please select a shipping address',
     agreeHint: 'Please agree to Terms of Service',
     submitFail: 'Failed to place order, please retry',
+    orderSuccess: 'Order placed! Redirecting to payment...',
     loadFail: 'Failed to load checkout info',
     pointsValue: '= ¥{n} off',
     pointsDeductDetail: 'Points Deduction (×100)',
@@ -407,6 +408,7 @@ export default {
     refundEstimate: 'Est. 1-3 business days',
     needHelp: 'Need help?',
     supportContact: 'Contact support@yunxingcloud.com',
+    remark: 'Remark',
   },
   groupBuy: {
     title: 'Group Buy',
@@ -612,6 +614,12 @@ export default {
     payInApp: 'Complete payment in {app}',
     appWechat: 'WeChat',
     appAlipay: 'Alipay',
+    manualRefresh: 'Refresh',
+    orderExpired: 'Order expired, please re-order',
+    expiredTip: 'Order will auto-cancel when expired',
+    step1: 'Select payment method above',
+    step2: 'Click the button below to confirm payment',
+    backToOrderList: 'Back to Orders',
   },
   register: {
     title: 'Sign Up',

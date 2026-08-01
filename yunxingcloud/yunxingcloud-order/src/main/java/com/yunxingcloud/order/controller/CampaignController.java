@@ -33,17 +33,35 @@ public class CampaignController {
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
 
     @GetMapping
-    public ResponseEntity<?> active() {
-        LocalDateTime now = LocalDateTime.now();
-        return ResponseEntity.ok(repo.findByStatusAndStartTimeBeforeAndEndTimeAfter("1", now, now));
+    public ResponseEntity<?> list() { return ResponseEntity.ok(service.getActiveCampaigns()); }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable Long id) {
+        return service.get(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Campaign c) {
-        var saved = repo.save(c);
+        var saved = service.create(c);
         log.info("Campaign created: id={}", saved.getId());
         return ResponseEntity.ok(saved);
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Campaign c) {
+        c.setId(id);
+        return ResponseEntity.ok(service.create(c));
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @GetMapping("/{id}/calculate")

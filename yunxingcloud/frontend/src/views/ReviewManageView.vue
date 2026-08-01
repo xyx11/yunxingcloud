@@ -39,9 +39,9 @@ const columns: DataTableColumns<any> = [
   { title: t('common.actions'), key: 'actions', width: 120, render(r: any) { return h(NSpace, { size: 'small' }, { default: () => [h(NButton, { size: 'tiny', onClick: () => { detail.value = r; showDetail.value = true } }, { default: () => t('review.view') }), h(NPopconfirm, { onPositiveClick: () => delReview(r.id) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error' }, { default: () => t('common.delete') }), default: () => t('common.confirmDelete') }) ] }) } },
 ]
 
-async function load() { loading.value = true; try { const r = await request.get('/products/reviews/all'); items.value = r.data.content || r.data || [] } finally { loading.value = false } }
+async function load() { loading.value = true; try { const r = await request.get('/api/products/reviews/all'); items.value = r.data.content || r.data || [] } finally { loading.value = false } }
 async function loadStats() { try { const r = await request.get('/api/reviews/stats'); reviewStats.value = r.data || {} } catch(e) { console.warn('加载评价统计失败:', e) } }
-async function delReview(id: number) { try { await request.delete(`/products/reviews/${id}`); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.saveFailed')) } }
+async function delReview(id: number) { try { await request.delete(`/api/products/reviews/${id}`); notify.success(t('common.deleted')); load() } catch { notify.error(t('common.saveFailed')) } }
 onMounted(() => { load(); loadStats() })
 </script>
 <template>

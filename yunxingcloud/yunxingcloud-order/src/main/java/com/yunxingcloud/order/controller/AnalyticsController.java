@@ -4,11 +4,13 @@ import com.yunxingcloud.order.service.AnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "数据分析", description = "商城数据分析")
 @RestController
 @RequestMapping("/api/analytics")
+@PreAuthorize("hasAuthority('admin')")
 public class AnalyticsController {
 
     private final AnalyticsService service;

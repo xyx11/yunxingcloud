@@ -30,11 +30,11 @@ const columns: DataTableColumns<GroupBuy> = [
 
 async function load() { loading.value = true; try { const r = await fetchGroupBuys(); items.value = r.data } finally { loading.value = false } }
 async function save() {
-  if (editingId.value) { await request.put(`/api/groupbuys/${editingId.value}`, form.value) }
+  if (editingId.value) { await request.put(`/api/group-buy/${editingId.value}`, form.value) }
   else { await createGroupBuy(form.value) }
   showModal.value=false; editingId.value=null; notify.success(t('common.saveSuccess')); load()
 }
-async function del(id:number) { try{await request.delete(`/api/groupbuys/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.deleteFailed'))} }
+async function del(id:number) { try{await request.delete(`/api/group-buy/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.deleteFailed'))} }
 async function expire() { await expireGroupBuys(); notify.success(t('groupBuy.expired')); load() }
 function add() { editingId.value=null; form.value={productId:0,minMembers:2,groupPrice:0}; showModal.value=true }
 onMounted(load)

@@ -28,6 +28,26 @@ public class TagController {
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody TagDTO dto) { return ResponseEntity.ok(tagService.create(dto)); }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable Long id) {
+        return tagService.get(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody TagDTO dto) {
+        return ResponseEntity.ok(tagService.update(id, dto));
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        tagService.delete(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     @GetMapping("/product/{productId}")
     public ResponseEntity<?> tagsOfProduct(@PathVariable Long productId) {
         return ResponseEntity.ok(tagService.tagsOfProduct(productId));

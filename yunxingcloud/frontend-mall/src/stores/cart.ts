@@ -1,7 +1,6 @@
 import { reactive } from 'vue'
 import { defineStore } from 'pinia'
 import request from '@/api/request'
-import { useGlobalToast } from '@/composables/useToast'
 
 interface CartState {
   count: number

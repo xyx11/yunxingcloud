@@ -35,14 +35,15 @@ const selectedGroup = ref<GroupBuyItem | null>(null)
 const showModal = ref(false)
 
 async function loadMyGroups() {
-  try { const r = await request.get('/group-buy/my'); myGroups.value = r.data || []; loading.value = false; 
-    } catch {}
+  try { const r = await request.get('/group-buy/my'); myGroups.value = r.data || []
+    } catch { /* loadMyGroups is supplementary; main groups already loaded */ }
+    finally { loading.value = false }
 }
 
 onMounted(async () => {
-  try { const r = await request.get('/group-buy'); groups.value = r.data || []; loading.value = false; 
-      loading.value = false;
+  try { const r = await request.get('/group-buy'); groups.value = r.data || []
     } catch { toast.error(t('groupBuy.loadFail')) }
+  finally { loading.value = false }
   loadMyGroups()
 })
 
@@ -107,8 +108,14 @@ function downloadPoster() {
   const a = document.createElement('a'); a.href = sharePoster.value; a.download = '拼团海报.png'; a.click()
 }
 async function copyShareLink() {
-  try { await navigator.clipboard.writeText(window.location.origin + '/group-buy'); toast.success(t('toast.copied')) } catch {}
-  try { await request.post('/social/share', { productId: selectedGroup.value?.productId, channel: 'group_buy_copy' }) } catch {}
+  try {
+    const link = window.location.origin + '/group-buy' + (selectedGroup.value?.id ? '?id=' + selectedGroup.value.id : '')
+    await navigator.clipboard.writeText(link)
+    toast.success(t('toast.copied'))
+  } catch {
+    toast.error(t('toast.copyFailed') || '复制失败')
+  }
+  try { await request.post('/social/share', { productId: selectedGroup.value?.productId, channel: 'group_buy_copy' }) } catch { /* best-effort tracking */ }
 }
 </script>
 

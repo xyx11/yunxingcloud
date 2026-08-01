@@ -112,4 +112,27 @@ public class OrderMailService {
             log.error("退款邮件发送失败: {}", e.getMessage());
         }
     }
+
+    @Async
+    public void sendOrderCanceled(OrderHead order, String userEmail) {
+        if (userEmail == null || mailSender == null) return;
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setTo(userEmail);
+            msg.setSubject("[YXCLOUD] 订单已取消 — " + order.getOrderNo());
+            msg.setText(String.format("""
+                    亲爱的 %s：
+
+                    您的订单 %s 已被取消。
+
+                    如有疑问请联系客服。
+
+                    — YXCLOUD 商城
+                    """,
+                    order.getUsername(), order.getOrderNo()));
+            mailSender.send(msg);
+        } catch (Exception e) {
+            log.error("取消订单邮件发送失败: {}", e.getMessage());
+        }
+    }
 }

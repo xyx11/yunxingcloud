@@ -35,4 +35,10 @@ public interface OrderHeadRepository extends JpaRepository<OrderHead, Long> {
 
     @Query("SELECT o FROM OrderHead o WHERE o.createdAt >= :since ORDER BY o.createdAt DESC")
     List<OrderHead> findByCreatedAtAfter(java.time.LocalDateTime since);
+
+    @Query("SELECT COUNT(o) FROM OrderHead o WHERE o.username = :username AND o.status = :status")
+    long countByUsernameAndStatus(String username, String status);
+
+    @Query("SELECT COALESCE(SUM(o.actualAmount), 0) FROM OrderHead o WHERE o.username = :username AND o.status IN ('1','2','3')")
+    long totalSpentByUser(String username);
 }

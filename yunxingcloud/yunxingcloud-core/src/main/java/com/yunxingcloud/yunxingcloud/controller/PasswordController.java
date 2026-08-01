@@ -29,6 +29,7 @@ public class PasswordController {
 
     @PostMapping("/forgot")
     @SentinelResource(value = "passwordForgotFlow", blockHandler = "forgotPasswordBlockHandler")
+    @com.yunxingcloud.common.annotation.UserRateLimit(permits = 5, window = 60, message = "重置密码请求过于频繁，请稍后重试")
     public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> body) {
         Map<String, Object> result = passwordService.forgotPassword(body.get("email"));
         if (Boolean.FALSE.equals(result.get("success"))) {

@@ -35,6 +35,18 @@ public class TagService {
         return tagRepo.save(t);
     }
 
+    public Optional<ProductTag> get(Long id) { return tagRepo.findById(id); }
+
+    @Transactional
+    public ProductTag update(Long id, TagDTO dto) {
+        ProductTag t = tagRepo.findById(id).orElseThrow();
+        if (dto.getName() != null) t.setName(dto.getName());
+        return tagRepo.save(t);
+    }
+
+    @Transactional
+    public void delete(Long id) { tagRepo.deleteById(id); }
+
     public List<ProductTag> tagsOfProduct(Long productId) {
         List<ProductTagRelation> rels = relationRepo.findByProductId(productId);
         if (rels.isEmpty()) return Collections.emptyList();

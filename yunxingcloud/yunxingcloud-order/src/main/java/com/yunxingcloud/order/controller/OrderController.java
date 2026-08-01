@@ -3,6 +3,7 @@ package com.yunxingcloud.order.controller;
 import com.yunxingcloud.api.client.PaymentClient;
 import com.yunxingcloud.order.entity.OrderHead;
 import com.yunxingcloud.order.repository.OrderHeadRepository;
+import com.yunxingcloud.order.service.OrderFulfillmentService;
 import com.yunxingcloud.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,12 +29,14 @@ public class OrderController {
     private final OrderHeadRepository orderRepo;
     private final OrderService orderService;
     private final PaymentClient paymentClient;
+    private final OrderFulfillmentService fulfillmentService;
 
     public OrderController(OrderHeadRepository orderRepo, OrderService orderService,
-                           PaymentClient paymentClient) {
+                           PaymentClient paymentClient, OrderFulfillmentService fulfillmentService) {
         this.orderRepo = orderRepo;
         this.orderService = orderService;
         this.paymentClient = paymentClient;
+        this.fulfillmentService = fulfillmentService;
     }
 
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
@@ -51,6 +54,8 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
         return orderRepo.findById(id).map(order -> {
+            if (!order.getUsername().equals(user()) && !isAdmin())
+                return ResponseEntity.status(403).<Map<String, Object>>build();
             var lines = orderService.lines(id);
             return ResponseEntity.ok(Map.of("order", order, "lines", lines));
         }).orElse(ResponseEntity.notFound().build());
@@ -71,6 +76,9 @@ public class OrderController {
             return ResponseEntity.ok(order);
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            log.error("Order submit failed: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage() != null ? e.getMessage() : "下单失败"));
         }
     }
 
@@ -112,7 +120,10 @@ public class OrderController {
     }
 
     @PutMapping("/internal/by-order-no/{orderNo}/status")
-    public ResponseEntity<?> updateStatusByOrderNo(@PathVariable String orderNo, @RequestParam String status) {
+    public ResponseEntity<?> updateStatusByOrderNo(@PathVariable String orderNo, @RequestParam String status,
+            @RequestHeader(value = "X-Internal-Key", required = false) String internalKey) {
+        if (!"yunxingcloud-internal".equals(internalKey))
+            return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
         return orderRepo.findByOrderNo(orderNo).map(order -> {
             order.setStatus(status);
             orderRepo.save(order);
@@ -146,26 +157,37 @@ public class OrderController {
         return orderRepo.findById(id).map(order -> {
             if (!order.getUsername().equals(user()) && !isAdmin())
                 return ResponseEntity.status(403).build();
-            if ("3".equals(order.getStatus()) || "4".equals(order.getStatus()))
-                return ResponseEntity.badRequest().body(Map.of("message", "订单已完成或已取消"));
+            if ("2".equals(order.getStatus()) || "3".equals(order.getStatus()) || "4".equals(order.getStatus()))
+                return ResponseEntity.badRequest().body(Map.of("message", "订单已发货/已完成/已取消，不可取消"));
             orderService.cancelOrder(order);
             return ResponseEntity.ok(Map.of("success", true));
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}/confirm-receive")
+    public ResponseEntity<?> confirmReceive(@PathVariable Long id) {
+        return orderRepo.findById(id).map(order -> {
+            if (!order.getUsername().equals(user()) && !isAdmin())
+                return ResponseEntity.status(403).<Map<String, Object>>build();
+            try {
+                fulfillmentService.confirmReceive(id);
+                return ResponseEntity.ok(Map.of("success", true));
+            } catch (IllegalStateException e) {
+                return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<?> stats() {
-        var orders = orderRepo.findByUsernameOrderByCreatedAtDesc(user());
-        long pending = orders.stream().filter(o -> "0".equals(o.getStatus())).count();
-        long paid = orders.stream().filter(o -> "1".equals(o.getStatus())).count();
-        long shipped = orders.stream().filter(o -> "2".equals(o.getStatus())).count();
-        long done = orders.stream().filter(o -> "3".equals(o.getStatus())).count();
-        long total = orders.size();
-        long totalSpent = orders.stream().filter(o -> "1".equals(o.getStatus()) || "2".equals(o.getStatus()) || "3".equals(o.getStatus()))
-            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        long pending = orderRepo.countByUsernameAndStatus(user(), "0");
+        long paid = orderRepo.countByUsernameAndStatus(user(), "1");
+        long shipped = orderRepo.countByUsernameAndStatus(user(), "2");
+        long done = orderRepo.countByUsernameAndStatus(user(), "3");
+        long total = pending + paid + shipped + done;
         return ResponseEntity.ok(Map.of(
             "pending", pending, "paid", paid, "shipped", shipped, "done", done,
-            "total", total, "totalSpent", totalSpent
+            "total", total, "totalSpent", orderRepo.totalSpentByUser(user())
         ));
     }
 

@@ -4,6 +4,7 @@ import com.yunxingcloud.order.service.ProductCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ public class HealthController {
 
     private final JdbcTemplate jdbc;
     private final ProductCacheService cacheService;
+    private final StringRedisTemplate redis;
 
     @Value("${spring.application.name:yunxingcloud-order}")
     private String appName;
@@ -26,9 +28,11 @@ public class HealthController {
     @Value("${app.version:2.5.0}")
     private String appVersion;
 
-    public HealthController(JdbcTemplate jdbc, ProductCacheService cacheService) {
+    public HealthController(JdbcTemplate jdbc, ProductCacheService cacheService,
+                            StringRedisTemplate redis) {
         this.jdbc = jdbc;
         this.cacheService = cacheService;
+        this.redis = redis;
     }
 
     @GetMapping("/api/health")
@@ -36,15 +40,17 @@ public class HealthController {
     public ResponseEntity<?> health() {
         boolean dbOk = checkDatabase();
         boolean diskOk = checkDisk();
+        boolean redisOk = checkRedis();
 
         return ResponseEntity.ok(Map.of(
-            "status", dbOk && diskOk ? "UP" : "DEGRADED",
+            "status", dbOk && diskOk && redisOk ? "UP" : "DEGRADED",
             "service", appName,
             "version", appVersion,
             "uptime", ManagementFactory.getRuntimeMXBean().getUptime() / 1000 + "s",
             "checks", Map.of(
                 "database", dbOk ? "UP" : "DOWN",
-                "disk", diskOk ? "UP" : "DOWN"
+                "disk", diskOk ? "UP" : "DOWN",
+                "redis", redisOk ? "UP" : "DOWN"
             )
         ));
     }
@@ -62,6 +68,15 @@ public class HealthController {
         try {
             File tmp = new File(System.getProperty("java.io.tmpdir"));
             return tmp.getUsableSpace() > 10 * 1024 * 1024;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean checkRedis() {
+        try {
+            String pong = redis.getConnectionFactory().getConnection().ping();
+            return "PONG".equals(pong);
         } catch (Exception e) {
             return false;
         }
@@ -102,8 +117,12 @@ public class HealthController {
     @Operation(summary = "K8s Readiness Probe")
     public ResponseEntity<?> readiness() {
         boolean dbOk = checkDatabase();
-        return ResponseEntity.status(dbOk ? 200 : 503)
-                .body(Map.of("status", dbOk ? "UP" : "DOWN", "database", dbOk ? "UP" : "DOWN"));
+        boolean redisOk = checkRedis();
+        boolean ready = dbOk && redisOk;
+        return ResponseEntity.status(ready ? 200 : 503)
+                .body(Map.of("status", ready ? "UP" : "DOWN",
+                    "database", dbOk ? "UP" : "DOWN",
+                    "redis", redisOk ? "UP" : "DOWN"));
     }
 
     @GetMapping("/actuator/metrics")

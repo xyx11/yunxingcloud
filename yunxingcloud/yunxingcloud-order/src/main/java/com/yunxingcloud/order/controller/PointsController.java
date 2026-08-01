@@ -80,29 +80,35 @@ public class PointsController {
         return ResponseEntity.ok(Map.of("checked", checked));
     }
 
+    private static final java.util.List<Map<String, Object>> EXCHANGE_ITEMS = java.util.List.of(
+        Map.of("id", 1, "name", "50元优惠券", "points", 5000),
+        Map.of("id", 2, "name", "10元话费", "points", 1000),
+        Map.of("id", 3, "name", "包邮券", "points", 500),
+        Map.of("id", 4, "name", "限定周边", "points", 3000)
+    );
+
     @GetMapping("/exchanges")
     public ResponseEntity<?> exchangeItems() {
-        return ResponseEntity.ok(java.util.List.of(
-            Map.of("id", 1, "name", "50元优惠券", "points", 5000, "stock", 100),
-            Map.of("id", 2, "name", "10元话费", "points", 1000, "stock", 200),
-            Map.of("id", 3, "name", "包邮券", "points", 500, "stock", 500),
-            Map.of("id", 4, "name", "限定周边", "points", 3000, "stock", 50)
-        ));
+        return ResponseEntity.ok(EXCHANGE_ITEMS);
+    }
+
+    @GetMapping("/admin/accounts")
+    public ResponseEntity<?> adminAccounts() {
+        return ResponseEntity.ok(accountRepo.findAll());
     }
 
     @PostMapping("/exchange/{itemId}")
     public ResponseEntity<?> doExchange(@PathVariable Long itemId) {
+        var item = EXCHANGE_ITEMS.stream()
+                .filter(i -> itemId.equals(i.get("id"))).findFirst();
+        if (item.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("message", "无效的商品"));
+        long cost = ((Number) item.get().get("points")).longValue();
         PointsAccount acc = service.getAccount(user());
         long balance = acc != null ? acc.getBalance() : 0;
-        // Simple check: each item costs based on id
-        long[] costs = {0, 5000, 1000, 500, 3000};
-        int idx = itemId.intValue();
-        if (idx < 1 || idx >= costs.length)
-            return ResponseEntity.badRequest().body(Map.of("message", "无效的商品"));
-        long cost = costs[idx];
         if (balance < cost)
             return ResponseEntity.badRequest().body(Map.of("message", "积分不足"));
-        service.redeem(user(), cost, 0L);
+        service.redeem(user(), cost, itemId);
         return ResponseEntity.ok(Map.of("success", true, "message", "兑换成功"));
     }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, inject, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail, getAlsoBought } from '@/api/product'
 import { addToCart } from '@/api/cart'
@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useCartFly } from '@/composables/useCartFly'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useGlobalToast } from '@/composables/useToast'
 import { formatPrice, formatRelativeTime } from '@/utils/format'
 import type { Product, Sku, Review } from '@/types'
 
@@ -27,7 +27,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useGlobalToast()
 const { flyToCart } = useCartFly()
 
 // Data state
@@ -192,10 +192,12 @@ function onLightboxKey(e: KeyboardEvent) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
   }
 }
-const viewerCount = ref(Math.floor(Math.random() * 200) + 50)
+const viewerCount = ref(0)
 let viewerTimer: ReturnType<typeof setInterval> | null = null
+const couponCount = ref(0)
 
-function onScroll() { showFloatingBar.value = window.scrollY > 500 }
+let scrollTicking = false
+function onScroll() { if (!scrollTicking) { scrollTicking = true; requestAnimationFrame(() => { showFloatingBar.value = window.scrollY > 500; scrollTicking = false }) } }
 
 const displayPrice = computed(() =>
   selectedSku.value ? selectedSku.value.price : product.value?.price || 0
@@ -220,6 +222,9 @@ onMounted(async () => {
     skus.value = res.data.skus || []
     reviews.value = res.data.reviews || []
     related.value = res.data.related || []
+        if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
+        else if (product.value?.images) images.value = product.value.images
+        if (!images.value.length) images.value = ['📦']
     try { const ar = await request.get('/reviews/summary/' + Number(id)); reviewAnalytics.value = ar.data || null } catch {}
     try { const r = await getAlsoBought(Number(id), 4); alsoBought.value = r.data || [] } catch {}
     const { add } = useRecentlyViewed()
@@ -227,20 +232,23 @@ onMounted(async () => {
       add({ id: product.value.id, name: product.value.name, price: product.value.price, imageUrl: product.value.imageUrl })
     }
   } catch (e: unknown) {
-    const status = (e as { response?: { status?: number } }).response?.status
-    if (status === 404) notFound.value = true
-    else toast.error(t('product.loadFail'))
+    const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string }
+    const status = err.response?.status
+    if (status === 404) { notFound.value = true }
+    else if (status === 401 || status === 403) { /* handled by request interceptor */ }
+    else {
+      const msg = err.response?.data?.message || err.message || ''
+      toast.error(msg || t('product.loadFail'))
+    }
   } finally { loading.value = false }
 
   if (auth.isLoggedIn) {
     try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch { toast.error(t('toast.favStatusFail')) }
   }
+  try { const cr = await request.get('/coupons/available?productId=' + Number(id)); couponCount.value = cr.data?.length || cr.data?.count || 0 } catch {}
 
   window.addEventListener('scroll', onScroll)
 
-  if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
-  else if (product.value?.images) images.value = product.value.images
-  if (!images.value.length) images.value = ['\u{1F4E6}']
 
   // Structured data for search engines
   if (product.value) injectStructuredData(product.value)
@@ -279,7 +287,11 @@ async function buyNow() {
   if (!auth.isLoggedIn) { router.push('/login'); return }
   if (!product.value || buyingNow.value) return
   buyingNow.value = true
-  try { await addToCart(product.value.id, qty.value); router.push('/cart') }
+  try {
+    await addToCart(product.value.id, qty.value)
+    localStorage.setItem('checkout_buy_now', String(product.value.id))
+    router.push('/checkout')
+  }
   catch { toast.error(t('toast.addCartFail')) }
   finally { buyingNow.value = false }
 }
@@ -359,8 +371,16 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     <router-link to="/" class="nf-back-btn">{{ t('product.breadcrumbHome') }}</router-link>
   </div>
 
+  <!-- Fallback: product loaded but null (API error without 404) -->
+  <div v-else-if="!product" class="pdp-not-found">
+    <span style="font-size:64px">🔌</span>
+    <h2>{{ t('product.loadFail') }}</h2>
+    <p style="color:var(--text-tertiary);margin-bottom:var(--space-xl)">{{ t('product.notFoundDesc') }}</p>
+    <router-link to="/products" class="nf-back-btn">{{ t('product.viewAll') }}</router-link>
+  </div>
+
   <!-- Main Product -->
-  <div v-else-if="product" class="pdp-main">
+  <div v-else class="pdp-main">
     <ProductGallery :images="images" :product-name="product.name" />
 
     <div class="pdp-info">
@@ -410,10 +430,10 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
       ⚡ {{ t('product.stockLabel') }}: {{ displayStock }}
     </div>
     <div class="coupon-banner" @click="router.push('/coupons')">
-      🎫 {{ t('product.couponAvailable', { n: '0' }) }}
+      🎫 {{ t('product.couponAvailable', { n: String(couponCount > 0 ? couponCount : 0) }) }}
     </div>
     <div class="recent-sales-banner">
-      🔥 {{ t('product.recentViewers', { n: Math.floor(Math.random() * 50) + 5 }) }}
+      🔥 {{ t('product.recentViewers', { n: viewerCount || 5 }) }}
     </div>
   </div>
 

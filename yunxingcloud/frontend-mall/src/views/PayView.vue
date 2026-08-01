@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderById, payOrder } from '@/api/order'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import { formatPrice } from '@/utils/format'
 import JdButton from '@/components/JdButton.vue'
 import type { OrderHead } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const { t } = useI18n()
 const order = ref<OrderHead | null>(null)
 const selectedChannel = ref<'wechat' | 'alipay'>('wechat')
@@ -45,7 +45,7 @@ async function loadOrder() {
   loadError.value = false
   try {
     const r = await getOrderById(Number(route.params.id))
-    order.value = r.data.order
+    order.value = r.data?.order || null
     payAmount.value = order.value?.totalAmount || 0
     payOrderNo.value = order.value?.orderNo || ''
     if (order.value?.status !== '0') { toast.error(t('toast.payStatusError')); router.replace('/orders') }
@@ -98,8 +98,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
       <!-- Error -->
       <div v-else-if="loadError" class="pay-error">
         <p class="pay-error-icon">⚠️</p>
-        <p class="pay-error-text">订单信息加载失败</p>
-        <JdButton @click="loadOrder()">重新加载</JdButton>
+        <p class="pay-error-text">{{ t('pay.loadFail') }}</p>
+        <JdButton @click="loadOrder()">{{ t('pay.retry') }}</JdButton>
       </div>
 
       <!-- Polling -->
@@ -111,7 +111,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
           <div class="polling-bar"><div class="polling-fill" :class="{ slow: pollCount > 60 }" :style="{ width: (pollCount / 120 * 100) + '%' }" /></div>
           <p class="polling-count">{{ pollCount }}/120 s</p>
           <div v-if="pollCount > 25" class="polling-actions">
-            <JdButton size="sm" type="outline" @click="loadOrder()">手动刷新</JdButton>
+            <JdButton size="sm" type="outline" @click="loadOrder()">{{ t('pay.manualRefresh') }}</JdButton>
             <span class="polling-link" @click="router.replace('/orders')">{{ t('pay.backToOrders') }}</span>
           </div>
         </div>
@@ -124,15 +124,15 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
         <!-- Order summary card -->
         <div class="pay-summary">
           <div class="pay-summary-row">
-            <span>订单编号</span>
+            <span>{{ t('pay.orderNo') }}</span>
             <span class="pay-summary-val">{{ payOrderNo || '-' }}</span>
           </div>
           <div class="pay-summary-row">
-            <span>支付金额</span>
+            <span>{{ t('pay.payAmount') }}</span>
             <span class="pay-amount">{{ formatPrice(payAmount / 100, 2) }}</span>
           </div>
           <div class="pay-summary-row pay-summary-channel">
-            <span>支付方式</span>
+            <span>{{ t('pay.payMethod') }}</span>
             <span>{{ selectedChannel === 'wechat' ? t('pay.wechat') : t('pay.alipay') }}</span>
           </div>
         </div>
@@ -140,12 +140,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
         <!-- Countdown with urgency -->
         <div class="countdown-bar" :class="{ expired: expired, urgent: !expired && minutes === 0 && seconds <= 60 }">
           <template v-if="expired">
-            <span class="countdown-icon">⚠️</span> 订单已过期，请重新下单
+            <span class="countdown-icon">⚠️</span> {{ t('pay.orderExpired') }}
           </template>
           <template v-else>
             <span class="countdown-icon">⏱</span>
             {{ t('pay.timeout', { min: pad(minutes), sec: pad(seconds) }) }}
-            <span class="countdown-tip">超时订单将自动取消</span>
+            <span class="countdown-tip">{{ t('pay.expiredTip') }}</span>
           </template>
         </div>
 
@@ -180,11 +180,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
         <div class="pay-instructions">
           <div class="inst-step">
             <span class="inst-num">1</span>
-            <span>选择上方支付方式</span>
+            <span>{{ t('pay.step1') }}</span>
           </div>
           <div class="inst-step">
             <span class="inst-num">2</span>
-            <span>点击下方按钮确认支付</span>
+            <span>{{ t('pay.step2') }}</span>
           </div>
           <div class="inst-step">
             <span class="inst-num">3</span>
@@ -197,7 +197,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
         </JdButton>
         <div class="pay-footer">
           <p class="security-note">{{ t('pay.securityNote') }}</p>
-          <p class="pay-cancel-link" @click="router.push('/orders')">← 返回订单列表</p>
+          <p class="pay-cancel-link" @click="router.push('/orders')">{{ t('pay.backToOrderList') }}</p>
         </div>
       </template>
     </div>

@@ -4,6 +4,7 @@ import com.yunxingcloud.order.service.OrderSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "订单搜索", description = "订单高级搜索")
@@ -17,6 +18,10 @@ public class OrderSearchController {
         this.orderSearchService = orderSearchService;
     }
 
+    private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
+    private boolean isAdmin() { return SecurityContextHolder.getContext().getAuthentication()
+            .getAuthorities().stream().anyMatch(a -> "admin".equals(a.getAuthority())); }
+
     @GetMapping("/search")
     public ResponseEntity<?> search(
             @RequestParam(required = false) String keyword,
@@ -26,7 +31,8 @@ public class OrderSearchController {
             @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(orderSearchService.search(keyword, status, username,
+        String effectiveUsername = isAdmin() ? username : user();
+        return ResponseEntity.ok(orderSearchService.search(keyword, status, effectiveUsername,
                 startDate, endDate, page, size));
     }
 

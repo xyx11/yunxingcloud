@@ -16,6 +16,12 @@ async function load() {
   try { const r = await request.get('/api/recommend/hot'); hotProducts.value = r.data || [] } catch(e) { console.warn('加载推荐数据失败:', e) }
   try { const r = await request.get('/api/recommend/new'); newProducts.value = r.data || [] } catch(e) { console.warn('加载推荐数据失败:', e) }
 }
+async function saveConfig() {
+  try {
+    await request.post('/api/recommend/config', { hotLimit: hotLimit.value, newLimit: newLimit.value, cfEnabled: cfEnabled.value, hotWeight: hotWeight.value })
+    notify.success(t('recommend.configSaved'))
+  } catch { notify.error(t('common.updateFailed')) }
+}
 onMounted(load)
 </script>
 <template>
@@ -28,7 +34,7 @@ onMounted(load)
           <n-form-item :label="t('recommend.newLimit')"><n-input-number v-model:value="newLimit" :min="1" :max="50" /> <span class="recommend-count">{{ t('recommend.currently', { n: newProducts.length }) }}</span></n-form-item>
           <n-form-item label="协同过滤"><n-switch v-model:value="cfEnabled" /></n-form-item>
           <n-form-item label="热门权重"><n-slider v-model:value="hotWeight" :min="0" :max="100" :step="5" /> {{ hotWeight }}%</n-form-item>
-          <n-button type="primary" @click="notify.success(t('recommend.configHint'))">{{ t('recommend.saveConfig') }}</n-button>
+          <n-button type="primary" @click="saveConfig">{{ t('recommend.saveConfig') }}</n-button>
         </n-form>
       </n-card>
       <n-card :title="t('recommend.currentStatus')">

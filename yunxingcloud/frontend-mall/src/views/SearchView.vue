@@ -34,29 +34,24 @@ const minPrice = ref('')
 const maxPrice = ref('')
 const recentlyAdded = ref(new Set<number>())
 const priceRanges = [
-  { key: '', label: t('search.allPrices') },
-  { key: '0-100', label: '¥0-100' },
-  { key: '100-500', label: '¥100-500' },
-  { key: '500-1000', label: '¥500-1000' },
-  { key: '1000+', label: '¥1000+' },
+  { key: '', label: t('search.allPrices'), min: '', max: '' },
+  { key: '0-100', label: '¥0-100', min: '0', max: '100' },
+  { key: '100-500', label: '¥100-500', min: '100', max: '500' },
+  { key: '500-1000', label: '¥500-1000', min: '500', max: '1000' },
+  { key: '1000+', label: '¥1000+', min: '1000', max: '' },
 ]
-function filteredResults() {
-  let list = results.value
-  // Apply preset price filter
-  if (priceFilter.value) {
-    const [min, max] = priceFilter.value.split('-').map(Number)
-    list = list.filter(p => {
-      const price = p.price / 100
-      if (max) return price >= min && price <= max
-      return price >= min
-    })
+function applyPriceFilter(key: string) {
+  const range = priceRanges.find(r => r.key === key)
+  if (range) {
+    priceFilter.value = key
+    minPrice.value = range.min
+    maxPrice.value = range.max
+    page.value = 0
+    doSearch()
   }
-  // Apply custom price range
-  const cMin = Number(minPrice.value)
-  const cMax = Number(maxPrice.value)
-  if (!isNaN(cMin)) list = list.filter(p => p.price / 100 >= cMin)
-  if (!isNaN(cMax)) list = list.filter(p => p.price / 100 <= cMax)
-  return list
+}
+function filteredResults() {
+  return results.value
 }
 
 const hotKeywords = ref<string[]>([])
@@ -109,7 +104,7 @@ async function doSearch() {
   const cMin = Number(minPrice.value); if (!isNaN(cMin)) extra.minPrice = cMin * 100
   const cMax = Number(maxPrice.value); if (!isNaN(cMax)) extra.maxPrice = cMax * 100
   try { const r = await searchProducts(q, page.value, 20, extra); const data = r.data; results.value = data.content || data || []; totalPages.value = data.totalPages || 0; analytics.search(q, results.value.length); searchError.value = false; router.replace({ query: { q } }); try { await request.post('/search/log', { keyword: q }) } catch {}   loading.value = false;
-    } catch { toast.error(t('search.searchFail')); results.value = []; searchError.value = true }
+    } catch { toast.error(t('search.searchFail')); results.value = []; searchError.value = true; loading.value = false }
 }
 
 function loadMore() { page.value++; doSearch() }
@@ -195,7 +190,7 @@ async function quickAdd(e: Event, p: Product) {
       <div class="results-header">
         <h2 class="results-title">{{ t('search.resultCount', { n: String(results.length) }) }}</h2>
         <div class="price-filter">
-          <span v-for="pr in priceRanges" :key="pr.key" class="price-tag" :class="{ active: priceFilter === pr.key }" @click="priceFilter = pr.key">{{ pr.label }}</span>
+          <span v-for="pr in priceRanges" :key="pr.key" class="price-tag" :class="{ active: priceFilter === pr.key }" @click="applyPriceFilter(pr.key)">{{ pr.label }}</span>
           <span class="price-input-wrap">
             <input v-model="minPrice" type="number" placeholder="¥" class="price-input-inline" @keyup.enter="doSearch" />
             <span>-</span>

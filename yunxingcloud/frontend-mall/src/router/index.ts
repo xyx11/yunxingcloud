@@ -3,10 +3,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 // 高频路由 — 直接打包进主JS (避免首次访问空白)
 import HomeView from '@/views/HomeView.vue'
 import CartView from '@/views/CartView.vue'
-import CheckoutView from '@/views/CheckoutView.vue'
-import ProductView from '@/views/ProductView.vue'
 import ProductListView from '@/views/ProductListView.vue'
 
+const CheckoutView = () => import('@/views/CheckoutView.vue')
+const ProductView = () => import('@/views/ProductView.vue')
 const SearchView = () => import('@/views/SearchView.vue')
 const OrdersView = () => import('@/views/OrdersView.vue')
 const OrderDetailView = () => import('@/views/OrderDetailView.vue')
@@ -271,10 +271,14 @@ function prefetchRoute(path: string) {
   }
 }
 if (typeof window !== 'undefined') {
+  let prefetchTimer: ReturnType<typeof setTimeout> | null = null
   document.addEventListener('mouseover', (e) => {
     const target = e.target as HTMLElement
     const link = target.closest('[data-prefetch]') as HTMLElement | null
-    if (link?.dataset.prefetch) prefetchRoute(link.dataset.prefetch)
+    if (link?.dataset.prefetch) {
+      if (prefetchTimer) clearTimeout(prefetchTimer)
+      prefetchTimer = setTimeout(() => prefetchRoute(link.dataset.prefetch!), 150)
+    }
   })
 }
 

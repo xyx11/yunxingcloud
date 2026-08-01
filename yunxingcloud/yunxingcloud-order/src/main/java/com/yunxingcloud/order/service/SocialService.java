@@ -15,6 +15,9 @@ public class SocialService {
     private final WishlistRepository wishRepo;
     private final ShareRecordRepository shareRepo;
 
+    @org.springframework.beans.factory.annotation.Value("${app.domain:https://yxcloud.com}")
+    private String appDomain;
+
     public SocialService(WishlistRepository wishRepo, ShareRecordRepository shareRepo) {
         this.wishRepo = wishRepo; this.shareRepo = shareRepo;
     }
@@ -49,6 +52,6 @@ public class SocialService {
     public long wishlistCount(String username) { return wishRepo.findByUsername(username).size(); }
 
     public String shareLink(Long productId, String channel) {
-        return "https://yxcloud.com/product/" + productId + "?ref=" + (channel != null ? channel : "copy");
+        return appDomain + "/product/" + productId + "?ref=" + (channel != null ? channel : "copy");
     }
 }

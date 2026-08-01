@@ -53,9 +53,8 @@ public class GiftCardController {
     }
 
     @GetMapping("/{cardId}/history")
-    public ResponseEntity<?> history(@PathVariable String cardId) {
-        // Return empty history for now - transaction tracking needs DB schema
-        return ResponseEntity.ok(java.util.List.of());
+    public ResponseEntity<?> history(@PathVariable Long cardId) {
+        return ResponseEntity.ok(service.getTransactions(cardId));
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")
@@ -64,5 +63,17 @@ public class GiftCardController {
         Long amount = Long.valueOf(body.get("amount").toString());
         int expireDays = body.containsKey("expireDays") ? Integer.parseInt(body.get("expireDays").toString()) : 365;
         return ResponseEntity.ok(service.create(amount, expireDays));
+    }
+
+    @PostMapping("/purchase")
+    public ResponseEntity<?> purchase(@RequestBody Map<String, Object> body) {
+        try {
+            Long amount = Long.valueOf(body.get("amount").toString());
+            GiftCard card = service.purchase(user(), amount);
+            return ResponseEntity.ok(Map.of("success", true, "cardNo", card.getCardNo(),
+                    "amount", card.getAmount(), "id", card.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

@@ -17,9 +17,10 @@ import java.util.*;
 public class AggregationController {
 
     private static final Logger log = LoggerFactory.getLogger(AggregationController.class);
-    private final WebClient directClient = WebClient.create();
+    private final WebClient lbClient;
 
-    public AggregationController() {
+    public AggregationController(WebClient.Builder webClientBuilder) {
+        this.lbClient = webClientBuilder.build();
     }
 
     /**
@@ -29,24 +30,22 @@ public class AggregationController {
     @GetMapping("/order/{id}")
     public Mono<ResponseEntity<?>> orderDetail(@PathVariable Long id,
                                                 @RequestHeader("Authorization") String auth) {
-        WebClient client = directClient;
-
-        Mono<Map> orderMono = client.get()
-                .uri("http://localhost:8084/api/orders/" + id)
+        Mono<Map> orderMono = lbClient.get()
+                .uri("lb://yunxingcloud-order/api/orders/" + id)
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .onErrorResume(e -> Mono.just(Map.of("error", e.getMessage())));
 
-        Mono<Map> paymentMono = client.get()
-                .uri("http://localhost:8083/api/payment/orders?orderNo=" + id)
+        Mono<Map> paymentMono = lbClient.get()
+                .uri("lb://yunxingcloud-payment/api/payment/orders?orderId=" + id)
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .onErrorResume(e -> Mono.just(Collections.emptyMap()));
 
-        Mono<Map> shipmentMono = client.get()
-                .uri("http://localhost:8084/api/shipments?orderId=" + id)
+        Mono<Map> shipmentMono = lbClient.get()
+                .uri("lb://yunxingcloud-order/api/orders/" + id + "/shipment")
                 .header("Authorization", auth)
                 .retrieve()
                 .bodyToMono(Map.class)
@@ -67,14 +66,13 @@ public class AggregationController {
      */
     @GetMapping("/home")
     public Mono<ResponseEntity<?>> homeData() {
-        String orderUrl = "http://localhost:8084"; // direct when Nacos disabled
-        Mono<Object> hot = directClient.get().uri(orderUrl + "/api/products/hot")
+        Mono<Object> hot = lbClient.get().uri("lb://yunxingcloud-order/api/products/hot")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> news = directClient.get().uri(orderUrl + "/api/products/new")
+        Mono<Object> news = lbClient.get().uri("lb://yunxingcloud-order/api/products/new")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> categories = directClient.get().uri(orderUrl + "/api/categories")
+        Mono<Object> categories = lbClient.get().uri("lb://yunxingcloud-order/api/categories")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
-        Mono<Object> banners = directClient.get().uri(orderUrl + "/api/banners")
+        Mono<Object> banners = lbClient.get().uri("lb://yunxingcloud-order/api/banners")
                 .retrieve().bodyToMono(Object.class).onErrorResume(e -> Mono.just(List.of()));
 
         return Mono.zip(hot, news, categories, banners)

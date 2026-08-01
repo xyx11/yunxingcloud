@@ -53,4 +53,8 @@ public class PriceAlertService {
     public void remove(Long id, String username) {
         alertRepo.deleteByIdAndUsername(id, username);
     }
+
+    public List<PriceAlert> listAll() {
+        return alertRepo.findAll();
+    }
 }

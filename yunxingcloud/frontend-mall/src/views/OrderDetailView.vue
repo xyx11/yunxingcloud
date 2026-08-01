@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderById, getAggregateOrder, cancelOrder } from '@/api/order'
 import { addToCart } from '@/api/cart'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
 import LazyImage from '@/components/LazyImage.vue'
@@ -11,12 +11,12 @@ import { formatPrice } from '@/utils/format'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import type { OrderHead, OrderItem, OrderStatus } from '@/types'
+import type { OrderHead, OrderItem } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const order = ref<OrderHead | null>(null)
 const lines = ref<OrderItem[]>([])
 const shipment = ref<{carrier:string,trackingNo:string} | null>(null)
@@ -60,11 +60,11 @@ onMounted(async () => {
 
 async function pay() { if (!order.value) return; router.push(`/pay/${order.value.id}`) }
 async function cancel() { confirmShow.value = true }
-async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = 4 as OrderStatus; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch { toast.error(t('toast.cancelFail')) } }
+async function doCancel() { if (!order.value) return; try { await cancelOrder(order.value.id); order.value.status = '4'; toast.info(t('orderDetail.statusCanceled')); confirmShow.value = false } catch { toast.error(t('toast.cancelFail')) } }
 
 async function confirmReceive() {
   if (receiving.value || !order.value) return; receiving.value = true
-  try { await request.put(`/orders/${order.value.id}/status`, { status: 3 as OrderStatus }); order.value.status = 3 as OrderStatus; toast.success(t('toast.received')) } catch { toast.error(t('toast.updateFailed')) }
+  try { await request.put(`/orders/${order.value.id}/status`, { status: 3 }); order.value.status = '3'; toast.success(t('toast.received')) } catch { toast.error(t('toast.updateFailed')) }
   finally { receiving.value = false }
 }
 

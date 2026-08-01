@@ -30,19 +30,22 @@ public class MallService {
     private final ProductRepository productRepo;
     private final ProductCacheService cacheService;
     private final UserFavoriteRepository favRepo;
+    private final OrderFulfillmentService fulfillmentService;
 
     public MallService(ProductCategoryRepository catRepo, ProductBrandRepository brandRepo,
                        ProductSkuRepository skuRepo, ProductReviewRepository reviewRepo,
                        CouponRepository couponRepo, CouponUserRepository couponUserRepo,
                        OrderShipmentRepository shipRepo, UserAddressRepository addrRepo,
                        BannerRepository bannerRepo, UserFavoriteRepository favRepo,
-                       ProductRepository productRepo, ProductCacheService cacheService) {
+                       ProductRepository productRepo, ProductCacheService cacheService,
+                       OrderFulfillmentService fulfillmentService) {
         this.catRepo = catRepo; this.brandRepo = brandRepo; this.skuRepo = skuRepo;
         this.reviewRepo = reviewRepo; this.couponRepo = couponRepo; this.couponUserRepo = couponUserRepo;
         this.shipRepo = shipRepo; this.addrRepo = addrRepo;
         this.bannerRepo = bannerRepo; this.favRepo = favRepo;
         this.productRepo = productRepo;
         this.cacheService = cacheService;
+        this.fulfillmentService = fulfillmentService;
     }
 
     private void evictCache() { cacheService.evictCatalog(); }
@@ -220,11 +223,14 @@ public class MallService {
         if (c.getEndTime() != null && c.getEndTime().isBefore(LocalDateTime.now())) return "优惠券已过期";
         if (c.getStartTime() != null && c.getStartTime().isAfter(LocalDateTime.now())) return "优惠券未开始";
         if (c.getUsedQty() >= c.getTotalQty()) return "已领完";
-        if (couponUserRepo.existsByCouponIdAndUsername(id, username)) return "已领取过";
         int updated = couponRepo.incrementUsedQty(id);
         if (updated == 0) return "已领完";
         CouponUser cu = new CouponUser(); cu.setCouponId(id); cu.setUsername(username);
-        couponUserRepo.save(cu);
+        try {
+            couponUserRepo.save(cu);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return "已领取过";
+        }
         return null;
     }
 
@@ -245,10 +251,7 @@ public class MallService {
 
     @Transactional
     public OrderShipment ship(Long orderId, String carrier, String trackingNo) {
-        OrderShipment s = new OrderShipment();
-        s.setOrderId(orderId); s.setCarrier(carrier); s.setTrackingNo(trackingNo);
-        s.setShippedAt(LocalDateTime.now());
-        return shipRepo.save(s);
+        return fulfillmentService.ship(orderId, carrier, trackingNo);
     }
 
     // ===== Addresses =====

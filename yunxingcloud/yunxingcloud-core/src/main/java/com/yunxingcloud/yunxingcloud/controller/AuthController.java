@@ -39,6 +39,7 @@ public class AuthController {
     @Operation(summary = "用户登录", description = "使用用户名密码登录，返回 JWT accessToken 和 refreshToken")
     @PostMapping("/login")
     @SentinelResource(value = "loginFlow", blockHandler = "loginBlockHandler")
+    @com.yunxingcloud.common.annotation.UserRateLimit(permits = 20, window = 60, message = "登录尝试过于频繁，请60秒后重试")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request,
                                                       HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();

@@ -87,6 +87,9 @@ public class ProductCacheService {
     @CacheEvict(value = {"categories", "brands", "banners"}, allEntries = true)
     public void evictCatalog() {}
 
+    @CacheEvict(value = "productDetail", key = "#id")
+    public void evictProductDetail(Long id) {}
+
     /** 预热所有缓存 */
     public java.util.Map<String, Object> refreshAllCaches() {
         int count = 0;

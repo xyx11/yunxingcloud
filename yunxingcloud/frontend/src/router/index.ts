@@ -74,6 +74,12 @@ const CampaignView = () => import('@/views/CampaignView.vue')
 const TagView = () => import('@/views/TagView.vue')
 const MemberTierView = () => import('@/views/MemberTierView.vue')
 const FeedbackView = () => import('@/views/FeedbackView.vue')
+const SupplierView = () => import('@/views/SupplierView.vue')
+const RefundView = () => import('@/views/RefundView.vue')
+const PresaleManageView = () => import('@/views/PresaleManageView.vue')
+const LiveManageView = () => import('@/views/LiveManageView.vue')
+const MerchantManageView = () => import('@/views/MerchantManageView.vue')
+const PriceAlertManageView = () => import('@/views/PriceAlertManageView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/oauth2/callback']
@@ -148,6 +154,12 @@ const router = createRouter({
         { path: 'seo', name: 'Seo', component: SeoManageView, meta: { title: 'nav.seo' } },
         { path: 'chat-admin', name: 'ChatAdmin', component: ChatAdminView, meta: { title: 'nav.chatAdmin' } },
         { path: 'points-admin', name: 'PointsAdmin', component: PointsAdminView, meta: { title: 'nav.pointsAdmin' } },
+        { path: 'suppliers', name: 'Suppliers', component: SupplierView, meta: { title: 'nav.suppliers' } },
+        { path: 'refunds', name: 'Refunds', component: RefundView, meta: { title: 'nav.refunds' } },
+        { path: 'presales', name: 'Presales', component: PresaleManageView, meta: { title: 'nav.presale' } },
+        { path: 'live-rooms', name: 'LiveRooms', component: LiveManageView, meta: { title: 'nav.live' } },
+        { path: 'merchants', name: 'Merchants', component: MerchantManageView, meta: { title: 'nav.merchant' } },
+        { path: 'price-alerts', name: 'PriceAlerts', component: PriceAlertManageView, meta: { title: 'nav.priceAlert' } },
         { path: 'recommend-config', name: 'RecommendConfig', component: RecommendConfigView, meta: { title: 'nav.recommendConfig' } },
         { path: 'audit', name: 'Audit', component: AuditView, meta: { title: 'nav.audit' } },
         { path: 'system-config', name: 'SystemConfig', component: SystemConfigView, meta: { title: 'nav.systemConfig' } },

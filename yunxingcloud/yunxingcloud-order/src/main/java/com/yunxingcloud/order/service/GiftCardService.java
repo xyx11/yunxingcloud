@@ -1,19 +1,32 @@
 package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.order.entity.GiftCard;
+import com.yunxingcloud.order.entity.GiftCardTransaction;
 import com.yunxingcloud.order.repository.GiftCardRepository;
+import com.yunxingcloud.order.repository.GiftCardTransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class GiftCardService {
 
     private final GiftCardRepository repo;
+    private final GiftCardTransactionRepository txnRepo;
 
-    public GiftCardService(GiftCardRepository repo) { this.repo = repo; }
+    public GiftCardService(GiftCardRepository repo, GiftCardTransactionRepository txnRepo) {
+        this.repo = repo; this.txnRepo = txnRepo;
+    }
+
+    private void recordTxn(Long cardId, String cardNo, String type, Long amount, String remark) {
+        GiftCardTransaction t = new GiftCardTransaction();
+        t.setCardId(cardId); t.setCardNo(cardNo); t.setType(type);
+        t.setAmount(amount); t.setRemark(remark);
+        txnRepo.save(t);
+    }
 
     /** 生成礼品卡 */
     public GiftCard create(Long amount, int expireDays) {
@@ -37,7 +50,9 @@ public class GiftCardService {
             throw new IllegalStateException("礼品卡已过期");
         }
         card.setStatus("1"); card.setOwner(username); card.setActivateAt(LocalDateTime.now());
-        return repo.save(card);
+        repo.save(card);
+        recordTxn(card.getId(), card.getCardNo(), "ACTIVATE", card.getAmount(), "激活礼品卡");
+        return card;
     }
 
     /** 使用礼品卡支付 (返回抵扣金额) */
@@ -49,6 +64,7 @@ public class GiftCardService {
         card.setBalance(card.getBalance() - deduct);
         if (card.getBalance() <= 0) card.setStatus("2");
         repo.save(card);
+        recordTxn(card.getId(), card.getCardNo(), "PAY", deduct, "礼品卡支付");
         return deduct;
     }
 
@@ -77,6 +93,27 @@ public class GiftCardService {
             }
         }
         return count;
+    }
+
+    /** 用户购买礼品卡 */
+    @Transactional
+    public GiftCard purchase(String username, Long amount) {
+        GiftCard card = new GiftCard();
+        card.setCardNo("GC" + generateCode());
+        card.setAmount(amount);
+        card.setBalance(amount);
+        card.setStatus("1");
+        card.setOwner(username);
+        card.setActivateAt(LocalDateTime.now());
+        card.setExpireAt(LocalDateTime.now().plusDays(365));
+        repo.save(card);
+        recordTxn(card.getId(), card.getCardNo(), "PURCHASE", amount, "购买礼品卡");
+        return card;
+    }
+
+    /** 获取礼品卡交易记录 */
+    public List<GiftCardTransaction> getTransactions(Long cardId) {
+        return txnRepo.findByCardIdOrderByCreatedAtDesc(cardId);
     }
 
     private String generateCode() {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getOrders, cancelOrder } from '@/api/order'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import { formatPrice, formatRelativeTime } from '@/utils/format'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -13,7 +13,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const router = useRouter()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const orders = ref<any[]>([])
 const loading = ref(false)
 const activeTab = ref('all')
@@ -69,7 +69,7 @@ async function load() {
     orders.value = data.content || data || []
     totalPages.value = data.totalPages || 1
     loading.value = false;
-    } catch { loadError.value = true }
+    } catch { loadError.value = true; loading.value = false }
 }
 
 async function onRefresh() {

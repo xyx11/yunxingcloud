@@ -4,9 +4,12 @@ import com.yunxingcloud.api.client.InventoryClient;
 import com.yunxingcloud.common.annotation.Idempotent;
 import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.order.entity.*;
+import com.yunxingcloud.order.event.OrderEvent;
 import com.yunxingcloud.order.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +31,14 @@ public class OrderService {
     private final CouponUserRepository couponUserRepo;
     private final InventoryClient inventoryClient;
     private final I18nService i18n;
+    private final StringRedisTemplate redis;
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(OrderHeadRepository orderRepo, OrderLineRepository lineRepo,
                         CartItemRepository cartRepo, ProductRepository productRepo,
                         CouponRepository couponRepo, CouponUserRepository couponUserRepo,
-                        InventoryClient inventoryClient, I18nService i18n) {
+                        InventoryClient inventoryClient, I18nService i18n,
+                        StringRedisTemplate redis, ApplicationEventPublisher eventPublisher) {
         this.orderRepo = orderRepo;
         this.lineRepo = lineRepo;
         this.cartRepo = cartRepo;
@@ -41,6 +47,8 @@ public class OrderService {
         this.couponUserRepo = couponUserRepo;
         this.inventoryClient = inventoryClient;
         this.i18n = i18n;
+        this.redis = redis;
+        this.eventPublisher = eventPublisher;
     }
 
     @Idempotent(prefix = "order", ttl = 10, unit = TimeUnit.SECONDS, message = "order.duplicate_submit")
@@ -69,8 +77,10 @@ public class OrderService {
         long actualAmount = totalAmount - couponAmount;
 
         OrderHead order = new OrderHead();
-        order.setOrderNo("ORD" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-                + String.format("%04d", (int)(Math.random() * 10000)));
+        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Long seq = redis.opsForValue().increment("order:seq:" + datePart);
+        redis.expire("order:seq:" + datePart, 48, TimeUnit.HOURS);
+        order.setOrderNo("ORD" + datePart + String.format("%08d", seq));
         order.setUsername(username);
         order.setTotalAmount(totalAmount);
         order.setCouponAmount(couponAmount);
@@ -106,10 +116,12 @@ public class OrderService {
             } catch (Exception e) {
                 log.error("订单 {} 库存预占失败 productId={} qty={}: {}",
                     order.getOrderNo(), c.getProductId(), c.getQuantity(), e.getMessage());
+                throw new RuntimeException("库存服务不可用，请稍后重试", e);
             }
         }
 
         cartRepo.deleteByUsername(username);
+        eventPublisher.publishEvent(new OrderEvent.Created(this, order));
         return order;
     }
 
@@ -166,6 +178,7 @@ public class OrderService {
         restoreProductStock(current.getId());
         rollbackInventory(current.getId());
         refundCoupon(current.getCouponId());
+        eventPublisher.publishEvent(new OrderEvent.Canceled(this, current, "用户取消"));
     }
 
     @Transactional

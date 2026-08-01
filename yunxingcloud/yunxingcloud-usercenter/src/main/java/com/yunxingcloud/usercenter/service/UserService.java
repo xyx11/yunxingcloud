@@ -132,9 +132,6 @@ public class UserService {
         }).orElseThrow(() -> new IllegalArgumentException("user.not_found"));
     }
 
-    public java.util.Optional<com.yunxingcloud.usercenter.entity.User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
 
     private String generateRandomPassword() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";

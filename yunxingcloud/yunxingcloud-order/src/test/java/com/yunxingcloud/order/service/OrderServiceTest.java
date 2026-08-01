@@ -1,6 +1,7 @@
 package com.yunxingcloud.order.service;
 
 import com.yunxingcloud.api.client.InventoryClient;
+import com.yunxingcloud.common.core.I18nService;
 import com.yunxingcloud.order.entity.*;
 import com.yunxingcloud.order.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +10,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.util.*;
 
@@ -18,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OrderServiceTest {
 
     @Mock private OrderHeadRepository orderRepo;
@@ -27,12 +34,35 @@ class OrderServiceTest {
     @Mock private CouponRepository couponRepo;
     @Mock private CouponUserRepository couponUserRepo;
     @Mock private InventoryClient inventoryClient;
+    @Mock private I18nService i18n;
+    @Mock private StringRedisTemplate redis;
+    @Mock private ValueOperations<String, String> valueOps;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @InjectMocks private OrderService orderService;
 
     private List<CartItem> sampleCart;
 
     @BeforeEach
     void setUp() {
+        when(redis.opsForValue()).thenReturn(valueOps);
+        when(valueOps.increment(anyString())).thenReturn(1L);
+        when(i18n.msg(anyString())).thenAnswer(inv -> {
+            String key = inv.getArgument(0);
+            return switch (key) {
+                case "cart.empty" -> "购物车为空";
+                case "order.stock_insufficient" -> "库存不足";
+                case "coupon.unavailable" -> "优惠券不可用";
+                default -> key;
+            };
+        });
+        when(i18n.msg(anyString(), any())).thenAnswer(inv -> {
+            String key = inv.getArgument(0);
+            return switch (key) {
+                case "coupon.below_threshold" -> "未达到最低消费";
+                default -> key;
+            };
+        });
+
         CartItem c1 = new CartItem();
         c1.setId(1L); c1.setProductId(1L); c1.setProductName("商品A");
         c1.setPrice(9900L); c1.setQuantity(2);

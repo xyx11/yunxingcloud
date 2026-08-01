@@ -37,7 +37,7 @@ async function batchCreate() {
     notify.success(t('giftCard.batchSuccess', { n: String(batchCount.value) })); loadCards()
   } finally { creating.value = false }
 }
-async function loadCards() { try { const r = await request.get('/api/giftcards'); cards.value = r.data || [] } catch(e) { console.warn('Failed to load gift cards:', e) } }
+async function loadCards() { try { const r = await request.get('/api/gift-cards'); cards.value = r.data || [] } catch(e) { console.warn('Failed to load gift cards:', e) } }
 onMounted(loadCards)
 </script>
 <template>

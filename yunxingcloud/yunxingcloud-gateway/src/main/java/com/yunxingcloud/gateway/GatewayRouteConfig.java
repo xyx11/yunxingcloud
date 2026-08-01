@@ -67,11 +67,15 @@ public class GatewayRouteConfig {
                               "/api/bundles/**", "/api/suppliers/**",
                               "/api/batch/**", "/api/chat/**",
                               "/api/revenue/**", "/api/live/**",
-                              "/api/presale/**")
+                              "/api/presale/**", "/api/merchant/**")
                         .uri(uri("yunxingcloud-order", 8084)))
                 // Export + GlobalDashboard -> core
                 .route("core-export", r -> r
                         .path("/api/export/**", "/api/global-dashboard/**")
+                        .uri(uri("yunxingcloud-core", 8080)))
+                // Files + Email -> core
+                .route("core-files-email", r -> r
+                        .path("/api/files/**", "/api/email/**")
                         .uri(uri("yunxingcloud-core", 8080)))
                 // System overview -> core
                 .route("core-system", r -> r

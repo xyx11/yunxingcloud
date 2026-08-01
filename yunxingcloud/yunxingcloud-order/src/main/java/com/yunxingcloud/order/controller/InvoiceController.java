@@ -24,10 +24,13 @@ public class InvoiceController {
 
     private final InvoiceRepository invoiceRepo;
     private final InvoiceService service;
+    private final com.yunxingcloud.order.repository.OrderHeadRepository orderRepo;
 
-    public InvoiceController(InvoiceRepository invoiceRepo, InvoiceService service) {
+    public InvoiceController(InvoiceRepository invoiceRepo, InvoiceService service,
+                             com.yunxingcloud.order.repository.OrderHeadRepository orderRepo) {
         this.invoiceRepo = invoiceRepo;
         this.service = service;
+        this.orderRepo = orderRepo;
     }
 
     private String user() { return SecurityContextHolder.getContext().getAuthentication().getName(); }
@@ -42,13 +45,20 @@ public class InvoiceController {
 
     @PostMapping
     public ResponseEntity<?> apply(@RequestBody Map<String, Object> body) {
-        if (body.get("orderId") == null)
-            return ResponseEntity.badRequest().body(Map.of("message", "缺少订单ID"));
+        Object orderIdObj = body.get("orderId");
+        if (orderIdObj == null) {
+            Object orderNoObj = body.get("orderNo");
+            if (orderNoObj == null)
+                return ResponseEntity.badRequest().body(Map.of("message", "缺少订单ID或订单号"));
+            var order = orderRepo.findByOrderNo(orderNoObj.toString()).orElse(null);
+            if (order == null) return ResponseEntity.badRequest().body(Map.of("message", "订单不存在"));
+            orderIdObj = order.getId();
+        }
         Invoice inv = service.apply(
-                Long.valueOf(body.get("orderId").toString()), user(),
+                Long.valueOf(orderIdObj.toString()), user(),
                 (String) body.get("type"), (String) body.getOrDefault("title", ""),
                 (String) body.getOrDefault("taxNo", ""), (String) body.getOrDefault("email", ""));
-        log.info("User {} applied invoice for order {}, type={}", user(), body.get("orderId"), body.get("type"));
+        log.info("User {} applied invoice for orderId={}, type={}", user(), orderIdObj, body.get("type"));
         return ResponseEntity.ok(inv);
     }
 

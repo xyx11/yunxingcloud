@@ -8,7 +8,6 @@ export interface ToastItem {
 
 export const ToastInjectionKey: InjectionKey<ReturnType<typeof useToast>> = Symbol('toast')
 
-const toasts = ref<ToastItem[]>([])
 let nextId = 1
 
 const icons: Record<string, string> = {
@@ -18,7 +17,9 @@ const icons: Record<string, string> = {
   warning: '⚠️',
 }
 
-export function useToast() {
+function createToast() {
+  const toasts = ref<ToastItem[]>([])
+
   function show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration = 3000) {
     // Dedup: skip if identical message+type already showing
     if (toasts.value.some(t => t.message === message && t.type === type)) return
@@ -45,9 +46,12 @@ export function useToast() {
   return { toasts, icons, success, error, info, warning, dismiss, announce }
 }
 
-const instance = ref<ReturnType<typeof useToast>>()
+const instance = createToast()
+
+export function useToast() {
+  return instance
+}
 
 export function useGlobalToast() {
-  if (!instance.value) instance.value = useToast()
-  return instance.value
+  return instance
 }

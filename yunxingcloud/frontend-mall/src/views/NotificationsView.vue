@@ -72,7 +72,7 @@ async function load(pageNum = 1) {
 }
 
 async function loadUnread() {
-  try { const r = await request.get('/notifications/unread-count'); unreadCount.value = r.data || 0; loading.value = false; 
+  try { const r = await request.get('/notifications/unread-count'); unreadCount.value = (r.data as any)?.count || 0; loading.value = false;
     } catch { /* silent */ }
 }
 

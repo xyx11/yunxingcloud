@@ -2,6 +2,9 @@ jasypt:
   encryptor:
     password: ${JASYPT_ENCRYPTOR_PASSWORD:yunxingcloud@2024}
 
+jwt:
+  secret: ${JWT_SECRET:yunxingcloud-jwt-secret-key-2024}
+
 spring:
   application:
     name: yunxingcloud-payment

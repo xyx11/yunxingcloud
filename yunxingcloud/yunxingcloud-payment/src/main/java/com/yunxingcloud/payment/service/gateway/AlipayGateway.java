@@ -52,7 +52,7 @@ public class AlipayGateway implements PaymentGateway {
 
     @Override
     public boolean verifyCallback(Map<String, String> params, String body) {
-        if (isMock()) return true;
+        if (isMock()) { log.warn("Mock mode: callback verification always fails for security"); return false; }
         return liveVerifyCallback(params);
     }
 

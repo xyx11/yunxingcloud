@@ -301,6 +301,7 @@ export default {
     selectAddressHint: '请选择收货地址',
     agreeHint: '请同意服务协议',
     submitFail: '提交订单失败，请重试',
+    orderSuccess: '下单成功，跳转支付...',
     loadFail: '加载结算信息失败',
     pointsValue: '抵 ¥{n}',
     pointsDeductDetail: '积分抵扣 (×100)',
@@ -517,6 +518,7 @@ export default {
     refundEstimate: '预计1-3个工作日到账',
     needHelp: '需要帮助？',
     supportContact: '联系客服 support@yunxingcloud.com',
+    remark: '备注',
   },
   invoice: {
     title: '发票管理',
@@ -610,6 +612,12 @@ export default {
     payInApp: '在{app}中完成付款',
     appWechat: '微信',
     appAlipay: '支付宝',
+    manualRefresh: '手动刷新',
+    orderExpired: '订单已过期，请重新下单',
+    expiredTip: '超时订单将自动取消',
+    step1: '选择上方支付方式',
+    step2: '点击下方按钮确认支付',
+    backToOrderList: '← 返回订单列表',
   },
   register: {
     title: '用户注册',

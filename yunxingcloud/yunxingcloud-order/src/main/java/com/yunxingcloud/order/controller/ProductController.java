@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "商品管理", description = "商品查询与管理")
@@ -66,16 +67,10 @@ public class ProductController {
     public ResponseEntity<?> priceHistory(@PathVariable Long id) {
         var product = productService.get(id).orElse(null);
         if (product == null) return ResponseEntity.notFound().build();
-        // Return simulated price history (last 30 days)
-        long currentPrice = product.getPrice();
-        var history = new java.util.ArrayList<Map<String, Object>>();
-        var rand = new java.util.Random(id);
-        for (int i = 30; i >= 0; i--) {
-            long price = currentPrice + (long)(currentPrice * (rand.nextDouble() * 0.2 - 0.1));
-            history.add(Map.of("date", java.time.LocalDate.now().minusDays(i).toString(),
-                "price", (double) price / 100));
-        }
-        return ResponseEntity.ok(Map.of("productId", id, "currentPrice", (double) currentPrice / 100, "history", history));
+        return ResponseEntity.ok(Map.of(
+            "productId", id,
+            "currentPrice", (double) product.getPrice() / 100,
+            "history", java.util.List.of()));
     }
 
     @GetMapping("/{id}/review-summary")
@@ -92,10 +87,11 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
 
+    // TODO: persist back-in-stock alerts to DB and send notifications when stock replenishes
     @PostMapping("/{id}/back-in-stock-alert")
     public ResponseEntity<?> backInStockAlert(@PathVariable Long id) {
         backInStockAlerts.computeIfAbsent(id, k -> new java.util.HashSet<>()).add(user());
-        return ResponseEntity.ok(Map.of("success", true));
+        return ResponseEntity.ok(Map.of("success", true, "message", "已订阅到货通知，补货后会通知您"));
     }
 
     @PreAuthorize("hasAuthority('ticket:write')")

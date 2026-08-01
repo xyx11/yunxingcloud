@@ -33,4 +33,7 @@ public class PriceAlertController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> remove(@PathVariable Long id) { service.remove(id, user()); return ResponseEntity.ok().build(); }
+
+    @GetMapping("/admin/list")
+    public ResponseEntity<?> adminList() { return ResponseEntity.ok(service.listAll()); }
 }

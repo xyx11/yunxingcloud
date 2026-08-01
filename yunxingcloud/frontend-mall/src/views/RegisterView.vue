@@ -4,21 +4,32 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
 import JdButton from '@/components/JdButton.vue'
+import request from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
-const form = ref({ username: '', password: '', confirmPassword: '', email: '' })
+const form = ref({ username: '', password: '', confirmPassword: '', email: '', captcha: '' })
 const error = ref('')
 const loading = ref(false)
 const showSuccess = ref(false)
 const agreedToTerms = ref(false)
 const showPwd = ref(false)
 const shakeErr = ref(false)
+const captchaToken = ref('')
+const captchaUrl = ref('')
+
+async function loadCaptcha() {
+  try {
+    const r = await request.get('/captcha')
+    captchaUrl.value = r.data?.image || ''
+    captchaToken.value = r.data?.captchaToken || ''
+  } catch { captchaUrl.value = ''; captchaToken.value = '' }
+}
 
 function triggerShake() { shakeErr.value = true; setTimeout(() => shakeErr.value = false, 500) }
 
-onMounted(() => setTimeout(() => document.querySelector<HTMLInputElement>('.form-input')?.focus(), 200))
+onMounted(() => { setTimeout(() => document.querySelector<HTMLInputElement>('.form-input')?.focus(), 200); loadCaptcha() })
 
 const emailValid = computed(() => {
   if (!form.value.email) return true // optional field
@@ -50,7 +61,7 @@ async function doRegister() {
   if (!emailValid.value) { error.value = t('register.invalidEmail'); triggerShake(); return }
   loading.value = true
   try {
-    await auth.register(form.value.username, form.value.password, form.value.email || undefined)
+    await auth.register(form.value.username, form.value.password, form.value.email || undefined, captchaToken.value, form.value.captcha)
     showSuccess.value = true
   } catch (e: unknown) { error.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('register.registerFail'); triggerShake() }
   finally { loading.value = false }
@@ -70,7 +81,7 @@ async function doRegister() {
 
       <div class="form-group">
         <label class="form-label">{{ t('register.username') }}</label>
-        <input v-model="form.username" :placeholder="t('register.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doRegister" />
+        <input v-model.trim="form.username" :placeholder="t('register.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doRegister" />
       </div>
 
       <div class="form-group">
@@ -98,6 +109,18 @@ async function doRegister() {
         <label class="form-label">{{ t('register.emailLabel') }} <span class="hint">({{ t('register.optional') }})</span></label>
         <input v-model="form.email" type="email" :placeholder="t('register.emailPlaceholder')" class="form-input" :class="{ invalid: !emailValid }" />
         <span v-if="form.email && !emailValid" class="email-error">{{ t('register.invalidEmail') }}</span>
+      </div>
+
+      <!-- Captcha -->
+      <div class="form-group">
+        <label class="form-label">{{ t('login.captcha') }}</label>
+        <div class="captcha-row">
+          <input v-model="form.captcha" :placeholder="t('login.captchaPlaceholder')" class="form-input captcha-input" maxlength="4" />
+          <div class="captcha-img-wrap" @click="loadCaptcha">
+            <img v-if="captchaUrl" :src="captchaUrl" :alt="t('login.captcha')" class="captcha-img" />
+            <span class="captcha-refresh">↻ {{ t('login.captchaRefresh') }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="benefits-box">

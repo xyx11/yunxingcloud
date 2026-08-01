@@ -31,10 +31,10 @@ const columns: DataTableColumns<Record<string, unknown>> = [
   ]})}}
 ]
 
-async function load() { const r = await request.get('/suppliers'); items.value = r.data }
+async function load() { const r = await request.get('/api/suppliers'); items.value = r.data }
 async function save() {
   if (editingId.value) { await request.put(`/suppliers/${editingId.value}`, form.value) }
-  else { await request.post('/suppliers', form.value) }
+  else { await request.post('/api/suppliers', form.value) }
   showModal.value=false; editingId.value=null; notify.success(t('common.saveSuccess')); load()
 }
 async function del(id:number) { try{await request.delete(`/suppliers/${id}`);notify.success(t('common.deleted'));load()}catch{notify.error(t('common.deleteFailed'))} }

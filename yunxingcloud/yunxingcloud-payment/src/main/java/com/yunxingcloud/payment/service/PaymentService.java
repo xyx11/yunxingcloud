@@ -78,7 +78,8 @@ public class PaymentService {
         PaymentGateway gw = gateways.get(channel);
         if (gw == null) return;
 
-        String orderNo = params.getOrDefault("out_trade_no", params.getOrDefault("out_trade_no", ""));
+        String orderNo = params.getOrDefault("out_trade_no",
+                params.getOrDefault("trade_no", ""));
         PaymentOrder order = orderRepo.findByOrderNo(orderNo).orElse(null);
         if (order == null) return;
 
@@ -102,11 +103,16 @@ public class PaymentService {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Value("${payment.order-service-url:http://localhost:8084}")
+    private String orderServiceUrl;
+
     private void syncOrderStatus(String orderNo, String status) {
         try {
             var rest = new org.springframework.web.client.RestTemplate();
-            String url = "http://yunxingcloud-order/api/orders/internal/by-order-no/" + orderNo + "/status?status=" + status;
-            rest.put(url, null);
+            String url = orderServiceUrl + "/api/orders/internal/by-order-no/" + orderNo + "/status?status=" + status;
+            var headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-Internal-Key", "yunxingcloud-internal");
+            rest.put(url, new org.springframework.http.HttpEntity<>(null, headers));
         } catch (Exception e) {
             log.warn("Failed to sync order status for {}: {}", orderNo, e.getMessage());
         }

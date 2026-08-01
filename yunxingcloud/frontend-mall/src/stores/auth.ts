@@ -12,17 +12,19 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<UserInfo | null>(safeParseJSON('user'))
   const token = ref(safeGet('accessToken'))
 
-  async function login(username: string, password: string) {
-    const res = await apiLogin({ username, password })
+  async function login(username: string, password: string, captchaToken?: string, captchaCode?: string) {
+    const res = await apiLogin({ username, password, captchaToken, captchaCode })
     token.value = res.data.accessToken
     safeSet('accessToken', token.value)
-    user.value = { username }
-    safeSet('user', JSON.stringify({ username }))
+    const userData = { username, nickname: res.data.nickname, email: res.data.email, avatarUrl: res.data.avatarUrl }
+    user.value = userData
+    safeSet('user', JSON.stringify(userData))
   }
 
-  async function register(username: string, password: string, email?: string) {
-    const params: { username: string; password: string; email?: string } = { username, password }
+  async function register(username: string, password: string, email?: string, captchaToken?: string, captchaCode?: string) {
+    const params: { username: string; password: string; email?: string; captchaToken?: string; captchaCode?: string } = { username, password }
     if (email) params.email = email
+    if (captchaToken) { params.captchaToken = captchaToken; params.captchaCode = captchaCode }
     await apiRegister(params)
   }
 

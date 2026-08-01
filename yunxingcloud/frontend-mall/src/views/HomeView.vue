@@ -43,14 +43,14 @@ const campaign = ref<any>(null)
 // Featured brands
 const featuredBrands = ref<any[]>([])
 async function loadBrands() {
-  try { const r = await request.get('/brands'); featuredBrands.value = (r.data || []).slice(0, 6) } catch {}
+  try { const r = await request.get('/brands'); featuredBrands.value = (r.data || []).slice(0, 6) } catch { console.warn('[Home] Load brands failed') }
 }
 
 // Daily check-in
 const checkedInToday = ref(false)
 const checkingIn = ref(false)
 async function loadCheckinStatus() {
-  try { const token = localStorage.getItem('accessToken'); if (!token) return; const r = await request.get('/points/checkin/status'); checkedInToday.value = r.data?.checked || false } catch {}
+  try { const token = localStorage.getItem('accessToken'); if (!token) return; const r = await request.get('/points/checkin/status'); checkedInToday.value = r.data?.checked || false } catch { console.warn("[Home] Load checkin status failed") }
 }
 async function doCheckin() {
   if (checkingIn.value || checkedInToday.value) return

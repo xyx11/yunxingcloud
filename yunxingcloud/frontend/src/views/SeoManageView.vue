@@ -15,6 +15,12 @@ async function load() {
   try { const r = await request.get('/api/seo/sitemap'); sitemap.value = typeof r.data === 'string' ? r.data : '' } catch(e) { console.warn('加载SEO数据失败:', e) }
 }
 function copySitemap() { navigator.clipboard.writeText(sitemap.value); notify.success(t('seo.copied')) }
+async function saveSeo() {
+  try {
+    await request.post('/api/seo/meta/home', homeMeta.value)
+    notify.success(t('seo.configSaved') || 'SEO配置已保存')
+  } catch { notify.error(t('common.updateFailed')) }
+}
 onMounted(load)
 </script>
 <template>
@@ -25,7 +31,7 @@ onMounted(load)
           <n-form-item :label="t('seo.homeTitle')"><n-input v-model:value="homeMeta.title" placeholder="Mall - 最佳购物体验" /></n-form-item>
           <n-form-item :label="t('seo.homeDesc')"><n-input v-model:value="homeMeta.description" type="textarea" placeholder="商城首页 meta description" /></n-form-item>
           <n-form-item :label="t('seo.homeKeywords')"><n-input v-model:value="homeMeta.keywords" placeholder="keyword1,keyword2" /></n-form-item>
-          <n-button type="primary" @click="notify.success(t('seo.preview'))">{{ t('seo.preview') }}</n-button>
+          <n-button type="primary" @click="saveSeo">{{ t('seo.preview') }}</n-button>
         </n-form>
       </n-card>
       <n-card :title="t('seo.sitemap')">

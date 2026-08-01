@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, inject, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import { forgotPassword } from '@/api/auth'
 import JdButton from '@/components/JdButton.vue'
 import request from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const { t } = useI18n()
 
 const showForgotPwd = ref(false)
@@ -19,7 +19,7 @@ const forgotLoading = ref(false)
 const forgotSent = ref(false)
 
 async function doForgot() {
-  if (!forgotForm.value.email) return
+  if (!forgotForm.value.email) { toast.error(t('login.fillRequired')); return }
   forgotLoading.value = true
   try {
     await forgotPassword(forgotForm.value.email)
@@ -38,18 +38,18 @@ const rememberMe = ref(!!form.value.username)
 const showPwd = ref(false)
 const error = ref('')
 const loading = ref(false)
-const captchaId = ref('')
+const captchaToken = ref('')
 const captchaUrl = ref('')
 const captchaRefreshing = ref(false)
 const loginAttempts = ref(0)
 const showCaptcha = computed(() => loginAttempts.value >= 2)
 
 async function loadCaptcha() {
-  captchaId.value = 'captcha_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8)
   try {
     const r = await request.get('/captcha')
     captchaUrl.value = r.data?.image || ''
-  } catch { captchaUrl.value = '' }
+    captchaToken.value = r.data?.captchaToken || ''
+  } catch { captchaUrl.value = ''; captchaToken.value = '' }
 }
 
 async function refreshCaptcha() {
@@ -69,7 +69,7 @@ async function doLogin() {
   if (showCaptcha.value && !form.value.captcha) { error.value = t('login.captchaRequired'); triggerShake(); return }
   loading.value = true
   try {
-    await auth.login(form.value.username, form.value.password)
+    await auth.login(form.value.username, form.value.password, showCaptcha.value ? captchaToken.value : undefined, showCaptcha.value ? form.value.captcha : undefined)
     try { if (rememberMe.value) localStorage.setItem('mall_remember_user', form.value.username); else localStorage.removeItem('mall_remember_user') } catch {}
     loginAttempts.value = 0
     toast.success(t('toast.loginSuccess'))
@@ -113,7 +113,7 @@ const oauthProviders = [
 
       <div class="form-group">
         <label class="form-label">{{ t('login.username') }}</label>
-        <input v-model="form.username" :placeholder="t('login.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doLogin" />
+        <input v-model.trim="form.username" :placeholder="t('login.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doLogin" />
       </div>
 
       <div class="form-group">

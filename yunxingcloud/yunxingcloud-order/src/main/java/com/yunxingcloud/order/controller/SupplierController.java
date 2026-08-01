@@ -28,6 +28,20 @@ public class SupplierController {
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Supplier s) { return ResponseEntity.ok(supplierService.update(id, s)); }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable Long id) {
+        return supplierService.get(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        supplierService.delete(id);
+        return ResponseEntity.ok(java.util.Map.of("success", true));
+    }
+
     @GetMapping("/count")
     public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("count", supplierService.list().size())); }
 }

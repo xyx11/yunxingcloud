@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/locales'
-import { ToastInjectionKey } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import JdButton from '@/components/JdButton.vue'
 
 const route = useRoute()
 const { t } = useI18n()
-const toast = inject(ToastInjectionKey)!
+const toast = useToast()
 const traces = ref<any[]>([])
 const trackingNo = ref('')
 const carrier = ref('')

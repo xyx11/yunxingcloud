@@ -36,6 +36,19 @@ public class BundleController {
         return ResponseEntity.ok(bundleService.create(dto));
     }
 
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody ProductBundleDTO dto) {
+        return ResponseEntity.ok(bundleService.update(id, dto));
+    }
+
+    @PreAuthorize("hasAuthority('ticket:write')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        bundleService.delete(id);
+        return ResponseEntity.ok(java.util.Map.of("success", true));
+    }
+
     @GetMapping("/count")
     public ResponseEntity<?> count() { return ResponseEntity.ok(java.util.Map.of("count", bundleService.list().size())); }
 }
