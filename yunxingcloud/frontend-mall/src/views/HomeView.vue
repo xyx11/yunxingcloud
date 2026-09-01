@@ -350,7 +350,7 @@ function goProducts(query: Record<string, string>) { router.push({ path: '/produ
 }
 
 .campaign-bar { background: linear-gradient(90deg, var(--jd-red), #ff6b6b); color: #fff; text-align: center; padding: 10px var(--space-md); font-size: var(--font-md); font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.coupon-entry-bar { background: linear-gradient(90deg, #f90, #ffc107); color: #fff; text-align: center; padding: 8px var(--space-md); font-size: var(--font-sm); font-weight: 600; cursor: pointer; }
+.coupon-entry-bar { background: linear-gradient(90deg, #f90, #ffc107); color: #fff; text-align: center; min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 var(--space-md); font-size: var(--font-sm); font-weight: 600; cursor: pointer; }
 
 /* Tab transition */
 .tab-fade-enter-active { transition: opacity .2s ease, transform .2s ease; }

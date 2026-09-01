@@ -211,8 +211,8 @@ async function doRegister() {
 }
 
 .password-wrap { position: relative; }
-.password-wrap .form-input { padding-right: 40px; }
-.pwd-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; line-height: 1; }
+.password-wrap .form-input { padding-right: 48px; }
+.pwd-toggle { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; line-height: 1; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 

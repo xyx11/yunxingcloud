@@ -75,4 +75,9 @@ const emit = defineEmits<{ (e: 'click'): void }>()
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .jd-btn--sm { height: 40px; }
+  .jd-btn--md { height: 44px; }
+}
 </style>

@@ -364,10 +364,14 @@ watch(() => props.cartCount, (n, o) => {
   .logo { font-size: var(--font-lg); }
   .search-box { display: none !important; }
   .hot-tags { display: none !important; }
-  .header-actions { font-size: var(--font-sm); gap: var(--space-sm); }
+  .header-actions { font-size: var(--font-sm); gap: var(--space-xs); }
   .cart-label { display: none; }
   .cat-nav { display: none !important; }
   .mobile-search { display: flex !important; }
   .header-actions .header-link:first-of-type { display: none; }
+  .header-btn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .header-link { padding: var(--space-xs) var(--space-sm); display: inline-flex; align-items: center; }
+  .mobile-search-inner input { height: 44px; font-size: var(--font-base); }
+  .mobile-search-inner button { height: 44px; min-width: 56px; }
 }
 </style>

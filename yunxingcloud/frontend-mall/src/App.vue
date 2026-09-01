@@ -240,14 +240,15 @@ onUnmounted(() => {
 .push-banner-title { font-weight: 600; font-size: var(--font-base);}
 .push-banner-desc { color: var(--text-tertiary); font-size: var(--font-xs); }
 .push-banner-btn {
-  padding: 6px var(--space-lg); background: var(--bg-white); color: var(--text-primary);
+  padding: 0 var(--space-lg); min-height: 44px; background: var(--bg-white); color: var(--text-primary);
   border: 1px solid var(--border); border-radius: var(--radius-round); cursor: pointer;
   font-size: var(--font-sm); font-weight: 600; white-space: nowrap;
   transition: all var(--transition-fast);
 }
 .push-banner-btn:hover { border-color: var(--jd-red); color: var(--jd-red); }
 .push-banner-close {
-  background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: var(--font-md); padding: 2px;
+  background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: var(--font-md);
+  width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;
 }
 
 /* Welcome Modal */
@@ -264,6 +265,7 @@ onUnmounted(() => {
 .welcome-close {
   position: absolute; top: var(--space-md); right: var(--space-lg);
   background: none; border: none; font-size: var(--font-xl); color: var(--text-tertiary); cursor: pointer;
+  width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
 }
 .welcome-emoji { font-size: 56px; margin-bottom: var(--space-md); }
 .welcome-title { font-size: var(--font-title); font-weight: 800; margin-bottom: var(--space-sm); }
@@ -313,7 +315,7 @@ onUnmounted(() => {
 .toast-warning { background: rgba(255,152,0,.92); }
 .toast-info { background: rgba(22,119,255,.92); }
 .toast-msg { flex: 1; }
-.toast-dismiss { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: var(--font-md); padding: 0; line-height: 1; }
+.toast-dismiss { background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: var(--font-md); width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; line-height: 1; flex-shrink: 0; }
 
 .toast-enter-active { animation: toastIn .35s cubic-bezier(.21,1.02,.73,1); }
 .toast-leave-active { animation: toastOut .2s ease-in forwards; }

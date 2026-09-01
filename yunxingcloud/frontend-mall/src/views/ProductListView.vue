@@ -335,7 +335,7 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
 .price-tag:hover { background: var(--jd-red-light); color: var(--jd-red); }
 
 /* Main */
-.main { flex: 1; }
+.main { flex: 1; min-width: 0; }
 .sort-bar { background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-lg); display: flex; gap: var(--space-lg); align-items: center; box-shadow: var(--shadow-sm); }
 .sort-label { font-size: var(--font-base); color: var(--text-tertiary); }
 .sort-item { cursor: pointer; font-size: var(--font-base); padding: 4px 8px; border-radius: var(--radius-sm); color: var(--text-secondary); }
@@ -395,6 +395,11 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
   .sidebar { display: none; }
   .mobile-filter-btn { display: block; position: sticky; top: 0; z-index: 10; background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-lg); margin-bottom: var(--space-md); font-size: var(--font-md); cursor: pointer; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
   .product-grid { --grid-cols: 2; }
+  .sort-bar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: var(--space-xs) var(--space-md); gap: var(--space-md); }
+  .sort-bar::-webkit-scrollbar { display: none; }
+  .sort-bar > * { flex-shrink: 0; }
+  .sort-item { min-height: 44px; display: inline-flex; align-items: center; }
+  .view-btn { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; }
 }
 
 .pull-indicator {
