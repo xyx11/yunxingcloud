@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, onErrorCaptured, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import { useGlobalToast } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import { useNotification } from '@/composables/useNotification'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import MobileNav from '@/components/MobileNav.vue'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { useI18n } from '@/locales'
 import { createLogger } from '@/utils/logger'
@@ -17,17 +19,19 @@ const CompareFloatingBar = defineAsyncComponent(() => import('@/views/CompareVie
 const ChatWidget = defineAsyncComponent(() => import('@/components/ChatWidget.vue'))
 
 const router = useRouter()
+const auth = useAuthStore()
+useCartStore()
 useThemeStore()
 const { t } = useI18n()
 const { isOnline } = useNetworkStatus()
 
 // PWA install prompt
-const installPrompt = ref<any>(null)
+interface BeforeInstallEvent extends Event { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
+const installPrompt = ref<BeforeInstallEvent | null>(null)
 const showInstall = ref(false)
-function onBeforeInstall(e: Event) { e.preventDefault(); installPrompt.value = e; showInstall.value = true }
+function onBeforeInstall(e: Event) { e.preventDefault(); installPrompt.value = e as BeforeInstallEvent; showInstall.value = true }
 async function doInstall() { if (installPrompt.value) { installPrompt.value.prompt(); const r = await installPrompt.value.userChoice; if (r.outcome === 'accepted') showInstall.value = false; installPrompt.value = null } }
-window.addEventListener('beforeinstallprompt', onBeforeInstall)
-const toast = useGlobalToast()
+const toast = useToast()
 const cartCount = ref(0)
 const cartBounce = ref(false)
 const showBackTop = ref(false)
@@ -40,12 +44,10 @@ const showPushBanner = ref(pushSupported.value && !pushSubscribed.value && !push
 function dismissPushBanner() { showPushBanner.value = false; try { localStorage.setItem('mall_push_dismissed', '1') } catch {} }
 
 function updateCartCount() {
-  try {
-    if (!localStorage.getItem('accessToken')) { cartCount.value = 0; return }
-    const prev = cartCount.value
-    cartCount.value = JSON.parse(localStorage.getItem('cart_count') || '0')
-    if (cartCount.value > prev) { cartBounce.value = true; setTimeout(() => cartBounce.value = false, 400) }
-  } catch { cartCount.value = 0 }
+  if (!auth.isLoggedIn) { cartCount.value = 0; return }
+  const prev = cartCount.value
+  try { cartCount.value = parseInt(localStorage.getItem('cart_count') || '0') } catch { cartCount.value = 0 }
+  if (cartCount.value > prev) { cartBounce.value = true; setTimeout(() => cartBounce.value = false, 400) }
 }
 let scrollTicking = false
 function onScroll() { if (!scrollTicking) { scrollTicking = true; requestAnimationFrame(() => { showBackTop.value = window.scrollY > 400; scrollTicking = false }) } }
@@ -75,11 +77,21 @@ router.afterEach(() => {
 
 function onNetworkError() { toast.error('网络连接异常，请检查网络后重试') }
 
+function onGlobalKeydown(e: KeyboardEvent) {
+  if ((e.key === '/' || (e.key === 'k' && e.metaKey)) && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+    e.preventDefault()
+    const searchInput = document.querySelector<HTMLInputElement>('.search-input, [data-search-input]')
+    searchInput?.focus()
+  }
+}
+
 onMounted(() => {
   updateCartCount()
   window.addEventListener('scroll', onScroll)
   window.addEventListener('cart_updated', updateCartCount)
   window.addEventListener('api:network-error', onNetworkError)
+  window.addEventListener('beforeinstallprompt', onBeforeInstall)
+  window.addEventListener('keydown', onGlobalKeydown)
   if (!welcomeDismissed.value) setTimeout(() => showWelcome.value = true, 1500)
 })
 
@@ -87,6 +99,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('cart_updated', updateCartCount)
   window.removeEventListener('api:network-error', onNetworkError)
+  window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+  window.removeEventListener('keydown', onGlobalKeydown)
 })
 </script>
 
@@ -149,16 +163,14 @@ onUnmounted(() => {
 
     <!-- Welcome Modal -->
     <div v-if="showWelcome" class="welcome-overlay" @click.self="dismissWelcome" @keydown.escape="dismissWelcome">
-      <div class="welcome-card" role="dialog" aria-modal="true" aria-label="欢迎弹窗">
+      <div class="welcome-card" role="dialog" aria-modal="true" :aria-label="t('app.welcomeTitle')">
         <button class="welcome-close" @click="dismissWelcome" :aria-label="t('app.closeAria')">✕</button>
-        <div class="welcome-emoji">🎉</div>
+        <div class="welcome-emoji">🛍️</div>
         <h2 class="welcome-title">{{ t('app.welcomeTitle') }}</h2>
         <p class="welcome-subtitle">{{ t('app.welcomeSubtitle') }}</p>
-        <div class="welcome-coupon">
-          <div class="welcome-coupon-price">¥50</div>
-          <div class="welcome-coupon-label">{{ t('app.welcomeCouponLabel') }}</div>
+        <div class="welcome-actions">
+          <button class="welcome-cta" @click="dismissWelcome();router.push('/products')">{{ t('common.allProducts') }}</button>
         </div>
-        <button class="welcome-cta" @click="dismissWelcome();router.push('/coupons')">{{ t('app.welcomeCta') }}</button>
         <p class="welcome-skip" @click="dismissWelcome">{{ t('app.welcomeSkip') }}</p>
       </div>
     </div>
@@ -256,12 +268,7 @@ onUnmounted(() => {
 .welcome-emoji { font-size: 56px; margin-bottom: var(--space-md); }
 .welcome-title { font-size: var(--font-title); font-weight: 800; margin-bottom: var(--space-sm); }
 .welcome-subtitle { color: var(--text-secondary); font-size: var(--font-md); margin-bottom: 6px; }
-.welcome-coupon {
-  background: linear-gradient(135deg, var(--jd-red-light), var(--jd-red-bg));
-  border-radius: var(--radius-lg); padding: var(--space-lg); margin: var(--space-lg) 0;
-}
-.welcome-coupon-price { font-size: var(--font-h1); font-weight: 800; color: var(--jd-red); }
-.welcome-coupon-label { font-size: var(--font-sm); color: var(--text-tertiary); margin-top: 2px; }
+.welcome-actions { margin: var(--space-lg) 0; }
 .welcome-cta {
   width: 100%; height: 44px; background: var(--jd-red); color: #fff; border: none;
   border-radius: var(--radius-round); font-size: var(--font-lg); cursor: pointer; font-weight: 700;
@@ -287,11 +294,18 @@ onUnmounted(() => {
   position: fixed; top: 60px; right: var(--space-xl); z-index: 9999;
   display: flex; flex-direction: column-reverse; gap: var(--space-sm); pointer-events: none;
 }
+@media (max-width: 768px) {
+  .toast-container {
+    top: auto; bottom: 80px; right: 50%; transform: translateX(50%);
+    align-items: center;
+  }
+}
 .toast-item {
   padding: var(--space-md) var(--space-xl); border-radius: var(--radius-md);
   font-size: var(--font-md); color: #fff; box-shadow: var(--shadow-lg);
   min-width: 200px; max-width: 360px;
   display: flex; align-items: center; gap: var(--space-sm); pointer-events: auto;
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .toast-success { background: rgba(82,196,26,.92); }

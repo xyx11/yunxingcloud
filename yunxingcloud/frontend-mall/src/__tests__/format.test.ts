@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatPrice, formatCount, formatRating, formatPercent, formatFileSize, formatDate, formatDateTime, formatRelativeTime } from '@/utils/format'
+import { formatPrice, formatCount, formatRating, formatPercent, formatFileSize, formatDate, formatDateTime, formatRelativeTime, getProductImage } from '@/utils/format'
 
 describe('formatPrice', () => {
   it('formats integer price', () => {
@@ -85,5 +85,20 @@ describe('formatRelativeTime', () => {
   it('returns 天前', () => {
     const d = new Date(Date.now() - 4 * 86400 * 1000).toISOString()
     expect(formatRelativeTime(d)).toBe('4天前')
+  })
+})
+
+describe('getProductImage', () => {
+  it('returns imageUrl when present', () => {
+    expect(getProductImage({ imageUrl: '/img/a.jpg' })).toBe('/img/a.jpg')
+  })
+  it('falls back to images[0] when no imageUrl', () => {
+    expect(getProductImage({ images: ['/img/b.jpg'] })).toBe('/img/b.jpg')
+  })
+  it('returns empty string when neither present', () => {
+    expect(getProductImage({})).toBe('')
+  })
+  it('prefers imageUrl over images', () => {
+    expect(getProductImage({ imageUrl: '/img/a.jpg', images: ['/img/b.jpg'] })).toBe('/img/a.jpg')
   })
 })

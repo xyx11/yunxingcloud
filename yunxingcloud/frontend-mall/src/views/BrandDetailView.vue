@@ -9,6 +9,7 @@ import JdButton from '@/components/JdButton.vue'
 import { addToCart } from '@/api/cart'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { Product, Coupon } from '@/types'
 import request from '@/api/request'
 
 const route = useRoute()
@@ -19,13 +20,13 @@ const { t } = useI18n()
 interface BrandInfo { id: number; name: string; logo?: string; description?: string; productCount?: number }
 
 const brand = ref<BrandInfo | null>(null)
-const products = ref<any[]>([])
+const products = ref<Product[]>([])
 const loading = ref(true)
 const page = ref(0)
 const hasMore = ref(true)
 const loadingMore = ref(false)
 const sortBy = ref<'default' | 'priceAsc' | 'priceDesc' | 'sales' | 'newest'>('default')
-const brandCoupons = ref<any[]>([])
+const brandCoupons = ref<Coupon[]>([])
 
 const brandId = computed(() => Number(route.params.id))
 
@@ -68,8 +69,8 @@ async function loadMore() {
   finally { loadingMore.value = false }
 }
 
-function changeSort(sort: string) {
-  sortBy.value = sort as any
+function changeSort(sort: 'default' | 'priceAsc' | 'priceDesc' | 'sales' | 'newest') {
+  sortBy.value = sort
   load()
 }
 
@@ -112,11 +113,11 @@ onMounted(load)
         <div v-for="c in brandCoupons" :key="c.id" class="bd-coupon">
           <div class="bd-coupon-left">
             <span class="bd-coupon-value">¥{{ (c.amount || c.value || 0) / 100 }}</span>
-            <span v-if="c.minAmount" class="bd-coupon-min">满{{ c.minAmount / 100 }}可用</span>
+            <span v-if="c.minAmount" class="bd-coupon-min">{{ t('coupon.minAmount', { '0': String(c.minAmount / 100) }) }}</span>
           </div>
           <div class="bd-coupon-right">
             <span class="bd-coupon-name">{{ c.name }}</span>
-            <span class="bd-coupon-expire">{{ c.endTime?.substring(0, 10) }}前有效</span>
+            <span class="bd-coupon-expire">{{ String(c.endTime || '').substring(0, 10) }}{{ t('coupon.validUntil') }}</span>
           </div>
         </div>
       </div>
@@ -260,7 +261,6 @@ onMounted(load)
 
 .load-more-wrap { text-align: center; margin-top: var(--space-xl); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .brand-detail-page { padding: var(--space-lg) var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }

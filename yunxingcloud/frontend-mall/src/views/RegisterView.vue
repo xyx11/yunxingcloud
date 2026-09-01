@@ -107,7 +107,7 @@ async function doRegister() {
 
       <div class="form-group">
         <label class="form-label">{{ t('register.emailLabel') }} <span class="hint">({{ t('register.optional') }})</span></label>
-        <input v-model="form.email" type="email" :placeholder="t('register.emailPlaceholder')" class="form-input" :class="{ invalid: !emailValid }" />
+        <input v-model="form.email" type="email" autocomplete="email" :placeholder="t('register.emailPlaceholder')" class="form-input" :class="{ invalid: !emailValid }" />
         <span v-if="form.email && !emailValid" class="email-error">{{ t('register.invalidEmail') }}</span>
       </div>
 

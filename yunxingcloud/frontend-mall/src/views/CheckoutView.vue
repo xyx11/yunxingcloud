@@ -5,24 +5,26 @@ import { getAddresses, getMyCoupons, submitOrder, createAddress } from '@/api/or
 import { getCart } from '@/api/cart'
 import { getPointsAccount } from '@/api/member'
 import { formatPrice } from '@/utils/format'
-import { provinceList, cityList, districtList } from '@/utils/regionData'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdModal from '@/components/JdModal.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import { useAuthStore } from '@/stores/auth'
-import { useGlobalToast } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
+import { useAnalytics } from '@/composables/useAnalytics'
 import { useI18n } from '@/locales'
+import type { CartItem, Address as AddressType, Coupon } from '@/types'
 
 const router = useRouter()
 const auth = useAuthStore()
-const toast = useGlobalToast()
+const toast = useToast()
+const analytics = useAnalytics()
 const { t } = useI18n()
 
-const cartItems = ref<any[]>([])
-const addresses = ref<any[]>([])
-const coupons = ref<any[]>([])
+const cartItems = ref<CartItem[]>([])
+const addresses = ref<AddressType[]>([])
+const coupons = ref<Coupon[]>([])
 const loading = ref(true)
 const submitting = ref(false)
 
@@ -41,9 +43,31 @@ const maxPointsDiscount = computed(() => Math.min(pointsBalance.value, Math.floo
 
 const showAddrEditor = ref(false)
 const addrForm = ref({ name: '', phone: '', province: '', city: '', district: '', detail: '', isDefault: false })
+const regionLoaded = ref(false)
+const regionLoading = ref(false)
+const regionProvinceList = ref<string[]>([])
+const regionCityMap = ref<Record<string, Record<string, string[]>>>({})
 
-const addrCities = computed(() => cityList(addrForm.value.province))
-const addrDistricts = computed(() => districtList(addrForm.value.province, addrForm.value.city))
+async function loadRegionData() {
+  if (regionLoaded.value) return
+  regionLoading.value = true
+  const mod = await import('@/utils/regionData')
+  regionProvinceList.value = mod.provinceList
+  regionCityMap.value = mod.regionData
+  regionLoaded.value = true
+  regionLoading.value = false
+}
+
+function openAddrEditor() { showAddrEditor.value = true; loadRegionData() }
+
+const addrCities = computed(() => {
+  const province = addrForm.value.province
+  return province && regionCityMap.value[province] ? Object.keys(regionCityMap.value[province]) : []
+})
+const addrDistricts = computed(() => {
+  const { province, city } = addrForm.value
+  return province && city ? (regionCityMap.value[province]?.[city] || []) : []
+})
 
 function onProvinceChange() { addrForm.value.city = ''; addrForm.value.district = '' }
 function onCityChange() { addrForm.value.district = '' }
@@ -51,7 +75,7 @@ function onCityChange() { addrForm.value.district = '' }
 const selectedAddress = computed(() => addresses.value.find(a => a.id === selectedAddrId.value) || null)
 const selectedCoupon = computed(() => coupons.value.find(c => c.id === selectedCouponId.value) || null)
 const availableCoupons = computed(() =>
-  coupons.value.filter((c: any) => !c.minAmount || subtotal.value >= c.minAmount)
+  coupons.value.filter((c) => !c.minAmount || subtotal.value >= c.minAmount)
 )
 
 const subtotal = computed(() =>
@@ -81,11 +105,23 @@ async function loadData() {
       isLoggedIn.value ? getPointsAccount().catch(() => ({ data: { balance: 0 } })) : Promise.resolve({ data: { balance: 0 } }),
     ])
     let allItems = cartR.data?.items || []
-    // Filter to selected items (only apply once, then clear to avoid stale filtering)
+    // Handle buy-now: retry cart fetch once if it seems empty after a buy-now action
+    const buyNowId = localStorage.getItem('checkout_buy_now')
+    if (buyNowId && allItems.length === 0) {
+      await new Promise(r => setTimeout(r, 300))
+      const retryR = await getCart().catch(() => ({ data: { items: [] } }))
+      allItems = retryR.data?.items || []
+    }
+    // Filter to selected items or buy-now product
     try {
       const selected = JSON.parse(localStorage.getItem('checkout_selected') || '[]') as number[]
       if (selected.length > 0) {
-        allItems = allItems.filter((i: any) => selected.includes(i.id))
+        const filtered = allItems.filter((i: { id: number }) => selected.includes(i.id))
+        if (filtered.length > 0) allItems = filtered
+      }
+      if (buyNowId) {
+        const buyNowItem = allItems.filter((i: { productId: number }) => i.productId === Number(buyNowId))
+        if (buyNowItem.length > 0) allItems = buyNowItem
       }
       localStorage.removeItem('checkout_selected')
       localStorage.removeItem('checkout_buy_now')
@@ -120,7 +156,7 @@ async function doSubmit() {
     const payload: Record<string, string> = {
       name: addr.name || '',
       phone: addr.phone || '',
-      address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join('') || (addr as any).address || '',
+      address: [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(''),
     }
     if (selectedCouponId.value != null) payload.couponId = String(selectedCouponId.value)
     if (remark.value) payload.remark = remark.value
@@ -128,6 +164,7 @@ async function doSubmit() {
     const orderId = r.data?.id || r.data?.orderId
     if (orderId) {
       toast.success(t('checkout.orderSuccess'))
+      analytics.checkout(subtotal.value - discount.value + pointsDiscount.value)
       await router.push(`/pay/${orderId}`)
     } else {
       toast.error(t('checkout.submitFail'))
@@ -203,7 +240,7 @@ onMounted(async () => {
             <h3 class="chk-sec-title">{{ t('checkout.address') }}</h3>
             <div v-if="addresses.length === 0" class="chk-no-addr">
               <p>{{ t('checkout.noAddress') }}</p>
-              <JdButton size="sm" @click="showAddrEditor = true">{{ t('checkout.addAddress') }}</JdButton>
+              <JdButton size="sm" @click="openAddrEditor()">{{ t('checkout.addAddress') }}</JdButton>
             </div>
             <div v-else class="chk-addr-list">
               <div
@@ -224,10 +261,10 @@ onMounted(async () => {
                     <span class="chk-addr-phone">{{ a.phone }}</span>
                     <span v-if="a.isDefault" class="chk-addr-tag">{{ t('checkout.default') }}</span>
                   </div>
-                  <div class="chk-addr-line2">{{ a.address || `${a.province || ''}${a.city || ''}${a.district || ''}${a.detail || ''}` }}</div>
+                  <div class="chk-addr-line2">{{ `${a.province || ''}${a.city || ''}${a.district || ''}${a.detail || ''}` }}</div>
                 </div>
               </div>
-              <JdButton size="sm" type="outline" @click="showAddrEditor = true">+ {{ t('checkout.newAddress') }}</JdButton>
+              <JdButton size="sm" type="outline" @click="openAddrEditor()">+ {{ t('checkout.newAddress') }}</JdButton>
             </div>
           </section>
 
@@ -262,12 +299,12 @@ onMounted(async () => {
                 @keydown.space.prevent="selectedCouponId = selectedCouponId === c.id ? null : c.id"
               >
                 <div class="chk-coupon-left">
-                  <div class="chk-coupon-amount">{{ formatPrice(c.amount / 100) }}</div>
+                  <div class="chk-coupon-amount">{{ formatPrice((c.amount || 0) / 100) }}</div>
                   <div v-if="c.minAmount" class="chk-coupon-min">{{ t('checkout.minAmount', { n: String(Math.ceil((c.minAmount || 0) / 100)) }) }}</div>
                 </div>
                 <div class="chk-coupon-body">
                   <div class="chk-coupon-name">{{ c.name }}</div>
-                  <div v-if="c.expireAt" class="chk-coupon-expire">{{ t('checkout.expiresAt', { d: c.expireAt }) }}</div>
+                  <div v-if="c.endTime" class="chk-coupon-expire">{{ t('checkout.expiresAt', { d: c.endTime }) }}</div>
                 </div>
               </div>
             </div>
@@ -352,7 +389,8 @@ onMounted(async () => {
         <div class="chk-addr-row">
           <select v-model="addrForm.province" class="chk-addr-input chk-addr-third" @change="onProvinceChange">
             <option value="">{{ t('checkout.province') }}</option>
-            <option v-for="p in provinceList" :key="p" :value="p">{{ p }}</option>
+            <option v-if="regionLoading" value="">{{ t('common.loading') }}</option>
+            <option v-for="p in regionProvinceList" :key="p" :value="p">{{ p }}</option>
           </select>
           <select v-model="addrForm.city" class="chk-addr-input chk-addr-third" :disabled="!addrForm.province" @change="onCityChange">
             <option value="">{{ t('checkout.city') }}</option>

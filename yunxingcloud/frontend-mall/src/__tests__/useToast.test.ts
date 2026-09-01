@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useToast, useGlobalToast } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 
 describe('useToast', () => {
   let toast: ReturnType<typeof useToast>
@@ -36,13 +36,5 @@ describe('useToast', () => {
   it('error helper should set type error', () => {
     toast.error('fail')
     expect(toast.toasts.value[0].type).toBe('error')
-  })
-})
-
-describe('useGlobalToast', () => {
-  it('should return singleton instance', () => {
-    const a = useGlobalToast()
-    const b = useGlobalToast()
-    expect(a).toBe(b)
   })
 })

@@ -19,7 +19,11 @@ const showMega = ref(false)
 const voiceSearching = ref(false)
 let megaTimer: ReturnType<typeof setTimeout> | null = null
 
-const hotKeywords = ['iPhone 17', 'MacBook Pro', '华为Mate 70', '茅台飞天', 'Nike Dunk', '戴森V16']
+const hotKeywords = ref<string[]>([])
+
+async function fetchHotKeywords() {
+  try { const r = await request.get('/search/hot-keywords'); hotKeywords.value = (r.data || []).slice(0, 6) } catch { hotKeywords.value = [] }
+}
 
 // Instant search suggestions
 const suggestions = ref<string[]>([])
@@ -46,6 +50,7 @@ function selectSuggestion(kw: string) { searchText.value = kw; showSuggestions.v
 
 onMounted(async () => {
   try { const r = await request.get('/categories'); categories.value = r.data || [] } catch { /* noop */ }
+  fetchHotKeywords()
 })
 
 function doSearch() {
@@ -123,7 +128,7 @@ watch(() => props.cartCount, (n, o) => {
 
     <!-- Search Box -->
     <div class="search-box" role="search">
-      <input v-model="searchText" :placeholder="t('search.placeholder')" @keyup.enter="doSearch" @input="onSearchInput" @focus="onSearchFocus" @blur="onSearchBlur" :aria-label="t('header.searchAria')" />
+      <input v-model="searchText" data-search-input :placeholder="t('search.placeholder')" @keyup.enter="doSearch" @input="onSearchInput" @focus="onSearchFocus" @blur="onSearchBlur" :aria-label="t('header.searchAria')" />
       <button class="search-btn" @click="doSearch" :aria-label="t('common.search')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>

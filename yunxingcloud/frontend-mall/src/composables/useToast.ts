@@ -51,7 +51,3 @@ const instance = createToast()
 export function useToast() {
   return instance
 }
-
-export function useGlobalToast() {
-  return instance
-}

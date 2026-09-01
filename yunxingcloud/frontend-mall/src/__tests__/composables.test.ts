@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { useCompare } from '@/composables/useCompare'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
 
 function mockLocalStorage() {
   const store: Record<string, string> = {}

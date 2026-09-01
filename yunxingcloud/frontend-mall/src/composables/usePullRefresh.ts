@@ -1,5 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
+let instanceCount = 0
+
 export function usePullRefresh(onRefresh: () => Promise<void>) {
   const pulling = ref(false)
   const refreshing = ref(false)
@@ -45,15 +47,20 @@ export function usePullRefresh(onRefresh: () => Promise<void>) {
   }
 
   onMounted(() => {
-    document.addEventListener('touchstart', onTouchStart, { passive: true })
-    document.addEventListener('touchmove', onTouchMove, { passive: true })
-    document.addEventListener('touchend', onTouchEnd, { passive: true })
+    if (instanceCount++ === 0) {
+      document.addEventListener('touchstart', onTouchStart, { passive: true })
+      document.addEventListener('touchmove', onTouchMove, { passive: true })
+      document.addEventListener('touchend', onTouchEnd, { passive: true })
+    }
   })
 
   onUnmounted(() => {
-    document.removeEventListener('touchstart', onTouchStart)
-    document.removeEventListener('touchmove', onTouchMove)
-    document.removeEventListener('touchend', onTouchEnd)
+    if (--instanceCount <= 0) {
+      instanceCount = 0
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onTouchEnd)
+    }
   })
 
   return { pulling, refreshing, pullDistance }

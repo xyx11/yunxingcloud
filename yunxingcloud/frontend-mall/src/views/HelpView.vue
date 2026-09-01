@@ -301,7 +301,6 @@ onMounted(loadHelp)
 /* Skeleton */
 .help-skel { display: flex; flex-direction: column; gap: var(--space-md); }
 .sk-line { height: 48px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 .help-error { text-align: center; padding: 40px var(--space-md); }
 
 @media (max-width: 768px) {

@@ -62,9 +62,12 @@ request.interceptors.response.use(
     }
     if (err.response?.status === 401) {
       localStorage.removeItem('accessToken')
+      localStorage.removeItem('user')
       const currentPath = window.location.pathname
       if (currentPath !== '/login') {
-        window.location.href = '/login?redirect=' + encodeURIComponent(currentPath + window.location.search)
+        import('@/router').then(({ default: router }) => {
+          router.replace('/login?redirect=' + encodeURIComponent(currentPath + window.location.search))
+        })
       }
     }
     if (err.response?.status >= 500) {

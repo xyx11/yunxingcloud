@@ -274,7 +274,6 @@ onMounted(load)
 .sk-line { height: 16px; background: var(--border-light); border-radius: var(--radius-sm); width: 100%; }
 .sk-line.w60 { width: 60%; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
 
 @media (max-width: 768px) {

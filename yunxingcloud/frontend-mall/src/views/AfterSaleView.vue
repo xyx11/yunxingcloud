@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import request from '@/api/request'
+import { getAfterSales, createAfterSale, cancelAfterSale } from '@/api/aftersale'
 import { formatPrice, formatRelativeTime } from '@/utils/format'
 import { useI18n } from '@/locales'
 import JdButton from '@/components/JdButton.vue'
@@ -58,7 +58,7 @@ const filteredList = computed(() => {
 async function loadList() {
   loading.value = true; loadError.value = false
   try {
-    const r = await request.get('/after-sale')
+    const r = await getAfterSales()
     list.value = r.data || []
   } catch { loadError.value = true }
   finally { loading.value = false }
@@ -69,7 +69,7 @@ async function doSubmit() {
   if (!oid) { submitMsg.value = t('afterSale.fillComplete'); submitSuccess.value = false; return }
   submitting.value = true; submitMsg.value = ''; submitSuccess.value = false
   try {
-    await request.post('/after-sale', {
+    await createAfterSale({
       orderId: Number(oid),
       type: form.value.type,
       reason: form.value.reason,
@@ -87,7 +87,7 @@ async function doSubmit() {
 async function doCancel(id: number) {
   if (canceling.value.has(id)) return
   canceling.value.add(id)
-  try { await request.put(`/after-sale/${id}/cancel`); loadList() }
+  try { await cancelAfterSale(String(id)); loadList() }
   catch { /* ignore */ }
   finally { canceling.value.delete(id) }
 }
@@ -271,7 +271,6 @@ onMounted(loadList)
 .as-help { margin-top: var(--space-xxl); padding-top: var(--space-xl); border-top: 1px solid var(--border-light); text-align: center; font-size: var(--font-sm); color: var(--text-tertiary); }
 .as-help-contact { color: var(--jd-red); margin-top: 4px; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .as-page { padding: 0 var(--space-md) 80px; }

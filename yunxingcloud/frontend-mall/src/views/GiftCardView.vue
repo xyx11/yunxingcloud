@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import request from '@/api/request'
+import { getMyGiftCards, queryGiftCard, activateGiftCard, getGiftCardHistory, purchaseGiftCard } from '@/api/giftcard'
 import { formatPrice } from '@/utils/format'
 import { useI18n } from '@/locales'
 import JdButton from '@/components/JdButton.vue'
+import JdModal from '@/components/JdModal.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 
@@ -48,7 +49,7 @@ const amountOptions = [5000, 10000, 20000, 50000, 100000] // 分
 async function doPurchase() {
   purchaseLoading.value = true; purchaseMsg.value = ''; purchaseSuccess.value = false
   try {
-    await request.post('/gift-cards/purchase', { amount: purchaseAmount.value })
+    await purchaseGiftCard(purchaseAmount.value)
     purchaseSuccess.value = true
     purchaseMsg.value = t('giftCard.purchaseSuccess') || '购买成功'
     loadMyCards()
@@ -63,14 +64,14 @@ onMounted(() => { loadMyCards() })
 
 async function loadMyCards() {
   myCardsLoading.value = true
-  try { const r = await request.get('/gift-cards/my'); myCards.value = r.data || [] }
+  try { const r = await getMyGiftCards(); myCards.value = r.data || [] }
   catch { /* silent */ }
   finally { myCardsLoading.value = false }
 }
 
 async function loadHistory(cardId: number) {
   historyLoading.value = true
-  try { const r = await request.get(`/gift-cards/${cardId}/history`); history.value = r.data || [] }
+  try { const r = await getGiftCardHistory(cardId); history.value = r.data || [] }
   catch { history.value = [] }
   finally { historyLoading.value = false }
 }
@@ -78,7 +79,7 @@ async function loadHistory(cardId: number) {
 async function query() {
   if (!cardNo.value.trim()) return
   loading.value = true; msgSuccess.value = false
-  try { const r = await request.get('/gift-cards/' + cardNo.value.trim()); card.value = r.data; msg.value = ''; loading.value = false;
+  try { const r = await queryGiftCard(cardNo.value.trim()); card.value = r.data; msg.value = ''; loading.value = false;
     } catch { card.value = null; msg.value = t('giftCard.notFound') }
 }
 
@@ -86,7 +87,7 @@ async function activate() {
   if (!cardNo.value.trim()) return
   loading.value = true
   try {
-    const r = await request.post('/gift-cards/' + cardNo.value.trim() + '/activate')
+    const r = await activateGiftCard(cardNo.value.trim())
     card.value = r.data; msg.value = t('giftCard.activateSuccess'); msgSuccess.value = true
     loadMyCards()
   } catch (e: any) {
@@ -150,7 +151,7 @@ function selectCard(c: GiftCard) {
             <span class="gc-history-amount" :class="{ plus: h.type === 'RECHARGE' }">
               {{ h.type === 'RECHARGE' ? '+' : '-' }}{{ formatPrice(h.amount / 100, 2) }}
             </span>
-            <span class="gc-history-time">{{ h.createdAt?.substring(0, 10) }}</span>
+            <span class="gc-history-time">{{ String(h.createdAt || '').substring(0, 10) }}</span>
           </div>
         </div>
       </div>
@@ -224,24 +225,21 @@ function selectCard(c: GiftCard) {
       </div>
 
       <!-- Purchase Modal -->
-      <div v-if="showPurchase" class="gc-modal-overlay" @click.self="showPurchase = false">
-        <div class="gc-modal">
-          <h3 class="gc-modal-title">🎁 {{ t('giftCard.buyNow') }}</h3>
-          <div class="gc-amount-grid">
-            <button
-              v-for="a in amountOptions" :key="a"
-              class="gc-amount-btn"
-              :class="{ active: purchaseAmount === a }"
-              @click="purchaseAmount = a"
-            >{{ formatPrice(a / 100, 0) }}</button>
-          </div>
-          <p v-if="purchaseMsg" class="gc-msg" :class="{ success: purchaseSuccess }">{{ purchaseMsg }}</p>
-          <div class="gc-modal-actions">
-            <JdButton type="ghost" @click="showPurchase = false">{{ t('common.cancel') }}</JdButton>
-            <JdButton :loading="purchaseLoading" @click="doPurchase">{{ purchaseLoading ? '...' : t('giftCard.buyNow') }}</JdButton>
-          </div>
+      <JdModal v-model:visible="showPurchase" :title="'🎁 ' + t('giftCard.buyNow')" width="380px">
+        <div class="gc-amount-grid">
+          <button
+            v-for="a in amountOptions" :key="a"
+            class="gc-amount-btn"
+            :class="{ active: purchaseAmount === a }"
+            @click="purchaseAmount = a"
+          >{{ formatPrice(a / 100, 0) }}</button>
         </div>
-      </div>
+        <p v-if="purchaseMsg" class="gc-msg" :class="{ success: purchaseSuccess }">{{ purchaseMsg }}</p>
+        <template #footer>
+          <JdButton type="ghost" @click="showPurchase = false">{{ t('common.cancel') }}</JdButton>
+          <JdButton :loading="purchaseLoading" @click="doPurchase">{{ purchaseLoading ? '...' : t('giftCard.buyNow') }}</JdButton>
+        </template>
+      </JdModal>
     </template>
   </div>
 </template>
@@ -327,17 +325,12 @@ function selectCard(c: GiftCard) {
 
 .flex-1 { flex: 1; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
 
-/* Purchase Modal */
-.gc-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-.gc-modal { background: var(--bg-white); border-radius: var(--radius-xl); padding: var(--space-xxl); width: 90%; max-width: 360px; box-shadow: var(--shadow-lg); }
-.gc-modal-title { font-size: var(--font-lg); font-weight: 700; text-align: center; margin-bottom: var(--space-lg); }
+/* Purchase Modal (hosted inside JdModal) */
 .gc-amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); margin-bottom: var(--space-lg); }
 .gc-amount-btn { padding: var(--space-md); border: 2px solid var(--border); border-radius: var(--radius-md); background: var(--bg-white); font-size: var(--font-lg); font-weight: 700; cursor: pointer; color: var(--text-primary); transition: all var(--transition-fast); }
 .gc-amount-btn.active { border-color: var(--jd-red); background: var(--jd-red-light); color: var(--jd-red); }
-.gc-modal-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
 
 @media (max-width: 768px) {
   .gc-page { padding: 0 var(--space-md) 80px; }

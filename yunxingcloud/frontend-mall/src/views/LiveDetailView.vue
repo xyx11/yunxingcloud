@@ -10,12 +10,13 @@ import { reportLiveView } from '@/api/live'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
+import type { LiveRoom } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const room = ref<any>(null)
+const room = ref<LiveRoom | null>(null)
 const loading = ref(true)
 const error = ref(false)
 const id = Number(route.params.id)

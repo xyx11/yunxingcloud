@@ -10,11 +10,12 @@ import JdEmpty from '@/components/JdEmpty.vue'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { PresaleProduct } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const presales = ref<any[]>([])
+const presales = ref<PresaleProduct[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const paying = ref<Set<number>>(new Set())
@@ -40,7 +41,7 @@ async function doDeposit(id: number) {
 }
 
 function goDetail(id: number) { router.push(`/presale/${id}`) }
-function presaleExpired(p: any): boolean { return p.endTime && new Date(p.endTime).getTime() <= Date.now() }
+function presaleExpired(p: PresaleProduct): boolean { return !!p.endTime && new Date(p.endTime).getTime() <= Date.now() }
 
 onMounted(load)
 </script>
@@ -65,7 +66,7 @@ onMounted(load)
       <div v-for="p in presales" :key="p.id" class="presale-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
         <LazyImage :src="p.imageUrl || p.productImage || ''" :alt="p.productName || p.name" height="200px" />
         <div class="presale-badge">{{ t('presale.badge') }}</div>
-        <div v-if="p.depositCount > 100" class="presale-hot">🔥 热门</div>
+        <div v-if="(p.depositCount || 0) > 100" class="presale-hot">🔥 热门</div>
         <div class="presale-info">
           <h3 class="presale-name">{{ p.productName || p.name }}</h3>
           <div class="presale-prices">

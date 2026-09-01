@@ -72,8 +72,8 @@ async function load(pageNum = 1) {
 }
 
 async function loadUnread() {
-  try { const r = await request.get('/notifications/unread-count'); unreadCount.value = (r.data as any)?.count || 0; loading.value = false;
-    } catch { /* silent */ }
+  try { const r = await request.get('/notifications/unread-count'); unreadCount.value = (r.data as { count?: number })?.count || 0; loading.value = false;
+    } catch { /* unread count is non-critical */ }
 }
 
 function switchFilter(type: 'all' | 'order' | 'promo' | 'system') {
@@ -258,7 +258,6 @@ onMounted(() => { load(); loadUnread() })
 .notif-item-leave-to { opacity: 0; transform: translateX(-20px); }
 .notif-item-move { transition: transform .3s ease; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .notif-page { padding: var(--space-lg) var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }

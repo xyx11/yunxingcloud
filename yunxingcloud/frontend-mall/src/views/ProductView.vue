@@ -7,28 +7,31 @@ import { checkFavorite, addFavorite, removeFavorite } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useCartFly } from '@/composables/useCartFly'
+import { useAnalytics } from '@/composables/useAnalytics'
 import { useI18n } from '@/locales'
-import { useGlobalToast } from '@/composables/useToast'
-import { formatPrice, formatRelativeTime } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
+import { formatPrice, getProductImage } from '@/utils/format'
 import type { Product, Sku, Review } from '@/types'
 
 // Sub-components
 import ProductGallery from '@/components/ProductGallery.vue'
 import SkuSelector from '@/components/SkuSelector.vue'
 import ProductInfo from '@/components/ProductInfo.vue'
+import ProductReviews from '@/components/ProductReviews.vue'
 
 // Retained existing components
-import ReviewSummary from '@/components/ReviewSummary.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
+import JdModal from '@/components/JdModal.vue'
 import request from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
-const toast = useGlobalToast()
+const toast = useToast()
 const { flyToCart } = useCartFly()
+const analytics = useAnalytics()
 
 // Data state
 const product = ref<Product | null>(null)
@@ -36,13 +39,6 @@ const notFound = ref(false)
 const skus = ref<Sku[]>([])
 const reviews = ref<Review[]>([])
 const reviewAnalytics = ref<{ avgRating?: number; total?: number; distribution?: Record<number, number> }>()
-const reviewSort = ref<'newest' | 'highest' | 'lowest'>('newest')
-const reviewShow = ref(3)
-const reviewForm = ref({ rating: 0, content: '' })
-const reviewImages = ref<File[]>([])
-const reviewPreviews = ref<string[]>([])
-const reviewSubmitting = ref(false)
-const MAX_REVIEW_IMAGES = 5
 const restockSubscribing = ref(false)
 const restockDone = ref(false)
 
@@ -58,9 +54,7 @@ async function subscribeRestock() {
 }
 
 function openChat() {
-  const btn = document.querySelector<HTMLElement>('.chat-bubble')
-  if (btn) btn.click()
-  else toast.info(t('product.customerServiceUnavailable'))
+  window.dispatchEvent(new CustomEvent('chat:open'))
 }
 
 function injectStructuredData(p: Product) {
@@ -82,49 +76,6 @@ function injectStructuredData(p: Product) {
   })
 }
 
-function handleReviewImages(e: Event) {
-  const files = (e.target as HTMLInputElement).files
-  if (!files) return
-  for (let i = 0; i < files.length && reviewImages.value.length < MAX_REVIEW_IMAGES; i++) {
-    reviewImages.value.push(files[i])
-    reviewPreviews.value.push(URL.createObjectURL(files[i]))
-  }
-  ;(e.target as HTMLInputElement).value = ''
-}
-function removeReviewImage(i: number) {
-  URL.revokeObjectURL(reviewPreviews.value[i])
-  reviewImages.value.splice(i, 1)
-  reviewPreviews.value.splice(i, 1)
-}
-
-async function submitProductReview() {
-  if (!product.value || !reviewForm.value.rating || !reviewForm.value.content) return
-  reviewSubmitting.value = true
-  try {
-    let imageUrls: string[] = []
-    if (reviewImages.value.length) {
-      const fd = new FormData()
-      reviewImages.value.forEach((f) => fd.append('files', f))
-      const uploadRes = await request.post('/files/upload/review-images', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      imageUrls = uploadRes.data || []
-    }
-    await request.post(`/products/${product.value.id}/reviews`, { rating: reviewForm.value.rating, content: reviewForm.value.content, images: imageUrls })
-    toast.success(t('toast.reviewSuccess'))
-    reviewForm.value = { rating: 0, content: '' }
-    reviewImages.value.forEach((_, i) => URL.revokeObjectURL(reviewPreviews.value[i]))
-    reviewImages.value = []; reviewPreviews.value = []
-    const res = await getProductDetail(Number(product.value.id)); reviews.value = res.data.reviews || []
-  } catch { toast.error(t('toast.reviewFail')) } finally { reviewSubmitting.value = false }
-}
-const sortedReviews = computed(() => {
-  const arr = [...reviews.value]
-  if (reviewSort.value === 'newest') arr.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-  else if (reviewSort.value === 'highest') arr.sort((a, b) => b.rating - a.rating)
-  else arr.sort((a, b) => a.rating - b.rating)
-  return arr.slice(0, reviewShow.value)
-})
-function showMoreReviews() { reviewShow.value = Math.min(reviewShow.value + 3, reviews.value.length) }
-
 const related = ref<Product[]>([])
 const alsoBought = ref<Product[]>([])
 const selectedSku = ref<Sku | null>(null)
@@ -135,6 +86,7 @@ const favorited = ref(false)
 const alertSet = ref(false)
 const loading = ref(true)
 const addingToCart = ref(false)
+const addedToCart = ref(false)
 const buyingNow = ref(false)
 const shareMenu = ref(false)
 const showFloatingBar = ref(false)
@@ -192,8 +144,6 @@ function onLightboxKey(e: KeyboardEvent) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
   }
 }
-const viewerCount = ref(0)
-let viewerTimer: ReturnType<typeof setInterval> | null = null
 const couponCount = ref(0)
 
 let scrollTicking = false
@@ -205,12 +155,6 @@ const displayPrice = computed(() =>
 const displayStock = computed(() =>
   selectedSku.value ? selectedSku.value.stock : product.value?.stock || 0
 )
-
-function productImage(p: Product): string {
-  if (p?.imageUrl && p.imageUrl !== '\u{1F4E6}') return p.imageUrl
-  if (p?.images?.length) return p.images[0]
-  return ''
-}
 
 // --- Lifecycle ---
 
@@ -225,12 +169,21 @@ onMounted(async () => {
         if (product.value?.imageUrl) images.value = [product.value.imageUrl, ...(product.value.images || [])]
         else if (product.value?.images) images.value = product.value.images
         if (!images.value.length) images.value = ['📦']
-    try { const ar = await request.get('/reviews/summary/' + Number(id)); reviewAnalytics.value = ar.data || null } catch {}
-    try { const r = await getAlsoBought(Number(id), 4); alsoBought.value = r.data || [] } catch {}
     const { add } = useRecentlyViewed()
     if (product.value) {
       add({ id: product.value.id, name: product.value.name, price: product.value.price, imageUrl: product.value.imageUrl })
     }
+
+    // 并行加载非关键数据
+    const parallel = [
+      request.get('/reviews/summary/' + Number(id)).then(ar => { reviewAnalytics.value = ar.data || null }).catch(() => {}),
+      getAlsoBought(Number(id), 4).then(r => { alsoBought.value = r.data || [] }).catch(() => {}),
+    ]
+    if (auth.isLoggedIn) {
+      parallel.push(checkFavorite(Number(id)).then(r => { favorited.value = r.data.favorited }).catch(() => {}))
+    }
+    parallel.push(request.get('/coupons/available?productId=' + Number(id)).then(cr => { couponCount.value = cr.data?.length || cr.data?.count || 0 }).catch(() => {}))
+    await Promise.allSettled(parallel)
   } catch (e: unknown) {
     const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string }
     const status = err.response?.status
@@ -242,25 +195,14 @@ onMounted(async () => {
     }
   } finally { loading.value = false }
 
-  if (auth.isLoggedIn) {
-    try { const r = await checkFavorite(Number(id)); favorited.value = r.data.favorited } catch { toast.error(t('toast.favStatusFail')) }
-  }
-  try { const cr = await request.get('/coupons/available?productId=' + Number(id)); couponCount.value = cr.data?.length || cr.data?.count || 0 } catch {}
-
   window.addEventListener('scroll', onScroll)
 
-
   // Structured data for search engines
-  if (product.value) injectStructuredData(product.value)
-
-  viewerTimer = setInterval(() => {
-    viewerCount.value = Math.max(10, viewerCount.value + Math.floor(Math.random() * 7) - 3)
-  }, 5000)
+  if (product.value) { injectStructuredData(product.value); analytics.productView(product.value.id) }
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
-  if (viewerTimer) clearInterval(viewerTimer)
 })
 
 // --- Actions ---
@@ -278,6 +220,7 @@ async function onAddToCart(e?: MouseEvent) {
   try {
     await addToCart(product.value.id, qty.value)
     toast.success(t('toast.addedToCart'))
+    addedToCart.value = true; setTimeout(() => addedToCart.value = false, 1500)
     if (e) flyToCart(e)
   } catch { toast.error(t('toast.addCartFail')) }
   finally { addingToCart.value = false }
@@ -344,6 +287,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 </script>
 
 <template>
+  <div>
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <span @click="router.push('/')" class="crumb-link">{{ t('product.breadcrumbHome') }}</span><span>/</span>
@@ -389,8 +333,6 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
         :selected-sku="selectedSku"
         :favorited="favorited"
         :reviews-count="reviews.length"
-        :alert-set="alertSet"
-        :viewer-count="viewerCount"
         @toggle-favorite="toggleFavorite"
         @share="shareProduct"
         @set-price-alert="onSetPriceAlert"
@@ -414,7 +356,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
           </JdButton>
         </template>
         <template v-else>
-          <JdButton type="outline" size="lg" class="flex-1" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
+          <JdButton type="outline" size="lg" class="flex-1" :loading="addingToCart" :disabled="addingToCart || addedToCart" @click="() => onAddToCart()">{{ addedToCart ? '✓ ' + t('toast.addedToCart') : t('product.addToCart') }}</JdButton>
           <JdButton size="lg" class="flex-1" :loading="buyingNow" :disabled="buyingNow" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
         </template>
         <button class="icon-btn" :class="{ active: favorited }" @click="toggleFavorite" :aria-label="t('product.favorite')">{{ favorited ? '❤️' : '🤍' }}</button>
@@ -433,72 +375,19 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
       🎫 {{ t('product.couponAvailable', { n: String(couponCount > 0 ? couponCount : 0) }) }}
     </div>
     <div class="recent-sales-banner">
-      🔥 {{ t('product.recentViewers', { n: viewerCount || 5 }) }}
+      🔥 {{ t('product.recentViewers', { n: 5 }) }}
     </div>
   </div>
 
   <!-- Reviews -->
-  <div v-if="product" class="pdp-section">
-    <h3 class="section-title">{{ t('product.reviews') }} ({{ reviews.length }})</h3>
-    <ReviewSummary v-if="reviews.length" :reviews="reviews" :analytics="reviewAnalytics" />
-    <div v-if="reviews.length" class="review-sort">
-      <span class="rs-opt" :class="{ active: reviewSort === 'newest' }" @click="reviewSort = 'newest'">{{ t('product.reviewSortNewest') }}</span>
-      <span class="rs-opt" :class="{ active: reviewSort === 'highest' }" @click="reviewSort = 'highest'">{{ t('product.reviewSortHighest') }}</span>
-      <span class="rs-opt" :class="{ active: reviewSort === 'lowest' }" @click="reviewSort = 'lowest'">{{ t('product.reviewSortLowest') }}</span>
-    </div>
-    <div v-if="reviews.length">
-      <div v-for="r in sortedReviews" :key="r.id" class="review-item">
-        <div class="review-header">
-          <div class="review-user">
-            <span class="review-username">{{ r.username }}</span>
-            <span class="review-stars">{{ '★'.repeat(r.rating) }}</span>
-          </div>
-          <span class="review-date">{{ formatRelativeTime(r.createdAt) }}</span>
-        </div>
-        <p class="review-content">{{ r.content }}</p>
-        <div v-if="r.images?.length" class="review-images">
-          <img v-for="(img, j) in r.images" :key="j" :src="img" class="review-thumb" @click.stop="openPreview(img)" />
-        </div>
-      </div>
-      <div v-if="reviewShow < reviews.length" class="review-more">
-        <button class="review-more-btn" @click="showMoreReviews">{{ t('product.loadMoreReviews') }} ({{ reviews.length - reviewShow }})</button>
-      </div>
-    </div>
-    <div v-else class="empty-text">{{ t('product.noReviews') }}</div>
-
-    <!-- Write Review -->
-    <div v-if="auth.isLoggedIn" class="write-review">
-      <h4 class="write-review-title">{{ t('product.writeReview') }}</h4>
-      <div class="write-review-stars">
-        <span v-for="i in 5" :key="i" class="write-star" :class="{ active: i <= reviewForm.rating }" @click="reviewForm.rating = i">{{ i <= reviewForm.rating ? '★' : '☆' }}</span>
-      </div>
-      <textarea v-model="reviewForm.content" class="write-review-textarea" :placeholder="t('rating.placeholder')" />
-      <!-- Image picker -->
-      <div class="write-review-images">
-        <div v-for="(preview, i) in reviewPreviews" :key="i" class="review-img-preview">
-          <img :src="preview" />
-          <button class="review-img-remove" @click="removeReviewImage(i)">✕</button>
-        </div>
-        <label v-if="reviewImages.length < MAX_REVIEW_IMAGES" class="review-img-add">
-          <input type="file" accept="image/*" multiple hidden @change="handleReviewImages" />
-          <span>+</span>
-        </label>
-      </div>
-      <JdButton size="sm" :loading="reviewSubmitting" :disabled="reviewSubmitting" @click="submitProductReview">{{ t('rating.submitReview') }}</JdButton>
-    </div>
-    <div v-else class="write-review-login">
-      <span>{{ t('login.fillRequired') }}</span>
-      <JdButton size="sm" type="outline" @click="router.push('/login')">{{ t('common.login') }}</JdButton>
-    </div>
-    <!-- Image lightbox -->
-    <div v-if="previewImage" class="img-lightbox" @click="closePreview" @keydown="onLightboxKey" tabindex="0" ref="lightboxRef">
-      <button class="lightbox-close" @click.stop="closePreview" :aria-label="t('common.close')">✕</button>
-      <button v-if="allPreviewImages.length > 1" class="lightbox-nav lightbox-prev" @click.stop="prevPreview" aria-label="‹">‹</button>
-      <img :src="previewImage" @click.stop />
-      <button v-if="allPreviewImages.length > 1" class="lightbox-nav lightbox-next" @click.stop="nextPreview" aria-label="›">›</button>
-      <div v-if="allPreviewImages.length > 1" class="lightbox-counter">{{ previewIndex + 1 }} / {{ allPreviewImages.length }}</div>
-    </div>
-  </div>
+  <ProductReviews
+    v-if="product"
+    :product-id="product.id"
+    :reviews="reviews"
+    :review-analytics="reviewAnalytics"
+    @open-preview="openPreview"
+    @reviews-updated="reviews = $event"
+  />
 
   <!-- Specs -->
   <div v-if="product" class="pdp-section">
@@ -507,7 +396,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
       <div class="spec-row"><span class="spec-label">{{ t('product.specName') }}</span><span>{{ product.name }}</span></div>
       <div class="spec-row"><span class="spec-label">{{ t('product.specNo') }}</span><span>{{ product.id }}</span></div>
       <div v-if="product.brandId" class="spec-row"><span class="spec-label">{{ t('product.brand') }}</span><span>{{ product.brandName || t('product.brand') + '#' + product.brandId }}</span></div>
-      <div class="spec-row"><span class="spec-label">{{ t('common.createdAt') }}</span><span>{{ product.createdAt?.substring(0, 10) || '-' }}</span></div>
+      <div class="spec-row"><span class="spec-label">{{ t('common.createdAt') }}</span><span>{{ String(product.createdAt || '').substring(0, 10) || '-' }}</span></div>
     </div>
   </div>
 
@@ -568,7 +457,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     <h3 class="section-title">{{ t('product.relatedProducts') }}</h3>
     <div class="related-grid">
       <div v-for="p in related" :key="p.id" class="related-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
-        <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
+        <LazyImage :src="getProductImage(p)" :alt="p.name" height="140px" />
         <div class="related-info">
           <h5 class="related-name">{{ p.name }}</h5>
           <span class="related-price">{{ formatPrice(p.price / 100, 2) }}</span>
@@ -582,7 +471,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     <h3 class="section-title">{{ t('product.alsoBought') }}</h3>
     <div class="related-grid">
       <div v-for="p in alsoBought" :key="p.id" class="related-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
-        <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
+        <LazyImage :src="getProductImage(p)" :alt="p.name" height="140px" />
         <div class="related-info">
           <h5 class="related-name">{{ p.name }}</h5>
           <span class="related-price">{{ formatPrice(p.price / 100, 2) }}</span>
@@ -592,19 +481,25 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
   </div>
 
   <!-- Price Alert Modal -->
-  <div v-if="showPriceAlert" class="modal-overlay" @click.self="showPriceAlert = false">
-    <div class="alert-modal">
-      <h3 class="alert-title">🔔 {{ t('product.setPriceAlert') }}</h3>
-      <p class="alert-desc">{{ t('product.restockNotifySuccess') }}</p>
-      <div class="alert-input-row">
-        <span class="alert-input-label">{{ t('product.targetPrice') }} ¥</span>
-        <input v-model="alertPrice" type="number" step="0.01" class="alert-input" />
-      </div>
-      <div class="alert-actions">
-        <JdButton type="ghost" @click="showPriceAlert = false">{{ t('common.cancel') }}</JdButton>
-        <JdButton @click="confirmPriceAlert">{{ t('product.confirmSet') }}</JdButton>
-      </div>
+  <JdModal v-model:visible="showPriceAlert" :title="'🔔 ' + t('product.setPriceAlert')" width="380px">
+    <p class="alert-desc">{{ t('product.restockNotifySuccess') }}</p>
+    <div class="alert-input-row">
+      <span class="alert-input-label">{{ t('product.targetPrice') }} ¥</span>
+      <input v-model="alertPrice" type="number" step="0.01" class="alert-input" />
     </div>
+    <template #footer>
+      <JdButton type="ghost" @click="showPriceAlert = false">{{ t('common.cancel') }}</JdButton>
+      <JdButton @click="confirmPriceAlert">{{ t('product.confirmSet') }}</JdButton>
+    </template>
+  </JdModal>
+
+  <!-- Image lightbox -->
+  <div v-if="previewImage" class="img-lightbox" @click="closePreview" @keydown="onLightboxKey" tabindex="0" ref="lightboxRef">
+    <button class="lightbox-close" @click.stop="closePreview" :aria-label="t('common.close')">✕</button>
+    <button v-if="allPreviewImages.length > 1" class="lightbox-nav lightbox-prev" @click.stop="prevPreview" aria-label="‹">‹</button>
+    <img :src="previewImage" :alt="t('product.previewImage')" @click.stop />
+    <button v-if="allPreviewImages.length > 1" class="lightbox-nav lightbox-next" @click.stop="nextPreview" aria-label="›">›</button>
+    <div v-if="allPreviewImages.length > 1" class="lightbox-counter">{{ previewIndex + 1 }} / {{ allPreviewImages.length }}</div>
   </div>
 
   <!-- Floating Bar -->
@@ -612,7 +507,7 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
     <LazyImage :src="images[0]" :alt="product.name" height="48px" width="48px" rounded="6px" />
     <div class="floating-name">{{ product.name }}</div>
     <span class="floating-price">{{ formatPrice(displayPrice / 100, 2) }}</span>
-    <JdButton type="outline" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
+    <JdButton type="outline" :loading="addingToCart" :disabled="addingToCart || addedToCart" @click="() => onAddToCart()">{{ addedToCart ? '✓ ' + t('toast.addedToCart') : t('product.addToCart') }}</JdButton>
     <JdButton :loading="buyingNow" :disabled="buyingNow" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
   </div>
 
@@ -620,8 +515,9 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
   <div v-if="product" class="mobile-bar">
     <button class="mobile-bar-fav" :class="{ faved: favorited }" @click="toggleFavorite" :aria-label="favorited ? t('product.favoritedAria') : t('product.unfavoriteAria')">{{ favorited ? '❤️' : '🤍' }}</button>
     <div class="mobile-bar-price">{{ formatPrice(displayPrice / 100, 2) }}</div>
-    <JdButton type="outline" class="flex-1" :loading="addingToCart" :disabled="addingToCart" @click="() => onAddToCart()">{{ t('product.addToCart') }}</JdButton>
+    <JdButton type="outline" class="flex-1" :loading="addingToCart" :disabled="addingToCart || addedToCart" @click="() => onAddToCart()">{{ addedToCart ? '✓ ' + t('toast.addedToCart') : t('product.addToCart') }}</JdButton>
     <JdButton class="flex-1" :loading="buyingNow" :disabled="buyingNow" @click="buyNow">{{ t('product.buyNow') }}</JdButton>
+  </div>
   </div>
 </template>
 
@@ -667,40 +563,9 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 .icon-btn.active { color: var(--jd-red); }
 
 /* Sections */
-.pdp-section { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); }
+.pdp-section { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); box-shadow: var(--shadow-sm); margin-bottom: var(--space-xxl); content-visibility: auto; contain-intrinsic-size: auto 300px; }
 .section-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
 
-/* Reviews */
-.review-sort { display: flex; gap: var(--space-md); margin-bottom: var(--space-md); }
-.rs-opt { cursor: pointer; padding: 4px 10px; border-radius: var(--radius-sm); font-size: var(--font-sm); color: var(--text-secondary); transition: all var(--transition-fast); }
-.rs-opt.active { color: var(--jd-red); background: var(--jd-red-light); }
-.rs-opt:hover:not(.active) { color: var(--jd-red); }
-.review-more { text-align: center; padding: var(--space-lg) 0; }
-.review-more-btn { padding: var(--space-md) 32px; border: 1px solid var(--border); background: var(--bg-white); border-radius: var(--radius-round); cursor: pointer; font-size: var(--font-md); color: var(--text-secondary); transition: all var(--transition-fast); }
-.review-more-btn:hover { border-color: var(--jd-red); color: var(--jd-red); }
-.write-review { margin-top: var(--space-xl); padding: var(--space-lg); background: var(--bg-hover); border-radius: var(--radius-md); }
-.write-review-login { margin-top: var(--space-xl); padding: var(--space-lg); background: var(--bg-hover); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); font-size: var(--font-sm); color: var(--text-tertiary); }
-.write-review-title { font-size: var(--font-md); font-weight: 600; margin-bottom: var(--space-sm); }
-.write-review-stars { margin-bottom: var(--space-sm); display: flex; gap: 4px; }
-.write-star { font-size: 24px; cursor: pointer; color: var(--border); transition: color .2s; }
-.write-star.active { color: var(--orange); }
-.write-review-textarea { width: 100%; height: 80px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-sm); }
-.review-item { padding: var(--space-lg) 0; border-bottom: 1px solid var(--border-light); }
-.review-header { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); }
-.review-user { display: flex; align-items: center; gap: var(--space-sm); }
-.review-username { font-weight: 600; font-size: var(--font-md); }
-.review-stars { color: var(--orange); font-size: var(--font-md); }
-.review-date { color: var(--text-tertiary); font-size: var(--font-sm); }
-.review-content { font-size: var(--font-md); color: var(--text-primary); line-height: 1.6; }
-.review-images { display: flex; gap: 6px; margin-top: var(--space-sm); flex-wrap: wrap; }
-.review-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--border-light); transition: transform .2s; }
-.review-thumb:hover { transform: scale(1.05); }
-.write-review-images { display: flex; gap: 8px; margin-bottom: var(--space-sm); flex-wrap: wrap; }
-.review-img-preview { position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-light); }
-.review-img-preview img { width: 100%; height: 100%; object-fit: cover; }
-.review-img-remove { position: absolute; top: 0; right: 0; width: 20px; height: 20px; background: rgba(0,0,0,.5); color: #fff; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.review-img-add { width: 80px; height: 80px; border: 2px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-tertiary); font-size: 28px; transition: border-color .2s; }
-.review-img-add:hover { border-color: var(--jd-red); color: var(--jd-red); }
 .img-lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.92); z-index: 1000; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; }
 .img-lightbox img { max-width: 85vw; max-height: 85vh; object-fit: contain; border-radius: 8px; cursor: default; }
 .lightbox-close { position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.15); color: #fff; border: none; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: background var(--transition-fast); z-index: 1001; }
@@ -740,22 +605,17 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 
 /* Related */
 .related-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); }
-.related-card { background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform var(--transition); }
+.related-card { background: var(--bg-white); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform var(--transition); will-change: transform; }
 .related-card:hover { transform: translateY(-4px); }
 .related-info { padding: var(--space-sm) var(--space-md); }
 .related-name { font-size: var(--font-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: var(--space-xs); color: var(--text-primary); }
 .related-price { color: var(--jd-red); font-size: var(--font-lg); font-weight: 700; }
 
-.empty-text { text-align: center; padding: 30px; color: var(--text-tertiary); }
-
-/* Alert Modal */
-.alert-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); width: 360px; max-width: 90vw; }
-.alert-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-lg); }
+/* Alert Modal (hosted inside JdModal) */
 .alert-desc { color: var(--text-secondary); font-size: var(--font-base); margin-bottom: var(--space-md); }
 .alert-input-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-lg); }
 .alert-input-label { font-size: var(--font-base); color: var(--text-secondary); }
 .alert-input { flex: 1; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-md); background: var(--bg-white); color: var(--text-primary); }
-.alert-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; }
 
 /* Floating Bar */
 .floating-bar { display: flex; position: fixed; top: 60px; left: 0; right: 0; z-index: 90; background: var(--bg-white); box-shadow: var(--shadow-md); padding: var(--space-sm) var(--space-xxl); align-items: center; gap: var(--space-xl); animation: slideDown .3s ease-out; }
@@ -785,7 +645,6 @@ function goDetail(id: number) { router.push(`/product/${id}`) }
 .coupon-banner:hover { background: #fff3cd; }
 .recent-sales-banner { background: #f0f7ff; color: var(--blue); padding: var(--space-sm) var(--space-lg); border-radius: var(--radius-md); font-size: var(--font-sm); text-align: center; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 @media (min-width: 769px) { .floating-bar { display: flex; } }

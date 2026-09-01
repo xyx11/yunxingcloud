@@ -1,4 +1,9 @@
 import { t, currentLocale } from '@/locales'
+import type { Product } from '@/types'
+
+export function getProductImage(p: Product | { imageUrl?: string; images?: string[] }): string {
+  return p.imageUrl || p.images?.[0] || ''
+}
 
 export function formatPrice(price: number, decimals: number = 0): string {
   const loc = currentLocale.value === 'en' ? 'en-US' : 'zh-CN'

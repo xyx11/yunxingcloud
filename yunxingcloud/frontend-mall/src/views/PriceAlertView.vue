@@ -9,11 +9,12 @@ import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { PriceAlertItem } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const alerts = ref<any[]>([])
+const alerts = ref<PriceAlertItem[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const deleting = ref<Set<number>>(new Set())

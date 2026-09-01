@@ -10,6 +10,7 @@ import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatPrice } from '@/utils/format'
 import type { CartItem, Product } from '@/types'
 
@@ -82,9 +83,15 @@ const allSelected = computed({
 const lastRemoved = ref<CartItem | null>(null)
 let undoTimer: ReturnType<typeof setTimeout> | null = null
 
+function syncCartCount() {
+  const count = items.value.reduce((s, i) => s + (i.quantity || 0), 0)
+  try { localStorage.setItem('cart_count', String(count)) } catch {}
+  window.dispatchEvent(new CustomEvent('cart_updated'))
+}
+
 async function load() {
   loading.value = true
-  try { const r = await getCart(); items.value = r.data.items || []; recs.value = r.data.recommended || [] }
+  try { const r = await getCart(); items.value = r.data.items || []; recs.value = r.data.recommended || []; syncCartCount() }
   catch { toast.error(t('toast.cartLoadFail')); loading.value = false; return }
   loading.value = false
 }
@@ -123,8 +130,8 @@ async function remove(id: number) {
 
 async function updateQtyDirect(item: CartItem, e: Event) {
   const v = parseInt((e.target as HTMLInputElement).value, 10)
-  if (isNaN(v) || v < 1) { load(); return }
-  const q = Math.min((item as any).stock || 999, v)
+  if (isNaN(v) || v < 1) { (e.target as HTMLInputElement).value = String(item.quantity); return }
+  const q = Math.min(item.stock || 999, v)
   const delta = q - item.quantity
   if (delta === 0) return
   updateQty(item, delta)
@@ -236,16 +243,7 @@ onBeforeUnmount(() => { if (qtyTimer) clearTimeout(qtyTimer); if (undoTimer) cle
         </div>
       </div>
 
-      <!-- Clear confirm dialog -->
-      <div v-if="showClearConfirm" class="confirm-overlay" @click.self="showClearConfirm = false">
-        <div class="confirm-dialog">
-          <p class="confirm-msg">{{ t('common.confirmDelete') }}</p>
-          <div class="confirm-btns">
-            <JdButton type="outline" size="sm" @click="showClearConfirm = false">{{ t('common.cancel') }}</JdButton>
-            <JdButton size="sm" :loading="clearingCart" @click="confirmClear">{{ t('common.confirm') }}</JdButton>
-          </div>
-        </div>
-      </div>
+      <ConfirmDialog :show="showClearConfirm" :message="t('common.confirmDelete')" :loading="clearingCart" @confirm="confirmClear" @cancel="showClearConfirm = false" />
     </template>
 
     <!-- Empty -->
@@ -332,12 +330,6 @@ input[type="checkbox"] { accent-color: var(--jd-red); }
 /* Clear cart */
 .clear-cart-btn { padding: 4px 12px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-tertiary); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm); margin-left: var(--space-md); transition: all var(--transition-fast); }
 .clear-cart-btn:hover { color: var(--jd-red); border-color: var(--jd-red); }
-
-/* Confirm dialog */
-.confirm-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 400; display: flex; align-items: center; justify-content: center; }
-.confirm-dialog { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); max-width: 360px; width: 90%; text-align: center; box-shadow: var(--shadow-xl); }
-.confirm-msg { font-size: var(--font-md); margin-bottom: var(--space-xl); color: var(--text-primary); }
-.confirm-btns { display: flex; gap: var(--space-md); justify-content: center; }
 
 .cart-footer {
   display: flex; align-items: center; justify-content: space-between;

@@ -308,7 +308,6 @@ onMounted(load)
 }
 .wl-add:hover { background: var(--jd-red); color: #fff; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .wl-grid { grid-template-columns: repeat(2, 1fr); }

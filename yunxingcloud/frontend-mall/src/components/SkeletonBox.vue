@@ -103,8 +103,4 @@ withDefaults(defineProps<{
 .sk-list-line-2 { width: 60%; height: 12px; margin-bottom: 6px; }
 .sk-list-line-3 { width: 30%; height: 16px; }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
 </style>

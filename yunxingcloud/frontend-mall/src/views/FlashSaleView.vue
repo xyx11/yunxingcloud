@@ -3,7 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
-import request from '@/api/request'
+import { getFlashSales, setFlashRemind, buyFlashSale, releaseFlashSale } from '@/api/flashsale'
+import { addToCart } from '@/api/cart'
 import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
@@ -68,7 +69,7 @@ function detectSlot() {
 
 onMounted(async () => {
   detectSlot()
-  try { const r = await request.get('/flash-sale'); sales.value = r.data || []; loadError.value = false
+  try { const r = await getFlashSales(); sales.value = r.data || []; loadError.value = false
     } catch { toast.error(t('toast.flashFail')); loadError.value = true }
   loading.value = false
 })
@@ -82,7 +83,7 @@ const soldPct = (s: FlashSaleItem) => 100 - stockPct(s)
 async function setRemind(s: FlashSaleItem) {
   if (remindSet.value.has(s.id)) return
   try {
-    await request.post('/flash-sale/remind', { saleId: s.id, productId: s.productId })
+    await setFlashRemind(s.id, s.productId)
     remindSet.value.add(s.id)
     toast.success(t('toast.flashRemindSet'))
   } catch { toast.error(t('toast.flashRemindFail')) }
@@ -93,15 +94,15 @@ async function buyNow(s: FlashSaleItem) {
   if (buying.value.has(s.id)) return
   buying.value.add(s.id)
   try {
-    await request.post('/cart', { productId: s.productId, quantity: 1 })
-    await request.post(`/flash-sale/${s.id}/buy`, null, { params: { productId: s.productId } })
+    await addToCart(s.productId, 1)
+    await buyFlashSale(s.id, s.productId)
     toast.success(t('toast.flashSuccess'))
     router.push('/cart')
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message || t('toast.flashBuyFail')
     toast.error(msg)
     // try to release reservation if flash buy failed after cart add
-    try { await request.post(`/flash-sale/${s.id}/release`) } catch {}
+    try { await releaseFlashSale(s.id) } catch {}
   } finally { buying.value.delete(s.id) }
 }
 </script>

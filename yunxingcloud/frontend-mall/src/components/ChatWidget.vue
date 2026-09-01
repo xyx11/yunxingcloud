@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
 
@@ -21,6 +21,20 @@ function fmtTime(ts: number): string { const d = new Date(ts); return d.getHours
 async function checkHealth() {
   try { await request.get('/chat/health'); enabled.value = true } catch {}
 }
+
+function openChat() {
+  if (open.value) return
+  open.value = true
+  unread.value = 0
+  if (messages.value.length === 0) {
+    messages.value.push({ role: 'assistant', content: t('chat.greeting'), time: Date.now() })
+    saveMsgs()
+  }
+  nextTick(() => { const el = document.getElementById('chat-list'); if (el) el.scrollTop = el.scrollHeight })
+}
+
+onMounted(() => window.addEventListener('chat:open', openChat))
+onUnmounted(() => window.removeEventListener('chat:open', openChat))
 
 function toggle() {
   open.value = !open.value

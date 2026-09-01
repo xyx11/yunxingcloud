@@ -50,10 +50,6 @@ function applyPriceFilter(key: string) {
     doSearch()
   }
 }
-function filteredResults() {
-  return results.value
-}
-
 const hotKeywords = ref<string[]>([])
 const hotKeywordsLoading = ref(true)
 
@@ -215,8 +211,8 @@ async function quickAdd(e: Event, p: Product) {
       </div>
 
       <!-- Results -->
-      <div v-else-if="filteredResults().length" class="results-grid">
-        <div v-for="p in filteredResults()" :key="p.id" class="result-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
+      <div v-else-if="results.length" class="results-grid">
+        <div v-for="p in results" :key="p.id" class="result-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
           <div class="result-info">
             <h4 class="result-name" v-html="highlightName(p.name)" />
@@ -351,7 +347,6 @@ async function quickAdd(e: Event, p: Product) {
 .sk-line-w70 { width: 70%; height: 16px; }
 .sk-line-w40 { width: 40%; height: 20px; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .results-grid { grid-template-columns: repeat(2, 1fr); }

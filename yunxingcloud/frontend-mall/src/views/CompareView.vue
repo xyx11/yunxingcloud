@@ -20,18 +20,21 @@ interface SpecRow { label: string; values: string[]; diff: boolean }
 
 const specRows = computed<SpecRow[]>(() => {
   if (items.value.length < 2) return []
-  const rows: { label: string; key: string; format?: (v: any) => string }[] = [
-    { label: t('product.price'), key: 'price', format: (v: number) => formatPrice(v / 100, 2) },
-    { label: t('product.salesCount'), key: 'sales', format: (v: number) => formatCount(v || 0) },
-    { label: t('rating.title'), key: 'rating', format: (v: number) => v ? v + ' ' + t('common.score') : '-' },
-    { label: t('product.reviewCount'), key: 'reviewCount', format: (v: number) => v ? formatCount(v) : '-' },
-    { label: t('product.brand'), key: 'brandName', format: (v: any) => v || '-' },
-    { label: t('product.category'), key: 'categoryName', format: (v: any) => v || '-' },
-    { label: t('product.stock'), key: 'stock', format: (v: number) => v !== undefined ? String(v) : '-' },
-    { label: t('product.originalPrice'), key: 'originalPrice', format: (v: number) => v ? formatPrice(v / 100, 2) : '-' },
+  const rows: { label: string; key: string; format?: (v: unknown) => string }[] = [
+    { label: t('product.price'), key: 'price', format: (v) => formatPrice((v as number) / 100, 2) },
+    { label: t('product.salesCount'), key: 'sales', format: (v) => formatCount((v as number) || 0) },
+    { label: t('rating.title'), key: 'rating', format: (v) => (v as number) ? (v as number) + ' ' + t('common.score') : '-' },
+    { label: t('product.reviewCount'), key: 'reviewCount', format: (v) => (v as number) ? formatCount(v as number) : '-' },
+    { label: t('product.brand'), key: 'brandName', format: (v) => (v as string) || '-' },
+    { label: t('product.category'), key: 'categoryName', format: (v) => (v as string) || '-' },
+    { label: t('product.stock'), key: 'stock', format: (v) => v !== undefined ? String(v) : '-' },
+    { label: t('product.originalPrice'), key: 'originalPrice', format: (v) => (v as number) ? formatPrice((v as number) / 100, 2) : '-' },
   ]
   return rows.map(row => {
-    const values = items.value.map(p => row.format ? row.format((p as any)[row.key]) : ((p as any)[row.key] || '-'))
+    const values = items.value.map(p => {
+      const val = (p as unknown as Record<string, unknown>)[row.key]
+      return row.format ? row.format(val) : (val as string || '-')
+    })
     const diff = values.length >= 2 && !values.every(v => v === values[0])
     return { label: row.label, values, diff }
   })

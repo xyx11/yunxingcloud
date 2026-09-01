@@ -5,12 +5,13 @@ import { getAddresses, createAddress, updateAddress, deleteAddress, setDefaultAd
 import { changePassword } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/locales'
-import type { Address, Coupon, FavoriteItem } from '@/types'
+import type { Address, Coupon, FavoriteItem, OrderHead } from '@/types'
 import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import { provinceList, cityList, districtList } from '@/utils/regionData'
 import LazyImage from '@/components/LazyImage.vue'
 import JdButton from '@/components/JdButton.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -66,10 +67,10 @@ const orderStats = ref({ pending: 0, paid: 0, shipped: 0, done: 0, total: 0 })
 async function loadOrderStats() {
   try { const r = await request.get('/orders'); const orders = r.data || []
     orderStats.value.total = orders.length
-    orderStats.value.pending = orders.filter((o: any) => o.status === '0').length
-    orderStats.value.paid = orders.filter((o: any) => o.status === '1').length
-    orderStats.value.shipped = orders.filter((o: any) => o.status === '2').length
-    orderStats.value.done = orders.filter((o: any) => o.status === '3').length
+    orderStats.value.pending = orders.filter((o: OrderHead) => o.status === '0').length
+    orderStats.value.paid = orders.filter((o: OrderHead) => o.status === '1').length
+    orderStats.value.shipped = orders.filter((o: OrderHead) => o.status === '2').length
+    orderStats.value.done = orders.filter((o: OrderHead) => o.status === '3').length
   } catch {}
 }
 
@@ -331,16 +332,7 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
         <JdButton type="ghost" block @click="showLogout = true">{{ t('profile.logoutTitle') }}</JdButton>
       </div>
 
-      <!-- Logout confirm -->
-      <div v-if="showLogout" class="confirm-overlay" @click.self="showLogout = false">
-        <div class="confirm-dialog">
-          <p class="confirm-msg">{{ t('profile.logoutConfirm') }}</p>
-          <div class="confirm-btns">
-            <JdButton type="outline" size="sm" @click="showLogout = false">{{ t('common.cancel') }}</JdButton>
-            <JdButton size="sm" @click="doLogout()">{{ t('profile.logoutConfirmBtn') }}</JdButton>
-          </div>
-        </div>
-      </div>
+      <ConfirmDialog :show="showLogout" :message="t('profile.logoutConfirm')" :confirm-text="t('profile.logoutConfirmBtn')" @confirm="doLogout()" @cancel="showLogout = false" />
     </div>
   </div>
 </template>
@@ -452,17 +444,12 @@ async function toggleDefault(addr: Address) { await setDefaultAddress(addr.id, !
 .sk-line { height: 16px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); width: 100%; }
 .sk-line.w60 { width: 60%; }
 .sk-line.w40 { width: 40%; }
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 .feedback-form { background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); box-shadow: var(--shadow-sm); }
 .feedback-textarea { width: 100%; height: 80px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-sm); }
 .feedback-success { text-align: center; color: var(--green); font-size: var(--font-md); padding: var(--space-md); }
 
 .logout-section { margin-top: var(--space-xxl); }
-.confirm-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-overlay); z-index: 400; display: flex; align-items: center; justify-content: center; }
-.confirm-dialog { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); max-width: 320px; width: 90%; text-align: center; box-shadow: var(--shadow-xl); }
-.confirm-msg { font-size: var(--font-md); margin-bottom: var(--space-xl); color: var(--text-primary); }
-.confirm-btns { display: flex; gap: var(--space-md); justify-content: center; }
 .tier-progress { margin-top: var(--space-xs); }
 .tier-progress-bar { height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; margin-bottom: 2px; max-width: 200px; }
 .tier-progress-fill { height: 100%; background: linear-gradient(90deg, var(--jd-red), #ff6b6b); border-radius: 2px; transition: width .6s; }

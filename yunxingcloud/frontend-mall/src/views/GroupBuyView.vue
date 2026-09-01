@@ -4,6 +4,7 @@ import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
 const { t } = useI18n()
 const toast = useToast()
+import { getGroupBuys, getMyGroupBuys } from '@/api/groupbuy'
 import request from '@/api/request'
 import { formatPrice } from '@/utils/format'
 import CountdownTimer from '@/components/CountdownTimer.vue'
@@ -25,23 +26,24 @@ interface GroupBuyItem {
   currentMembers?: number
   endTime: string
   stock?: number
+  status?: string
 }
 
 const groups = ref<GroupBuyItem[]>([])
-const myGroups = ref<any[]>([])
+const myGroups = ref<GroupBuyItem[]>([])
 const loading = ref(true)
 const activeTab = ref<'all' | 'my'>('all')
 const selectedGroup = ref<GroupBuyItem | null>(null)
 const showModal = ref(false)
 
 async function loadMyGroups() {
-  try { const r = await request.get('/group-buy/my'); myGroups.value = r.data || []
+  try { const r = await getMyGroupBuys(); myGroups.value = r.data || []
     } catch { /* loadMyGroups is supplementary; main groups already loaded */ }
     finally { loading.value = false }
 }
 
 onMounted(async () => {
-  try { const r = await request.get('/group-buy'); groups.value = r.data || []
+  try { const r = await getGroupBuys(); groups.value = r.data || []
     } catch { toast.error(t('groupBuy.loadFail')) }
   finally { loading.value = false }
   loadMyGroups()
@@ -122,7 +124,7 @@ async function copyShareLink() {
 <template>
   <div class="gb-page">
     <div class="gb-hero">
-      <h1 class="gb-hero-title">👥 拼团专区</h1>
+      <h1 class="gb-hero-title">👥 {{ t('groupBuy.title') }}</h1>
       <p class="gb-hero-sub">{{ t('groupBuy.subtitle') }}</p>
     </div>
 
@@ -191,7 +193,7 @@ async function copyShareLink() {
     <div v-if="showShare" class="share-overlay" @click.self="showShare = false">
       <div class="share-modal">
         <h3 class="share-title">分享拼团 - {{ shareGroupName }}</h3>
-        <img :src="sharePoster" class="share-poster" />
+        <img :src="sharePoster" :alt="t('groupBuy.posterTitle')" class="share-poster" />
         <div class="share-btns">
           <JdButton @click="downloadPoster">下载海报</JdButton>
           <JdButton type="outline" @click="copyShareLink">复制链接</JdButton>
@@ -242,7 +244,6 @@ async function copyShareLink() {
 .sk-body { padding: var(--space-lg); }
 .sk-line { height: 16px; width: 60%; background: var(--border-light); border-radius: var(--radius-sm); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 .gb-actions { display: flex; gap: var(--space-sm); }
 .flex-1 { flex: 1; }

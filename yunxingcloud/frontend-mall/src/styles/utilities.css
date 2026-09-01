@@ -121,3 +121,14 @@
   width: 40px; background: linear-gradient(to right, transparent, var(--bg-page, #f5f5f5));
   pointer-events: none;
 }
+
+/* ===== Touch Feedback ===== */
+@media (hover: none) {
+  [role="button"], button, .clickable {
+    -webkit-tap-highlight-color: transparent;
+  }
+  [role="button"]:active, .clickable:active {
+    transform: scale(.97);
+    transition: transform .1s ease;
+  }
+}

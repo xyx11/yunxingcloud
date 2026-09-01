@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import request from '@/api/request'
+import { getAvailableCoupons, getMyCoupons, claimCoupon } from '@/api/coupon'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { Coupon } from '@/types'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
 
 const toast = useToast()
 const { t } = useI18n()
-const availableCoupons = ref<any[]>([])
-const myCoupons = ref<any[]>([])
+const availableCoupons = ref<Coupon[]>([])
+const myCoupons = ref<Coupon[]>([])
 const activeTab = ref<'available' | 'mine'>('available')
 const loading = ref(true)
 const loadError = ref(false)
@@ -28,7 +29,7 @@ function expiryLabel(endTime: string): string {
   if (d <= 3) return t('coupon.expiringSoon')
   return ''
 }
-function couponStatus(c: any): string {
+function couponStatus(c: Coupon): string {
   if (c.status === '1') return t('coupon.statusUsed')
   if (daysLeft(c.endTime) <= 0) return t('coupon.statusExpired')
   return t('coupon.statusUnused')
@@ -48,9 +49,9 @@ const filteredMyCoupons = computed(() =>
 async function load() {
   loadError.value = false
   loading.value = true
-  try { const r = await request.get('/coupons/available'); availableCoupons.value = r.data || []
+  try { const r = await getAvailableCoupons(); availableCoupons.value = r.data || []
     } catch { toast.error(t('coupon.loadFail')); loadError.value = true }
-  try { const r = await request.get('/coupons/my'); myCoupons.value = r.data || []
+  try { const r = await getMyCoupons(); myCoupons.value = r.data || []
     } catch { toast.error(t('coupon.myLoadFail')) }
   loading.value = false
 }
@@ -58,7 +59,7 @@ async function load() {
 async function claim(couponId: number) {
   claiming.value.add(couponId)
   try {
-    await request.post(`/coupons/${couponId}/claim`)
+    await claimCoupon(couponId)
     claimed.value.add(couponId)
     toast.success(t('toast.couponClaimed'))
     setTimeout(() => load(), 600)
@@ -70,7 +71,7 @@ async function claimAll() {
   claimingAll.value = true
   let success = 0
   for (const c of availableCoupons.value) {
-    try { await request.post(`/coupons/${c.id}/claim`); success++ } catch {}
+    try { await claimCoupon(c.id); success++ } catch {}
   }
   if (success > 0) { toast.success(t('coupon.claimSuccess', { n: String(success) })); load() }
   else { toast.error(t('coupon.claimAllFail')) }
@@ -107,7 +108,7 @@ onMounted(load)
       <div class="cp-grid">
       <div v-for="c in availableCoupons" :key="c.id" class="coupon-card">
         <div class="coupon-left">
-          <span class="coupon-amount">¥{{ (c.amount / 100).toFixed(0) }}</span>
+          <span class="coupon-amount">¥{{ ((c.amount || 0) / 100).toFixed(0) }}</span>
           <span class="coupon-type">{{ c.type === 'full_reduction' ? t('coupon.fullReduction') : (c.discount || '') + t('common.discount') }}</span>
         </div>
         <div class="coupon-right">
@@ -134,13 +135,13 @@ onMounted(load)
       <div class="cp-grid">
       <div v-for="c in filteredMyCoupons" :key="c.id" class="coupon-card" :class="{ used: c.status !== '0' || daysLeft(c.endTime) <= 0 }">
         <div class="coupon-left" :class="{ used: c.status !== '0' || daysLeft(c.endTime) <= 0 }">
-          <span class="coupon-amount">¥{{ (c.amount / 100).toFixed(0) }}</span>
+          <span class="coupon-amount">¥{{ ((c.amount || 0) / 100).toFixed(0) }}</span>
           <span v-if="expiryLabel(c.endTime)" class="coupon-expiry-warn">{{ expiryLabel(c.endTime) }}</span>
           <span class="coupon-status">{{ couponStatus(c) }}</span>
         </div>
         <div class="coupon-right">
           <div class="coupon-name">{{ c.name || t('coupon.name') }}</div>
-          <div class="coupon-meta">{{ t('coupon.validUntil') }} {{ c.endTime?.substring(0, 10) || '-' }}</div>
+          <div class="coupon-meta">{{ t('coupon.validUntil') }} {{ String(c.endTime || '').substring(0, 10) || '-' }}</div>
           <div v-if="c.status === '0' && daysLeft(c.endTime) <= 3 && daysLeft(c.endTime) > 0" class="coupon-countdown">
             ⏱ {{ daysLeft(c.endTime) < 1 ? t('coupon.expiringToday') : t('coupon.expiringIn', { n: String(Math.ceil(daysLeft(c.endTime))) }) }}
           </div>
@@ -192,7 +193,6 @@ onMounted(load)
 .empty-full { grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-tertiary); background: var(--bg-white); border-radius: var(--radius-lg); }
 .empty-icon { font-size: 48px; margin-bottom: var(--space-md); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) { .cp-grid { grid-template-columns: 1fr; } .cp-page { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
 .error-state { text-align: center; padding: 60px var(--space-md); }

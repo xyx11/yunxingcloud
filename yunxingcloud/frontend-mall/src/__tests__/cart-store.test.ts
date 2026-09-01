@@ -83,7 +83,7 @@ describe('useCartStore', () => {
     mockDelete.mockResolvedValue({})
     const store = useCartStore()
     store.state.count = 10
-    store.state.items = [{ id: 1 }]
+    store.state.items = [{ id: 1, productId: 1, productName: 'test', price: 100, quantity: 1, selected: false, stock: 10 }]
     await store.clearCart()
     expect(store.state.count).toBe(0)
     expect(store.state.items).toHaveLength(0)

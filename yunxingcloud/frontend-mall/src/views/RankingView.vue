@@ -142,7 +142,6 @@ async function quickAdd(e: Event, p: Product) { e.stopPropagation(); try { await
 }
 .rank-add:hover { background: var(--jd-red); color: #fff; }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .rank-item { padding: 12px; gap: 10px; }

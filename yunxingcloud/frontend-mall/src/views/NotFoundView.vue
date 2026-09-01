@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/locales'
+import type { Product } from '@/types'
 import JdButton from '@/components/JdButton.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import request from '@/api/request'
@@ -10,7 +11,7 @@ import { formatPrice } from '@/utils/format'
 const router = useRouter()
 const { t } = useI18n()
 const searchText = ref('')
-const recProducts = ref<any[]>([])
+const recProducts = ref<Product[]>([])
 
 function doSearch() {
   if (searchText.value.trim()) {

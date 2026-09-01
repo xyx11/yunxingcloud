@@ -9,19 +9,20 @@ import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { Bundle } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const bundles = ref<any[]>([])
+const bundles = ref<Bundle[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const sortBy = ref<'default' | 'priceAsc' | 'priceDesc' | 'savings'>('default')
 
 const sortedBundles = computed(() => {
   const list = [...bundles.value]
-  const p = (b: any) => b.bundlePrice || b.price || 0
-  const save = (b: any) => (b.originalPrice || 0) - p(b)
+  const p = (b: Bundle) => b.bundlePrice || b.price || 0
+  const save = (b: Bundle) => (b.originalPrice || 0) - p(b)
   switch (sortBy.value) {
     case 'priceAsc': return list.sort((a, b) => p(a) - p(b))
     case 'priceDesc': return list.sort((a, b) => p(b) - p(a))

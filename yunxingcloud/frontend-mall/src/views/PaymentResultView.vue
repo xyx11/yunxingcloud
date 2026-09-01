@@ -68,7 +68,7 @@ onMounted(async () => {
 })
 
 function shareOrder() {
-  const text = `我在 YXCLOUD 商城下单成功！订单号 ${orderNo.value}，金额 ¥${orderInfo.value ? formatPrice(orderInfo.value.totalAmount / 100, 2) : '--'}`
+  const text = `${t('paymentResult.shareText') || 'I ordered on YXCLOUD'}! #${orderNo.value} ¥${orderInfo.value ? formatPrice(orderInfo.value.totalAmount / 100, 2) : '--'}`
   if (navigator.share) { navigator.share({ title: 'YXCLOUD', text }).catch(() => {}) }
   else { navigator.clipboard.writeText(text).catch(() => {}) }
 }
@@ -113,13 +113,13 @@ function shareOrder() {
           <JdButton block @click="router.push('/')">
             {{ t('paymentResult.continueShopping') }}
           </JdButton>
-          <JdButton type="ghost" block @click="shareOrder">📤 分享战绩</JdButton>
+          <JdButton type="ghost" block @click="shareOrder">📤 {{ t('paymentResult.shareResult') || t('product.share') }}</JdButton>
         </div>
         <p class="auto-redirect">{{ t('paymentResult.autoRedirect', { n: countdown }) }}</p>
 
         <!-- Recommendations -->
         <div v-if="recommendations.length" class="recs-section">
-          <h4 class="recs-title">🔥 猜你喜欢</h4>
+          <h4 class="recs-title">🔥 {{ t('product.recommended') }}</h4>
           <div class="recs-grid">
             <div v-for="p in recommendations" :key="p.id" class="recs-item" @click="router.push('/product/' + p.id)">
               <LazyImage :src="p.imageUrl || ''" :alt="p.name" height="100px" />

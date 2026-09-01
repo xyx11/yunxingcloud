@@ -11,6 +11,7 @@ import { formatPrice } from '@/utils/format'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import JdModal from '@/components/JdModal.vue'
 import type { OrderHead, OrderItem } from '@/types'
 
 const route = useRoute()
@@ -19,7 +20,7 @@ const { t } = useI18n()
 const toast = useToast()
 const order = ref<OrderHead | null>(null)
 const lines = ref<OrderItem[]>([])
-const shipment = ref<{carrier:string,trackingNo:string} | null>(null)
+const shipment = ref<{carrier:string,trackingNo:string,estimatedDelivery?:string} | null>(null)
 const reviewForm = ref({ productId: 0, rating: 5, content: '' })
 const showReview = ref(false)
 const loading = ref(true)
@@ -132,7 +133,7 @@ function copyOrderNo() {
         <span>{{ t('orderDetail.carrier') }}：{{ shipment.carrier || '-' }}</span>
         <span>{{ t('orderDetail.trackingNo') }}：{{ shipment.trackingNo || '-' }}</span>
         <JdButton v-if="shipment.trackingNo" type="outline" size="sm" @click="router.push('/logistics?orderId=' + order.id)">📦 {{ t('orderDetail.viewLogistics') }}</JdButton>
-        <span v-if="order.status==='2'" class="eta">{{ t('orderDetail.deliveryEstimate', { date: (shipment as any)?.estimatedDelivery ? new Date((shipment as any).estimatedDelivery).toLocaleDateString() : new Date(Date.now()+3*86400000).toLocaleDateString() }) }}</span>
+        <span v-if="order.status==='2'" class="eta">{{ t('orderDetail.deliveryEstimate', { date: shipment?.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : new Date(Date.now()+3*86400000).toLocaleDateString() }) }}</span>
       </div>
     </div>
 
@@ -189,22 +190,19 @@ function copyOrderNo() {
     </div>
 
     <!-- Review Modal -->
-    <div v-if="showReview" class="modal-overlay" @click.self="showReview=false">
-      <div class="review-modal">
-        <h3 class="review-title">{{ t('rating.title') }}</h3>
-        <div class="rating-stars">
-          <span class="rating-label">评分</span>
-          <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= reviewForm.rating }" @click="reviewForm.rating = i">
-            {{ i <= reviewForm.rating ? '★' : '☆' }}
-          </span>
-        </div>
-        <textarea v-model="reviewForm.content" :placeholder="t('rating.placeholder')" class="review-textarea" />
-        <div class="review-actions">
-          <JdButton type="ghost" @click="showReview = false">{{ t('common.cancel') }}</JdButton>
-          <JdButton @click="submitReview">{{ t('rating.submitReview') }}</JdButton>
-        </div>
+    <JdModal v-model:visible="showReview" :title="t('rating.title')" width="400px">
+      <div class="rating-stars">
+        <span class="rating-label">{{ t('rating.title') }}</span>
+        <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= reviewForm.rating }" @click="reviewForm.rating = i">
+          {{ i <= reviewForm.rating ? '★' : '☆' }}
+        </span>
       </div>
-    </div>
+      <textarea v-model="reviewForm.content" :placeholder="t('rating.placeholder')" class="review-textarea" />
+      <template #footer>
+        <JdButton type="ghost" @click="showReview = false">{{ t('common.cancel') }}</JdButton>
+        <JdButton @click="submitReview">{{ t('rating.submitReview') }}</JdButton>
+      </template>
+    </JdModal>
     <ConfirmDialog :show="confirmShow" title="确认取消" :message="t('order.cancelOrder') + '?'" @confirm="doCancel" @cancel="confirmShow = false" />
   </div>
 </template>
@@ -267,17 +265,13 @@ function copyOrderNo() {
 /* Actions */
 .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); }
 
-/* Review Modal */
-.review-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); width: 400px; max-width: 90vw; }
-.review-title { font-size: var(--font-lg); font-weight: 600; margin-bottom: var(--space-lg); }
+/* Review Modal (hosted inside JdModal) */
 .rating-stars { margin-bottom: var(--space-md); display: flex; align-items: center; }
 .rating-label { font-size: var(--font-base); color: var(--text-secondary); margin-right: var(--space-md); }
 .star { cursor: pointer; font-size: var(--font-xxl); color: var(--border); }
 .star.filled { color: var(--orange); }
 .review-textarea { width: 100%; height: 100px; padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: var(--font-base); resize: none; box-sizing: border-box; margin-bottom: var(--space-lg); background: var(--bg-white); color: var(--text-primary); }
-.review-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .order-page { padding: 0 var(--space-md); }
@@ -294,6 +288,5 @@ function copyOrderNo() {
   .action-row { flex-direction: column; }
   .action-row > * { width: 100%; }
   .total-price { font-size: var(--font-xl); }
-  .review-modal { width: 100%; padding: var(--space-lg); }
 }
 </style>

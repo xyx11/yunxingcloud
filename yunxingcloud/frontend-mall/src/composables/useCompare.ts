@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { getCompareList, addCompare, removeCompare, clearCompare } from '@/api/compare'
+import { useAuthStore } from '@/stores/auth'
 
 const MAX_COMPARE = 3
 const STORAGE_KEY = 'mall_compare_list'
@@ -16,7 +17,7 @@ function loadLocal(): CompareItem[] {
 
 function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(items.value)) }
 
-function isAuthenticated() { return !!localStorage.getItem('accessToken') }
+function isAuthenticated() { return useAuthStore().isLoggedIn }
 
 async function syncFromServer() {
   if (!isAuthenticated()) return

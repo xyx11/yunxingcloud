@@ -57,4 +57,21 @@
     var nav = performance.getEntriesByType('navigation')[0]
     if (nav) send({ name: 'TTFB', value: Math.round(nav.responseStart) })
   } catch (_) {}
+
+  // INP (Interaction to Next Paint)
+  try {
+    var maxINP = 0
+    new PerformanceObserver(function (list) {
+      for (var i = 0; i < list.getEntries().length; i++) {
+        var entry = list.getEntries()[i]
+        var duration = entry.duration
+        if (duration > maxINP) maxINP = duration
+      }
+    }).observe({ type: 'event', buffered: true, durationThreshold: 16 })
+    window.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && maxINP > 0) {
+        send({ name: 'INP', value: Math.round(maxINP), rating: maxINP <= 200 ? 'good' : maxINP <= 500 ? 'needs-improvement' : 'poor' })
+      }
+    })
+  } catch (_) {}
 })()

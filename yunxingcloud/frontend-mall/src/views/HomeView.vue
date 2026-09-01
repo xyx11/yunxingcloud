@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHomeData, getRecommend } from '@/api/product'
+import { useAuthStore } from '@/stores/auth'
 import request from '@/api/request'
 import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
@@ -9,8 +10,8 @@ import { usePullRefresh } from '@/composables/usePullRefresh'
 import { useRecentlyViewed } from '@/composables/useRecentlyViewed'
 import { useAbTest } from '@/composables/useAbTest'
 import { getExperimentById } from '@/config/abTests'
-import { formatPrice } from '@/utils/format'
-import type { Product, Banner, Category } from '@/types'
+import { formatPrice, getProductImage } from '@/utils/format'
+import type { Product, Banner, Category, Brand, Campaign, FlashSaleItem } from '@/types'
 import CountdownTimer from '@/components/CountdownTimer.vue'
 import LazyImage from '@/components/LazyImage.vue'
 import SkeletonBox from '@/components/SkeletonBox.vue'
@@ -21,6 +22,7 @@ import CategoryNav from '@/components/CategoryNav.vue'
 import ProductSection from '@/components/ProductSection.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
 const { t } = useI18n()
 const toast = useToast()
 const { items: recentItems } = useRecentlyViewed()
@@ -38,10 +40,10 @@ const recommended = ref<Product[]>([])
 const activeTab = ref<'hot' | 'new'>('hot')
 const loading = ref(true)
 const loadError = ref(false)
-const campaign = ref<any>(null)
+const campaign = ref<Campaign | null>(null)
 
 // Featured brands
-const featuredBrands = ref<any[]>([])
+const featuredBrands = ref<Brand[]>([])
 async function loadBrands() {
   try { const r = await request.get('/brands'); featuredBrands.value = (r.data || []).slice(0, 6) } catch { console.warn('[Home] Load brands failed') }
 }
@@ -50,7 +52,7 @@ async function loadBrands() {
 const checkedInToday = ref(false)
 const checkingIn = ref(false)
 async function loadCheckinStatus() {
-  try { const token = localStorage.getItem('accessToken'); if (!token) return; const r = await request.get('/points/checkin/status'); checkedInToday.value = r.data?.checked || false } catch { console.warn("[Home] Load checkin status failed") }
+  try { if (!auth.isLoggedIn) return; const r = await request.get('/points/checkin/status'); checkedInToday.value = r.data?.checked || false } catch { console.warn("[Home] Load checkin status failed") }
 }
 async function doCheckin() {
   if (checkingIn.value || checkedInToday.value) return
@@ -60,7 +62,7 @@ async function doCheckin() {
 }
 
 async function loadCampaign() {
-  try { const r = await request.get('/campaigns'); const list = r.data || []; campaign.value = list.length > 0 ? list[0] : null } catch {}
+  try { const r = await request.get('/campaigns'); const list = r.data || []; campaign.value = list.length > 0 ? list[0] : null } catch { console.warn('[Home] loadCampaign failed') }
 }
 
 // Hot search tags
@@ -70,20 +72,17 @@ async function loadHotKeywords() {
 }
 function searchTag(kw: string) { router.push('/search?q=' + encodeURIComponent(kw)) }
 
-const flashSales = ref<any[]>([])
+const flashSales = ref<FlashSaleItem[]>([])
 const flashEnd = computed(() => {
-  if (flashSales.value.length) {
-    const active = flashSales.value.find((s: any) => new Date(s.endTime).getTime() > Date.now())
-    return active ? new Date(active.endTime).getTime() : Date.now() + 6 * 3600 * 1000
-  }
-  return Date.now() + 6 * 3600 * 1000
+  const active = flashSales.value.find((s) => new Date(s.endTime).getTime() > Date.now())
+  return active ? new Date(active.endTime).getTime() : 0
 })
-const hasActiveFlash = computed(() => flashSales.value.some((s: any) => {
+const hasActiveFlash = computed(() => flashSales.value.some((s) => {
   return new Date(s.startTime).getTime() <= Date.now() && new Date(s.endTime).getTime() > Date.now()
 }))
 const flashPriceMap = computed(() => {
   const map: Record<number, number> = {}
-  flashSales.value.forEach((s: any) => { if (s.productId) map[s.productId] = s.flashPrice })
+  flashSales.value.forEach((s) => { if (s.productId) map[s.productId] = s.flashPrice })
   return map
 })
 const flashProducts = computed(() => {
@@ -100,10 +99,14 @@ async function loadData() {
     newProducts.value = d.newProducts || []
     categories.value = d.categories || []
     recommended.value = d.recommended || []
-    try { const r = await getRecommend(); const recs = r.data; if (recs && recs.length) recommended.value = recs } catch {}
-    try { const r = await request.get('/flash-sale'); flashSales.value = r.data || [] } catch { /* 秒杀非核心，静默降级 */ }
-    try { const token = localStorage.getItem('accessToken'); if (token) { const pr = await request.get('/personalized/home'); const precs = pr.data?.guessYouLike; if (precs && precs.length) recommended.value = precs } } catch { /* 个性化推荐非核心 */ }
-  } catch { loadError.value = true; toast.error(t('toast.homeLoadFail') || '首页加载失败') }
+    // 并行加载推荐和秒杀
+    await Promise.allSettled([
+      getRecommend().then(r => { const recs = r.data; if (recs && recs.length) recommended.value = recs }).catch(() => {}),
+      request.get('/flash-sale').then(r => { flashSales.value = r.data || [] }).catch(() => {}),
+    ])
+    // 个性化推荐覆盖（需优先于通用推荐）
+    try { if (auth.isLoggedIn) { const pr = await request.get('/personalized/home'); const precs = pr.data?.guessYouLike; if (precs && precs.length) recommended.value = precs } } catch { /* 个性化推荐非核心 */ }
+  } catch (e) { console.warn('[Home] loadData failed:', e); loadError.value = true; toast.error(t('toast.homeLoadFail') || '首页加载失败') }
   loading.value = false
 }
 
@@ -120,9 +123,6 @@ onMounted(() => {
 
 function goDetail(id: number) { router.push(`/product/${id}`) }
 function goProducts(query: Record<string, string>) { router.push({ path: '/products', query }) }
-function productImage(p: Product): string {
-  return p.imageUrl || (p.images?.length ? p.images[0] : '')
-}
 </script>
 
 <template>
@@ -192,13 +192,13 @@ function productImage(p: Product): string {
         </div>
         <div class="flash-grid">
           <div v-for="p in flashProducts" :key="'fs-' + p.id" class="flash-item" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
-            <LazyImage :src="productImage(p)" :alt="p.name" height="140px" />
-            <span class="discount-badge">{{ Math.round(flashPriceMap[p.id] / p.price * 100) }}%OFF</span>
+            <LazyImage :src="getProductImage(p)" :alt="p.name" height="140px" />
+            <span class="discount-badge">{{ Math.round(Math.min(flashPriceMap[p.id], p.price) / p.price * 100) }}%OFF</span>
             <div class="flash-item-body">
               <h5 class="item-name">{{ p.name }}</h5>
               <div class="flex-center gap-sm">
                 <span class="flash-price">{{ formatPrice(flashPriceMap[p.id] / 100, 2) }}</span>
-                <span class="original-price">¥{{ (p.price / 100).toFixed(2) }}</span>
+                <span class="original-price">{{ formatPrice(p.price / 100, 2) }}</span>
               </div>
             </div>
           </div>
@@ -220,12 +220,12 @@ function productImage(p: Product): string {
       <!-- Recently Viewed -->
       <section v-if="recentItems.length" class="section">
         <div class="section-header">
-          <span class="section-title">🕐 最近浏览</span>
-          <span class="section-more" @click="router.push('/recent')">查看全部 &gt;</span>
+          <span class="section-title">🕐 {{ t('recent.title') }}</span>
+          <span class="section-more" @click="router.push('/recent')">{{ t('product.viewAll') }}</span>
         </div>
         <div class="product-grid recent-grid">
           <div v-for="p in recentItems.slice(0, 4)" :key="'rv-' + p.id" class="product-card-recent" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
-            <LazyImage :src="productImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
+            <LazyImage :src="getProductImage(p)" :alt="p.name" height="160px" bg="linear-gradient(135deg,#f0f0ff,#e8e8ff)" />
             <div class="product-info">
               <h4 class="product-name">{{ p.name }}</h4>
               <span class="product-price">{{ formatPrice(p.price / 100, 2) }}</span>

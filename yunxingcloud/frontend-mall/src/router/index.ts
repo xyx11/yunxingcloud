@@ -2,9 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 高频路由 — 直接打包进主JS (避免首次访问空白)
 import HomeView from '@/views/HomeView.vue'
-import CartView from '@/views/CartView.vue'
 import ProductListView from '@/views/ProductListView.vue'
 
+const CartView = () => import('@/views/CartView.vue')
 const CheckoutView = () => import('@/views/CheckoutView.vue')
 const ProductView = () => import('@/views/ProductView.vue')
 const SearchView = () => import('@/views/SearchView.vue')
@@ -164,10 +164,18 @@ function finishProgress() {
   setTimeout(() => { if (bar) bar.style.width = '0%' }, 300)
 }
 
+const scrollPositions = new Map<string, number>()
+
 const router = createRouter({
   history: createWebHistory('/'),
-  scrollBehavior(_to, _from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition
+    // Restore scroll for KeepAlive routes when navigating back
+    if (from.meta.keepAlive) {
+      scrollPositions.set(from.fullPath, window.scrollY)
+    }
+    const saved = to.meta.keepAlive ? scrollPositions.get(to.fullPath) : undefined
+    if (saved) return { top: saved, behavior: 'instant' as const }
     return { top: 0, behavior: 'smooth' }
   },
   routes: [
@@ -175,41 +183,41 @@ const router = createRouter({
     { path: '/products', component: ProductListView, meta: { keepAlive: true, transition: 'fade' } },
     { path: '/product/:id', component: ProductView, meta: { transition: 'slide' } },
     { path: '/search', component: SearchView },
-    { path: '/cart', component: CartView },
-    { path: '/checkout', component: CheckoutView },
-    { path: '/orders', component: OrdersView, meta: { keepAlive: true } },
-    { path: '/order/:id', component: OrderDetailView, meta: { transition: 'slide' } },
+    { path: '/cart', component: CartView, meta: { requiresAuth: true } },
+    { path: '/checkout', component: CheckoutView, meta: { requiresAuth: true } },
+    { path: '/orders', component: OrdersView, meta: { keepAlive: true, requiresAuth: true } },
+    { path: '/order/:id', component: OrderDetailView, meta: { transition: 'slide', requiresAuth: true } },
     { path: '/login', component: LoginView },
     { path: '/register', component: RegisterView },
-    { path: '/profile', component: ProfileView, meta: { keepAlive: true } },
-    { path: '/pay/:id', component: PayView },
-    { path: '/order/:id/result', component: PaymentResultView },
-    { path: '/points', component: PointsView },
-    { path: '/gift-card', component: MallGiftCardView },
-    { path: '/logistics', component: LogisticsView },
-    { path: '/wishlist', component: WishlistView, meta: { keepAlive: true } },
-    { path: '/coupons', component: CouponCenterView, meta: { keepAlive: true } },
-    { path: '/after-sale', component: AfterSaleView },
+    { path: '/profile', component: ProfileView, meta: { keepAlive: true, requiresAuth: true } },
+    { path: '/pay/:id', component: PayView, meta: { requiresAuth: true } },
+    { path: '/order/:id/result', component: PaymentResultView, meta: { requiresAuth: true } },
+    { path: '/points', component: PointsView, meta: { requiresAuth: true } },
+    { path: '/gift-card', component: MallGiftCardView, meta: { requiresAuth: true } },
+    { path: '/logistics', component: LogisticsView, meta: { requiresAuth: true } },
+    { path: '/wishlist', component: WishlistView, meta: { keepAlive: true, requiresAuth: true } },
+    { path: '/coupons', component: CouponCenterView, meta: { keepAlive: true, requiresAuth: true } },
+    { path: '/after-sale', component: AfterSaleView, meta: { requiresAuth: true } },
     { path: '/group-buy', component: GroupBuyView },
     { path: '/flash-sale', component: FlashSaleView },
-    { path: '/invoices', component: InvoiceView },
+    { path: '/invoices', component: InvoiceView, meta: { requiresAuth: true } },
     { path: '/recent', component: RecentView, meta: { keepAlive: true } },
     { path: '/ranking', component: RankingView },
-    { path: '/notifications', component: NotificationsView },
+    { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
     { path: '/oauth2/callback', component: OAuthCallbackView },
     { path: '/live', component: LiveView },
     { path: '/live/:id', component: LiveDetailView, meta: { transition: 'slide' } },
     { path: '/brands', component: BrandsView, meta: { keepAlive: true } },
     { path: '/brand/:id', component: BrandDetailView, meta: { transition: 'slide' } },
-    { path: '/merchant/apply', component: MerchantApplyView },
+    { path: '/merchant/apply', component: MerchantApplyView, meta: { requiresAuth: true } },
     { path: '/bundles', component: BundleListView },
     { path: '/bundle/:id', component: BundleDetailView, meta: { transition: 'slide' } },
     { path: '/presale', component: PresaleView },
     { path: '/presale/:id', component: PresaleDetailView, meta: { transition: 'slide' } },
-    { path: '/price-alerts', component: PriceAlertView },
+    { path: '/price-alerts', component: PriceAlertView, meta: { requiresAuth: true } },
     { path: '/help', component: HelpView },
     { path: '/compare', component: CompareView },
-    { path: '/my-reviews', component: MyReviewsView, meta: { transition: 'fade' } },
+    { path: '/my-reviews', component: MyReviewsView, meta: { transition: 'fade', requiresAuth: true } },
     { path: '/:pathMatch(.*)*', component: NotFoundView },
   ],
 })
@@ -222,9 +230,7 @@ router.beforeEach((to, _from) => {
   startProgress()
 
   // Auth guard
-  const protectedPaths = ['/orders', '/profile', '/checkout', '/cart', '/wishlist', '/coupons', '/after-sale', '/invoices', '/points', '/gift-card', '/merchant/apply', '/price-alerts', '/notifications', '/logistics', '/my-reviews']
-  const needsAuth = protectedPaths.some(p => to.path === p || to.path.startsWith(p + '/')) || to.path.startsWith('/order/') || to.path.startsWith('/pay/')
-  if (needsAuth && !localStorage.getItem('accessToken')) {
+  if (to.meta.requiresAuth && !localStorage.getItem('accessToken')) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 })

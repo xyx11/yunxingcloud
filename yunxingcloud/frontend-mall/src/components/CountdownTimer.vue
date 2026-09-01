@@ -12,9 +12,30 @@ const props = withDefaults(defineProps<{
 
 const now = ref(Date.now())
 let timer: number | null = null
+let wasHidden = false
 
-onMounted(() => { timer = window.setInterval(() => now.value = Date.now(), 1000) })
-onUnmounted(() => { if (timer) clearInterval(timer) })
+function startTimer() { timer = window.setInterval(() => now.value = Date.now(), 1000) }
+function stopTimer() { if (timer) { clearInterval(timer); timer = null } }
+
+function onVisibilityChange() {
+  if (document.hidden) {
+    wasHidden = true
+    stopTimer()
+  } else if (wasHidden) {
+    wasHidden = false
+    now.value = Date.now()
+    startTimer()
+  }
+}
+
+onMounted(() => {
+  startTimer()
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+onUnmounted(() => {
+  stopTimer()
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 function parseEndTime(val: string | number): number {
   if (typeof val === 'number') return val

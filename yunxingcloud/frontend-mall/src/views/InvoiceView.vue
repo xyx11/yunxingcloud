@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import request from '@/api/request'
+import { getInvoices, applyInvoice } from '@/api/invoice'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 import JdButton from '@/components/JdButton.vue'
 import JdBadge from '@/components/JdBadge.vue'
 import JdEmpty from '@/components/JdEmpty.vue'
+import JdModal from '@/components/JdModal.vue'
+
+interface InvoiceData { id: number; orderNo: string; type: 'personal' | 'company'; title: string; taxNo?: string; email?: string; invoiceNo?: string; status: string; createdAt: string }
 
 const toast = useToast()
 const { t } = useI18n()
-const invoices = ref<any[]>([])
+const invoices = ref<InvoiceData[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const showForm = ref(false)
@@ -17,7 +20,7 @@ const submitting = ref(false)
 const form = ref({ orderNo: '', type: 'personal', title: '', taxNo: '', email: '' })
 const typeFilter = ref<'all' | 'personal' | 'company'>('all')
 const statusFilter = ref<'all' | '0' | '1' | '2'>('all')
-const detailInv = ref<any>(null)
+const detailInv = ref<InvoiceData | null>(null)
 
 const filteredInvoices = computed(() => {
   let list = invoices.value
@@ -27,7 +30,7 @@ const filteredInvoices = computed(() => {
 })
 
 onMounted(async () => {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || []
+  try { const r = await getInvoices(); invoices.value = r.data || []
     } catch { toast.error(t('invoice.loadFail')); loadError.value = true }
   loading.value = false
 })
@@ -36,12 +39,12 @@ async function submit() {
   if (!form.value.orderNo) { toast.error(t('invoice.fillOrderNo')); return }
   if (form.value.type === 'company' && !form.value.title) { toast.error(t('invoice.fillTitle')); return }
   submitting.value = true
-  try { await request.post('/invoices', form.value); toast.success(t('invoice.submitSuccess')); showForm.value = false; load() } catch { toast.error(t('invoice.submitFail')) }
+  try { await applyInvoice(form.value); toast.success(t('invoice.submitSuccess')); showForm.value = false; load() } catch { toast.error(t('invoice.submitFail')) }
   finally { submitting.value = false }
 }
 
 async function load() {
-  try { const r = await request.get('/invoices'); invoices.value = r.data || []; loading.value = false; 
+  try { const r = await getInvoices(); invoices.value = r.data || []; loading.value = false;
     } catch { toast.error(t('invoice.loadFail')) }
 }
 
@@ -49,7 +52,7 @@ function copyInvNo(no: string) {
   navigator.clipboard.writeText(no).then(() => toast.success(t('toast.copied'))).catch(() => {})
 }
 
-function showDetail(inv: any) { detailInv.value = inv }
+function showDetail(inv: InvoiceData) { detailInv.value = inv }
 
 const badgeTypeMap: Record<string, 'orange' | 'green' | 'blue'> = {
   '0': 'orange',
@@ -133,22 +136,16 @@ const statusMap: Record<string, { label: string }> = {
     <JdEmpty v-else icon="🧾" :title="filteredInvoices.length === 0 && invoices.length > 0 ? '筛选结果为空' : t('invoice.noRecords')" />
 
     <!-- Detail modal -->
-    <div v-if="detailInv" class="inv-modal-overlay" @click.self="detailInv = null">
-      <div class="inv-modal">
-        <h3 class="inv-modal-title">{{ t('invoice.title') }}</h3>
-        <div class="inv-modal-body">
-          <div class="inv-detail-row"><span>类型</span><span>{{ detailInv.type === 'company' ? t('invoice.company') : t('invoice.personal') }}</span></div>
-          <div class="inv-detail-row"><span>{{ t('invoice.companyTitle') }}</span><span>{{ detailInv.title || '-' }}</span></div>
-          <div class="inv-detail-row" v-if="detailInv.taxNo"><span>{{ t('invoice.taxNo') }}</span><span>{{ detailInv.taxNo }}</span></div>
-          <div class="inv-detail-row"><span>{{ t('invoice.orderNo') }}</span><span>{{ detailInv.orderNo }}</span></div>
-          <div class="inv-detail-row"><span>{{ t('common.status') }}</span><span>{{ statusMap[detailInv.status]?.label }}</span></div>
-          <div class="inv-detail-row" v-if="detailInv.invoiceNo"><span>{{ t('invoice.invoiceNo') || 'No.' }}</span><span class="inv-no-link" @click="copyInvNo(detailInv.invoiceNo)">{{ detailInv.invoiceNo }} 📋</span></div>
-          <div class="inv-detail-row"><span>{{ t('invoice.applyTime') || t('common.createdAt') }}</span><span>{{ detailInv.createdAt }}</span></div>
-          <div class="inv-detail-row" v-if="detailInv.email"><span>{{ t('invoice.email') }}</span><span>{{ detailInv.email }}</span></div>
-        </div>
-        <JdButton block @click="detailInv = null">关闭</JdButton>
-      </div>
-    </div>
+    <JdModal :visible="!!detailInv" @close="detailInv = null" :title="t('invoice.title')" width="440px">
+      <div class="inv-detail-row"><span>类型</span><span>{{ detailInv?.type === 'company' ? t('invoice.company') : t('invoice.personal') }}</span></div>
+      <div class="inv-detail-row"><span>{{ t('invoice.companyTitle') }}</span><span>{{ detailInv?.title || '-' }}</span></div>
+      <div class="inv-detail-row" v-if="detailInv?.taxNo"><span>{{ t('invoice.taxNo') }}</span><span>{{ detailInv?.taxNo }}</span></div>
+      <div class="inv-detail-row"><span>{{ t('invoice.orderNo') }}</span><span>{{ detailInv?.orderNo }}</span></div>
+      <div class="inv-detail-row"><span>{{ t('common.status') }}</span><span>{{ detailInv ? statusMap[detailInv.status]?.label : '' }}</span></div>
+      <div class="inv-detail-row" v-if="detailInv?.invoiceNo"><span>{{ t('invoice.invoiceNo') || 'No.' }}</span><span class="inv-no-link" @click="copyInvNo(detailInv!.invoiceNo)">{{ detailInv!.invoiceNo }} 📋</span></div>
+      <div class="inv-detail-row"><span>{{ t('invoice.applyTime') || t('common.createdAt') }}</span><span>{{ detailInv?.createdAt }}</span></div>
+      <div class="inv-detail-row" v-if="detailInv?.email"><span>{{ t('invoice.email') }}</span><span>{{ detailInv?.email }}</span></div>
+    </JdModal>
   </div>
 </template>
 
@@ -171,7 +168,6 @@ const statusMap: Record<string, { label: string }> = {
 .skeleton-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xl); box-shadow: var(--shadow-md); height: 60px; }
 .skeleton-line { height: 16px; width: 50%; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 /* Filters */
 .invoice-filters { display: flex; flex-wrap: wrap; gap: var(--space-lg); margin-bottom: var(--space-lg); background: var(--bg-white); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); box-shadow: var(--shadow-sm); }
@@ -188,10 +184,6 @@ const statusMap: Record<string, { label: string }> = {
 .inv-no:hover { text-decoration: underline; }
 .filter-notice { text-align: center; font-size: var(--font-xs); color: var(--text-placeholder); margin-top: var(--space-md); }
 
-.inv-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 500; display: flex; align-items: center; justify-content: center; }
-.inv-modal { background: var(--bg-white); border-radius: var(--radius-lg); padding: var(--space-xxl); max-width: 440px; width: 90%; box-shadow: var(--shadow-xl); }
-.inv-modal-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-lg); }
-.inv-modal-body { margin-bottom: var(--space-lg); }
 .inv-detail-row { display: flex; justify-content: space-between; padding: var(--space-sm) 0; border-bottom: 1px solid var(--border-light); font-size: var(--font-sm); }
 .inv-detail-row span:first-child { color: var(--text-tertiary); }
 .inv-no-link { color: var(--jd-red); cursor: pointer; }

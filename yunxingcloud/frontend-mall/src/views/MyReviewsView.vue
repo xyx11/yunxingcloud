@@ -10,11 +10,12 @@ import SkeletonBox from '@/components/SkeletonBox.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { Review } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const reviews = ref<any[]>([])
+const reviews = ref<Review[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const deleting = ref<Set<number>>(new Set())
@@ -49,7 +50,8 @@ async function doDelete(id: number) {
   }
 }
 
-function goProduct(id: number) {
+function goProduct(id?: number) {
+  if (!id) return
   router.push(`/product/${id}`)
 }
 

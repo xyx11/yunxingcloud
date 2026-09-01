@@ -8,11 +8,12 @@ import JdEmpty from '@/components/JdEmpty.vue'
 import JdButton from '@/components/JdButton.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
+import type { Brand } from '@/types'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const brands = ref<any[]>([])
+const brands = ref<Brand[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 const searchQuery = ref('')

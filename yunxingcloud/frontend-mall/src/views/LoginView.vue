@@ -113,7 +113,7 @@ const oauthProviders = [
 
       <div class="form-group">
         <label class="form-label">{{ t('login.username') }}</label>
-        <input v-model.trim="form.username" :placeholder="t('login.placeholderUser')" class="form-input" autocomplete="username" @keyup.enter="doLogin" />
+        <input v-model.trim="form.username" :placeholder="t('login.placeholderUser')" class="form-input" autocomplete="username" autofocus @keyup.enter="doLogin" />
       </div>
 
       <div class="form-group">

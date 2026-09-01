@@ -250,7 +250,6 @@ const typeLabel: Record<string, string> = {
 
 .pts-load-more { text-align: center; padding-top: var(--space-lg); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 @media (max-width: 768px) {
   .pts-page { padding: 0 var(--space-md) calc(80px + env(safe-area-inset-bottom, 0px)); }

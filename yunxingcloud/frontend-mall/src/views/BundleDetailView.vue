@@ -9,13 +9,14 @@ import SkeletonBox from '@/components/SkeletonBox.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/locales'
 import { formatPrice } from '@/utils/format'
+import type { Bundle } from '@/types'
 import request from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const bundle = ref<any>(null)
+const bundle = ref<Bundle | null>(null)
 const loading = ref(true)
 const error = ref(false)
 const adding = ref(false)
@@ -40,6 +41,7 @@ function savings() {
 }
 
 async function addBundleToCart() {
+  if (!bundle.value) return
   adding.value = true
   try {
     if (bundle.value.products && bundle.value.products.length) {

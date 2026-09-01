@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategories, getBrands, getProducts, getTags } from '@/api/product'
 import { addToCart } from '@/api/cart'
-import { useGlobalToast } from '@/composables/useToast'
+import { useToast } from '@/composables/useToast'
 import { useCompare } from '@/composables/useCompare'
 import { useCartFly } from '@/composables/useCartFly'
 import { usePullRefresh } from '@/composables/usePullRefresh'
@@ -18,7 +18,7 @@ import type { Product, Category } from '@/types'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const toast = useGlobalToast()
+const toast = useToast()
 const { toggle: toggleCompare, isSelected } = useCompare()
 const { flyToCart } = useCartFly()
 
@@ -34,7 +34,7 @@ const quickViewProduct = ref<Product | null>(null)
 const showFilter = ref(false)
 
 const filters = ref({ categoryId: '', brandId: '', minPrice: '', maxPrice: '', sort: '', tagId: '' })
-const tags = ref<any[]>([])
+const tags = ref<{ id: number; name: string }[]>([])
 const priceRanges = [
   { label: t('sort.under100'), min: '', max: '100' },
   { label: t('sort.r100500'), min: '100', max: '500' },
@@ -212,8 +212,8 @@ function openQuickView(e: Event, p: Product) { e.stopPropagation(); quickViewPro
         <div v-for="p in products" :key="p.id" class="product-card" role="button" tabindex="0" @click="goDetail(p.id)" @keydown.enter.prevent="goDetail(p.id)" @keydown.space.prevent="goDetail(p.id)">
           <div class="card-img-wrap">
             <LazyImage :src="p.imageUrl || (p.images?.[0]) || ''" :alt="p.name" height="180px" />
-            <JdBadge v-if="p.isNew" type="green" class="card-badge-tl">新品</JdBadge>
-            <JdBadge v-else-if="p.isHot" class="card-badge-tl">热卖</JdBadge>
+            <JdBadge v-if="p.isNew" type="green" class="card-badge-tl">{{ t('product.newBadge') }}</JdBadge>
+            <JdBadge v-else-if="p.isHot" class="card-badge-tl">{{ t('product.hotBadge') }}</JdBadge>
             <JdBadge v-if="p.originalPrice && p.originalPrice > p.price" type="orange" class="card-badge-tr">
               -{{ Math.round((1 - p.price / p.originalPrice) * 100) }}%
             </JdBadge>

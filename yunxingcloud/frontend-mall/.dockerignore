@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+*.md
+.vscode
+.idea
+e2e
+src/__tests__
+coverage
+playwright-report
+lighthouserc.json

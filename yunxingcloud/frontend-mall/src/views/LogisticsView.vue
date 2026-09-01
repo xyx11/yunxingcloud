@@ -3,13 +3,14 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
-import request from '@/api/request'
+import type { LogisticsTrace } from '@/types'
+import { trackByOrder, trackByNo } from '@/api/logistics'
 import JdButton from '@/components/JdButton.vue'
 
 const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
-const traces = ref<any[]>([])
+const traces = ref<LogisticsTrace[]>([])
 const trackingNo = ref('')
 const carrier = ref('')
 const estimatedDelivery = ref('')
@@ -44,7 +45,7 @@ onMounted(async () => {
   if (orderId) {
     loading.value = true
     try {
-      const r = await request.get('/logistics/order/' + orderId)
+      const r = await trackByOrder(String(orderId))
       traces.value = r.data?.traces || r.data || []
       carrier.value = r.data?.carrier || ''
       trackingNo.value = r.data?.trackingNo || ''
@@ -58,7 +59,7 @@ onMounted(async () => {
 async function track() {
   if (!trackingNo.value.trim()) return
   loading.value = true
-  try { const r = await request.get('/logistics/track/' + trackingNo.value.trim()); traces.value = r.data || []; loading.value = false;
+  try { const r = await trackByNo(trackingNo.value.trim()); traces.value = r.data || []; loading.value = false;
     } catch { toast.error(t('logistics.trackFail')) }
 }
 async function copyNo() { try { await navigator.clipboard.writeText(trackingNo.value); copying.value = true; toast.success(t('toast.copied')); setTimeout(() => copying.value = false, 1500) } catch {} }
@@ -131,14 +132,14 @@ function scanBarcode() {
       <div v-else-if="traces.length" class="log-timeline">
         <div v-for="(trace, i) in traces" :key="trace.id || i" class="log-trace">
           <div class="trace-dot-col">
-            <div class="trace-dot" :class="{ active: i === 0 }">{{ statusIcon(trace.status || trace.description) }}</div>
+            <div class="trace-dot" :class="{ active: i === 0 }">{{ statusIcon(trace.status || trace.description || '') }}</div>
             <div v-if="i < traces.length - 1" class="trace-line" :class="{ active: i === 0 }" />
           </div>
           <div class="trace-body">
             <div class="trace-status" :class="{ active: i === 0 }">{{ trace.status || trace.description }}</div>
-            <div class="trace-meta">{{ trace.location || '' }}<span v-if="trace.traceTime"> · {{ trace.traceTime?.substring(0, 16) }}</span></div>
+            <div class="trace-meta">{{ trace.location || '' }}<span v-if="trace.traceTime"> · {{ String(trace.traceTime).substring(0, 16) }}</span></div>
           </div>
-          <div class="trace-time">{{ trace.traceTime?.substring(11, 16) }}</div>
+          <div class="trace-time">{{ String(trace.traceTime || '').substring(11, 16) }}</div>
         </div>
       </div>
 

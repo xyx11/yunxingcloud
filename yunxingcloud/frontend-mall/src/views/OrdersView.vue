@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { getOrders, cancelOrder } from '@/api/order'
 import { useI18n } from '@/locales'
 import { useToast } from '@/composables/useToast'
+import type { OrderHead } from '@/types'
 import { formatPrice, formatRelativeTime } from '@/utils/format'
 import SkeletonBox from '@/components/SkeletonBox.vue'
 import JdButton from '@/components/JdButton.vue'
@@ -14,7 +15,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 const router = useRouter()
 const { t } = useI18n()
 const toast = useToast()
-const orders = ref<any[]>([])
+const orders = ref<OrderHead[]>([])
 const loading = ref(false)
 const activeTab = ref('all')
 const page = ref(0)
@@ -118,13 +119,13 @@ onMounted(load)
             <span class="order-no-label">{{ t('order.orderNo') }}：</span>
             <span class="order-no">{{ o.orderNo }}</span>
             <span class="order-copy" @click.stop="copyOrderNo(o.orderNo)" title="复制">📋</span>
-            <span class="order-date">{{ formatRelativeTime(o.createdAt) }}</span>
+            <span class="order-date">{{ formatRelativeTime(o.createTime) }}</span>
           </div>
           <JdBadge :type="statusBadge[o.status]?.type || 'gray'">{{ statusBadge[o.status]?.label || o.status }}</JdBadge>
         </div>
         <div class="order-body">
           <div>
-            <span v-if="o.receiverName" class="order-receiver">{{ o.receiverName }} {{ o.receiverAddress?.substring(0, 20) }}...</span>
+            <span v-if="o.receiverName" class="order-receiver">{{ o.receiverName }} {{ String(o.receiverAddress || '').substring(0, 20) }}...</span>
           </div>
           <span class="order-amount">{{ formatPrice(o.totalAmount / 100, 2) }}</span>
         </div>

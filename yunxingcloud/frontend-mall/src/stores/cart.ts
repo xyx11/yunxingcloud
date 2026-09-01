@@ -1,10 +1,11 @@
 import { reactive } from 'vue'
 import { defineStore } from 'pinia'
 import request from '@/api/request'
+import type { CartItem } from '@/types'
 
 interface CartState {
   count: number
-  items: any[]
+  items: CartItem[]
 }
 
 export const useCartStore = defineStore('cart', () => {
@@ -16,9 +17,9 @@ export const useCartStore = defineStore('cart', () => {
   async function fetchCart() {
     try {
       const r = await request.get('/cart')
-      const items = r.data?.items || []
+      const items: CartItem[] = r.data?.items || []
       state.items = items
-      state.count = items.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0)
+      state.count = items.reduce((sum, i) => sum + (i.quantity || 1), 0)
       persist()
     } catch {
       /* fallback toast — view should handle errors */
@@ -58,7 +59,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function persist() {
-    localStorage.setItem('cart_count', String(state.count))
+    try { localStorage.setItem('cart_count', String(state.count)) } catch {}
   }
 
   function incrementLocal(delta = 1) {

@@ -33,15 +33,5 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     reportCompressedSize: true,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id: string) {
-          if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) return 'vendor-vue'
-          if (id.includes('node_modules/naive-ui')) return 'vendor-ui'
-          if (id.includes('node_modules/axios')) return 'vendor-axios'
-          if (id.includes('node_modules/@vue') || id.includes('node_modules/vue-')) return 'vendor-vue'
-        },
-      },
-    },
   },
 })

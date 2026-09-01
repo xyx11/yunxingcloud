@@ -57,8 +57,13 @@ onUnmounted(() => { observer?.disconnect() })
 watch(() => props.src, () => {
   loaded.value = false
   error.value = false
-  // 如果元素当前不在视口内，重置 inView 并重新 observe
-  if (el.value && observer && !inView.value) {
+  if (!el.value || !hasSrc()) return
+  if (!observer) {
+    observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) inView.value = true
+    }, { rootMargin: '300px' })
+    observer.observe(el.value)
+  } else if (!inView.value) {
     inView.value = false
     observer.disconnect()
     observer = new IntersectionObserver(([entry]) => {
@@ -110,8 +115,8 @@ function onLoad() { loaded.value = true }
       @error="onError"
       :class="{ 'img-loaded': loaded }"
     />
-    <span v-if="inView && !loaded && !error" class="lazy-placeholder">📦</span>
-    <span v-if="inView && error" class="lazy-error">🖼️</span>
+    <span v-if="inView && !loaded && !error" class="lazy-placeholder" />
+    <span v-if="inView && error" class="lazy-error" />
   </div>
 </template>
 
@@ -132,10 +137,19 @@ function onLoad() { loaded.value = true }
 }
 .lazy-image img.img-loaded { opacity: 1; }
 
-.lazy-placeholder,
-.lazy-error {
-  position: absolute;
-  font-size: 32px;
+.lazy-placeholder {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--border-light) 25%, var(--border) 50%, var(--border-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
   pointer-events: none;
 }
+.lazy-error {
+  position: absolute; inset: 0;
+  background: var(--bg-hover);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+.lazy-error::after { content: '⚠'; font-size: 24px; }
 </style>

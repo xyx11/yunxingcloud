@@ -34,7 +34,7 @@ const i18nKey: Record<string, string> = {
 }
 
 function goTo(path: string) { router.push(path) }
-function getLabel(path: string) { return t(i18nKey[path] as any) || '' }
+function getLabel(path: string) { return t(i18nKey[path] || '') || '' }
 function isActive(path: string): boolean {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
@@ -74,6 +74,7 @@ function isActive(path: string): boolean {
   border-top: 1px solid var(--border-light);
   padding: 6px 0 env(safe-area-inset-bottom);
   z-index: 200;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }

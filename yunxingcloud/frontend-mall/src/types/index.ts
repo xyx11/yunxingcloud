@@ -22,7 +22,7 @@ export interface Product {
   specs?: Spec[]
   categoryName?: string
   brandName?: string
-  createdAt?: string
+  createdAt?: string | number
 }
 
 export interface Sku {
@@ -122,6 +122,7 @@ export interface Coupon {
   value: number
   discount?: number
   amount?: number
+  scope?: string
   threshold?: number
   minAmount?: number
   startTime: string
@@ -184,7 +185,7 @@ export interface Bundle {
   bundlePrice?: number
   price?: number
   originalPrice?: number
-  products?: { id: number; name: string; imageUrl?: string; price: number; quantity?: number }[]
+  products?: { id: number; name: string; imageUrl?: string; price: number; originalPrice?: number; stock?: number; quantity?: number }[]
 }
 
 export interface UserInfo {
@@ -195,6 +196,27 @@ export interface UserInfo {
   email?: string
   points?: number
   memberLevel?: string
+}
+
+export interface Campaign {
+  id: number
+  name: string
+  description?: string
+  bannerUrl?: string
+  startTime?: string
+  endTime?: string
+}
+
+export interface PriceAlertItem {
+  id: number
+  productId: number
+  productName?: string
+  productImage?: string
+  imageUrl?: string
+  targetPrice: number
+  currentPrice?: number
+  notified: boolean
+  createdAt: string
 }
 
 export interface ApiResponse<T = unknown> {
@@ -226,6 +248,25 @@ export interface CompareItem {
   description?: string
 }
 
+export interface FlashSaleItem {
+  id: number
+  productId: number
+  flashPrice: number
+  stock: number
+  sold?: number
+  startTime: string
+  endTime: string
+}
+
+export interface LogisticsTrace {
+  id?: number
+  status: string
+  description?: string
+  time?: string
+  traceTime?: string
+  location?: string
+}
+
 export interface ViewedProduct {
   id: number
   name: string
@@ -243,6 +284,9 @@ export interface Review {
   content: string
   images?: string[]
   createdAt: string
+  productId?: number
+  productName?: string
+  productImage?: string
 }
 
 export interface FavoriteItem {

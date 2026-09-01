@@ -113,7 +113,7 @@ function defaultImage(name: string): string {
 .card-image {
   position: relative;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--bg-page);
 }
 .card-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 .card-image :deep(img) {

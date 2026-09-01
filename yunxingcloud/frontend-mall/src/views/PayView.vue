@@ -16,16 +16,44 @@ const order = ref<OrderHead | null>(null)
 const selectedChannel = ref<'wechat' | 'alipay'>('wechat')
 const paying = ref(false)
 const polling = ref(false)
+let pollTimer: ReturnType<typeof setTimeout> | null = null
 const pollCount = ref(0)
+
+function backoffDelay(count: number): number {
+  if (count <= 10) return 2000
+  if (count <= 30) return 4000
+  if (count <= 60) return 6000
+  return 8000
+}
+
+function scheduleNextPoll() {
+  if (pollCount.value > 120) {
+    polling.value = false
+    router.replace(`/order/${route.params.id}/result?status=fail`)
+    return
+  }
+  pollTimer = setTimeout(async () => {
+    pollCount.value++
+    try {
+      const r = await getOrderById(Number(route.params.id))
+      if (['1', '2', '3'].includes(r.data.order?.status)) {
+        polling.value = false
+        router.replace(`/order/${route.params.id}/result?status=success`)
+        return
+      }
+    } catch { /* transient */ }
+    scheduleNextPoll()
+  }, backoffDelay(pollCount.value))
+}
 const expired = ref(false)
 const pageLoading = ref(true)
 const loadError = ref(false)
 const payAmount = ref(0)
 const payOrderNo = ref('')
-let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const minutes = ref(15); const seconds = ref(0)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
+let wasHidden = false
 
 function startCountdown(expiresAt?: string) {
   if (expiresAt) {
@@ -38,6 +66,22 @@ function startCountdown(expiresAt?: string) {
     else if (minutes.value > 0) { minutes.value--; seconds.value = 59 }
     else { if (countdownTimer) clearInterval(countdownTimer); expired.value = true }
   }, 1000)
+}
+
+function onCountdownVisibility() {
+  if (document.hidden) {
+    wasHidden = true
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null }
+  } else if (wasHidden) {
+    wasHidden = false
+    // Recompute from order's expiresAt
+    if (order.value?.expiresAt) {
+      const remaining = Math.max(0, new Date(order.value.expiresAt).getTime() - Date.now())
+      minutes.value = Math.floor(remaining / 60000)
+      seconds.value = Math.floor((remaining % 60000) / 1000)
+    }
+    if (!expired.value) startCountdown()
+  }
 }
 
 async function loadOrder() {
@@ -54,34 +98,16 @@ async function loadOrder() {
   finally { pageLoading.value = false }
 }
 
-onMounted(loadOrder)
-
-function startPolling() {
-  polling.value = true; pollCount.value = 0
-  pollTimer = setInterval(async () => {
-    pollCount.value++
-    try {
-      const r = await getOrderById(Number(route.params.id))
-      if (['1', '2', '3'].includes(r.data.order?.status)) {
-        if (pollTimer) clearInterval(pollTimer); polling.value = false
-        router.replace(`/order/${route.params.id}/result?status=success`)
-      } else if (pollCount.value > 120) {
-        if (pollTimer) clearInterval(pollTimer); polling.value = false
-        router.replace(`/order/${route.params.id}/result?status=fail`)
-      }
-    } catch { /* poll failure is transient, next cycle will retry */ }
-  }, 2000)
-}
+onMounted(() => { loadOrder(); document.addEventListener('visibilitychange', onCountdownVisibility) })
+onUnmounted(() => { document.removeEventListener('visibilitychange', onCountdownVisibility); if (pollTimer) clearTimeout(pollTimer); if (countdownTimer) clearInterval(countdownTimer) })
 
 async function confirmPay() {
   if (!order.value) return; paying.value = true
-  try { await payOrder(order.value.id, selectedChannel.value); startPolling() }
+  try { await payOrder(order.value.id, selectedChannel.value); polling.value = true; pollCount.value = 0; scheduleNextPoll() }
   catch { paying.value = false; router.replace(`/order/${route.params.id}/result?status=fail`) }
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
-
-onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer) clearInterval(countdownTimer) })
 </script>
 
 <template>
@@ -269,7 +295,6 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); if (countdownTimer)
 .sk-bar { height: 40px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
 .sk-channel { height: 64px; background: linear-gradient(90deg, var(--border-light), var(--border), var(--border-light)); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
 
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 /* Error */
 .pay-error { text-align: center; padding: var(--space-xxxl) 0; }
