@@ -4,7 +4,7 @@ import { useI18n } from '@/locales'
 const { t } = useI18n()
 
 const supported = ref('Notification' in window && 'serviceWorker' in navigator)
-const permission = ref(Notification.permission)
+const permission = ref('Notification' in window ? Notification.permission : 'default')
 const subscribed = ref(localStorage.getItem('mall_push_subscribed') === 'true')
 
 export function useNotification() {
