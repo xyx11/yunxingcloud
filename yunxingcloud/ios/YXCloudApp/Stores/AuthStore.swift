@@ -1,14 +1,13 @@
 import Foundation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class AuthStore {
-    var isLoggedIn = false
-    var username: String?
-    var currentUser: User?
-    var isBusy = false
-    var errorMessage: String?
+final class AuthStore: ObservableObject {
+    @Published var isLoggedIn = false
+    @Published var username: String?
+    @Published var currentUser: User?
+    @Published var isBusy = false
+    @Published var errorMessage: String?
 
     private let client = APIClient.shared
 

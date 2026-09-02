@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 分类页：左侧分类栏 + 右侧商品网格
 struct CategoryView: View {
-    @Environment(CatalogStore.self) private var catalog
+    @EnvironmentObject private var catalog: CatalogStore
     @State private var selectedCategory: Category?
 
     var body: some View {

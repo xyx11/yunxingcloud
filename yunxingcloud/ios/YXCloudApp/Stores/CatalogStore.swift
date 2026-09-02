@@ -1,14 +1,13 @@
 import Foundation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class CatalogStore {
-    var categories: [Category] = []
-    var products: [Product] = []
-    var isLoading = false
-    var isLoadingMore = false
-    var errorMessage: String?
+final class CatalogStore: ObservableObject {
+    @Published var categories: [Category] = []
+    @Published var products: [Product] = []
+    @Published var isLoading = false
+    @Published var isLoadingMore = false
+    @Published var errorMessage: String?
 
     private var currentPage = 0
     private var totalPages = 1

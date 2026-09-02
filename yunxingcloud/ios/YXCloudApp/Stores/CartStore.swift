@@ -1,13 +1,12 @@
 import Foundation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class CartStore {
-    var items: [CartItem] = []
-    var isLoading = false
-    var errorMessage: String?
-    var toastMessage: String?
+final class CartStore: ObservableObject {
+    @Published var items: [CartItem] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var toastMessage: String?
 
     private let client = APIClient.shared
 

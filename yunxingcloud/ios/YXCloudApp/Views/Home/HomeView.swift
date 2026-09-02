@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(HomeStore.self) private var home
+    @EnvironmentObject private var home: HomeStore
     @State private var bannerIndex = 0
 
     var body: some View {

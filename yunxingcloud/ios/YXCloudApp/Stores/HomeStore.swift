@@ -1,12 +1,11 @@
 import Foundation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class HomeStore {
-    var data: HomeData?
-    var isLoading = false
-    var errorMessage: String?
+final class HomeStore: ObservableObject {
+    @Published var data: HomeData?
+    @Published var isLoading = false
+    @Published var errorMessage: String?
 
     private let client = APIClient.shared
 

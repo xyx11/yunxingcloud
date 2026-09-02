@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RegisterView: View {
-    @Environment(AuthStore.self) private var auth
+    @EnvironmentObject private var auth: AuthStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var username = ""

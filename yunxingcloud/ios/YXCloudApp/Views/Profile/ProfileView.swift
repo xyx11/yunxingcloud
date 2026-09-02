@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @Environment(AuthStore.self) private var auth
-    @Environment(CartStore.self) private var cart
+    @EnvironmentObject private var auth: AuthStore
+    @EnvironmentObject private var cart: CartStore
 
     var body: some View {
         NavigationStack {

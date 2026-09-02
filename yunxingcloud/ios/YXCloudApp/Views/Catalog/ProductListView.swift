@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 通用商品列表页：分类入口 / 搜索结果共用（分页加载更多）
 struct ProductListView: View {
-    @Environment(CatalogStore.self) private var catalog
+    @EnvironmentObject private var catalog: CatalogStore
     let title: String
     var categoryId: Int?
 
@@ -63,7 +63,7 @@ struct ProductListView: View {
 
 /// 搜索页：搜索框 + 结果列表
 struct SearchView: View {
-    @Environment(CatalogStore.self) private var catalog
+    @EnvironmentObject private var catalog: CatalogStore
     @State private var keyword = ""
     @State private var searched = ""
 
@@ -83,8 +83,7 @@ struct SearchView: View {
             .background(Color.white)
 
             if searched.isEmpty {
-                ContentUnavailableView("输入关键词搜索商品", systemImage: "magnifyingglass")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(icon: "magnifyingglass", title: "输入关键词搜索商品")
             } else {
                 resultList
             }
@@ -105,8 +104,7 @@ struct SearchView: View {
             if catalog.isLoading {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if catalog.products.isEmpty {
-                ContentUnavailableView("没有找到相关商品", systemImage: "tray")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(icon: "tray", title: "没有找到相关商品")
             } else {
                 ScrollView {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {

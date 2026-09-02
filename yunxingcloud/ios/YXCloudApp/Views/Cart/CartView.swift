@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct CartView: View {
-    @Environment(CartStore.self) private var cart
-    @Environment(AuthStore.self) private var auth
+    @EnvironmentObject private var cart: CartStore
+    @EnvironmentObject private var auth: AuthStore
 
     var body: some View {
         NavigationStack {
@@ -24,17 +24,15 @@ struct CartView: View {
         .task {
             if auth.isLoggedIn { await cart.load() }
         }
-        .onChange(of: auth.isLoggedIn) {
+        .onChange(of: auth.isLoggedIn) { _ in
             Task { await cart.load() }
         }
     }
 
     private var notLoggedInView: some View {
-        ContentUnavailableView {
-            Label("登录后查看购物车", systemImage: "cart")
-        } description: {
-            Text("登录即可同步你的购物车商品")
-        } actions: {
+        VStack(spacing: 12) {
+            EmptyStateView(icon: "cart", title: "登录后查看购物车", subtitle: "登录即可同步你的购物车商品")
+                .frame(maxHeight: 200)
             NavigationLink {
                 LoginView()
             } label: {
@@ -46,11 +44,12 @@ struct CartView: View {
                     .background(AppConfig.brandRed)
                     .clipShape(Capsule())
             }
+            .padding(.bottom, 40)
         }
     }
 
     private var emptyView: some View {
-        ContentUnavailableView("购物车还是空的", systemImage: "cart", description: Text("快去挑选心仪的商品吧"))
+        EmptyStateView(icon: "cart", title: "购物车还是空的", subtitle: "快去挑选心仪的商品吧")
     }
 
     private var cartList: some View {

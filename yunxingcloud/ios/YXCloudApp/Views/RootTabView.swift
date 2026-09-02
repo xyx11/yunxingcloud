@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RootTabView: View {
-    @Environment(CartStore.self) private var cart
+    @EnvironmentObject private var cart: CartStore
 
     var body: some View {
         TabView {

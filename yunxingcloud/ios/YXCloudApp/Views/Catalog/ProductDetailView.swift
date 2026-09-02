@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ProductDetailView: View {
-    @Environment(CartStore.self) private var cart
-    @Environment(AuthStore.self) private var auth
+    @EnvironmentObject private var cart: CartStore
+    @EnvironmentObject private var auth: AuthStore
 
     let productId: Int
 
