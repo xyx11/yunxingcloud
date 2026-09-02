@@ -13,6 +13,7 @@ enum Endpoints {
     static func cartItem(_ id: Int) -> String { "/api/cart/\(id)" }
     // 订单
     static let orders = "/api/orders"
+    static func payOrder(_ id: Int) -> String { "/api/orders/\(id)/pay" }
     // 收货地址
     static let addresses = "/api/addresses"
     static func address(_ id: Int) -> String { "/api/addresses/\(id)" }

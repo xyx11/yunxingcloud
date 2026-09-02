@@ -3,6 +3,8 @@ import SwiftUI
 struct RootTabView: View {
     @EnvironmentObject private var cart: CartStore
     @EnvironmentObject private var auth: AuthStore
+    @EnvironmentObject private var orderStore: OrderStore
+    @EnvironmentObject private var addressStore: AddressStore
 
     @State private var toastText: String?
     @State private var toastTask: Task<Void, Never>?
@@ -31,6 +33,8 @@ struct RootTabView: View {
         }
         .onChange(of: cart.toastMessage) { msg in showToast(msg) }
         .onChange(of: auth.toastMessage) { msg in showToast(msg) }
+        .onChange(of: orderStore.toastMessage) { msg in showToast(msg) }
+        .onChange(of: addressStore.toastMessage) { msg in showToast(msg) }
     }
 
     private func showToast(_ message: String?) {

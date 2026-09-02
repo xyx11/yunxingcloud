@@ -5,6 +5,9 @@ struct OrderListView: View {
     @EnvironmentObject private var orderStore: OrderStore
     @EnvironmentObject private var auth: AuthStore
 
+    @State private var payTarget: OrderHead?
+    @State private var isPaying = false
+
     var body: some View {
         Group {
             if !auth.isLoggedIn {
@@ -34,6 +37,32 @@ struct OrderListView: View {
             if auth.isLoggedIn { await orderStore.load() }
         }
         .refreshable { await orderStore.load() }
+        .confirmationDialog("选择支付方式", isPresented: Binding(
+            get: { payTarget != nil },
+            set: { if !$0 { payTarget = nil } }
+        ), titleVisibility: .visible) {
+            Button("微信支付") { startPay(channel: "wechat") }
+            Button("支付宝") { startPay(channel: "alipay") }
+            Button("取消", role: .cancel) {}
+        } message: {
+            if let order = payTarget {
+                Text("订单 \(order.orderNo ?? "") 合计 \(PriceText.format(fen: order.totalAmount ?? 0))")
+            }
+        }
+    }
+
+    private func startPay(channel: String) {
+        guard let order = payTarget, !isPaying else { return }
+        isPaying = true
+        Task {
+            do {
+                try await orderStore.pay(order: order, channel: channel)
+            } catch {
+                orderStore.toastMessage = error.localizedDescription
+            }
+            isPaying = false
+            payTarget = nil
+        }
     }
 
     private var orderList: some View {
@@ -76,6 +105,24 @@ struct OrderListView: View {
                 }
                 Spacer()
                 PriceText(fen: order.totalAmount ?? 0, size: 16)
+            }
+
+            if order.status == "0" {
+                HStack {
+                    Spacer()
+                    Button {
+                        payTarget = order
+                    } label: {
+                        Text("去支付")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .frame(height: 32)
+                            .background(AppConfig.brandRed)
+                            .clipShape(Capsule())
+                    }
+                }
             }
         }
         .padding(12)
