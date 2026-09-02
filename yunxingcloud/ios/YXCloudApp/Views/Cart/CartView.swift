@@ -4,6 +4,8 @@ struct CartView: View {
     @EnvironmentObject private var cart: CartStore
     @EnvironmentObject private var auth: AuthStore
 
+    @State private var showCheckout = false
+
     var body: some View {
         NavigationStack {
             Group {
@@ -26,6 +28,9 @@ struct CartView: View {
         }
         .onChange(of: auth.isLoggedIn) { _ in
             Task { await cart.load() }
+        }
+        .sheet(isPresented: $showCheckout) {
+            NavigationStack { CheckoutView() }
         }
     }
 
@@ -100,7 +105,7 @@ struct CartView: View {
             }
             Spacer()
             Button {
-                // 结算（MVP 阶段提示）
+                showCheckout = true
             } label: {
                 Text("去结算")
                     .font(.subheadline)
@@ -116,5 +121,91 @@ struct CartView: View {
         .padding(.vertical, 10)
         .background(Color.white)
         .overlay(alignment: .top) { Divider() }
+    }
+}
+
+/// 结算页：收货人表单 + 金额确认 + 提交订单
+struct CheckoutView: View {
+    @EnvironmentObject private var cart: CartStore
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var address = ""
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
+    @State private var successOrderNo: String?
+
+    var body: some View {
+        Form {
+            Section("收货信息（选填）") {
+                TextField("收货人姓名", text: $name)
+                TextField("手机号", text: $phone)
+                    .keyboardType(.phonePad)
+                TextField("收货地址", text: $address)
+            }
+
+            Section("订单金额") {
+                HStack {
+                    Text("共 \(cart.totalQuantity) 件商品")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    PriceText(fen: cart.totalPriceFen, size: 18)
+                }
+            }
+
+            Section {
+                Button {
+                    Task { await submit() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isSubmitting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("提交订单").fontWeight(.semibold)
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(isSubmitting || cart.items.isEmpty)
+                .listRowBackground(AppConfig.brandRed)
+                .foregroundStyle(.white)
+            } footer: {
+                if let errorMessage {
+                    Text(errorMessage).foregroundStyle(AppConfig.brandRed)
+                }
+                if let successOrderNo {
+                    Text("下单成功！订单号：\(successOrderNo)")
+                        .foregroundStyle(.green)
+                }
+            }
+        }
+        .navigationTitle("确认订单")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("关闭") { dismiss() }
+            }
+        }
+    }
+
+    private func submit() async {
+        isSubmitting = true
+        errorMessage = nil
+        do {
+            let order = try await cart.submitOrder(
+                name: name.isEmpty ? nil : name,
+                phone: phone.isEmpty ? nil : phone,
+                address: address.isEmpty ? nil : address
+            )
+            successOrderNo = order.orderNo
+            // 延迟关闭，让用户看到成功提示
+            try? await Task.sleep(for: .seconds(1.5))
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSubmitting = false
     }
 }

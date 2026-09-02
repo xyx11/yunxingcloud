@@ -12,10 +12,12 @@ enum KeychainStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
         ]
-        SecItemDelete(query as CFDictionary)
-        var attrs = query
-        attrs[kSecValueData as String] = data
-        SecItemAdd(attrs as CFDictionary, nil)
+        let status = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if status == errSecItemNotFound {
+            var attrs = query
+            attrs[kSecValueData as String] = data
+            SecItemAdd(attrs as CFDictionary, nil)
+        }
     }
 
     static func read(_ key: String) -> String? {

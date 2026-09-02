@@ -74,4 +74,20 @@ final class CartStore: ObservableObject {
             toastMessage = error.localizedDescription
         }
     }
+
+    /// 提交订单（用当前购物车下单），成功后后端会清空购物车
+    func submitOrder(name: String?, phone: String?, address: String?) async throws -> OrderHead {
+        struct SubmitBody: Encodable {
+            let name: String?
+            let phone: String?
+            let address: String?
+        }
+        let order: OrderHead = try await client.request(
+            Endpoints.orders, method: "POST",
+            body: SubmitBody(name: name, phone: phone, address: address),
+            auth: true
+        )
+        items = []
+        return order
+    }
 }

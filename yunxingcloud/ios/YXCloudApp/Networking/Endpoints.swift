@@ -11,6 +11,8 @@ enum Endpoints {
     // 购物车
     static let cart = "/api/cart"
     static func cartItem(_ id: Int) -> String { "/api/cart/\(id)" }
+    // 订单
+    static let orders = "/api/orders"
     // 认证
     static let login = "/api/login"
     static let refresh = "/api/refresh"
