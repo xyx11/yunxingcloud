@@ -127,6 +127,7 @@ struct CartView: View {
 /// 结算页：收货人表单 + 金额确认 + 提交订单
 struct CheckoutView: View {
     @EnvironmentObject private var cart: CartStore
+    @EnvironmentObject private var addressStore: AddressStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -138,6 +139,32 @@ struct CheckoutView: View {
 
     var body: some View {
         Form {
+            if let defaultAddr = addressStore.defaultAddress {
+                Section("默认地址") {
+                    Button {
+                        name = defaultAddr.name
+                        phone = defaultAddr.phone
+                        address = defaultAddr.fullAddress
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(defaultAddr.name) \(defaultAddr.phone)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text(defaultAddr.fullAddress)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+                            Spacer()
+                            Text("使用")
+                                .font(.caption)
+                                .foregroundStyle(AppConfig.brandRed)
+                        }
+                    }
+                }
+            }
+
             Section("收货信息（选填）") {
                 TextField("收货人姓名", text: $name)
                 TextField("手机号", text: $phone)
@@ -183,6 +210,7 @@ struct CheckoutView: View {
         }
         .navigationTitle("确认订单")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await addressStore.load() }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("关闭") { dismiss() }
