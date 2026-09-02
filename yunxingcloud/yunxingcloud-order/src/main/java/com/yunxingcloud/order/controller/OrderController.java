@@ -105,7 +105,7 @@ public class OrderController {
                 if (result != null && result.get("id") != null) {
                     order.setPaymentOrderId(Long.valueOf(result.get("id").toString()));
                     orderRepo.saveAndFlush(order);
-                    paymentClient.pay(Long.valueOf(result.get("id").toString()), null);
+                    paymentClient.pay(Long.valueOf(result.get("id").toString()), Map.of());
                     order.setStatus("1");
                     orderRepo.save(order);
                     return ResponseEntity.ok(result);

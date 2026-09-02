@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @FeignClient(name = "yunxingcloud-payment", contextId = "paymentClient", path = "/api/payment",
-             fallback = PaymentClientFallback.class)
+             fallback = PaymentClientFallback.class, configuration = PaymentClientConfig.class)
 public interface PaymentClient {
 
     @PostMapping("/orders")

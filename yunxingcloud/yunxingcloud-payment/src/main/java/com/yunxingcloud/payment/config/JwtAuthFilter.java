@@ -23,6 +23,10 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
+    /** 微服务内部调用密钥（与 PaymentClientConfig.INTERNAL_KEY 一致） */
+    private static final String INTERNAL_KEY = "yunxingcloud-internal";
+    private static final String INTERNAL_HEADER = "X-Internal-Key";
+
     private final SecretKey key;
 
     public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
@@ -32,6 +36,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
+        // 内部微服务间调用（order 服务 Feign 直连）：密钥匹配则直接放行
+        if (INTERNAL_KEY.equals(request.getHeader(INTERNAL_HEADER))) {
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(
+                            "internal",
+                            null,
+                            List.of(
+                                    new SimpleGrantedAuthority("ROLE_INTERNAL"),
+                                    new SimpleGrantedAuthority("ticket:read"),
+                                    new SimpleGrantedAuthority("ticket:write"))));
+            chain.doFilter(request, response);
+            return;
+        }
         String token = JwtTokenProvider.extractToken(request);
         if (token != null) {
             try {

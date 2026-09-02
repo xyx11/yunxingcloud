@@ -1,19 +1,17 @@
 package com.yunxingcloud.order.repository;
 
 import com.yunxingcloud.order.entity.OrderHead;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
 public interface OrderHeadRepository extends JpaRepository<OrderHead, Long> {
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT o FROM OrderHead o WHERE o.id = :id")
+    // MySQL 5.7 不支持 Hibernate 6 生成的 FOR UPDATE OF 语法，改用原生 SQL
+    @Query(value = "SELECT * FROM order_head WHERE id = :id FOR UPDATE", nativeQuery = true)
     Optional<OrderHead> findByIdForUpdate(Long id);
     List<OrderHead> findByUsernameOrderByCreatedAtDesc(String username);
     Page<OrderHead> findByUsernameOrderByCreatedAtDesc(String username, Pageable pageable);
