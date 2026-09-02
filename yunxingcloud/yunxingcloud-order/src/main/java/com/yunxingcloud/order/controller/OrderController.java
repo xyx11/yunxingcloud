@@ -105,10 +105,18 @@ public class OrderController {
                 if (result != null && result.get("id") != null) {
                     order.setPaymentOrderId(Long.valueOf(result.get("id").toString()));
                     orderRepo.saveAndFlush(order);
-                    paymentClient.pay(Long.valueOf(result.get("id").toString()), Map.of());
-                    order.setStatus("1");
-                    orderRepo.save(order);
-                    return ResponseEntity.ok(result);
+                    Map<String, Object> payResult = paymentClient.pay(Long.valueOf(result.get("id").toString()), Map.of());
+                    // 当面付（返回收款二维码）：等待异步回调确认后再置已付款
+                    boolean isQrPay = payResult != null && payResult.get("qrCode") != null;
+                    if (!isQrPay) {
+                        order.setStatus("1");
+                        orderRepo.save(order);
+                    }
+                    Map<String, Object> merged = new java.util.LinkedHashMap<>();
+                    if (payResult != null) merged.putAll(payResult);
+                    merged.put("paymentOrderId", order.getPaymentOrderId());
+                    merged.put("orderNo", order.getOrderNo());
+                    return ResponseEntity.ok(merged);
                 } else {
                     return ResponseEntity.status(502).body(Map.of("message", "创建支付订单失败"));
                 }

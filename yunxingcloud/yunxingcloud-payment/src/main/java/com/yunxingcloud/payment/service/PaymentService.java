@@ -99,7 +99,8 @@ public class PaymentService {
             String tradeNo = params.getOrDefault("trade_no", params.getOrDefault("transaction_id", ""));
             if (!tradeNo.isEmpty()) order.setTradeNo(tradeNo);
             orderRepo.save(order);
-            syncOrderStatus(orderNo, "2");
+            // 订单状态 1 = 已付款（非发货）
+            syncOrderStatus(orderNo, "1");
         }
     }
 

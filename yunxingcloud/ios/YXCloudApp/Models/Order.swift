@@ -1,5 +1,17 @@
 import Foundation
 
+/// 支付发起响应（含当面付二维码）
+struct PayResponse: Codable {
+    let channel: String?
+    let orderNo: String?
+    let qrCode: String?
+    let tradeNo: String?
+    let mock: Bool?
+    let paymentOrderId: Int?
+
+    var isQrPay: Bool { !(qrCode ?? "").isEmpty }
+}
+
 /// 订单（宽容解码，后端 OrderHead 实体）
 struct OrderHead: Codable, Hashable {
     let id: Int?

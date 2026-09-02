@@ -7,6 +7,7 @@ struct OrderListView: View {
 
     @State private var payTarget: OrderHead?
     @State private var isPaying = false
+    @State private var qrPay: (order: OrderHead, qr: String, channel: String)?
 
     var body: some View {
         Group {
@@ -41,12 +42,20 @@ struct OrderListView: View {
             get: { payTarget != nil },
             set: { if !$0 { payTarget = nil } }
         ), titleVisibility: .visible) {
-            Button("微信支付") { startPay(channel: "wechat") }
             Button("支付宝") { startPay(channel: "alipay") }
+            Button("微信支付") { startPay(channel: "wechat") }
             Button("取消", role: .cancel) {}
         } message: {
             if let order = payTarget {
                 Text("订单 \(order.orderNo ?? "") 合计 \(PriceText.format(fen: order.totalAmount ?? 0))")
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { qrPay != nil },
+            set: { if !$0 { qrPay = nil } }
+        )) {
+            if let qrPay {
+                PayQRView(order: qrPay.order, qrContent: qrPay.qr, channel: qrPay.channel)
             }
         }
     }
@@ -56,7 +65,12 @@ struct OrderListView: View {
         isPaying = true
         Task {
             do {
-                try await orderStore.pay(order: order, channel: channel)
+                let resp = try await orderStore.pay(order: order, channel: channel)
+                if resp.isQrPay, let qr = resp.qrCode {
+                    // 当面付：跳转二维码收银台，等回调后自动刷新
+                    await orderStore.load()
+                    qrPay = (order, qr, channel)
+                }
             } catch {
                 orderStore.toastMessage = error.localizedDescription
             }
