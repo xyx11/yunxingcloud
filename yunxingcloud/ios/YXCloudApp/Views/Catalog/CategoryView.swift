@@ -4,9 +4,10 @@ import SwiftUI
 struct CategoryView: View {
     @EnvironmentObject private var catalog: CatalogStore
     @State private var selectedCategory: Category?
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             HStack(spacing: 0) {
                 categoryList
                     .frame(width: 100)
@@ -18,6 +19,20 @@ struct CategoryView: View {
             }
             .navigationTitle("分类")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .productDetail(let id):
+                    ProductDetailView(productId: id)
+                case .products(let title, let categoryId):
+                    ProductListView(title: title, categoryId: categoryId)
+                case .search:
+                    SearchView()
+                case .login:
+                    LoginView()
+                case .register:
+                    RegisterView()
+                }
+            }
         }
         .task {
             if catalog.categories.isEmpty { await catalog.loadCategories() }
@@ -40,6 +55,7 @@ struct CategoryView: View {
                             .padding(.vertical, 14)
                             .background(selectedCategory?.id == cat.id ? Color.white : Color.clear)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -73,8 +89,8 @@ struct CategoryView: View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {
                 ForEach(catalog.products) { product in
-                    NavigationLink {
-                        ProductDetailView(productId: product.id)
+                    Button {
+                        path.append(Route.productDetail(product.id))
                     } label: {
                         ProductCard(product: product)
                     }

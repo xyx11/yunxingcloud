@@ -89,9 +89,7 @@ struct ProductDetailView: View {
                     SectionHeader(title: "相关推荐")
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {
                         ForEach(related) { product in
-                            NavigationLink {
-                                ProductDetailView(productId: product.id)
-                            } label: {
+                            NavigationLink(value: Route.productDetail(product.id)) {
                                 ProductCard(product: product)
                             }
                             .buttonStyle(.plain)

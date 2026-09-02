@@ -21,9 +21,7 @@ struct ProductListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if catalog.products.isEmpty {
-                Text("暂无商品")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(icon: "tray", title: "暂无商品")
             } else {
                 grid
             }
@@ -38,9 +36,7 @@ struct ProductListView: View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {
                 ForEach(catalog.products) { product in
-                    NavigationLink {
-                        ProductDetailView(productId: product.id)
-                    } label: {
+                    NavigationLink(value: Route.productDetail(product.id)) {
                         ProductCard(product: product)
                     }
                     .buttonStyle(.plain)
@@ -109,9 +105,7 @@ struct SearchView: View {
                 ScrollView {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {
                         ForEach(catalog.products) { product in
-                            NavigationLink {
-                                ProductDetailView(productId: product.id)
-                            } label: {
+                            NavigationLink(value: Route.productDetail(product.id)) {
                                 ProductCard(product: product)
                             }
                             .buttonStyle(.plain)

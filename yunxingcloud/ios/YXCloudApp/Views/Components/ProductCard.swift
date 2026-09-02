@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// 商品卡片：图 + 名称（2行）+ 价格 + 销量
+/// 商品卡片：图 + 名称（2行）+ 价格 + 销量（纯展示，点击由外层 Button 处理）
 struct ProductCard: View {
     let product: Product
-    var onTap: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -27,6 +26,5 @@ struct ProductCard: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
     }
 }

@@ -3,9 +3,10 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var home: HomeStore
     @State private var bannerIndex = 0
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if home.isLoading {
                     ProgressView("加载中...").frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -20,6 +21,20 @@ struct HomeView: View {
             .background(AppConfig.pageBackground)
             .navigationTitle("YXCLOUD 商城")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .products(let title, let categoryId):
+                    ProductListView(title: title, categoryId: categoryId)
+                case .productDetail(let id):
+                    ProductDetailView(productId: id)
+                case .search:
+                    SearchView()
+                case .login:
+                    LoginView()
+                case .register:
+                    RegisterView()
+                }
+            }
         }
         .task { await home.load() }
     }
@@ -49,8 +64,8 @@ struct HomeView: View {
     }
 
     private var searchBar: some View {
-        NavigationLink {
-            SearchView()
+        Button {
+            path.append(Route.search)
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
@@ -65,6 +80,7 @@ struct HomeView: View {
             .clipShape(Capsule())
             .padding(.horizontal)
         }
+        .buttonStyle(.plain)
     }
 
     private func bannerCarousel(_ banners: [Banner]) -> some View {
@@ -92,8 +108,8 @@ struct HomeView: View {
     private func categoryGrid(_ categories: [Category]) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
             ForEach(categories) { cat in
-                NavigationLink {
-                    ProductListView(title: cat.name, categoryId: cat.id)
+                Button {
+                    path.append(Route.products(title: cat.name, categoryId: cat.id))
                 } label: {
                     VStack(spacing: 6) {
                         Text(cat.icon ?? "🛍️")
@@ -103,7 +119,10 @@ struct HomeView: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     }
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal)
@@ -114,8 +133,8 @@ struct HomeView: View {
     private func productGrid(_ products: [Product]) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 12) {
             ForEach(products.prefix(10)) { product in
-                NavigationLink {
-                    ProductDetailView(productId: product.id)
+                Button {
+                    path.append(Route.productDetail(product.id))
                 } label: {
                     ProductCard(product: product)
                 }
