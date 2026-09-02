@@ -200,6 +200,7 @@ struct CheckoutView: View {
                 address: address.isEmpty ? nil : address
             )
             successOrderNo = order.orderNo
+            cart.toastMessage = "下单成功：\(order.orderNo ?? "")"
             // 延迟关闭，让用户看到成功提示
             try? await Task.sleep(for: .seconds(1.5))
             dismiss()

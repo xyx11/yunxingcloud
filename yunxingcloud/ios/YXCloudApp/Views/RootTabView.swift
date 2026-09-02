@@ -2,6 +2,10 @@ import SwiftUI
 
 struct RootTabView: View {
     @EnvironmentObject private var cart: CartStore
+    @EnvironmentObject private var auth: AuthStore
+
+    @State private var toastText: String?
+    @State private var toastTask: Task<Void, Never>?
 
     var body: some View {
         TabView {
@@ -19,5 +23,23 @@ struct RootTabView: View {
                 .tabItem { Label("我的", systemImage: "person.fill") }
         }
         .tint(AppConfig.brandRed)
+        .overlay(alignment: .bottom) {
+            if let toastText {
+                ToastView(message: toastText)
+                    .animation(.spring(duration: 0.3), value: toastText)
+            }
+        }
+        .onChange(of: cart.toastMessage) { msg in showToast(msg) }
+        .onChange(of: auth.toastMessage) { msg in showToast(msg) }
+    }
+
+    private func showToast(_ message: String?) {
+        guard let message, !message.isEmpty else { return }
+        toastTask?.cancel()
+        toastText = message
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(2.2))
+            if !Task.isCancelled { toastText = nil }
+        }
     }
 }

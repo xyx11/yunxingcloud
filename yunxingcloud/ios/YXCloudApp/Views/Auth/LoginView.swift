@@ -19,8 +19,12 @@ struct LoginView: View {
                 HStack {
                     if showPassword {
                         TextField("密码", text: $password)
+                            .submitLabel(.go)
+                            .onSubmit { Task { await doLogin() } }
                     } else {
                         SecureField("密码", text: $password)
+                            .submitLabel(.go)
+                            .onSubmit { Task { await doLogin() } }
                     }
                     Button {
                         showPassword.toggle()

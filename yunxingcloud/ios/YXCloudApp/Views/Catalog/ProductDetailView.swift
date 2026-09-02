@@ -11,6 +11,7 @@ struct ProductDetailView: View {
     @State private var errorMessage: String?
     @State private var quantity = 1
     @State private var showLoginSheet = false
+    @State private var isAdding = false
 
     private let client = APIClient.shared
 
@@ -142,23 +143,33 @@ struct ProductDetailView: View {
             .fixedSize()
 
             Button {
+                guard !isAdding else { return }
                 Task {
+                    isAdding = true
                     if await cart.add(productId: productId, quantity: quantity) {
                         // 成功；未登录时弹出登录
                     } else {
                         showLoginSheet = true
                     }
+                    isAdding = false
                 }
             } label: {
-                Text("加入购物车")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(AppConfig.brandRed)
-                    .clipShape(Capsule())
+                Group {
+                    if isAdding {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("加入购物车")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(AppConfig.brandRed)
+                .clipShape(Capsule())
             }
+            .disabled(isAdding)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)

@@ -8,6 +8,7 @@ final class AuthStore: ObservableObject {
     @Published var currentUser: User?
     @Published var isBusy = false
     @Published var errorMessage: String?
+    @Published var toastMessage: String?
 
     private let client = APIClient.shared
 
@@ -38,6 +39,7 @@ final class AuthStore: ObservableObject {
         self.username = resp.username ?? username
         isLoggedIn = true
         errorMessage = nil
+        toastMessage = "登录成功"
         await loadUser()
     }
 
@@ -63,7 +65,7 @@ final class AuthStore: ObservableObject {
         isLoggedIn = false
         username = nil
         currentUser = nil
-        errorMessage = "登录已过期，请重新登录"
+        toastMessage = "登录已过期，请重新登录"
     }
 
     func loadUser() async {
