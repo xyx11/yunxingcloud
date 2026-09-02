@@ -7,6 +7,7 @@ struct YXCloudAppApp: App {
     @StateObject private var cart = CartStore()
     @StateObject private var home = HomeStore()
     @StateObject private var catalog = CatalogStore()
+    @StateObject private var orderStore = OrderStore()
 
     var body: some Scene {
         WindowGroup {
@@ -15,6 +16,7 @@ struct YXCloudAppApp: App {
                 .environmentObject(cart)
                 .environmentObject(home)
                 .environmentObject(catalog)
+                .environmentObject(orderStore)
         }
     }
 }

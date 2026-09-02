@@ -6,12 +6,24 @@ struct OrderHead: Codable, Hashable {
     let orderNo: String?
     let status: String?
     let totalAmount: Int?
-    let payAmount: Int?
-    let freight: Int?
+    let actualAmount: Int?
     let couponAmount: Int?
     let receiverName: String?
     let receiverPhone: String?
     let receiverAddress: String?
-    let createTime: String?
+    let remark: String?
+    let createdAt: String?
     let username: String?
+
+    /// 状态中文描述：0待付款/1已付款/2已发货/3已完成/4已取消
+    var statusText: String {
+        switch status ?? "" {
+        case "0": return "待付款"
+        case "1": return "已付款"
+        case "2": return "已发货"
+        case "3": return "已完成"
+        case "4": return "已取消"
+        default: return status ?? "未知"
+        }
+    }
 }

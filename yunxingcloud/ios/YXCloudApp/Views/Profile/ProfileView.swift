@@ -25,7 +25,11 @@ struct ProfileView: View {
                     }
 
                     Section {
-                        LabeledContent("我的订单", value: "查看全部")
+                        NavigationLink {
+                            OrderListView()
+                        } label: {
+                            LabeledContent("我的订单", value: "查看全部")
+                        }
                         LabeledContent("收货地址", value: "管理")
                         LabeledContent("优惠券", value: "查看")
                     }
